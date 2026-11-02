@@ -40,4 +40,4 @@ Belfast Mini Mills (Prince Edward Island, Canada) builds fibre-processing machin
 - `npm install` – install
 - `npm run dev` – local dev server (http://localhost:5173)
 - `npm run build` – type-check and production build
-- `npm run lint` – ESLint
+- `npm run lint` – linter (oxlint)
