@@ -14,7 +14,7 @@ const navItems = [
 
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { session, signOut } = useAuth()
+  const { session, role, signOut } = useAuth()
   return (
     <div className="flex h-full">
       {/* Dark backdrop behind the menu on phones */}
@@ -57,6 +57,7 @@ export default function Layout() {
             <div className="truncate text-slate-400" title={session.user.email}>
               {session.user.email}
             </div>
+            {role && <div className="text-xs text-slate-500">{role === 'admin' ? 'Admin' : 'Staff'}</div>}
             <button type="button" onClick={signOut} className="mt-2 text-slate-300 underline hover:text-white">
               Sign out
             </button>

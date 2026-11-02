@@ -66,11 +66,19 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0004_payments_and_activity_log.sql` | Balance = total − down payment; records every change |
 | `0005_order_summary_view.sql` | The `order_summary` view (delay, machines ready, paid, outstanding) |
 | `0006_security.sql` | Only signed-in, allowed users can see or change anything |
+| `0007_roles_options_archiving.sql` | Admin/staff roles, editable dropdown lists, archive instead of delete |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
 ```sql
 insert into public.allowed_users (email, name) values ('you@example.com', 'Your name');
+```
+
+New users are **staff** (can add and edit). Admins can also delete, change machine types, dropdown lists,
+settings and users. To make someone an admin:
+
+```sql
+update public.allowed_users set role = 'admin' where email = 'them@example.com';
 ```
 
 To remove someone later: `delete from public.allowed_users where email = 'them@example.com';`
