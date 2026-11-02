@@ -31,9 +31,13 @@ Belfast Mini Mills (Prince Edward Island, Canada) builds fibre-processing machin
 
 ## Project layout (keep up to date)
 - `src/` – React app. `src/lib/supabase.ts` is the only place the Supabase client is created.
-- `src/components/` – shared UI (Layout with sidebar).
+- `src/components/` – shared UI (Layout with sidebar, AuthProvider, RequireAuth).
+- `src/lib/auth.ts` – `useAuth()` hook: session, `allowed` (email is in allowed_users), signOut. Sign-in is Supabase email magic link with PKCE (needed because of HashRouter).
 - `src/pages/` – one file per route.
-- `supabase/migrations/` – numbered SQL migrations (`0001_*.sql`, `0002_*.sql`, …).
+- `supabase/migrations/` – numbered SQL migrations (`0001_*.sql`, `0002_*.sql`, …). The user pastes them into the Supabase SQL Editor one at a time.
+  - 0001 tables, 0002 machine type seed, 0003 serials + board (`next_serial`, `renumber_board`, `reassign_serials`, `move_board`, triggers), 0004 balance sync + `activity_log` triggers, 0005 `order_summary` view, 0006 RLS (`is_allowed_user()`).
+  - Board numbers and serials are maintained by triggers; never set `board_position` or unbuilt serials directly from the app, call `move_board` / change `stage` instead.
+  - `order_machines.ready` = machine is built (keeps its serial forever).
 - Only `VITE_`-prefixed env vars reach the browser; the Supabase anon key is the only key allowed there (RLS protects data). Service-role keys, AI keys and email passwords never go in `VITE_` vars.
 
 ## Commands

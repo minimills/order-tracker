@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
+import { useAuth } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
 
 const navItems = [
@@ -13,6 +14,7 @@ const navItems = [
 
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
+  const { session, signOut } = useAuth()
   return (
     <div className="flex h-full">
       {/* Dark backdrop behind the menu on phones */}
@@ -50,6 +52,16 @@ export default function Layout() {
             </NavLink>
           ))}
         </nav>
+        {session && (
+          <div className="border-t border-slate-800 px-5 py-4 text-sm">
+            <div className="truncate text-slate-400" title={session.user.email}>
+              {session.user.email}
+            </div>
+            <button type="button" onClick={signOut} className="mt-2 text-slate-300 underline hover:text-white">
+              Sign out
+            </button>
+          </div>
+        )}
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">

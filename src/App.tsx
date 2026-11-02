@@ -1,7 +1,9 @@
 import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
+import RequireAuth from './components/RequireAuth'
 import AgentPage from './pages/AgentPage'
 import DashboardPage from './pages/DashboardPage'
+import LoginPage from './pages/LoginPage'
 import NotFoundPage from './pages/NotFoundPage'
 import OrdersBoardPage from './pages/OrdersBoardPage'
 import OrdersListPage from './pages/OrdersListPage'
@@ -11,7 +13,14 @@ import SettingsPage from './pages/SettingsPage'
 export default function App() {
   return (
     <Routes>
-      <Route element={<Layout />}>
+      <Route path="login" element={<LoginPage />} />
+      <Route
+        element={
+          <RequireAuth>
+            <Layout />
+          </RequireAuth>
+        }
+      >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="board" element={<OrdersBoardPage />} />
