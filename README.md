@@ -68,6 +68,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0006_security.sql` | Only signed-in, allowed users can see or change anything |
 | `0007_roles_options_archiving.sql` | Admin/staff roles, editable dropdown lists, archive instead of delete |
 | `0008_create_order.sql` | Saves a new order in one step; hand-typed serials |
+| `0009_board_moves.sql` | Orders board moves (with a preview of serial changes); payment status for badges |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

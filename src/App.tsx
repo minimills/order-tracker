@@ -12,11 +12,21 @@ import OrderPage from './pages/OrderPage'
 import OrdersListPage from './pages/OrdersListPage'
 import PaymentsPage from './pages/PaymentsPage'
 import SettingsPage from './pages/SettingsPage'
+import ShopBoardPage from './pages/ShopBoardPage'
 
 export default function App() {
   return (
     <Routes>
       <Route path="login" element={<LoginPage />} />
+      {/* Full-screen, printable shop board (no sidebar). */}
+      <Route
+        path="shop-board"
+        element={
+          <RequireAuth>
+            <ShopBoardPage />
+          </RequireAuth>
+        }
+      />
       <Route
         element={
           <RequireAuth>
