@@ -67,6 +67,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0005_order_summary_view.sql` | The `order_summary` view (delay, machines ready, paid, outstanding) |
 | `0006_security.sql` | Only signed-in, allowed users can see or change anything |
 | `0007_roles_options_archiving.sql` | Admin/staff roles, editable dropdown lists, archive instead of delete |
+| `0008_create_order.sql` | Saves a new order in one step; hand-typed serials |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

@@ -38,10 +38,12 @@ Belfast Mini Mills (Prince Edward Island, Canada) builds fibre-processing machin
 - `src/` – React app. `src/lib/supabase.ts` is the only place the Supabase client is created.
 - `src/components/` – shared UI (Layout with sidebar, AuthProvider, RequireAuth).
 - `src/lib/auth.ts` – `useAuth()` hook: session, `allowed` (email is in allowed_users), `role`, `isAdmin`, signOut. Sign-in is Supabase email magic link with PKCE (needed because of HashRouter).
-- `src/pages/` – one file per route.
+- `src/pages/` – one file per route. `NewOrderPage` (/orders/new), `OrderPage` (/orders/:id, read-only for now), `MachineTypesPage` (/settings/machine-types, admin edits).
+- `src/components/form.tsx` – shared `Field`, `Section` and input/button classes. `src/components/order/` – New Order form parts (CustomerPicker, MachinesSection, serial preview).
+- `src/lib/types.ts` (row types, fixed STAGES/CURRENCIES), `src/lib/format.ts` (`formatSerial`, `formatMoney`, `friendlyError`), `src/lib/useOptionList.ts` (load a dropdown from option_lists).
 - `supabase/migrations/` – numbered SQL migrations (`0001_*.sql`, `0002_*.sql`, …). The user pastes them into the Supabase SQL Editor one at a time.
-  - 0001 tables, 0002 machine type seed, 0003 serials + board (`next_serial`, `renumber_board`, `reassign_serials`, `move_board`, triggers), 0004 balance sync + `activity_log` triggers, 0005 `order_summary` view, 0006 RLS (`is_allowed_user()`), 0007 roles (`current_user_role()`, `is_admin()`), `option_lists`, `app_settings`, archiving, `payments.kind` renamed to `payment_type`.
-  - Board numbers and serials are maintained by triggers; never set `board_position` or unbuilt serials directly from the app, call `move_board` / change `stage` instead.
+  - 0001 tables, 0002 machine type seed, 0003 serials + board (`next_serial`, `renumber_board`, `reassign_serials`, `move_board`, triggers), 0004 balance sync + `activity_log` triggers, 0005 `order_summary` view, 0006 RLS (`is_allowed_user()`), 0007 roles (`current_user_role()`, `is_admin()`), `option_lists`, `app_settings`, archiving, `payments.kind` renamed to `payment_type`, 0008 `create_order(p_order jsonb)` (saves customer + order + machines + payments in one transaction), `order_machines.serial_manual` (hand-typed serials, never reassigned), `next_serial` skips taken numbers, `machine_type_usage` view.
+  - Board numbers and serials are maintained by triggers; never set `board_position` or unbuilt serials directly from the app, call `move_board` / change `stage` instead. New orders are saved only through the `create_order` RPC.
   - `order_machines.ready` = machine is built (keeps its serial forever).
 - Only `VITE_`-prefixed env vars reach the browser; the Supabase anon key is the only key allowed there (RLS protects data). Service-role keys, AI keys and email passwords never go in `VITE_` vars.
 

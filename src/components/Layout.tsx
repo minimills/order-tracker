@@ -6,7 +6,8 @@ import { isSupabaseConfigured } from '../lib/supabase'
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/board', label: 'Orders board', icon: '📋' },
-  { to: '/orders', label: 'Orders list', icon: '📄' },
+  { to: '/orders/new', label: 'New order', icon: '➕' },
+  { to: '/orders', label: 'Orders list', icon: '📄', end: true },
   { to: '/payments', label: 'Payments', icon: '💵' },
   { to: '/agent', label: 'Agent', icon: '💬' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
@@ -40,6 +41,7 @@ export default function Layout() {
             <NavLink
               key={item.to}
               to={item.to}
+              end={'end' in item ? item.end : undefined}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
