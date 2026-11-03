@@ -9,6 +9,7 @@ const sections = [
   { to: '/admin/board', icon: '📋', title: 'Board numbers', text: 'Set a board number by hand, or renumber all.' },
   { to: '/admin/alerts', icon: '🔔', title: 'Alert settings', text: 'How many days ahead to warn.' },
   { to: '/admin/company', icon: '🏢', title: 'Company details', text: 'Name, address and logo for printouts.' },
+  { to: '/admin/import', icon: '📥', title: 'Import & backup', text: 'Bring in orders from a spreadsheet, or download everything.' },
   { to: '/admin/archive', icon: '🗄', title: 'Archive', text: 'Bring back archived records, or delete them for good.' },
   { to: '/admin/activity', icon: '🕘', title: 'Activity', text: 'Every change: who, what and when.' },
 ]

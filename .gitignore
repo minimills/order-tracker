@@ -30,6 +30,8 @@ dist-ssr
 supabase/.temp
 supabase/.branches
 
-# The exported Google Sheet and import reports – never commit (customer data)
-/import/*
-!/import/README.md
+# Spreadsheets with customer data – never commit
+/import/
+*.xlsx
+*.xls
+*.ods

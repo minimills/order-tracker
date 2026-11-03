@@ -8,6 +8,7 @@ import AdminHomePage from './pages/admin/AdminHomePage'
 import ArchivePage from './pages/admin/ArchivePage'
 import BoardAdminPage from './pages/admin/BoardAdminPage'
 import CompanyPage from './pages/admin/CompanyPage'
+import ImportPage from './pages/admin/ImportPage'
 import OptionListsPage from './pages/admin/OptionListsPage'
 import RecordsPage from './pages/admin/RecordsPage'
 import SerialsPage from './pages/admin/SerialsPage'
@@ -70,6 +71,7 @@ export default function App() {
           <Route path="company" element={<CompanyPage />} />
           <Route path="archive" element={<ArchivePage />} />
           <Route path="activity" element={<ActivityPage />} />
+          <Route path="import" element={<ImportPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
