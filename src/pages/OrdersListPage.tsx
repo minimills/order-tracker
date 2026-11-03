@@ -132,7 +132,7 @@ type Filters = {
   archived: boolean
 }
 
-const defaultFilters: Filters = { q: '', stage: 'open', voltage: '', payment: '', sort: 'order', dir: 'desc', archived: false }
+const defaultFilters: Filters = { q: '', stage: 'open', voltage: '', payment: '', sort: 'order', dir: 'asc', archived: false }
 
 function readFilters(p: URLSearchParams): Filters {
   return {
@@ -141,7 +141,7 @@ function readFilters(p: URLSearchParams): Filters {
     voltage: p.get('voltage') ?? defaultFilters.voltage,
     payment: p.get('payment') ?? defaultFilters.payment,
     sort: p.get('sort') ?? defaultFilters.sort,
-    dir: p.get('dir') === 'asc' ? 'asc' : 'desc',
+    dir: p.get('dir') === 'desc' ? 'desc' : 'asc',
     archived: p.get('archived') === '1',
   }
 }
