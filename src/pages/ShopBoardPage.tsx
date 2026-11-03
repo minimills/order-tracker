@@ -19,7 +19,7 @@ type Machine = {
 }
 
 /**
- * The shop board in large print: board number, order, customer and every
+ * The shop board in large print, in queue order: order, customer and every
  * machine with its serial and a "built" tick. Made for printing or a big screen.
  */
 export default function ShopBoardPage() {
@@ -114,12 +114,11 @@ export default function ShopBoardPage() {
           const list = machinesByOrder.get(o.id) ?? []
           const badges = orderBadges(o).filter((b) => !b.label.startsWith('Payment'))
           return (
-            <section key={o.id} className="grid grid-cols-[4.5rem_1fr] gap-4 py-4 break-inside-avoid md:grid-cols-[6rem_1fr]">
-              <div className="text-center text-5xl leading-none font-black md:text-6xl">{o.board_position}</div>
+            <section key={o.id} className="grid grid-cols-[5.5rem_1fr] gap-4 py-4 break-inside-avoid md:grid-cols-[8rem_1fr]">
+              <div className="text-center text-4xl leading-none font-black md:text-5xl">{o.order_code}</div>
               <div>
                 <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                  <span className="text-2xl font-bold md:text-3xl">Order {o.order_code}</span>
-                  <span className="text-xl md:text-2xl">
+                                    <span className="text-xl md:text-2xl">
                     {o.customer_name}
                     {o.customer_company && <span className="text-slate-600"> · {o.customer_company}</span>}
                   </span>

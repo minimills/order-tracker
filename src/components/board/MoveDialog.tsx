@@ -39,7 +39,7 @@ function rpcArgs(r: MoveRequest, shipDate: string | null, markBuilt: boolean) {
 }
 
 /**
- * Shows exactly what a move will change (board numbers and serials) and asks
+ * Shows exactly what a move will change (place in the queue and serials) and asks
  * to confirm. Moving to Shipped also asks for the ship date.
  */
 export default function MoveDialog({ request, onClose, onDone }: Props) {
@@ -134,23 +134,16 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
         {preview && (
           <div className="mt-4 space-y-4 text-sm">
             <div>
-              <h3 className="font-medium">Board numbers</h3>
-              {me ? (
-                <p className="mt-1">
-                  Order {request.order.order_code}:{' '}
-                  {me.old === null ? 'joins the board' : `#${me.old}`} →{' '}
-                  {me.new === null ? 'leaves the board' : `#${me.new}`}
-                  {others.length > 0 && (
-                    <span className="text-slate-500">
-                      {' '}
-                      ({others.length} other order{others.length === 1 ? '' : 's'} move{others.length === 1 ? 's' : ''}{' '}
-                      {me.new === null || (me.old !== null && me.new !== null && me.new > me.old) ? 'up' : 'down'} one place)
-                    </span>
-                  )}
-                </p>
-              ) : (
-                <p className="mt-1 text-slate-500">No board numbers change.</p>
-              )}
+              <h3 className="font-medium">Shop queue</h3>
+              <p className="mt-1">
+                {!me
+                  ? 'The order of the shop queue does not change.'
+                  : me.new === null
+                    ? `Order ${request.order.order_code} leaves the shop queue${others.length ? '; the orders behind it move up' : ''}.`
+                    : me.old === null
+                      ? `Order ${request.order.order_code} joins the shop queue${request.anchor ? ` ${request.place === 'before' ? 'above' : 'below'} order ${request.anchor.order_code}` : ' at the end'}.`
+                      : `Order ${request.order.order_code} moves ${me.new < me.old ? 'up' : 'down'} the queue${request.anchor ? `, ${request.place === 'before' ? 'above' : 'below'} order ${request.anchor.order_code}` : ''}.`}
+              </p>
             </div>
 
             <div>
@@ -161,7 +154,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
                 <>
                   <p className="mt-1 text-slate-600">
                     {preview.serials.length} serial number{preview.serials.length === 1 ? '' : 's'} will change, so
-                    lower board numbers keep the lower serials. Built machines are not affected.
+                    orders earlier in the queue keep the lower serials. Built machines are not affected.
                   </p>
                   <table className="mt-2 w-full text-left">
                     <thead className="text-xs text-slate-500">

@@ -6,7 +6,7 @@ const sections = [
   { to: '/admin/dropdowns', icon: '📝', title: 'Dropdown lists', text: 'Voltage, delivery equipment, freight and payment types.' },
   { to: '/admin/records', icon: '🗂', title: 'Orders, customers & machines', text: 'Edit any field, or archive.' },
   { to: '/admin/serials', icon: '🔢', title: 'Serial numbers', text: 'Fix one serial by hand, or re-sequence a machine type.' },
-  { to: '/admin/board', icon: '📋', title: 'Board numbers', text: 'Set a board number by hand, or renumber all.' },
+  { to: '/admin/board', icon: '📋', title: 'Shop queue', text: 'Put an order at a set place in the queue, or tidy the whole queue.' },
   { to: '/admin/alerts', icon: '🔔', title: 'Alert settings', text: 'How many days ahead to warn.' },
   { to: '/admin/company', icon: '🏢', title: 'Company details', text: 'Name, address and logo for printouts.' },
   { to: '/admin/import', icon: '📥', title: 'Import & backup', text: 'Bring in orders from a spreadsheet, or download everything.' },

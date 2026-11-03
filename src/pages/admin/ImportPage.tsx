@@ -137,7 +137,6 @@ export default function ImportPage() {
   // ---------- Checking (runs after every edit) ----------
   const ctx: ImportContext = useMemo(() => ({ types, options, existing, serialOwner, keepSerials }), [types, options, existing, serialOwner, keepSerials])
   const check = useMemo(() => checkImport(drafts, ctx), [drafts, ctx])
-  const boardPos = useMemo(() => new Map(check.boardOrder.map((o, i) => [o.draft.key, i + 1])), [check])
   const included = check.orders.filter((o) => o.draft.include)
   const errors = included.filter((o) => o.level === 'error').length
   const warnings = included.filter((o) => o.level === 'warning').length
@@ -376,7 +375,6 @@ export default function ImportPage() {
                 checked={c}
                 types={types}
                 options={options}
-                boardPosition={boardPos.get(c.draft.key) ?? null}
                 onOrder={(patch) => patchOrder(c.draft.key, patch)}
                 onMachine={(mk, patch) => patchMachine(c.draft.key, mk, patch)}
                 onCreateType={(m) => {

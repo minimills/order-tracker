@@ -274,11 +274,6 @@ export default function DashboardPage() {
                     <Link to={`/orders/${o.id}`} className="flex items-center justify-between gap-3 py-2 hover:bg-slate-50">
                       <span className="min-w-0">
                         <span className="font-medium">
-                          {o.board_position !== null && (
-                            <span className="mr-1.5 inline-block min-w-6 rounded bg-slate-900 px-1 text-center text-xs text-white">
-                              {o.board_position}
-                            </span>
-                          )}
                           Order {o.order_code}
                         </span>
                         <span className="block truncate text-slate-600">

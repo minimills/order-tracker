@@ -152,7 +152,6 @@ export default function RecordsPage() {
                     <th className="px-3 py-2 font-normal">Order</th>
                     <th className="px-3 py-2 font-normal">Customer</th>
                     <th className="px-3 py-2 font-normal">Stage</th>
-                    <th className="px-3 py-2 font-normal">Board #</th>
                     <th className="px-3 py-2 text-right font-normal">Total</th>
                     <th />
                   </tr>
@@ -167,7 +166,6 @@ export default function RecordsPage() {
                       </td>
                       <td className="px-3 py-2">{o.customer_name}</td>
                       <td className="px-3 py-2">{o.stage}</td>
-                      <td className="px-3 py-2">{o.board_position ?? ''}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{formatMoney(o.order_total, o.currency)}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button type="button" className={small} onClick={() => setEditOrder(o)}>

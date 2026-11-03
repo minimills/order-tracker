@@ -42,7 +42,6 @@ const COLUMNS: ColumnDef[] = [
     value: (o) => o.order_number * 1000 + (o.split_number ?? 0),
     render: (o) => <span className="font-medium">{o.order_code}</span>,
   },
-  { key: 'board', label: 'Board #', value: (o) => o.board_position, align: 'right' },
   { key: 'stage', label: 'Stage', value: (o) => o.stage },
   { key: 'customer', label: 'Customer', value: (o) => o.customer_name },
   { key: 'company', label: 'Company', value: (o) => o.customer_company },

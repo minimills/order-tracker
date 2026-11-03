@@ -68,16 +68,16 @@ export default function BoardAdminPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <AdminPageHeader
-        title="Board numbers"
+        title="Shop queue"
         aside={
           <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => ask(null, null, 'Renumber all')}>
             Renumber all
           </button>
         }
       >
-        Type a new board number for an order and press Set. Everyone in between moves one place, and unbuilt serials
-        follow the new order. <strong>Renumber all</strong> tidies the board to 1, 2, 3… and re-checks every unbuilt
-        serial. You always see the changes before they are saved. The normal{' '}
+        To move an order, type the place you want it in the queue (1 = built first) and press Set. Everyone in
+        between moves one place, and unbuilt serials follow the new order. <strong>Renumber all</strong> tidies the queue
+        and re-checks every unbuilt serial. You always see the changes before they are saved. The normal{' '}
         <Link to="/board" className="underline">
           Orders board
         </Link>{' '}
@@ -93,12 +93,12 @@ export default function BoardAdminPage() {
           return (
             <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
               <input
-                aria-label={`Board number for order ${r.order_code}`}
+                aria-label={`Place in queue for order ${r.order_code}`}
                 inputMode="numeric"
                 className="w-16 rounded-md border border-slate-300 px-2 py-1 text-center font-semibold"
                 value={draft}
                 onChange={(e) => setDrafts({ ...drafts, [r.id]: e.target.value })}
-                onKeyDown={(e) => e.key === 'Enter' && valid && ask(r.id, n, `Order ${r.order_code} to board #${n}`)}
+                onKeyDown={(e) => e.key === 'Enter' && valid && ask(r.id, n, `Move order ${r.order_code} to place ${n} in the queue`)}
               />
               <div className="min-w-0 flex-1">
                 <Link to={`/orders/${r.id}`} className="font-medium hover:underline">
@@ -111,7 +111,7 @@ export default function BoardAdminPage() {
                 </div>
               </div>
               {valid && (
-                <button type="button" className={buttonClass} disabled={busy} onClick={() => ask(r.id, n, `Order ${r.order_code} to board #${n}`)}>
+                <button type="button" className={buttonClass} disabled={busy} onClick={() => ask(r.id, n, `Move order ${r.order_code} to place ${n} in the queue`)}>
                   Set
                 </button>
               )}
@@ -137,7 +137,7 @@ export default function BoardAdminPage() {
           }
         >
           {nothing ? (
-            <p className="text-sm text-slate-600">Everything is already in order. Nothing would change.</p>
+            <p className="text-sm text-slate-600">The queue is already tidy. Nothing would change.</p>
           ) : (
             <ChangeList positions={pending.diff.positions} serials={pending.diff.serials} />
           )}
