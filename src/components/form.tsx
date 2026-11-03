@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, type ReactNode } from 'react'
 
 export const inputClass =
   'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none disabled:bg-slate-100'
@@ -47,5 +47,40 @@ export function Section({ title, children, aside }: { title: string; children: R
       </div>
       {children}
     </section>
+  )
+}
+
+/** A pop-up box over the page. Closes with Escape or the Cancel button. */
+export function Modal({
+  title,
+  onClose,
+  children,
+  footer,
+  busy = false,
+}: {
+  title: string
+  onClose: () => void
+  children: ReactNode
+  footer: ReactNode
+  busy?: boolean
+}) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !busy && onClose()
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [onClose, busy])
+  return (
+    <div
+      className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-lg bg-white p-5 shadow-xl sm:max-w-lg sm:rounded-lg">
+        <h2 className="text-lg font-semibold">{title}</h2>
+        <div className="mt-4">{children}</div>
+        <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>
+      </div>
+    </div>
   )
 }

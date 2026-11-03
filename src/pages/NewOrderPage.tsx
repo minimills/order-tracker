@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { buttonClass, Field, inputClass, Section } from '../components/form'
 import CustomerPicker from '../components/order/CustomerPicker'
@@ -30,13 +30,16 @@ type SplitInfo = { codes: string[]; customer: Customer | null } | 'not-found' | 
 
 export default function NewOrderPage() {
   const navigate = useNavigate()
+  // "Split shipment" on an order page opens /orders/new?split=76
+  const [searchParams] = useSearchParams()
+  const splitParam = /^\d+$/.test(searchParams.get('split') ?? '') ? searchParams.get('split')! : ''
 
   // --- Form state ---------------------------------------------------------
   const [customer, setCustomer] = useState<CustomerChoice>({ mode: 'existing', customer: null })
   const [orderNumber, setOrderNumber] = useState('')
   const [nextNumber, setNextNumber] = useState<number | null>(null)
-  const [isSplit, setIsSplit] = useState(false)
-  const [splitOf, setSplitOf] = useState('')
+  const [isSplit, setIsSplit] = useState(Boolean(splitParam))
+  const [splitOf, setSplitOf] = useState(splitParam)
   const [stage, setStage] = useState<Stage>('Confirmed')
   const [rows, setRows] = useState<MachineRow[]>(() => [newMachineRow()])
   const [voltage, setVoltage] = useState('Unknown')

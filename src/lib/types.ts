@@ -79,3 +79,31 @@ export type OrderSummaryRow = {
   payment_status: PaymentStatus
   archived: boolean
 }
+
+export type PaymentStatusLabel = 'Paid' | 'Overdue' | 'Due soon' | 'Upcoming' | 'Nothing due'
+
+/** One row of the payment_overview view. */
+export type PaymentRow = {
+  id: string
+  order_id: string
+  order_number: number
+  split_number: number | null
+  order_code: string
+  stage: Stage
+  order_archived: boolean
+  currency: Currency
+  customer_id: string
+  customer_name: string
+  customer_company: string | null
+  customer_country: string | null
+  customer_emails: string[]
+  payment_type: string
+  amount: number
+  received_amount: number
+  remaining: number
+  due_date: string | null
+  received_date: string | null
+  notes: string | null
+  days_until_due: number | null
+  status: PaymentStatusLabel
+}
