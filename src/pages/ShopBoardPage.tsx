@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { badgeClass, orderBadges } from '../components/board/badges'
+import { useCompany } from '../lib/company'
 import { countryFlag } from '../lib/country'
 import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
@@ -26,6 +27,7 @@ export default function ShopBoardPage() {
   const [machines, setMachines] = useState<Machine[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const company = useCompany()
 
   useEffect(() => {
     if (!supabase) return
@@ -79,11 +81,15 @@ export default function ShopBoardPage() {
   return (
     <div className="min-h-full bg-white p-4 text-slate-900 md:p-8 print:p-0">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:mb-3">
-        <div>
+        <div className="flex items-center gap-4">
+          {company.logo && <img src={company.logo} alt="" className="max-h-14" />}
+          <div>
+          <div className="text-sm font-medium text-slate-600">{company.name}</div>
           <h1 className="text-3xl font-bold">Shop board</h1>
           <p className="text-slate-600">
             {orders.length} order{orders.length === 1 ? '' : 's'} in the queue · {showDate(todayISO(), 'EEEE, MMMM d, yyyy')}
           </p>
+          </div>
         </div>
         <div className="flex gap-2 print:hidden">
           <Link to="/board" className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">

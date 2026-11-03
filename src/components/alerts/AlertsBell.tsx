@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { alertText, useAlerts, type AlertRow } from '../../lib/alerts'
+import { useAuth } from '../../lib/auth'
 import { askNotificationPermission, notificationPermission } from '../../lib/browserNotifications'
 import { showDate } from '../../lib/dates'
 
@@ -46,6 +47,7 @@ function AlertItem({ alert, onOpen }: { alert: AlertRow; onOpen: () => void }) {
 /** The bell in the top bar: shows how many alerts there are and lists them. */
 export default function AlertsBell() {
   const { visible, hidden, loading } = useAlerts()
+  const { isAdmin } = useAuth()
   const [open, setOpen] = useState(false)
   const [showHidden, setShowHidden] = useState(false)
   const [permission, setPermission] = useState(notificationPermission())
@@ -90,9 +92,11 @@ export default function AlertsBell() {
         <div className="absolute right-0 z-30 mt-2 w-[min(26rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
             <span className="font-semibold">Alerts</span>
-            <Link to="/settings/alerts" onClick={() => setOpen(false)} className="text-xs text-slate-600 underline">
-              Alert settings
-            </Link>
+            {isAdmin && (
+              <Link to="/admin/alerts" onClick={() => setOpen(false)} className="text-xs text-slate-600 underline">
+                Alert settings
+              </Link>
+            )}
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto">

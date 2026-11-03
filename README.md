@@ -71,12 +71,15 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0009_board_moves.sql` | Orders board moves (with a preview of serial changes); payment status for badges |
 | `0010_payments_received.sql` | Received amounts (part payments), payment status per payment, "Mark received" |
 | `0011_alerts.sql` | Alerts (payments due/overdue, ship dates, unknown voltage), per-user snooze/dismiss, alert settings |
+| `0012_admin.sql` | Admin area: admin-only rules and tools (serials, board, permanent delete), company details |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
 ```sql
 insert into public.allowed_users (email, name) values ('you@example.com', 'Your name');
 ```
+
+After the first admin exists, add and manage people in the app under **Admin → Users** instead.
 
 New users are **staff** (can add and edit). Admins can also delete, change machine types, dropdown lists,
 settings and users. To make someone an admin:

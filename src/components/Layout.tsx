@@ -18,7 +18,9 @@ const navItems = [
 
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { session, role, signOut } = useAuth()
+  const { session, role, isAdmin, signOut } = useAuth()
+  // The Admin menu item is only shown to admins.
+  const items = isAdmin ? [...navItems, { to: '/admin', label: 'Admin', icon: '🛠' }] : navItems
   const page = (
     <div className="flex h-full">
       {/* Dark backdrop behind the menu on phones */}
@@ -40,7 +42,7 @@ export default function Layout() {
           <div className="text-sm text-slate-400">Order tracker</div>
         </div>
         <nav className="flex-1 space-y-1 px-3">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
