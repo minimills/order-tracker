@@ -8,6 +8,7 @@ import AdminHomePage from './pages/admin/AdminHomePage'
 import ArchivePage from './pages/admin/ArchivePage'
 import BoardAdminPage from './pages/admin/BoardAdminPage'
 import CompanyPage from './pages/admin/CompanyPage'
+import DepartmentsPage from './pages/admin/DepartmentsPage'
 import ImportPage from './pages/admin/ImportPage'
 import OptionListsPage from './pages/admin/OptionListsPage'
 import RecordsPage from './pages/admin/RecordsPage'
@@ -62,6 +63,7 @@ export default function App() {
         <Route path="admin" element={<RequireAdmin />}>
           <Route index element={<AdminHomePage />} />
           <Route path="users" element={<UsersPage />} />
+          <Route path="departments" element={<DepartmentsPage />} />
           <Route path="machine-types" element={<MachineTypesPage />} />
           <Route path="dropdowns" element={<OptionListsPage />} />
           <Route path="records" element={<RecordsPage />} />

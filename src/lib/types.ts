@@ -107,3 +107,12 @@ export type PaymentRow = {
   days_until_due: number | null
   status: PaymentStatusLabel
 }
+
+/** A department (Office, Fabrication Shop…). default_permissions is filled in by a later step. */
+export type Department = {
+  id: string
+  name: string
+  sort_order: number
+  default_permissions: Record<string, unknown>
+  archived: boolean
+}
