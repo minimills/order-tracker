@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { friendlyError } from '../../lib/format'
-import { activityTime, describeActivity, type ActivityEntry } from '../../lib/activity'
+import { activityTime, activityWho, describeActivity, type ActivityEntry } from '../../lib/activity'
 import { supabase } from '../../lib/supabase'
 
 /** Everything that happened to one order, newest first. */
@@ -16,7 +16,7 @@ export default function ActivityList({ orderId, reloadKey }: { orderId: string; 
     Promise.all([
       supabase
         .from('activity_log')
-        .select('id, at, user_email, table_name, record_id, action, changes')
+        .select('id, at, user_email, user_departments, table_name, record_id, action, changes')
         .eq('order_id', orderId)
         .order('at', { ascending: false })
         .order('id', { ascending: false })
@@ -48,7 +48,7 @@ export default function ActivityList({ orderId, reloadKey }: { orderId: string; 
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <span className="font-medium">{d.title}</span>
               <span className="text-xs text-slate-500">
-                {activityTime.format(new Date(e.at))} · {e.user_email ?? 'automatic / database'}
+                {activityTime.format(new Date(e.at))} · {activityWho(e)}
               </span>
             </div>
             {d.lines.length > 0 && (

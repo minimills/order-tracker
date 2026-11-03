@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 
 const sections = [
   { to: '/admin/users', icon: '👤', title: 'Users', text: 'Who can sign in, and whether they are admin or staff.' },
+  { to: '/admin/departments', icon: '🏭', title: 'Departments', text: 'Office, Fabrication Shop, Shipping… Add, rename, reorder.' },
   { to: '/admin/machine-types', icon: '⚙️', title: 'Machine types', text: 'Names, codes and next serial numbers.' },
   { to: '/admin/dropdowns', icon: '📝', title: 'Dropdown lists', text: 'Voltage, delivery equipment, freight and payment types.' },
   { to: '/admin/records', icon: '🗂', title: 'Orders, customers & machines', text: 'Edit any field, or archive.' },

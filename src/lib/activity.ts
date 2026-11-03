@@ -2,6 +2,8 @@ export type ActivityEntry = {
   id: number
   at: string
   user_email: string | null
+  /** Departments of the person who made the change, at that moment. */
+  user_departments?: string[] | null
   table_name: string
   record_id: string | null
   action: 'insert' | 'update' | 'delete' | 'move' | 'admin'
@@ -55,6 +57,8 @@ const THING: Record<string, string> = {
   customers: 'customer',
   machine_types: 'machine type',
   option_lists: 'dropdown choice',
+  departments: 'department',
+  user_departments: 'department membership',
   allowed_users: 'user',
   app_settings: 'settings',
 }
@@ -116,6 +120,14 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     if (e.table_name === 'allowed_users') return { title: `${verb} user ${c.email} (${c.role ?? 'staff'})`, lines: [] }
     if (e.table_name === 'customers') return { title: `${verb} customer ${c.name}`, lines: [] }
     if (e.table_name === 'machine_types') return { title: `${verb} machine type ${c.name}`, lines: [] }
+    if (e.table_name === 'departments') return { title: `${verb} department "${c.name}"`, lines: [] }
+    if (e.table_name === 'user_departments')
+      return {
+        title: e.action === 'insert'
+          ? `Added ${c.user_email} to ${show(c.department_id, typeNames)}`
+          : `Removed ${c.user_email} from ${show(c.department_id, typeNames)}`,
+        lines: [],
+      }
     if (e.table_name === 'option_lists') return { title: `${verb} dropdown choice "${c.value}" (${c.list_name})`, lines: [] }
     if (e.table_name === 'order_machines')
       return {
@@ -139,3 +151,9 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
   return { title: `Changed ${thing}${typeof name === 'string' ? ` ${name}` : ''}`, lines }
 }
 
+
+/** "anna@x.com (Office, Shipping)" or "automatic / database". */
+export function activityWho(e: ActivityEntry) {
+  if (!e.user_email) return 'automatic / database'
+  return e.user_departments?.length ? `${e.user_email} (${e.user_departments.join(', ')})` : e.user_email
+}

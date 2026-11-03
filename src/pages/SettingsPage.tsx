@@ -1,14 +1,18 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
 import { askNotificationPermission, notificationPermission } from '../lib/browserNotifications'
-import { isSupabaseConfigured } from '../lib/supabase'
+import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 /** Personal settings. Company-wide settings are in the Admin area (admins only). */
 export default function SettingsPage() {
   const { session, role, isAdmin } = useAuth()
   const [permission, setPermission] = useState(notificationPermission())
+  const [departments, setDepartments] = useState<string[] | null>(null)
+  useEffect(() => {
+    supabase?.rpc('my_departments').then(({ data }) => setDepartments((data as string[] | null) ?? []))
+  }, [])
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
@@ -20,6 +24,11 @@ export default function SettingsPage() {
           Signed in as <strong>{session?.user.email ?? '—'}</strong>
           {role && <> · {role === 'admin' ? 'Admin' : 'Staff'}</>}
         </p>
+        {departments !== null && (
+          <p className="mt-1 text-slate-600">
+            Department{departments.length === 1 ? '' : 's'}: {departments.length ? departments.join(', ') : 'none yet (an admin can add you)'}
+          </p>
+        )}
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">

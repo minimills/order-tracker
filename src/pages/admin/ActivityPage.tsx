@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../../components/form'
-import { activityTime, describeActivity, type ActivityEntry } from '../../lib/activity'
+import { activityTime, activityWho, describeActivity, type ActivityEntry } from '../../lib/activity'
 import { addDaysISO, todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
@@ -20,6 +20,8 @@ const AREAS: { value: string; label: string }[] = [
   { value: 'machine_types', label: 'Machine types' },
   { value: 'option_lists', label: 'Dropdown lists' },
   { value: 'allowed_users', label: 'Users' },
+  { value: 'departments', label: 'Departments' },
+  { value: 'user_departments', label: 'Department memberships' },
   { value: 'app_settings', label: 'Settings' },
 ]
 
@@ -39,6 +41,8 @@ export default function ActivityPage() {
   const [person, setPerson] = useState('')
   const [orderCode, setOrderCode] = useState('')
   const [area, setArea] = useState('')
+  const [department, setDepartment] = useState('')
+  const [departmentNames, setDepartmentNames] = useState<string[]>([])
   const [from, setFrom] = useState(addDaysISO(todayISO(), -30))
   const [to, setTo] = useState(todayISO())
   const [entries, setEntries] = useState<Entry[]>([])
@@ -54,10 +58,13 @@ export default function ActivityPage() {
       .select('email')
       .order('email')
       .then(({ data }) => setPeople(((data as { email: string }[]) ?? []).map((u) => u.email)))
-    supabase
-      .from('machine_types')
-      .select('id, name')
-      .then(({ data }) => setTypeNames(new Map(((data as { id: string; name: string }[]) ?? []).map((t) => [t.id, t.name]))))
+    Promise.all([supabase.from('machine_types').select('id, name'), supabase.from('departments').select('id, name, sort_order').order('sort_order')]).then(
+      ([t, d]) => {
+        const depts = (d.data as { id: string; name: string }[]) ?? []
+        setDepartmentNames(depts.map((x) => x.name))
+        setTypeNames(new Map([...((t.data as { id: string; name: string }[]) ?? []), ...depts].map((x) => [x.id, x.name])))
+      },
+    )
   }, [])
 
   const search = useCallback(
@@ -80,13 +87,14 @@ export default function ActivityPage() {
       }
       let q = supabase
         .from('activity_log')
-        .select('id, at, user_email, table_name, record_id, order_id, action, changes')
+        .select('id, at, user_email, user_departments, table_name, record_id, order_id, action, changes')
         .order('at', { ascending: false })
         .order('id', { ascending: false })
         .range(offset, offset + PAGE - 1)
       if (person === '__auto') q = q.is('user_email', null)
       else if (person) q = q.eq('user_email', person)
       if (area) q = q.eq('table_name', area)
+      if (department) q = q.contains('user_departments', [department])
       if (orderIds) q = q.in('order_id', orderIds)
       if (from) q = q.gte('at', halifaxStart(from))
       if (to) q = q.lt('at', halifaxStart(addDaysISO(to, 1)))
@@ -111,7 +119,7 @@ export default function ActivityPage() {
       }
       setLoading(false)
     },
-    [person, area, orderCode, from, to],
+    [person, area, department, orderCode, from, to],
   )
 
   useEffect(() => {
@@ -127,7 +135,7 @@ export default function ActivityPage() {
       <AdminPageHeader title="Activity">Every change anyone made, newest first. Times are Halifax time.</AdminPageHeader>
 
       <form
-        className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr_1fr_auto]"
+        className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.8fr_1fr_1.2fr_1fr_1fr_auto]"
         onSubmit={(e) => {
           e.preventDefault()
           search(0)
@@ -152,6 +160,16 @@ export default function ActivityPage() {
             {AREAS.map((a) => (
               <option key={a.value} value={a.value}>
                 {a.label}
+              </option>
+            ))}
+          </select>
+        </Field>
+        <Field label="Department" htmlFor="ac-dept">
+          <select id="ac-dept" className={inputClass} value={department} onChange={(e) => setDepartment(e.target.value)}>
+            <option value="">All departments</option>
+            {departmentNames.map((n) => (
+              <option key={n} value={n}>
+                {n}
               </option>
             ))}
           </select>
@@ -191,7 +209,7 @@ export default function ActivityPage() {
                   {d.title}
                 </span>
                 <span className="text-xs text-slate-500">
-                  {activityTime.format(new Date(e.at))} · {e.user_email ?? 'automatic / database'}
+                  {activityTime.format(new Date(e.at))} · {activityWho(e)}
                 </span>
               </div>
               {d.lines.length > 0 && (
