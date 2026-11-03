@@ -72,6 +72,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0010_payments_received.sql` | Received amounts (part payments), payment status per payment, "Mark received" |
 | `0011_alerts.sql` | Alerts (payments due/overdue, ship dates, unknown voltage), per-user snooze/dismiss, alert settings |
 | `0012_admin.sql` | Admin area: admin-only rules and tools (serials, board, permanent delete), company details |
+| `0013_import.sql` | Importing the old Google Sheet; "needs serial" flag |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
@@ -115,6 +116,31 @@ email, and you should see the sidebar with Dashboard, Orders board, Orders list,
 
 If a yellow bar saying "Not connected to the database yet" shows at the top, `.env.local` is missing or empty.
 Fix it, then stop `npm run dev` (Ctrl+C) and start it again.
+
+## Importing the old Google Sheet
+
+1. In Google Sheets: **File → Download → Microsoft Excel (.xlsx)**. Put the file in the `import` folder of the project
+   (that folder is never uploaded to GitHub).
+2. Dry run (saves nothing):
+
+   ```bash
+   npm run import-sheet
+   ```
+
+   Read the report (also saved as `import/last-dry-run.txt`). Fix any "problems that stop the import" in the sheet, export
+   again and repeat.
+3. Add the secret key to `.env.local` (Supabase → Project Settings → API Keys → `service_role`):
+   `SUPABASE_SERVICE_ROLE_KEY=...` (no `VITE_` in front).
+4. Import for real:
+
+   ```bash
+   npm run import-sheet -- --commit
+   ```
+
+5. Delete the `SUPABASE_SERVICE_ROLE_KEY` line from `.env.local` again.
+
+Options: `--usd-countries "USA,United States"` (those orders in USD; default all CAD), `--keep-serials` (keep every
+serial exactly as in the sheet instead of following board order), `--sheet 2025`, `--file import/other.xlsx`.
 
 ## Other commands
 

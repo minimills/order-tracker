@@ -14,6 +14,7 @@ type Machine = {
   order_id: string
   serial_number: string | null
   serial_manual: boolean
+  needs_serial: boolean
   ready: boolean
   archived: boolean
   orders: { order_code: string; board_position: number | null; stage: string } | null
@@ -37,6 +38,8 @@ export default function SerialsPage() {
   const [serial, setSerial] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // Machines imported without a serial, across all types
+  const [needing, setNeeding] = useState<{ machine_type_id: string; machine_types: { name: string } | null }[]>([])
   // Re-sequence
   const [start, setStart] = useState('')
   const [preview, setPreview] = useState<ReseqRow[] | null>(null)
@@ -47,7 +50,7 @@ export default function SerialsPage() {
       .select('id, name, code, next_serial_number, archived')
       .order('name')
       .then(({ data }) => {
-        const list = ((data as MachineType[]) ?? []).filter((t) => t.code)
+        const list = (data as MachineType[]) ?? []
         setTypes(list)
         if (list.length) setTypeId((cur) => cur || list[0].id)
       })
@@ -55,13 +58,29 @@ export default function SerialsPage() {
 
   const type = types.find((t) => t.id === typeId)
 
+  useEffect(() => {
+    supabase
+      ?.from('order_machines')
+      .select('machine_type_id, machine_types(name)')
+      .eq('needs_serial', true)
+      .eq('archived', false)
+      .limit(1000)
+      .then(({ data }) => setNeeding((data as unknown as typeof needing) ?? []))
+  }, [machines])
+  const needingByType = new Map<string, { name: string; count: number }>()
+  for (const n of needing) {
+    const e = needingByType.get(n.machine_type_id) ?? { name: n.machine_types?.name ?? '?', count: 0 }
+    e.count += 1
+    needingByType.set(n.machine_type_id, e)
+  }
+
   const load = useCallback(async () => {
     if (!supabase || !typeId) return
     setLoading(true)
     const { data, error: e } = await fetchAll<Machine>(() =>
       supabase!
         .from('order_machines')
-        .select('id, order_id, serial_number, serial_manual, ready, archived, orders(order_code, board_position, stage)')
+        .select('id, order_id, serial_number, serial_manual, needs_serial, ready, archived, orders(order_code, board_position, stage)')
         .eq('machine_type_id', typeId)
         .eq('archived', false)
         .order('serial_number', { nullsFirst: false }),
@@ -124,17 +143,32 @@ export default function SerialsPage() {
         consecutive serials in board order. Built machines and hand-typed serials are never changed by re-sequencing.
       </AdminPageHeader>
 
+      {needing.length > 0 && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+          <strong>{needing.length}</strong> machine{needing.length === 1 ? '' : 's'} imported without a serial need one:{' '}
+          {[...needingByType].map(([id, t], i) => (
+            <span key={id}>
+              {i > 0 && ', '}
+              <button type="button" className="underline" onClick={() => setTypeId(id)}>
+                {t.name} ({t.count})
+              </button>
+            </span>
+          ))}
+          . Use <em>Edit serial</em> to type one, or save it empty to give it the next automatic serial.
+        </div>
+      )}
+
       <div className="flex flex-wrap items-end gap-3">
         <Field label="Machine type" htmlFor="st-type">
           <select id="st-type" className={inputClass} value={typeId} onChange={(e) => setTypeId(e.target.value)}>
             {types.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name} ({t.code})
+                {t.name} ({t.code ?? 'no code'})
               </option>
             ))}
           </select>
         </Field>
-        {type && (
+        {type?.code && (
           <p className="pb-2 text-sm text-slate-600">
             Next automatic serial: <strong className="font-mono">{formatSerial(type.code!, type.next_serial_number)}</strong>{' '}
             <Link to="/admin/machine-types" className="underline">
@@ -144,7 +178,18 @@ export default function SerialsPage() {
         )}
       </div>
 
-      {type && (
+      {type && !type.code && (
+        <p className="text-sm text-slate-600">
+          {type.name} has no code yet, so it gets no automatic serials. You can still type a serial by hand, or give it a
+          code in{' '}
+          <Link to="/admin/machine-types" className="underline">
+            Machine types
+          </Link>
+          .
+        </p>
+      )}
+
+      {type?.code && (
         <section className="rounded-lg border border-slate-200 bg-white p-4">
           <h2 className="font-semibold">Re-sequence {type.code} serials</h2>
           <p className="mt-1 text-sm text-slate-600">
@@ -198,8 +243,13 @@ export default function SerialsPage() {
             {machines.map((m) => (
               <tr key={m.id}>
                 <td className="px-3 py-2 font-mono">
-                  {m.serial_number ?? <span className="font-sans text-slate-400">none ({m.orders?.stage})</span>}
-                  {m.serial_manual && <span className="ml-1 font-sans text-xs text-slate-500">(by hand)</span>}
+                  {m.serial_number ??
+                    (m.needs_serial ? (
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 font-sans text-xs font-medium text-amber-900">Needs serial</span>
+                    ) : (
+                      <span className="font-sans text-slate-400">none ({m.orders?.stage})</span>
+                    ))}
+                  {m.serial_manual && m.serial_number && <span className="ml-1 font-sans text-xs text-slate-500">(by hand)</span>}
                 </td>
                 <td className="px-3 py-2">
                   <Link to={`/orders/${m.order_id}`} className="hover:underline">
@@ -260,7 +310,7 @@ export default function SerialsPage() {
         </Modal>
       )}
 
-      {preview && type && (
+      {preview && type?.code && (
         <Modal
           title={`Re-sequence ${type.code} serials?`}
           onClose={() => setPreview(null)}

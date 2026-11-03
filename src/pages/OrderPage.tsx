@@ -20,6 +20,7 @@ type Machine = {
   id: string
   serial_number: string | null
   serial_manual: boolean
+  needs_serial: boolean
   ready: boolean
   machine_types: { name: string; code: string | null } | null
 }
@@ -97,7 +98,7 @@ export default function OrderPage() {
       supabase.from('customers').select('*').eq('id', o.customer_id).maybeSingle(),
       supabase
         .from('order_machines')
-        .select('id, serial_number, serial_manual, ready, machine_types(name, code)')
+        .select('id, serial_number, serial_manual, needs_serial, ready, machine_types(name, code)')
         .eq('order_id', id)
         .eq('archived', false)
         .order('created_at'),
@@ -312,10 +313,15 @@ export default function OrderPage() {
                         </span>
                       </label>
                       <span className="font-mono font-semibold sm:min-w-36">
-                        {m.serial_number ?? <span className="font-sans font-normal text-slate-400">No serial yet</span>}
+                        {m.serial_number ??
+                          (m.needs_serial ? (
+                            <span className="rounded bg-amber-100 px-1.5 py-0.5 font-sans text-xs font-medium text-amber-900">Needs serial</span>
+                          ) : (
+                            <span className="font-sans font-normal text-slate-400">No serial yet</span>
+                          ))}
                       </span>
                       <span className="flex-1">{m.machine_types?.name}</span>
-                      {m.serial_manual && <span className="text-xs text-slate-500">serial typed by hand</span>}
+                      {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">serial typed by hand</span>}
                     </li>
                   ))}
                 </ul>

@@ -29,3 +29,7 @@ dist-ssr
 !.env.example
 supabase/.temp
 supabase/.branches
+
+# The exported Google Sheet and import reports – never commit (customer data)
+/import/*
+!/import/README.md
