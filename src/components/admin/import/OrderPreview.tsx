@@ -35,7 +35,6 @@ type Props = {
   checked: CheckedOrder
   types: ImportType[]
   options: { voltage: string[]; delivery_equipment: string[]; freight_type: string[] }
-  boardPosition: number | null
   onOrder: (patch: Partial<DraftOrder>) => void
   onMachine: (key: string, patch: Partial<DraftMachine>) => void
   onCreateType: (machine: DraftMachine) => void
@@ -43,7 +42,7 @@ type Props = {
 }
 
 /** One order in the import preview: what will be saved, problems, and quick fixes. */
-export default function OrderPreview({ checked: c, types, options, boardPosition, onOrder, onMachine, onCreateType, onUseForAll }: Props) {
+export default function OrderPreview({ checked: c, types, options, onOrder, onMachine, onCreateType, onUseForAll }: Props) {
   const [editing, setEditing] = useState(false)
   const d = c.draft
   const level = d.include ? c.level : 'off'
@@ -82,7 +81,6 @@ export default function OrderPreview({ checked: c, types, options, boardPosition
           {c.existing ? 'Update' : 'New'}
         </span>
         <span className="text-xs text-slate-600">{c.stage}</span>
-        {boardPosition !== null && <span className="rounded bg-slate-900 px-1.5 text-xs text-white">new on board #{boardPosition}</span>}
         <button type="button" className="ml-auto text-xs underline" onClick={() => setEditing((e) => !e)}>
           {editing ? 'Done editing' : 'Edit'}
         </button>

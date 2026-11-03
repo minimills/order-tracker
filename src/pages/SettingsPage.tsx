@@ -38,7 +38,7 @@ export default function SettingsPage() {
         <Link to="/admin" className="block rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-400">
           <div className="font-semibold">🛠 Admin</div>
           <div className="mt-1 text-sm text-slate-600">
-            Users, machine types, dropdown lists, serials, board numbers, alerts, company details, archive and activity.
+            Users, machine types, dropdown lists, serials, shop queue, alerts, company details, archive and activity.
           </div>
         </Link>
       )}

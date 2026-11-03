@@ -41,11 +41,6 @@ export default function OrderCard(props: Props) {
 
       <div className="flex items-start justify-between gap-2">
         <Link to={`/orders/${o.id}`} className="font-semibold hover:underline" draggable={false}>
-          {o.board_position !== null && (
-            <span className="mr-1.5 inline-block min-w-7 rounded bg-slate-900 px-1.5 text-center text-white">
-              {o.board_position}
-            </span>
-          )}
           Order {o.order_code}
         </Link>
         <span className={`shrink-0 text-xs ${allReady ? 'font-medium text-green-700' : 'text-slate-500'}`}>

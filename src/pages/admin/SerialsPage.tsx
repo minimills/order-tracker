@@ -220,7 +220,6 @@ export default function SerialsPage() {
             <tr>
               <th className="px-3 py-2 font-normal">Serial</th>
               <th className="px-3 py-2 font-normal">Order</th>
-              <th className="px-3 py-2 font-normal">Board #</th>
               <th className="px-3 py-2 font-normal">Built</th>
               <th />
             </tr>
@@ -256,7 +255,6 @@ export default function SerialsPage() {
                     {m.orders?.order_code}
                   </Link>
                 </td>
-                <td className="px-3 py-2">{m.orders?.board_position ?? ''}</td>
                 <td className="px-3 py-2">{m.ready ? '✓' : ''}</td>
                 <td className="px-3 py-2 text-right">
                   <button

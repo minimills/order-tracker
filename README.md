@@ -74,6 +74,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0012_admin.sql` | Admin area: admin-only rules and tools (serials, board, permanent delete), company details |
 | `0013_import.sql` | "Needs serial" flag for imported machines |
 | `0014_import_page.sql` | Import page: creates new orders and updates existing ones |
+| `0015_change_order_machines.sql` | Add or remove machines on an existing order |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

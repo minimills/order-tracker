@@ -12,7 +12,7 @@ type Change = { old: unknown; new: unknown }
 
 const LABELS: Record<string, string> = {
   stage: 'Stage',
-  board_position: 'Board number',
+  board_position: 'Place in shop queue',
   expected_ship_date: 'Expected ship date',
   actual_ship_date: 'Actual ship date',
   voltage: 'Voltage',
@@ -84,7 +84,7 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     const pos = c.board_position as Change | undefined
     const ship = c.actual_ship_date as Change | undefined
     if (stage && stage.old !== stage.new) lines.push(`Stage: ${stage.old} → ${stage.new}`)
-    if (pos && pos.old !== pos.new) lines.push(`Board number: ${pos.old ?? 'none'} → ${pos.new ?? 'none'}`)
+    if (pos && pos.old !== pos.new) lines.push(`Place in shop queue: ${pos.old ?? 'not in queue'} → ${pos.new ?? 'left the queue'}`)
     if (ship && ship.old !== ship.new) lines.push(`Actual ship date: ${show(ship.old, typeNames)} → ${show(ship.new, typeNames)}`)
     for (const s of (c.serial_changes as { order: string; old: string | null; new: string | null }[]) ?? []) {
       lines.push(`Serial (order ${s.order}): ${s.old ?? 'none'} → ${s.new ?? 'none'}`)
@@ -99,7 +99,7 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     if (serial) lines.push(`Serial: ${serial.old ?? 'none'} → ${serial.new ?? 'none'}`)
     if (ch.next_serial_number) lines.push(`Next serial number set to ${ch.next_serial_number}`)
     for (const p of (ch.positions as { order: string; old: number | null; new: number | null }[]) ?? []) {
-      lines.push(`Board number (order ${p.order}): ${p.old ?? 'none'} → ${p.new ?? 'none'}`)
+      lines.push(`Place in shop queue (order ${p.order}): ${p.old ?? 'not in queue'} → ${p.new ?? 'left the queue'}`)
     }
     for (const s of ((ch.serials ?? ch.serial_changes) as { order: string; old: string | null; new: string | null }[]) ?? []) {
       lines.push(`Serial (order ${s.order}): ${s.old ?? 'none'} → ${s.new ?? 'none'}`)

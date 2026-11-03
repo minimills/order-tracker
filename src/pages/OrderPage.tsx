@@ -5,6 +5,7 @@ import { badgeClass, orderBadges } from '../components/board/badges'
 import MoveDialog, { type MoveRequest } from '../components/board/MoveDialog'
 import { buttonClass, inputClass, secondaryButtonClass, Section } from '../components/form'
 import ActivityList from '../components/order/ActivityList'
+import ChangeMachinesDialog from '../components/order/ChangeMachinesDialog'
 import EditOrderDialog from '../components/order/EditOrderDialog'
 import PaymentDialog from '../components/order/PaymentDialog'
 import PaymentStatus from '../components/payments/PaymentStatus'
@@ -78,6 +79,9 @@ export default function OrderPage() {
   // Pop-ups
   const [move, setMove] = useState<MoveRequest | null>(null)
   const [editing, setEditing] = useState(false)
+  const [machineChange, setMachineChange] = useState<
+    { kind: 'add' } | { kind: 'remove'; machineId: string; label: string; built: boolean } | null
+  >(null)
   const [paymentDialog, setPaymentDialog] = useState<{ payment: PaymentRow | null } | null>(null)
   const [receiving, setReceiving] = useState<PaymentRow | null>(null)
 
@@ -191,11 +195,6 @@ export default function OrderPage() {
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-semibold">Order {order.order_code}</h1>
               <span className={`rounded px-2 py-0.5 text-sm font-medium ${stageTone[order.stage]}`}>{order.stage}</span>
-              {order.board_position !== null && (
-                <span className="rounded bg-slate-900 px-2 py-0.5 text-sm font-medium text-white">
-                  Board #{order.board_position}
-                </span>
-              )}
               {order.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-sm">Archived</span>}
             </div>
             <div className="mt-1 text-slate-700">
@@ -294,7 +293,14 @@ export default function OrderPage() {
         <div className="grid gap-5 lg:grid-cols-3">
           <div className="space-y-5 lg:col-span-2">
             {/* ---------- Machines ---------- */}
-            <Section title={`Machines · ${order.machines_ready_count} of ${order.machines_count} built`}>
+            <Section
+              title={`Machines · ${order.machines_ready_count} of ${order.machines_count} built`}
+              aside={
+                <button type="button" className={secondaryButtonClass} onClick={() => setMachineChange({ kind: 'add' })}>
+                  + Add machines
+                </button>
+              }
+            >
               {machines.length === 0 ? (
                 <p className="text-sm text-slate-500">No machines on this order.</p>
               ) : (
@@ -322,13 +328,27 @@ export default function OrderPage() {
                       </span>
                       <span className="flex-1">{m.machine_types?.name}</span>
                       {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">serial typed by hand</span>}
+                      <button
+                        type="button"
+                        className="text-xs text-red-700 underline"
+                        onClick={() =>
+                          setMachineChange({
+                            kind: 'remove',
+                            machineId: m.id,
+                            label: `${m.machine_types?.name ?? 'machine'}${m.serial_number ? ` ${m.serial_number}` : ''}`,
+                            built: m.ready,
+                          })
+                        }
+                      >
+                        Remove
+                      </button>
                     </li>
                   ))}
                 </ul>
               )}
               <p className="mt-3 text-xs text-slate-500">
                 Tick a machine when it is built: its serial is then fixed for good. Serials of machines not yet built
-                can change when the board order changes.
+                can change when the order of the shop queue changes, or when machines are added or removed.
               </p>
             </Section>
 
@@ -468,6 +488,20 @@ export default function OrderPage() {
           onDone={(n) => {
             toast.success(`Order ${order.order_code} moved.${n ? ` ${n} serial number${n === 1 ? '' : 's'} changed.` : ''}`)
             setMove(null)
+            load()
+          }}
+        />
+      )}
+      {machineChange && (
+        <ChangeMachinesDialog
+          orderId={order.id}
+          orderCode={order.order_code}
+          stage={order.stage}
+          mode={machineChange}
+          onClose={() => setMachineChange(null)}
+          onDone={(message) => {
+            toast.success(message)
+            setMachineChange(null)
             load()
           }}
         />
