@@ -124,6 +124,21 @@ Everything happens in the browser: **Admin → Import & backup**. Download the t
 check the preview (fix or untick red rows), then press **Import**. **Download all data** there makes a backup in the same
 layout. Never commit spreadsheets with customer data to GitHub (`.xlsx` files are ignored by git).
 
+## Going live (GitHub Pages at https://order.minimills.net)
+
+Every push to `main` builds the app and publishes it (`.github/workflows/deploy.yml`).
+One-time setup:
+
+1. GitHub → repo → **Settings → Secrets and variables → Actions → Variables** → add
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (same values as in `.env.local`).
+2. GitHub → **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. cPanel → **Zone Editor** → minimills.net → **+ Add Record**: type **CNAME**, name `order`, record
+   `minimills.github.io`.
+4. GitHub → **Settings → Pages → Custom domain**: `order.minimills.net` → Save. When the DNS check is green and the
+   certificate is ready, tick **Enforce HTTPS**.
+5. Supabase → **Authentication → URL Configuration**: Site URL `https://order.minimills.net`, and add
+   `https://order.minimills.net/**` to the Redirect URLs (keep `http://localhost:5173/**` for testing on your computer).
+
 ## Other commands
 
 | Command | What it does |
@@ -148,5 +163,5 @@ CLAUDE.md                project spec
 
 ## Notes
 
-- The app uses `#` in its addresses (e.g. `/#/board`) so it works on GitHub Pages.
+- The app uses `#` in its addresses (e.g. `/#/board`) so it works on GitHub Pages. It is published at https://order.minimills.net.
 - Times are shown in Atlantic time (America/Halifax).

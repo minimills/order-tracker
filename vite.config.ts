@@ -4,7 +4,7 @@ import { defineConfig } from 'vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  // Relative base so the build works on GitHub Pages under /<repo-name>/.
-  base: './',
+  // The app lives at the root of its own domain: https://order.minimills.net/
+  base: '/',
   plugins: [react(), tailwindcss()],
 })

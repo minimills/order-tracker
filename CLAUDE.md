@@ -62,6 +62,11 @@ Belfast Mini Mills (Prince Edward Island, Canada) builds fibre-processing machin
   - `order_machines.ready` = machine is built (keeps its serial forever).
 - Only `VITE_`-prefixed env vars reach the browser; the Supabase anon key is the only key allowed there (RLS protects data). Service-role keys, AI keys and email passwords never go in `VITE_` vars.
 
+## Deployment
+- `.github/workflows/deploy.yml`: on every push to `main` (or Run workflow), `npm ci` + `npm run build` with `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` from GitHub repository **variables**, then publishes `dist` to GitHub Pages.
+- Live at https://order.minimills.net (cPanel CNAME `order` → `minimills.github.io`; custom domain set in GitHub Settings → Pages; `public/CNAME` also holds it). Vite `base` is `/`.
+- Supabase Auth Site URL is https://order.minimills.net; Redirect URLs include `https://order.minimills.net/**` and `http://localhost:5173/**`.
+
 ## Commands
 - `npm install` – install
 - `npm run dev` – local dev server (http://localhost:5173)
