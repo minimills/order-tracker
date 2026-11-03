@@ -5,6 +5,8 @@ import { badgeClass, orderBadges } from '../components/board/badges'
 import MoveDialog, { type MoveRequest } from '../components/board/MoveDialog'
 import { buttonClass, inputClass, secondaryButtonClass, Section } from '../components/form'
 import ActivityList from '../components/order/ActivityList'
+import CratingSummary from '../components/crating/CratingSummary'
+import MachineCrating from '../components/crating/MachineCrating'
 import ChangeMachinesDialog from '../components/order/ChangeMachinesDialog'
 import EditOrderDialog from '../components/order/EditOrderDialog'
 import PaymentDialog from '../components/order/PaymentDialog'
@@ -12,6 +14,7 @@ import PaymentStatus from '../components/payments/PaymentStatus'
 import ReceivePaymentDialog from '../components/payments/ReceivePaymentDialog'
 import { useAlerts } from '../lib/alerts'
 import { countryFlag } from '../lib/country'
+import { CRATING_STAGES, loadCrates, type CrateMachine, type NumberedCrate } from '../lib/crates'
 import { showDate } from '../lib/dates'
 import { formatMoney, friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
@@ -72,6 +75,7 @@ export default function OrderPage() {
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [machines, setMachines] = useState<Machine[]>([])
   const [payments, setPayments] = useState<PaymentRow[]>([])
+  const [crates, setCrates] = useState<NumberedCrate[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
@@ -98,7 +102,7 @@ export default function OrderPage() {
       return
     }
     const o = data as OrderSummaryRow
-    const [c, m, p] = await Promise.all([
+    const [c, m, p, cr] = await Promise.all([
       supabase.from('customers').select('*').eq('id', o.customer_id).maybeSingle(),
       supabase
         .from('order_machines')
@@ -107,8 +111,9 @@ export default function OrderPage() {
         .eq('archived', false)
         .order('created_at'),
       supabase.from('payment_overview').select('*').eq('order_id', id).order('due_date', { nullsFirst: false }),
+      loadCrates([id]),
     ])
-    const firstError = c.error ?? m.error ?? p.error
+    const firstError = c.error ?? m.error ?? p.error ?? cr.error
     if (firstError) toast.error(friendlyError(firstError))
     setOrder(o)
     setNotes(o.notes ?? '')
@@ -121,6 +126,7 @@ export default function OrderPage() {
       ),
     )
     setPayments((p.data as PaymentRow[]) ?? [])
+    setCrates(cr.byOrder.get(id) ?? [])
     setError(null)
     setLoading(false)
     setReloadKey((k) => k + 1)
@@ -182,6 +188,14 @@ export default function OrderPage() {
   const badges = orderBadges(order)
   const delay = order.delay_days
   const canShip = order.stage !== 'Shipped' && order.stage !== 'Cancelled'
+
+  // Crating: shown on Ready to ship and Shipped orders (and on any order that already has crates).
+  const showCrating = CRATING_STAGES.includes(order.stage) || crates.length > 0
+  const crateMachines: CrateMachine[] = machines.map((m) => ({
+    id: m.id,
+    label: `${m.machine_types?.name ?? 'Machine'}${m.serial_number ? ` ${m.serial_number}` : ''}`,
+  }))
+  const notCrated = crateMachines.filter((m) => !crates.some((c) => c.machine_ids.includes(m.id))).map((m) => m.label)
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
@@ -294,7 +308,7 @@ export default function OrderPage() {
           <div className="space-y-5 lg:col-span-2">
             {/* ---------- Machines ---------- */}
             <Section
-              title={`Machines · ${order.machines_ready_count} of ${order.machines_count} built`}
+              title={`Machines · ${order.machines_ready_count} of ${order.machines_count} built${showCrating ? ` · ${machines.length - notCrated.length} of ${machines.length} crated` : ''}`}
               aside={
                 <button type="button" className={secondaryButtonClass} onClick={() => setMachineChange({ kind: 'add' })}>
                   + Add machines
@@ -328,6 +342,18 @@ export default function OrderPage() {
                       </span>
                       <span className="flex-1">{m.machine_types?.name}</span>
                       {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">serial typed by hand</span>}
+                      {showCrating && (
+                        <div className="order-last basis-full border-l-2 border-teal-200 pl-2 sm:ml-8">
+                          <MachineCrating
+                            orderId={order.id}
+                            orderCode={order.order_code}
+                            machine={crateMachines.find((x) => x.id === m.id)!}
+                            orderMachines={crateMachines}
+                            crates={crates}
+                            onChanged={load}
+                          />
+                        </div>
+                      )}
                       <button
                         type="button"
                         className="text-xs text-red-700 underline"
@@ -351,6 +377,14 @@ export default function OrderPage() {
                 can change when the order of the shop queue changes, or when machines are added or removed.
               </p>
             </Section>
+
+            {showCrating && (
+              <CratingSummary
+                order={order}
+                crates={crates}
+                notCrated={notCrated}
+              />
+            )}
 
             {/* ---------- Payments ---------- */}
             <Section

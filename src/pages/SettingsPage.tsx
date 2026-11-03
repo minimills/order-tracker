@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import UnitsSwitch from '../components/crating/UnitsSwitch'
 import { secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
 import { askNotificationPermission, notificationPermission } from '../lib/browserNotifications'
@@ -29,6 +30,12 @@ export default function SettingsPage() {
             Department{departments.length === 1 ? '' : 's'}: {departments.length ? departments.join(', ') : 'none yet (an admin can add you)'}
           </p>
         )}
+      </section>
+
+      <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
+        <h2 className="mb-2 font-semibold">Units for crate sizes and weights</h2>
+        <UnitsSwitch />
+        <p className="mt-2 text-slate-600">Only changes what you see. Everything is saved in metric, so others can pick their own.</p>
       </section>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">

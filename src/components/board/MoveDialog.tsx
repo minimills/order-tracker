@@ -38,6 +38,12 @@ function rpcArgs(r: MoveRequest, shipDate: string | null, markBuilt: boolean) {
   }
 }
 
+function notCratedText(notCrated: number, total: number) {
+  if (total === 1) return 'The machine on this order is not marked crated.'
+  if (notCrated >= total) return `None of the ${total} machines on this order are marked crated.`
+  return `${notCrated} of the ${total} machines on this order ${notCrated === 1 ? 'is' : 'are'} not marked crated.`
+}
+
 /**
  * Shows exactly what a move will change (place in the queue and serials) and asks
  * to confirm. Moving to Shipped also asks for the ship date.
@@ -48,6 +54,8 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
   const [shipDate, setShipDate] = useState(todayISO())
   const [markBuilt, setMarkBuilt] = useState(true)
   const [preview, setPreview] = useState<Preview | null>(null)
+  // Machines on the order with no crate yet (only checked when marking Shipped).
+  const [notCrated, setNotCrated] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -64,6 +72,22 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
       cancelled = true
     }
   }, [request])
+
+  useEffect(() => {
+    if (!supabase || !toShipped) return
+    let cancelled = false
+    supabase
+      .from('machine_crating')
+      .select('machine_id', { count: 'exact', head: true })
+      .eq('order_id', request.order.id)
+      .eq('crate_count', 0)
+      .then(({ count }) => {
+        if (!cancelled) setNotCrated(count ?? 0)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [request, toShipped])
 
   useEffect(() => {
     if (preview) confirmRef.current?.focus()
@@ -117,6 +141,12 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
                 onChange={(e) => setShipDate(e.target.value)}
               />
             </Field>
+            {notCrated > 0 && (
+              <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900" role="alert">
+                ⚠️ {notCratedText(notCrated, request.order.machines_count)} You can still mark it shipped; you can also
+                fill in the crates later from the order page.
+              </p>
+            )}
             {request.order.machines_ready_count < request.order.machines_count && (
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-0.5" checked={markBuilt} onChange={(e) => setMarkBuilt(e.target.checked)} />
