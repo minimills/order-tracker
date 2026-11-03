@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom'
 import Layout from './components/Layout'
 import RequireAuth from './components/RequireAuth'
 import AgentPage from './pages/AgentPage'
+import AlertSettingsPage from './pages/AlertSettingsPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import MachineTypesPage from './pages/MachineTypesPage'
@@ -44,6 +45,7 @@ export default function App() {
         <Route path="agent" element={<AgentPage />} />
         <Route path="settings" element={<SettingsPage />} />
         <Route path="settings/machine-types" element={<MachineTypesPage />} />
+        <Route path="settings/alerts" element={<AlertSettingsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>

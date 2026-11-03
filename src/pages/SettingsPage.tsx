@@ -3,6 +3,7 @@ import { isSupabaseConfigured } from '../lib/supabase'
 
 const sections = [
   { to: '/settings/machine-types', title: 'Machine types', text: 'Names, codes and next serial numbers.' },
+  { to: '/settings/alerts', title: 'Alerts', text: 'How many days ahead to warn about payments and ship dates.' },
 ]
 
 export default function SettingsPage() {

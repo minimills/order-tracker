@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import AlertsBell from './alerts/AlertsBell'
+import AlertsProvider from './alerts/AlertsProvider'
+import NotificationPrompt from './alerts/NotificationPrompt'
 import { isSupabaseConfigured } from '../lib/supabase'
 
 const navItems = [
@@ -16,7 +19,7 @@ const navItems = [
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { session, role, signOut } = useAuth()
-  return (
+  const page = (
     <div className="flex h-full">
       {/* Dark backdrop behind the menu on phones */}
       {menuOpen && (
@@ -68,17 +71,19 @@ export default function Layout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar with menu button – phones only */}
-        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 md:hidden">
+        {/* Top bar: menu button (phones) and the alerts bell */}
+        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 md:px-8">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="rounded-md border border-slate-300 px-3 py-1 text-sm"
+            className="rounded-md border border-slate-300 px-3 py-1 text-sm md:hidden"
           >
             ☰ Menu
           </button>
-          <span className="font-semibold">Belfast Mini Mills</span>
+          <span className="font-semibold md:hidden">Belfast Mini Mills</span>
+          <div className="ml-auto">{isSupabaseConfigured && <AlertsBell />}</div>
         </header>
+        {isSupabaseConfigured && <NotificationPrompt />}
 
         {!isSupabaseConfigured && (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
@@ -93,4 +98,6 @@ export default function Layout() {
       </div>
     </div>
   )
+  // Alerts need the database; without it the app still opens and shows a warning.
+  return isSupabaseConfigured ? <AlertsProvider>{page}</AlertsProvider> : page
 }

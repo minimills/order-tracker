@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useAlerts } from '../../lib/alerts'
 import { todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
@@ -42,6 +43,7 @@ function rpcArgs(r: MoveRequest, shipDate: string | null, markBuilt: boolean) {
  * to confirm. Moving to Shipped also asks for the ship date.
  */
 export default function MoveDialog({ request, onClose, onDone }: Props) {
+  const { refresh: refreshAlerts } = useAlerts()
   const toShipped = request.stage === 'Shipped'
   const [shipDate, setShipDate] = useState(todayISO())
   const [markBuilt, setMarkBuilt] = useState(true)
@@ -89,6 +91,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
       setError(friendlyError(e))
       return
     }
+    refreshAlerts()
     onDone((data as unknown[] | null)?.length ?? 0)
   }
 

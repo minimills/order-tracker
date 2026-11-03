@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAlerts } from '../../lib/alerts'
 import { useAuth } from '../../lib/auth'
 import { formatMoney, friendlyError } from '../../lib/format'
 import { parseMoney, round2 } from '../../lib/money'
@@ -19,6 +20,7 @@ type Props = {
 
 /** Add a payment, or change one's type, amount, due date or note. */
 export default function PaymentDialog({ order, payment, existingTypes, onClose, onDone }: Props) {
+  const { refresh: refreshAlerts } = useAlerts()
   const { isAdmin } = useAuth()
   const typeList = useOptionList('payment_type', payment?.payment_type)
   const [type, setType] = useState(payment?.payment_type ?? '')
@@ -58,6 +60,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
       : await supabase.from('payments').insert({ ...row, order_id: order.id })
     setSaving(false)
     if (e) return setError(friendlyError(e))
+    refreshAlerts()
     onDone()
   }
 

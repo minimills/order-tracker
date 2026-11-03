@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAlerts } from '../../lib/alerts'
 import { friendlyError } from '../../lib/format'
 import { parseMoney } from '../../lib/money'
 import { supabase } from '../../lib/supabase'
@@ -10,6 +11,7 @@ type Props = { order: OrderSummaryRow; onClose: () => void; onDone: () => void }
 
 /** Edit an order's dates, shipping details, currency and total. */
 export default function EditOrderDialog({ order, onClose, onDone }: Props) {
+  const { refresh: refreshAlerts } = useAlerts()
   const [expected, setExpected] = useState(order.expected_ship_date ?? '')
   const [actual, setActual] = useState(order.actual_ship_date ?? '')
   const [voltage, setVoltage] = useState(order.voltage)
@@ -46,6 +48,7 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
       .eq('id', order.id)
     setSaving(false)
     if (e) return setError(friendlyError(e))
+    refreshAlerts()
     onDone()
   }
 

@@ -70,6 +70,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0008_create_order.sql` | Saves a new order in one step; hand-typed serials |
 | `0009_board_moves.sql` | Orders board moves (with a preview of serial changes); payment status for badges |
 | `0010_payments_received.sql` | Received amounts (part payments), payment status per payment, "Mark received" |
+| `0011_alerts.sql` | Alerts (payments due/overdue, ship dates, unknown voltage), per-user snooze/dismiss, alert settings |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

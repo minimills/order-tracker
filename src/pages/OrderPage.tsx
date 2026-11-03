@@ -9,6 +9,7 @@ import EditOrderDialog from '../components/order/EditOrderDialog'
 import PaymentDialog from '../components/order/PaymentDialog'
 import PaymentStatus from '../components/payments/PaymentStatus'
 import ReceivePaymentDialog from '../components/payments/ReceivePaymentDialog'
+import { useAlerts } from '../lib/alerts'
 import { countryFlag } from '../lib/country'
 import { showDate } from '../lib/dates'
 import { formatMoney, friendlyError } from '../lib/format'
@@ -61,6 +62,7 @@ function Placeholder({ title, text }: { title: string; text: string }) {
 export default function OrderPage() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const { refresh: refreshAlerts } = useAlerts()
   const [params, setParams] = useSearchParams()
   const tab = (TABS.some((t) => t.key === params.get('tab')) ? params.get('tab') : 'details') as TabKey
 
@@ -158,6 +160,7 @@ export default function OrderPage() {
     const { error: e } = await supabase.from('payments').update({ received_date: null, received_amount: null }).eq('id', p.id)
     if (e) return toast.error(friendlyError(e))
     toast.success('Received amount cleared.')
+    refreshAlerts()
     load()
   }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useAlerts } from '../../lib/alerts'
 import { todayISO } from '../../lib/dates'
 import { formatMoney, friendlyError } from '../../lib/format'
 import { parseMoney } from '../../lib/money'
@@ -14,6 +15,7 @@ type Props = {
 
 /** Record money coming in for one payment: the date and how much. */
 export default function ReceivePaymentDialog({ payment, onClose, onDone }: Props) {
+  const { refresh: refreshAlerts } = useAlerts()
   const [date, setDate] = useState(todayISO())
   const [amount, setAmount] = useState(String(payment.remaining))
   const [error, setError] = useState<string | null>(null)
@@ -34,6 +36,7 @@ export default function ReceivePaymentDialog({ payment, onClose, onDone }: Props
     })
     setSaving(false)
     if (e) return setError(friendlyError(e))
+    refreshAlerts()
     onDone()
   }
 
