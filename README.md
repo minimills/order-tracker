@@ -66,11 +66,28 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0004_payments_and_activity_log.sql` | Balance = total − down payment; records every change |
 | `0005_order_summary_view.sql` | The `order_summary` view (delay, machines ready, paid, outstanding) |
 | `0006_security.sql` | Only signed-in, allowed users can see or change anything |
+| `0007_roles_options_archiving.sql` | Admin/staff roles, editable dropdown lists, archive instead of delete |
+| `0008_create_order.sql` | Saves a new order in one step; hand-typed serials |
+| `0009_board_moves.sql` | Orders board moves (with a preview of serial changes); payment status for badges |
+| `0010_payments_received.sql` | Received amounts (part payments), payment status per payment, "Mark received" |
+| `0011_alerts.sql` | Alerts (payments due/overdue, ship dates, unknown voltage), per-user snooze/dismiss, alert settings |
+| `0012_admin.sql` | Admin area: admin-only rules and tools (serials, board, permanent delete), company details |
+| `0013_import.sql` | "Needs serial" flag for imported machines |
+| `0014_import_page.sql` | Import page: creates new orders and updates existing ones |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
 ```sql
 insert into public.allowed_users (email, name) values ('you@example.com', 'Your name');
+```
+
+After the first admin exists, add and manage people in the app under **Admin → Users** instead.
+
+New users are **staff** (can add and edit). Admins can also delete, change machine types, dropdown lists,
+settings and users. To make someone an admin:
+
+```sql
+update public.allowed_users set role = 'admin' where email = 'them@example.com';
 ```
 
 To remove someone later: `delete from public.allowed_users where email = 'them@example.com';`
@@ -101,6 +118,27 @@ email, and you should see the sidebar with Dashboard, Orders board, Orders list,
 If a yellow bar saying "Not connected to the database yet" shows at the top, `.env.local` is missing or empty.
 Fix it, then stop `npm run dev` (Ctrl+C) and start it again.
 
+## Importing the old Google Sheet
+
+Everything happens in the browser: **Admin → Import & backup**. Download the template, paste your rows in, upload it,
+check the preview (fix or untick red rows), then press **Import**. **Download all data** there makes a backup in the same
+layout. Never commit spreadsheets with customer data to GitHub (`.xlsx` files are ignored by git).
+
+## Going live (GitHub Pages at https://order.minimills.net)
+
+Every push to `main` builds the app and publishes it (`.github/workflows/deploy.yml`).
+One-time setup:
+
+1. GitHub → repo → **Settings → Secrets and variables → Actions → Variables** → add
+   `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` (same values as in `.env.local`).
+2. GitHub → **Settings → Pages → Build and deployment → Source: GitHub Actions**.
+3. cPanel → **Zone Editor** → minimills.net → **+ Add Record**: type **CNAME**, name `order`, record
+   `minimills.github.io`.
+4. GitHub → **Settings → Pages → Custom domain**: `order.minimills.net` → Save. When the DNS check is green and the
+   certificate is ready, tick **Enforce HTTPS**.
+5. Supabase → **Authentication → URL Configuration**: Site URL `https://order.minimills.net`, and add
+   `https://order.minimills.net/**` to the Redirect URLs (keep `http://localhost:5173/**` for testing on your computer).
+
 ## Other commands
 
 | Command | What it does |
@@ -125,5 +163,5 @@ CLAUDE.md                project spec
 
 ## Notes
 
-- The app uses `#` in its addresses (e.g. `/#/board`) so it works on GitHub Pages.
+- The app uses `#` in its addresses (e.g. `/#/board`) so it works on GitHub Pages. It is published at https://order.minimills.net.
 - Times are shown in Atlantic time (America/Halifax).

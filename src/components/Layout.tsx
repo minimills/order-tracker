@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import AlertsBell from './alerts/AlertsBell'
+import AlertsProvider from './alerts/AlertsProvider'
+import NotificationPrompt from './alerts/NotificationPrompt'
 import { isSupabaseConfigured } from '../lib/supabase'
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
   { to: '/board', label: 'Orders board', icon: '📋' },
-  { to: '/orders', label: 'Orders list', icon: '📄' },
+  { to: '/orders/new', label: 'New order', icon: '➕' },
+  { to: '/orders', label: 'Orders list', icon: '📄', end: true },
   { to: '/payments', label: 'Payments', icon: '💵' },
   { to: '/agent', label: 'Agent', icon: '💬' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
@@ -14,8 +18,10 @@ const navItems = [
 
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { session, signOut } = useAuth()
-  return (
+  const { session, role, isAdmin, signOut } = useAuth()
+  // The Admin menu item is only shown to admins.
+  const items = isAdmin ? [...navItems, { to: '/admin', label: 'Admin', icon: '🛠' }] : navItems
+  const page = (
     <div className="flex h-full">
       {/* Dark backdrop behind the menu on phones */}
       {menuOpen && (
@@ -36,10 +42,11 @@ export default function Layout() {
           <div className="text-sm text-slate-400">Order tracker</div>
         </div>
         <nav className="flex-1 space-y-1 px-3">
-          {navItems.map((item) => (
+          {items.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
+              end={'end' in item ? item.end : undefined}
               onClick={() => setMenuOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
@@ -57,6 +64,7 @@ export default function Layout() {
             <div className="truncate text-slate-400" title={session.user.email}>
               {session.user.email}
             </div>
+            {role && <div className="text-xs text-slate-500">{role === 'admin' ? 'Admin' : 'Staff'}</div>}
             <button type="button" onClick={signOut} className="mt-2 text-slate-300 underline hover:text-white">
               Sign out
             </button>
@@ -65,17 +73,19 @@ export default function Layout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {/* Top bar with menu button – phones only */}
-        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-3 md:hidden">
+        {/* Top bar: menu button (phones) and the alerts bell */}
+        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 md:px-8">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            className="rounded-md border border-slate-300 px-3 py-1 text-sm"
+            className="rounded-md border border-slate-300 px-3 py-1 text-sm md:hidden"
           >
             ☰ Menu
           </button>
-          <span className="font-semibold">Belfast Mini Mills</span>
+          <span className="font-semibold md:hidden">Belfast Mini Mills</span>
+          <div className="ml-auto">{isSupabaseConfigured && <AlertsBell />}</div>
         </header>
+        {isSupabaseConfigured && <NotificationPrompt />}
 
         {!isSupabaseConfigured && (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
@@ -90,4 +100,6 @@ export default function Layout() {
       </div>
     </div>
   )
+  // Alerts need the database; without it the app still opens and shows a warning.
+  return isSupabaseConfigured ? <AlertsProvider>{page}</AlertsProvider> : page
 }

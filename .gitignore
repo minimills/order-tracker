@@ -29,3 +29,9 @@ dist-ssr
 !.env.example
 supabase/.temp
 supabase/.branches
+
+# Spreadsheets with customer data – never commit
+/import/
+*.xlsx
+*.xls
+*.ods
