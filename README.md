@@ -103,7 +103,7 @@ In Supabase, open **Authentication → URL Configuration**:
 - **Site URL**: `http://localhost:5173`
 - **Redirect URLs**: add `http://localhost:5173/**` (and later the GitHub Pages address, e.g. `https://minimills.github.io/order-tracker/**`)
 
-Sign-in links must be opened in the same browser where you asked for them.
+Sign-in uses a 6-digit code sent by email. In Supabase → **Authentication → Emails → Magic Link**, the email must show the code: put `{{ .Token }}` in the message.
 Supabase's built-in email sender only allows a few emails per hour; that is fine for a small team.
 
 ## 5. Run it
@@ -112,7 +112,7 @@ Supabase's built-in email sender only allows a few emails per hour; that is fine
 npm run dev
 ```
 
-Open <http://localhost:5173> in your browser. You will see the sign-in page. Enter your email, click the link in the
+Open <http://localhost:5173> in your browser. You will see the sign-in page. Enter your email, type the 6-digit code from the
 email, and you should see the sidebar with Dashboard, Orders board, Orders list, Payments, Agent and Settings.
 
 If a yellow bar saying "Not connected to the database yet" shows at the top, `.env.local` is missing or empty.
