@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Can from '../Can'
+import SerialNumber from '../SerialNumber'
 
 /** One machine, as the chips need it (a row of the order_machine_status view). */
 export type ChipMachine = {
@@ -163,7 +164,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                   const st = STATUS_STYLE[statusOf(m, showCrated)]
                   return (
                     <li key={m.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 py-0.5">
-                      <span className="font-mono">{m.serial_number ?? 'No serial yet'}</span>
+                      {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span>No serial yet</span>}
                       <Can permission="orders.board.card.chip_status">
                         <span className="text-slate-500">
                           {st.icon} {st.word}

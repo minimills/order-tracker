@@ -2,6 +2,7 @@ import { fetchAll } from '../fetchAll'
 import { supabase } from '../supabase'
 import { COLUMN_WIDTHS, HEADER_EXTRAS, HEADERS } from './layout'
 import type { OutCell, OutSheet } from './xlsx'
+import { richTextToPlain } from '../richText'
 
 const d = (iso: string | null | undefined): OutCell => (iso ? { date: iso } : null)
 
@@ -105,7 +106,7 @@ export async function backupSheets(): Promise<OutSheet[]> {
       null,
       d(ord.expected_ship_date),
       ord.voltage,
-      ord.notes ?? '',
+      richTextToPlain(ord.notes),
       d(ord.actual_ship_date),
       ord.delay_days,
       dp ? dp.amount : null,

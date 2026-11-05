@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import { badgeClass, orderBadges } from '../components/board/badges'
 import MoveDialog, { type MoveRequest } from '../components/board/MoveDialog'
 import Can from '../components/Can'
-import { buttonClass, inputClass, secondaryButtonClass, Section } from '../components/form'
+import { buttonClass, secondaryButtonClass, Section } from '../components/form'
 import ActivityList from '../components/order/ActivityList'
 import CratingSummary from '../components/crating/CratingSummary'
 import MachineCrating from '../components/crating/MachineCrating'
@@ -23,6 +23,9 @@ import { usePermissions } from '../lib/permissions'
 import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { STAGES, type Customer, type OrderSummaryRow, type PaymentRow, type Stage } from '../lib/types'
+import RichText from '../components/RichText'
+import RichTextEditor from '../components/RichTextEditor'
+import SerialNumber from '../components/SerialNumber'
 
 type Machine = {
   id: string
@@ -108,6 +111,8 @@ export default function OrderPage() {
   // Notes are edited in place.
   const [notes, setNotes] = useState('')
   const [savingNotes, setSavingNotes] = useState(false)
+  // Bumped to reset the note editor (Undo).
+  const [notesVersion, setNotesVersion] = useState(0)
 
   const load = useCallback(async () => {
     if (!supabase || !id) return
@@ -207,7 +212,7 @@ export default function OrderPage() {
   async function saveNotes() {
     if (!supabase || !order) return
     setSavingNotes(true)
-    const { error: e } = await supabase.from('orders').update({ notes: notes.trim() || null }).eq('id', order.id)
+    const { error: e } = await supabase.from('orders').update({ notes: notes || null }).eq('id', order.id)
     setSavingNotes(false)
     if (e) return toast.error(friendlyError(e))
     toast.success('Notes saved.')
@@ -404,7 +409,7 @@ export default function OrderPage() {
                             </label>
                           </Can>
                           <span className="font-mono font-semibold sm:min-w-36">
-                            {m.serial_number ??
+                            {(m.serial_number && <SerialNumber serial={m.serial_number} />) ??
                               (m.needs_serial ? (
                                 <span className="rounded bg-amber-100 px-1.5 py-0.5 font-sans text-xs font-medium text-amber-900">
                                   Needs serial
@@ -635,20 +640,27 @@ export default function OrderPage() {
                   <Can
                     permission="order.field.notes"
                     level="edit"
-                    fallback={<p className="text-sm whitespace-pre-wrap text-slate-700">{order.notes || '—'}</p>}
+                    fallback={<RichText value={order.notes} className="text-sm text-slate-700" />}
                   >
-                    <textarea
-                      aria-label="Notes"
-                      rows={5}
-                      className={inputClass}
-                      value={notes}
-                      readOnly={!canEditNotes}
-                      onChange={(e) => setNotes(e.target.value)}
+                    <RichTextEditor
+                      key={notesVersion}
+                      label="Notes"
+                      value={order.notes}
+                      disabled={!canEditNotes}
+                      onChange={setNotes}
                       placeholder="Anything worth remembering about this order"
+                      minHeight="7rem"
                     />
                     {notes !== (order.notes ?? '') && (
                       <div className="mt-2 flex justify-end gap-2">
-                        <button type="button" className="text-sm underline" onClick={() => setNotes(order.notes ?? '')}>
+                        <button
+                          type="button"
+                          className="text-sm underline"
+                          onClick={() => {
+                            setNotes(order.notes ?? '')
+                            setNotesVersion((v) => v + 1)
+                          }}
+                        >
                           Undo
                         </button>
                         <button type="button" className={buttonClass} onClick={saveNotes} disabled={savingNotes}>

@@ -28,3 +28,8 @@ export const START_PAGES: NavItem[] = [
   ...NAV_ITEMS,
   { to: '/shop-board', label: 'Shop board', icon: '🖨', permission: 'shop_board' },
 ]
+
+/** The pages a start page can be (the same addresses the database accepts). */
+export function startPageChoices(allowed: (p: NavItem) => boolean) {
+  return START_PAGES.filter(allowed)
+}

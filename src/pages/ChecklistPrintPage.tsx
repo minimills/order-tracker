@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import Can from '../components/Can'
+import RichText from '../components/RichText'
 import { groupBySection, showDateTime, signatureUrl, type Checklist, type ChecklistItem, type ChecklistStatusRow } from '../lib/checklists'
 import { useCompany } from '../lib/company'
 import { fetchAll } from '../lib/fetchAll'
@@ -173,7 +174,7 @@ export default function ChecklistPrintPage() {
             {checklist.general_notes && (
               <section className="mt-4 break-inside-avoid">
                 <h2 className="font-semibold">General notes</h2>
-                <p className="whitespace-pre-wrap text-slate-800">{checklist.general_notes}</p>
+                <RichText value={checklist.general_notes} className="text-slate-800" />
               </section>
             )}
 

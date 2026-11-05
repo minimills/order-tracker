@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
+import RichTextEditor from '../components/RichTextEditor'
 import { buttonClass, Field, inputClass, Section } from '../components/form'
 import CustomerPicker from '../components/order/CustomerPicker'
 import { emailPattern, parseEmails, type CustomerChoice } from '../components/order/customer'
 import MachinesSection from '../components/order/MachinesSection'
-import { cleanSerial, newMachineRow, parseQuantity, previewSerials, type MachineRow } from '../components/order/machines'
+import { cleanSerial, parseQuantity, previewSerials, type MachineRow } from '../components/order/machines'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { useStageLabels } from '../lib/stages'
@@ -59,7 +60,8 @@ export default function NewOrderPage() {
   const [isSplit, setIsSplit] = useState(Boolean(splitParam) && may.split)
   const [splitOf, setSplitOf] = useState(splitParam)
   const [stage, setStage] = useState<Stage>('Confirmed')
-  const [rows, setRows] = useState<MachineRow[]>(() => [newMachineRow()])
+  // Machines are added with the search box (empty to start).
+  const [rows, setRows] = useState<MachineRow[]>([])
   const [voltage, setVoltage] = useState('Unknown')
   const [deliveryEquipment, setDeliveryEquipment] = useState('Unknown')
   const [freightType, setFreightType] = useState('')
@@ -305,7 +307,7 @@ export default function NewOrderPage() {
       voltage: may.voltage ? voltage : undefined,
       delivery_equipment: may.delivery ? deliveryEquipment : undefined,
       freight_type: may.freight ? freightType || undefined : undefined,
-      notes: may.notes ? notes.trim() || undefined : undefined,
+      notes: may.notes ? notes || undefined : undefined,
       machines: rows.flatMap((row) =>
         row.manual.map((m) => ({
           machine_type_id: row.machineTypeId,
@@ -503,7 +505,7 @@ export default function NewOrderPage() {
               </Can>
               <Can permission="order.field.notes" level="edit">
                 <Field label="Notes" htmlFor="notes" className="md:col-span-2">
-                  <textarea id="notes" rows={3} className={inputClass} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                  <RichTextEditor label="Notes" value="" onChange={setNotes} placeholder="Anything worth remembering about this order" />
                 </Field>
               </Can>
             </div>

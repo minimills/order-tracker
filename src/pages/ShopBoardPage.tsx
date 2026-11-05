@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { badgeClass, orderBadges } from '../components/board/badges'
 import Can from '../components/Can'
+import RichText from '../components/RichText'
 import MachineCrating from '../components/crating/MachineCrating'
 import { useCompany } from '../lib/company'
 import { countryFlag } from '../lib/country'
@@ -13,6 +14,7 @@ import { usePermissions } from '../lib/permissions'
 import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import type { OrderSummaryRow } from '../lib/types'
+import SerialNumber from '../components/SerialNumber'
 
 type Machine = {
   id: string
@@ -202,7 +204,7 @@ export default function ShopBoardPage() {
                           >
                             {m.ready ? '✓' : ''}
                           </span>
-                          <span className="font-mono font-semibold">{m.serial_number ?? '—'}</span>
+                          {m.serial_number ? <SerialNumber serial={m.serial_number} className="font-semibold" /> : <span>—</span>}
                           <span className="text-slate-700">{m.machine_types?.name}</span>
                           {crating && (
                             <Can permission="crating">
@@ -225,7 +227,7 @@ export default function ShopBoardPage() {
                     </ul>
                   </Can>
                   <Can permission="shop_board.detail.notes">
-                    {o.notes && <p className="mt-2 text-base whitespace-pre-wrap text-slate-700">{o.notes}</p>}
+                    {o.notes && <RichText value={o.notes} className="mt-2 text-base text-slate-700" />}
                   </Can>
                 </div>
               </section>

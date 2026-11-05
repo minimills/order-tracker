@@ -10,6 +10,7 @@ import { fetchAll } from '../../lib/fetchAll'
 import { formatSerial, friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { MachineType } from '../../lib/types'
+import SerialNumber from '../../components/SerialNumber'
 
 type Machine = {
   id: string
@@ -244,7 +245,7 @@ export default function SerialsPage() {
             {machines.map((m) => (
               <tr key={m.id}>
                 <td className="px-3 py-2 font-mono">
-                  {m.serial_number ??
+                  {(m.serial_number && <SerialNumber serial={m.serial_number} />) ??
                     (m.needs_serial ? (
                       <span className="rounded bg-amber-100 px-1.5 py-0.5 font-sans text-xs font-medium text-amber-900">Needs serial</span>
                     ) : (

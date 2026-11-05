@@ -1,7 +1,8 @@
 // @permission-scope orders.new
 import type { MachineType } from '../../lib/types'
 import Can from '../Can'
-import { Field, inputClass, secondaryButtonClass } from '../form'
+import { Field, inputClass } from '../form'
+import MachineTypeSearch from './MachineTypeSearch'
 import { MAX_QUANTITY, newMachineRow, parseQuantity, type MachineRow } from './machines'
 
 type Props = {
@@ -30,6 +31,17 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
     updateRow(index, { quantity: text, manual })
   }
 
+  /** Adds machines from the search box; the same type again just adds to its quantity. */
+  const addMachines = (type: MachineType, n: number) => {
+    const i = rows.findIndex((r) => r.machineTypeId === type.id)
+    if (i >= 0) {
+      const total = Math.min(MAX_QUANTITY, (parseQuantity(rows[i].quantity) ?? 0) + n)
+      setQuantity(i, String(total))
+      return
+    }
+    onChange([...rows, { ...newMachineRow(), machineTypeId: type.id, quantity: String(n), manual: Array.from({ length: n }, () => null) }])
+  }
+
   const setManual = (rowIndex: number, unitIndex: number, value: string | null) => {
     const manual = [...rows[rowIndex].manual]
     manual[unitIndex] = value
@@ -43,21 +55,11 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
         return (
           <div key={row.key} className="rounded-md border border-slate-200 p-3">
             <div className="grid grid-cols-[1fr_5.5rem] gap-3 md:grid-cols-[1fr_7rem_auto]">
-              <Field label="Machine type" htmlFor={`${row.key}-type`} error={errors[`row-${i}-type`]}>
-                <select
-                  id={`${row.key}-type`}
-                  className={inputClass}
-                  value={row.machineTypeId}
-                  onChange={(e) => updateRow(i, { machineTypeId: e.target.value })}
-                >
-                  <option value="">Choose…</option>
-                  {activeTypes.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                      {t.code ? ` (${t.code})` : ' (no code yet)'}
-                    </option>
-                  ))}
-                </select>
+              <Field label="Machine type" error={errors[`row-${i}-type`]}>
+                <p className="py-2 text-sm font-medium">
+                  {type?.name ?? '—'}
+                  <span className="ml-2 font-mono text-xs font-normal text-slate-500">{type?.code ?? 'no code yet'}</span>
+                </p>
               </Field>
               <Field label="Quantity" htmlFor={`${row.key}-qty`} error={errors[`row-${i}-qty`]}>
                 <input
@@ -76,7 +78,6 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                   type="button"
                   className="text-sm text-red-700 underline disabled:text-slate-400 disabled:no-underline"
                   onClick={() => onChange(rows.filter((_, j) => j !== i))}
-                  disabled={rows.length === 1}
                 >
                   Remove
                 </button>
@@ -139,12 +140,11 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
         )
       })}
 
+      <MachineTypeSearch types={activeTypes} onAdd={addMachines} />
+
       {errors.machines && <p className="text-sm font-medium text-red-600">{errors.machines}</p>}
 
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <button type="button" className={secondaryButtonClass} onClick={() => onChange([...rows, newMachineRow()])}>
-          + Add another machine type
-        </button>
+      <div>
         <p className="text-xs text-slate-500">
           {getsSerials
             ? 'Serials shown are a preview. The final numbers are given when you save, so nobody can get the same number.'

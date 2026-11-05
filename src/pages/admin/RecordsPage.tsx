@@ -18,6 +18,7 @@ import { fetchAll } from '../../lib/fetchAll'
 import { formatMoney, friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { Customer } from '../../lib/types'
+import SerialNumber from '../../components/SerialNumber'
 
 type Tab = 'orders' | 'customers' | 'machines'
 type OrderRow = AdminOrder & { customer_name: string; board_position: number | null }
@@ -253,7 +254,7 @@ export default function RecordsPage() {
                   {shownMachines.slice(0, LIMIT).map((m) => (
                     <tr key={m.id}>
                       <td className="px-3 py-2 font-mono">
-                        {m.serial_number ?? <span className="font-sans text-slate-400">none</span>}
+                        {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span className="font-sans text-slate-400">none</span>}
                         {m.serial_manual && <span className="ml-1 font-sans text-xs text-slate-500">(by hand)</span>}
                       </td>
                       <td className="px-3 py-2">{m.machine_types?.name}</td>

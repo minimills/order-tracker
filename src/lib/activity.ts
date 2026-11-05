@@ -1,4 +1,5 @@
 import { CATALOG_BY_KEY } from './permissions/catalog'
+import { isRichText, richTextToPlain } from './richText'
 import { stageLabel } from './stages'
 
 export type ActivityEntry = {
@@ -99,6 +100,7 @@ function show(v: unknown, typeNames: Map<string, string>) {
   if (v === true) return 'yes'
   if (v === false) return 'no'
   if (typeof v === 'string' && typeNames.has(v)) return typeNames.get(v)!
+  if (typeof v === 'string' && isRichText(v)) return richTextToPlain(v).replace(/\n/g, ' / ')
   return String(v)
 }
 

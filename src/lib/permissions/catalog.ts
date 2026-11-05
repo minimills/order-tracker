@@ -189,6 +189,7 @@ export const CATALOG: PermissionItem[] = [
     Page: [{ key: 'order.page', label: 'Open an order (order page; also makes orders clickable elsewhere)', levels: V, page: true }],
     Header: [
       { key: 'order.header.customer', label: 'Customer name, company and country', levels: V, requires: 'order.page' },
+      { key: 'serial.copy', label: 'Copy button next to serial numbers (everywhere in the app)', levels: V },
       { key: 'customer.contact', label: 'Customer emails and phone (everywhere in the app)', levels: VE, db: true },
       { key: 'order.header.badges', label: 'Warning badges', levels: V, requires: 'order.page' },
     ],
@@ -294,6 +295,7 @@ export const CATALOG: PermissionItem[] = [
     Page: [
       { key: 'settings', label: 'Settings page', levels: V, page: true },
       { key: 'settings.account', label: 'Your account (email, role, departments)', levels: V, requires: 'settings' },
+      { key: 'settings.start_page', label: 'Choose their own start page (the page that opens after signing in)', levels: E, requires: 'settings', db: true },
       { key: 'settings.units', label: 'Units for crate sizes', levels: V, requires: 'settings', needs: ['crating.units'] },
       { key: 'settings.notifications', label: 'Desktop notifications', levels: V, requires: 'settings' },
       { key: 'settings.connection', label: 'Database connection status', levels: V, requires: 'settings' },

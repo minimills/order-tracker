@@ -10,7 +10,14 @@ import type { Units } from './units'
  * in this browser too so the right units show straight away).
  * Also gives the person's name from allowed_users, used as a default ("Crated by").
  */
-type Prefs = { units: Units; name: string | null }
+type Prefs = {
+  units: Units
+  name: string | null
+  /** The page to open after signing in (null = first allowed page). */
+  startPage: string | null
+  /** True once the database has answered. */
+  loaded: boolean
+}
 
 const LOCAL_KEY = 'bmm.units'
 const byEmail = new Map<string, Prefs>()
@@ -38,12 +45,17 @@ async function load(email: string) {
   if (!supabase || loading.has(email)) return
   loading.add(email)
   const [p, u] = await Promise.all([
-    supabase.from('user_preferences').select('units').eq('user_email', email).maybeSingle(),
+    supabase.from('user_preferences').select('units, start_page').eq('user_email', email).maybeSingle(),
     supabase.from('allowed_users').select('name').eq('email', email).maybeSingle(),
   ])
-  const current = byEmail.get(email) ?? { units: localUnits(), name: null }
+  const current = byEmail.get(email) ?? { units: localUnits(), name: null, startPage: null, loaded: false }
   const units = (p.data?.units as Units | undefined) ?? current.units
-  byEmail.set(email, { units, name: (u.data?.name as string | null) ?? null })
+  byEmail.set(email, {
+    units,
+    name: (u.data?.name as string | null) ?? null,
+    startPage: (p.data?.start_page as string | null) ?? null,
+    loaded: true,
+  })
   saveLocal(units)
   emit()
 }
@@ -53,7 +65,7 @@ function subscribe(listener: () => void) {
   return () => listeners.delete(listener)
 }
 
-const fallback: Prefs = { units: localUnits(), name: null }
+const fallback: Prefs = { units: localUnits(), name: null, startPage: null, loaded: false }
 
 export function usePreferences() {
   const { session } = useAuth()
@@ -73,5 +85,22 @@ export function usePreferences() {
     if (error) toast.error(`Could not remember your choice: ${friendlyError(error)}`)
   }
 
-  return { units: prefs.units, myName: prefs.name ?? email, setUnits }
+  /** Sets my own start page (needs "settings.start_page"). */
+  async function setStartPage(page: string | null) {
+    if (!email) return
+    const { error } = await supabase!.rpc('set_start_page', { p_email: email, p_page: page })
+    if (error) return toast.error(friendlyError(error))
+    byEmail.set(email, { ...prefs, startPage: page })
+    emit()
+    toast.success('Start page saved.')
+  }
+
+  return {
+    units: prefs.units,
+    myName: prefs.name ?? email,
+    startPage: prefs.startPage,
+    loaded: prefs.loaded || !email,
+    setUnits,
+    setStartPage,
+  }
 }
