@@ -4,13 +4,18 @@ import Can from '../components/Can'
 import UnitsSwitch from '../components/crating/UnitsSwitch'
 import { secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
+import { usePermissions } from '../lib/permissions'
 import { ADMIN_KEYS } from '../lib/permissions/catalog'
+import { startPageChoices } from '../lib/permissions/nav'
+import { usePreferences } from '../lib/preferences'
 import { askNotificationPermission, notificationPermission } from '../lib/browserNotifications'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
 
 /** Personal settings. Company-wide settings are in the Admin area (admins only). */
 export default function SettingsPage() {
   const { session, role } = useAuth()
+  const { can, canAny } = usePermissions()
+  const { startPage, setStartPage } = usePreferences()
   const [permission, setPermission] = useState(notificationPermission())
   const [departments, setDepartments] = useState<string[] | null>(null)
   useEffect(() => {
@@ -35,6 +40,28 @@ export default function SettingsPage() {
                 {departments.length ? departments.join(', ') : 'none yet (an admin can add you)'}
               </p>
             )}
+          </section>
+        </Can>
+
+        <Can permission="settings.start_page" level="edit">
+          <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
+            <h2 className="mb-2 font-semibold">Start page</h2>
+            <p className="mb-2 text-slate-600">The page that opens after you sign in.</p>
+            <select
+              aria-label="Start page"
+              className="w-full max-w-xs rounded-md border border-slate-300 bg-white px-3 py-2 text-sm"
+              value={startPage ?? ''}
+              onChange={(e) => setStartPage(e.target.value || null)}
+            >
+              <option value="">Automatic (the first page I can see)</option>
+              {startPageChoices((p) => (!p.permission || can(p.permission, p.level)) && (!p.anyOf || canAny(p.anyOf, p.level))).map(
+                (p) => (
+                  <option key={p.to} value={p.to}>
+                    {p.label}
+                  </option>
+                ),
+              )}
+            </select>
           </section>
         </Can>
 

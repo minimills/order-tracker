@@ -19,6 +19,9 @@ import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
+import RichText from '../components/RichText'
+import RichTextEditor from '../components/RichTextEditor'
+import SerialNumber from '../components/SerialNumber'
 
 type OrderInfo = { id: string; order_code: string; customer_name: string; customer_company: string | null; stage: string }
 
@@ -82,6 +85,55 @@ function NoteBox({
       {state !== 'idle' && (
         <span className="absolute right-2 bottom-1 text-[10px] text-slate-400">{state === 'saving' ? 'Saving…' : 'Saved'}</span>
       )}
+    </div>
+  )
+}
+
+/** A formatted note box that saves by itself a moment after you stop typing. */
+/* @layout-helper */
+function RichNoteBox({
+  value,
+  disabled,
+  placeholder,
+  onSave,
+}: {
+  value: string | null
+  disabled: boolean
+  placeholder: string
+  onSave: (html: string) => Promise<boolean>
+}) {
+  const [state, setState] = useState<'idle' | 'saving' | 'saved'>('idle')
+  const timer = useRef<number | undefined>(undefined)
+  const pending = useRef<string | null>(null)
+  const saved = useRef(value ?? '')
+
+  async function flush() {
+    window.clearTimeout(timer.current)
+    const next = pending.current
+    if (next === null || next === saved.current) return
+    pending.current = null
+    setState('saving')
+    const ok = await onSave(next)
+    if (ok) saved.current = next
+    setState(ok ? 'saved' : 'idle')
+  }
+
+  return (
+    <div>
+      <RichTextEditor
+        label="General notes"
+        value={value}
+        disabled={disabled}
+        placeholder={placeholder}
+        onChange={(html) => {
+          pending.current = html
+          setState('idle')
+          window.clearTimeout(timer.current)
+          timer.current = window.setTimeout(flush, 900)
+        }}
+        onBlur={flush}
+      />
+      <div className="mt-1 h-4 text-right text-xs text-slate-400">{state === 'saving' ? 'Saving…' : state === 'saved' ? 'Saved' : ''}</div>
     </div>
   )
 }
@@ -170,7 +222,6 @@ export default function ChecklistPage() {
   const pct = items.length ? Math.round((completed / items.length) * 100) : 0
   const sections = groupBySection(items)
   const sectionNames = sections.map((s) => s.section)
-  const title = `${status.machine_type}${status.serial_number ? ` ${status.serial_number}` : ''}`
 
   // ---- Saving ---------------------------------------------------------------
   async function setItemStatus(item: ChecklistItem, next: ChecklistItem['status']) {
@@ -203,7 +254,7 @@ export default function ChecklistPage() {
 
   async function saveGeneralNotes(text: string) {
     if (!supabase || !checklist) return false
-    const { error: e } = await supabase.from('machine_checklists').update({ general_notes: text.trim() || null }).eq('id', checklist.id)
+    const { error: e } = await supabase.from('machine_checklists').update({ general_notes: text || null }).eq('id', checklist.id)
     if (e) {
       toast.error(friendlyError(e))
       return false
@@ -286,7 +337,10 @@ export default function ChecklistPage() {
               </Link>
             </Can>
           )}
-          <h1 className="mt-1 text-2xl font-semibold">Final check · {title}</h1>
+          <h1 className="mt-1 text-2xl font-semibold">
+            Final check · {status.machine_type}{' '}
+            {status.serial_number && <SerialNumber serial={status.serial_number} />}
+          </h1>
           {order && (
             <p className="text-slate-600">
               {order.customer_name}
@@ -555,12 +609,11 @@ export default function ChecklistPage() {
                 <Can
                   permission="checklist.tick"
                   level="edit"
-                  fallback={<p className="text-sm whitespace-pre-wrap text-slate-700">{checklist.general_notes || '—'}</p>}
+                  fallback={<RichText value={checklist.general_notes} className="text-sm text-slate-700" />}
                 >
-                  <NoteBox
+                  <RichNoteBox
                     value={checklist.general_notes}
                     disabled={!editable}
-                    rows={4}
                     placeholder="Anything about this machine's final check"
                     onSave={saveGeneralNotes}
                   />

@@ -5,6 +5,7 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { MachineType } from '../../lib/types'
 import ChangeList, { type SerialChange } from '../admin/ChangeList'
+import MachineTypeSearch from './MachineTypeSearch'
 import { buttonClass, inputClass, Modal, secondaryButtonClass } from '../form'
 
 type Row = { key: number; typeId: string; quantity: string; serial: string }
@@ -34,7 +35,8 @@ const newRow = (): Row => ({ key: nextKey++, typeId: '', quantity: '1', serial: 
 export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, onClose, onDone }: Props) {
   const { refresh: refreshAlerts } = useAlerts()
   const [types, setTypes] = useState<MachineType[]>([])
-  const [rows, setRows] = useState<Row[]>(() => [newRow()])
+  // Machines are added with the search box (empty to start).
+  const [rows, setRows] = useState<Row[]>([])
   const [preview, setPreview] = useState<Preview | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -64,6 +66,7 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
   async function run(apply: boolean) {
     if (!supabase) return
     if (mode.kind === 'add') {
+      if (rows.length === 0) return setError('Add at least one machine with the search box.')
       if (rows.some((r) => !r.typeId)) return setError('Choose a machine type on every line.')
       if (rows.some((r) => !/^\d+$/.test(r.quantity) || Number(r.quantity) < 1 || Number(r.quantity) > 50))
         return setError('Quantity must be 1 to 50.')
@@ -124,22 +127,10 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
         <div className="space-y-3">
           {rows.map((r, i) => (
             <div key={r.key} className="grid grid-cols-[1fr_5rem_auto] items-end gap-2">
-              <label className="text-sm">
+              <div className="text-sm">
                 <span className="mb-1 block text-slate-600">Machine type</span>
-                <select
-                  className={inputClass}
-                  value={r.typeId}
-                  onChange={(e) => setRows(rows.map((x) => (x.key === r.key ? { ...x, typeId: e.target.value } : x)))}
-                >
-                  <option value="">Choose…</option>
-                  {types.map((t) => (
-                    <option key={t.id} value={t.id}>
-                      {t.name}
-                      {t.code ? ` (${t.code})` : ' (no code yet)'}
-                    </option>
-                  ))}
-                </select>
-              </label>
+                <p className="py-2 font-medium">{types.find((t) => t.id === r.typeId)?.name ?? '—'}</p>
+              </div>
               <label className="text-sm">
                 <span className="mb-1 block text-slate-600">How many</span>
                 <input
@@ -152,7 +143,6 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
               <button
                 type="button"
                 className="pb-2 text-sm text-red-700 underline disabled:text-slate-400 disabled:no-underline"
-                disabled={rows.length === 1}
                 onClick={() => setRows(rows.filter((x) => x.key !== r.key))}
                 aria-label={`Remove line ${i + 1}`}
               >
@@ -171,9 +161,16 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
               )}
             </div>
           ))}
-          <button type="button" className={secondaryButtonClass} onClick={() => setRows([...rows, newRow()])}>
-            + Another machine type
-          </button>
+          <MachineTypeSearch
+            types={types}
+            onAdd={(t, n) =>
+              setRows((list) =>
+                list.some((x) => x.typeId === t.id)
+                  ? list.map((x) => (x.typeId === t.id ? { ...x, quantity: String(Number(x.quantity) + n) } : x))
+                  : [...list, { ...newRow(), typeId: t.id, quantity: String(n) }],
+              )
+            }
+          />
         </div>
       )}
 

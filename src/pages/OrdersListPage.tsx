@@ -9,10 +9,12 @@ import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
+import { richTextToPlain } from '../lib/richText'
 import { stageLabel, useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { PAYMENT_STATUSES, STAGES, type OrderSummaryRow } from '../lib/types'
 import { useOptionList } from '../lib/useOptionList'
+import SerialNumber from '../components/SerialNumber'
 
 type Value = string | number | null
 
@@ -66,7 +68,16 @@ const COLUMNS: ColumnDef[] = [
     key: 'serials', permission: 'orders.list.column.serials',
     label: 'Serials',
     value: (o) => o.serials,
-    render: /* @rendered-inside-can */ (o) => <span className="font-mono text-xs">{o.serials}</span>,
+    render: /* @rendered-inside-can */ (o) => (
+      <span className="flex gap-x-2 text-xs">
+        {(o.serials ?? '')
+          .split(', ')
+          .filter(Boolean)
+          .map((s) => (
+            <SerialNumber key={s} serial={s} />
+          ))}
+      </span>
+    ),
   },
   {
     key: 'ready', permission: 'orders.list.column.ready',
@@ -121,7 +132,7 @@ const COLUMNS: ColumnDef[] = [
   },
   { key: 'downamount', permission: 'orders.list.column.downamount', label: 'Down payment', value: (o) => o.down_payment_amount, csvOnly: true },
   { key: 'orderdate', permission: 'orders.list.column.orderdate', label: 'Order date', value: (o) => o.order_date, csvOnly: true },
-  { key: 'notes', permission: 'orders.list.column.notes', label: 'Notes', value: (o) => o.notes, csvOnly: true },
+  { key: 'notes', permission: 'orders.list.column.notes', label: 'Notes', value: (o) => richTextToPlain(o.notes), csvOnly: true },
   { key: 'archived', permission: 'orders.list.column.archived', label: 'Archived', value: (o) => (o.archived ? 'Yes' : ''), csvOnly: true },
 ]
 

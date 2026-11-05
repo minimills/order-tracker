@@ -11,6 +11,7 @@ import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
 import { usePreferences } from '../lib/preferences'
 import { supabase } from '../lib/supabase'
+import SerialNumber from '../components/SerialNumber'
 import {
   csvLength,
   csvWeight,
@@ -328,7 +329,13 @@ export default function CratingReportPage() {
                       </td>
                       <td className="px-3 py-2">
                         {contentsLabel(c.machine_types)}
-                        {c.serials.length > 0 && <div className="font-mono text-xs text-slate-500">{c.serials.join(', ')}</div>}
+                        {c.serials.length > 0 && (
+                          <div className="flex flex-wrap gap-x-2 text-xs text-slate-500">
+                            {c.serials.map((s) => (
+                              <SerialNumber key={s} serial={s} />
+                            ))}
+                          </div>
+                        )}
                       </td>
                       <td className="px-3 py-2 whitespace-nowrap">{showDims(c, units) ?? <span className="text-slate-300">—</span>}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap tabular-nums">{showWeight(c.weight_kg, units)}</td>

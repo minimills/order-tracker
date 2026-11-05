@@ -8,7 +8,8 @@ import { emailPattern } from '../../components/order/customer'
 import { useAuth } from '../../lib/auth'
 import { showDate } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
-import type { Perms } from '../../lib/permissions'
+import { allowedBy, type Perms } from '../../lib/permissions'
+import { startPageChoices } from '../../lib/permissions/nav'
 import { CATALOG } from '../../lib/permissions/catalog'
 import { supabase } from '../../lib/supabase'
 import type { Role } from '../../lib/auth'
@@ -44,13 +45,19 @@ export default function UsersPage() {
   const [reviewed, setReviewed] = useState<Set<string>>(new Set())
   const [editingPerms, setEditingPerms] = useState<User | null>(null)
   const [startWith, setStartWith] = useState('')
+  // email → start page ('/board'…; empty = first allowed page)
+  const [startPages, setStartPages] = useState<Record<string, string | null>>({})
 
   const load = useCallback(async () => {
     if (!supabase) return
-    const [{ data, error: e }, links] = await Promise.all([
+    const [{ data, error: e }, links, prefs] = await Promise.all([
       supabase.from('allowed_users').select('email, name, role, created_at').order('email'),
       supabase.from('user_departments').select('user_email, department_id'),
+      supabase.from('user_preferences').select('user_email, start_page'),
     ])
+    setStartPages(
+      Object.fromEntries(((prefs.data as { user_email: string; start_page: string | null }[] | null) ?? []).map((r) => [r.user_email, r.start_page])),
+    )
     if (e) toast.error(friendlyError(e))
     setUsers((data as User[]) ?? [])
     const m: Record<string, string[]> = {}
@@ -135,6 +142,14 @@ export default function UsersPage() {
     setRole('staff')
     setError(null)
     load()
+  }
+
+  async function changeStartPage(u: User, page: string | null) {
+    if (!supabase) return
+    const { error: e } = await supabase.rpc('set_start_page', { p_email: u.email, p_page: page })
+    if (e) return toast.error(friendlyError(e))
+    setStartPages((m) => ({ ...m, [u.email]: page }))
+    toast.success(`Start page saved for ${u.email}.`)
   }
 
   async function changeRole(u: User, newRole: Role) {
@@ -341,6 +356,28 @@ export default function UsersPage() {
               </div>
             )}
             {u.role === 'admin' && <span className="text-xs text-slate-500">Sees and does everything</span>}
+            <label className="flex items-center gap-1 text-xs text-slate-600">
+              Start page
+              <select
+                aria-label={`Start page for ${u.email}`}
+                className={selectClass}
+                value={startPages[u.email] ?? ''}
+                onChange={(e) => changeStartPage(u, e.target.value || null)}
+              >
+                <option value="">Automatic</option>
+                {startPageChoices(
+                  (p) =>
+                    u.role === 'admin' ||
+                    !isAdmin || // people managing users without seeing permissions get the full list
+                    ((!p.permission || allowedBy(permsByUser[u.email] ?? {}, p.permission, p.level)) &&
+                      (!p.anyOf || p.anyOf.some((k) => allowedBy(permsByUser[u.email] ?? {}, k, p.level)))),
+                ).map((p) => (
+                  <option key={p.to} value={p.to}>
+                    {p.label}
+                  </option>
+                ))}
+              </select>
+            </label>
             {isAdmin ? (
               <select
                 aria-label={`Role for ${u.email}`}

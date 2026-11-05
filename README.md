@@ -80,6 +80,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0018_permissions.sql` | Fine-grained permissions: each user sees only what an admin ticks (enforced by the database for money, contacts, edits, crating and Admin) |
 | `0019_ready_stage_and_machine_chips.sql` | New stage “Ready” (built, being tested), renameable stage names, machine chips on the board, “final checklist done” per machine |
 | `0020_final_checklists.sql` | Final checklist per machine: templates, ticks, sign-off with signature (Storage), lock/unlock, no Ready to ship until signed |
+| `0021_start_page_and_safe_notes.sql` | Start page per person; formatted notes are checked so no scripts can be saved |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

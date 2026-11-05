@@ -1,6 +1,6 @@
 // @permission-scope orders.board
 import type { DragEvent } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { countryFlag } from '../../lib/country'
 import { showDate } from '../../lib/dates'
 import { usePermissions } from '../../lib/permissions'
@@ -53,6 +53,15 @@ export default function OrderCard(props: Props) {
   const allReady = o.machines_count > 0 && o.machines_ready_count === o.machines_count
   const STAGE_SET = new Set(props.stageChoices)
   const { can } = usePermissions()
+  const navigate = useNavigate()
+  // The whole card opens the order; buttons, menus, links and chips keep their own job.
+  const opens = can('order.page')
+  const openOrder = (e: { target: EventTarget | null }) => {
+    if (!opens) return
+    const el = e.target as HTMLElement | null
+    if (el?.closest('button, a, select, input, label, [role="tooltip"]')) return
+    navigate(`/orders/${o.id}`)
+  }
 
   return (
     <div
@@ -60,7 +69,13 @@ export default function OrderCard(props: Props) {
       onDragStart={props.onDragStart}
       onDragEnd={props.onDragEnd}
       onDragOver={props.onDragOver}
-      className={`relative rounded-md border border-slate-200 bg-white p-3 text-sm shadow-sm ${
+      onClick={openOrder}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' && e.target === e.currentTarget) openOrder(e)
+      }}
+      tabIndex={opens ? 0 : undefined}
+      aria-label={opens ? `Order ${o.order_code}, open` : undefined}
+      className={`relative rounded-md border border-slate-200 bg-white p-3 text-sm shadow-sm ${opens ? 'cursor-pointer hover:border-slate-400 hover:shadow focus:ring-2 focus:ring-blue-400 focus:outline-none' : ''} ${
         props.draggable ? 'cursor-grab active:cursor-grabbing' : ''
       } ${props.dragging ? 'opacity-40' : ''}`}
     >
