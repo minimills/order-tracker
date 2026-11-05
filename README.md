@@ -76,6 +76,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0014_import_page.sql` | Import page: creates new orders and updates existing ones |
 | `0015_change_order_machines.sql` | Add or remove machines on an existing order |
 | `0016_departments.sql` | Departments, who belongs to which, department on every activity line |
+| `0017_crating.sql` | Crates per machine (sizes, weight, plywood, hours), Imperial/Metric choice per person, crating report |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

@@ -15,6 +15,7 @@ import RecordsPage from './pages/admin/RecordsPage'
 import SerialsPage from './pages/admin/SerialsPage'
 import UsersPage from './pages/admin/UsersPage'
 import AlertSettingsPage from './pages/AlertSettingsPage'
+import CratingReportPage from './pages/CratingReportPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import MachineTypesPage from './pages/MachineTypesPage'
@@ -54,6 +55,7 @@ export default function App() {
         <Route path="orders/new" element={<NewOrderPage />} />
         <Route path="orders/:id" element={<OrderPage />} />
         <Route path="payments" element={<PaymentsPage />} />
+        <Route path="crating" element={<CratingReportPage />} />
         <Route path="agent" element={<AgentPage />} />
         <Route path="settings" element={<SettingsPage />} />
         {/* Old addresses of pages that moved to Admin */}

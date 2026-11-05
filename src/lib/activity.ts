@@ -48,6 +48,14 @@ const LABELS: Record<string, string> = {
   due_date: 'Due date',
   received_date: 'Received date',
   received_amount: 'Received amount',
+  length_cm: 'Length (cm)',
+  width_cm: 'Width (cm)',
+  height_cm: 'Height (cm)',
+  weight_kg: 'Weight (kg)',
+  plywood_sheets: 'Plywood sheets',
+  build_hours: 'Hours to build',
+  crated_on: 'Date crated',
+  crated_by: 'Crated by',
 }
 
 const THING: Record<string, string> = {
@@ -61,6 +69,7 @@ const THING: Record<string, string> = {
   user_departments: 'department membership',
   allowed_users: 'user',
   app_settings: 'settings',
+  crates: 'crate',
 }
 
 /** Fields that are filled in automatically and only add noise. */
@@ -133,6 +142,17 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
       return {
         title: `${verb} machine: ${show(c.machine_type_id, typeNames)}`,
         lines: c.serial_number ? [`Serial ${c.serial_number}`] : [],
+      }
+    if (e.table_name === 'crates')
+      return {
+        title: `${verb} crate`,
+        lines: [
+          [c.length_cm, c.width_cm, c.height_cm].some((v) => v != null)
+            ? `Size ${c.length_cm ?? '?'} × ${c.width_cm ?? '?'} × ${c.height_cm ?? '?'} cm`
+            : '',
+          c.weight_kg != null ? `Weight ${c.weight_kg} kg` : '',
+          c.crated_by ? `Crated by ${c.crated_by}` : '',
+        ].filter(Boolean),
       }
     if (e.table_name === 'payments')
       return { title: `${verb} payment: ${c.payment_type} ${c.amount ?? ''}`, lines: c.due_date ? [`Due ${c.due_date}`] : [] }

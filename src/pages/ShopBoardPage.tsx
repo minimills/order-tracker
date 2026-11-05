@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { badgeClass, orderBadges } from '../components/board/badges'
+import MachineCrating from '../components/crating/MachineCrating'
 import { useCompany } from '../lib/company'
 import { countryFlag } from '../lib/country'
+import { CRATING_STAGES, loadCrates, type NumberedCrate } from '../lib/crates'
 import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
@@ -25,6 +27,8 @@ type Machine = {
 export default function ShopBoardPage() {
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
   const [machines, setMachines] = useState<Machine[]>([])
+  const [crates, setCrates] = useState<Map<string, NumberedCrate[]>>(new Map())
+  const [reloadKey, setReloadKey] = useState(0)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const company = useCompany()
@@ -52,17 +56,20 @@ export default function ShopBoardPage() {
               .order('created_at'),
           )
         : { data: [], error: null }
+      // Crating is only asked for on orders that are ready to ship.
+      const c = await loadCrates(o.data.filter((x) => CRATING_STAGES.includes(x.stage)).map((x) => x.id))
       if (cancelled) return
-      const e = o.error ?? m.error
+      const e = o.error ?? m.error ?? c.error
       if (e) setError(friendlyError(e))
       setOrders(o.data)
       setMachines(m.data)
+      setCrates(c.byOrder)
       setLoading(false)
     })()
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [reloadKey])
 
   const machinesByOrder = new Map<string, Machine[]>()
   for (const m of machines) {
@@ -113,6 +120,12 @@ export default function ShopBoardPage() {
         {orders.map((o) => {
           const list = machinesByOrder.get(o.id) ?? []
           const badges = orderBadges(o).filter((b) => !b.label.startsWith('Payment'))
+          const crating = CRATING_STAGES.includes(o.stage)
+          const orderCrates = crates.get(o.id) ?? []
+          const crateMachines = list.map((m) => ({
+            id: m.id,
+            label: `${m.machine_types?.name ?? 'Machine'}${m.serial_number ? ` ${m.serial_number}` : ''}`,
+          }))
           return (
             <section key={o.id} className="grid grid-cols-[5.5rem_1fr] gap-4 py-4 break-inside-avoid md:grid-cols-[8rem_1fr]">
               <div className="text-center text-4xl leading-none font-black md:text-5xl">{o.order_code}</div>
@@ -143,9 +156,9 @@ export default function ShopBoardPage() {
                     ))}
                   </div>
                 )}
-                <ul className="mt-3 grid gap-x-8 gap-y-1 sm:grid-cols-2">
+                <ul className={`mt-3 grid gap-x-8 ${crating ? 'gap-y-3' : 'gap-y-1 sm:grid-cols-2'}`}>
                   {list.map((m) => (
-                    <li key={m.id} className="flex items-center gap-3 text-xl">
+                    <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xl">
                       <span
                         className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border-2 text-lg font-bold ${
                           m.ready ? 'border-green-700 bg-green-700 text-white' : 'border-slate-500'
@@ -156,6 +169,19 @@ export default function ShopBoardPage() {
                       </span>
                       <span className="font-mono font-semibold">{m.serial_number ?? '—'}</span>
                       <span className="text-slate-700">{m.machine_types?.name}</span>
+                      {crating && (
+                        <div className="basis-full pl-10">
+                          <MachineCrating
+                            orderId={o.id}
+                            orderCode={o.order_code}
+                            machine={crateMachines.find((x) => x.id === m.id)!}
+                            orderMachines={crateMachines}
+                            crates={orderCrates}
+                            onChanged={() => setReloadKey((k) => k + 1)}
+                            large
+                          />
+                        </div>
+                      )}
                     </li>
                   ))}
                   {list.length === 0 && <li className="text-lg text-slate-500">No machines</li>}

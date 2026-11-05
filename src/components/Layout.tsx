@@ -12,6 +12,7 @@ const navItems = [
   { to: '/orders/new', label: 'New order', icon: '➕' },
   { to: '/orders', label: 'Orders list', icon: '📄', end: true },
   { to: '/payments', label: 'Payments', icon: '💵' },
+  { to: '/crating', label: 'Crating report', icon: '📦' },
   { to: '/agent', label: 'Agent', icon: '💬' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
