@@ -1,5 +1,6 @@
 // @permission-scope orders.board.card.machines
 import { useEffect, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Can from '../Can'
 
 /** One machine, as the chips need it (a row of the order_machine_status view). */
@@ -13,6 +14,10 @@ export type ChipMachine = {
   ready: boolean
   checklist_done: boolean
   crate_count: number
+  /** Final check (empty without the "checklist" permission). */
+  checklist_status?: 'not_started' | 'in_progress' | 'signed' | null
+  checklist_total?: number | null
+  checklist_completed?: number | null
 }
 
 /** 0 not built · 1 built · 2 final checklist done · 3 crated */
@@ -21,7 +26,7 @@ type Status = 0 | 1 | 2 | 3
 const STATUS_STYLE: Record<Status, { chip: string; icon: string; word: string }> = {
   0: { chip: 'bg-slate-100 text-slate-700 ring-slate-300', icon: '○', word: 'Not built' },
   1: { chip: 'bg-green-50 text-green-800 ring-green-300', icon: '✓', word: 'Built' },
-  2: { chip: 'bg-blue-50 text-blue-800 ring-blue-300', icon: '☑', word: 'Final checklist done' },
+  2: { chip: 'bg-blue-50 text-blue-800 ring-blue-300', icon: '☑', word: 'Final check signed' },
   3: { chip: 'bg-teal-50 text-teal-900 ring-teal-400', icon: '📦', word: 'Crated' },
 }
 
@@ -157,12 +162,31 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                 {g.machines.map((m) => {
                   const st = STATUS_STYLE[statusOf(m, showCrated)]
                   return (
-                    <li key={m.id} className="flex flex-wrap items-center justify-between gap-x-2">
+                    <li key={m.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 py-0.5">
                       <span className="font-mono">{m.serial_number ?? 'No serial yet'}</span>
                       <Can permission="orders.board.card.chip_status">
                         <span className="text-slate-500">
                           {st.icon} {st.word}
+                          {m.checklist_status === 'in_progress' && (
+                            <> · final check {m.checklist_completed ?? 0}/{m.checklist_total ?? 0}</>
+                          )}
                         </span>
+                      </Can>
+                      <Can permission="checklist">
+                        {(m.ready || m.checklist_status === 'in_progress' || m.checklist_status === 'signed') && (
+                          <Link
+                            to={`/checklists/${m.id}`}
+                            draggable={false}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full rounded border border-slate-300 px-1.5 py-0.5 text-center text-[11px] font-medium hover:bg-slate-50"
+                          >
+                            {m.checklist_status === 'signed'
+                              ? 'View final check'
+                              : m.checklist_status === 'in_progress'
+                                ? 'Continue final check'
+                                : 'Final check'}
+                          </Link>
+                        )}
                       </Can>
                     </li>
                   )

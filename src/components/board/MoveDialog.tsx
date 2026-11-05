@@ -1,5 +1,6 @@
 // @permission-scope orders.board.reorder, orders.board.change_stage, order.action.change_stage, order.action.mark_shipped
 import { useEffect, useRef, useState } from 'react'
+import { toast } from 'sonner'
 import { useAlerts } from '../../lib/alerts'
 import { todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
@@ -59,7 +60,19 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
   const [preview, setPreview] = useState<Preview | null>(null)
   // Machines on the order with no crate yet (only checked when marking Shipped).
   const [notCrated, setNotCrated] = useState(0)
-  const warnCrating = usePermissions().can('crating.ship_warning')
+  const { can } = usePermissions()
+  const warnCrating = can('crating.ship_warning')
+  const canOverride = can('checklist.override', 'edit')
+  // Final checks: machines not signed (moving to Ready to ship / Shipped), or
+  // built machines whose final check hasn't started (moving to Ready).
+  const gateMove =
+    (request.stage === 'Ready to ship' || request.stage === 'Shipped') &&
+    request.order.stage !== 'Ready to ship' &&
+    request.order.stage !== 'Shipped'
+  const toReady = request.stage === 'Ready'
+  const [notSigned, setNotSigned] = useState<string[]>([])
+  const [notStarted, setNotStarted] = useState<string[]>([])
+  const [overrideReason, setOverrideReason] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -94,6 +107,39 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
   }, [request, toShipped, warnCrating])
 
   useEffect(() => {
+    if (!supabase || !gateMove) return
+    let cancelled = false
+    supabase.rpc('checklist_gate_problems', { p_order_id: request.order.id }).then(({ data }) => {
+      if (!cancelled) setNotSigned((data as string[] | null) ?? [])
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [request, gateMove])
+
+  useEffect(() => {
+    if (!supabase || !toReady || !can('checklist.ready_reminder')) return
+    let cancelled = false
+    supabase
+      .from('machine_checklist_status')
+      .select('machine_type, serial_number')
+      .eq('order_id', request.order.id)
+      .eq('ready', true)
+      .eq('status', 'not_started')
+      .then(({ data }) => {
+        if (cancelled) return
+        setNotStarted(
+          ((data as { machine_type: string; serial_number: string | null }[] | null) ?? []).map(
+            (m) => `${m.machine_type}${m.serial_number ? ` ${m.serial_number}` : ''}`,
+          ),
+        )
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [request, toReady, can])
+
+  useEffect(() => {
     if (preview) confirmRef.current?.focus()
   }, [preview])
 
@@ -109,15 +155,23 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
       setError('Enter the date the shipment left.')
       return
     }
+    const blocked = gateMove && notSigned.length > 0
+    if (blocked && (!canOverride || !overrideReason.trim())) {
+      setError(canOverride ? 'Give a reason for moving on without signed final checks.' : 'Sign the final checks first.')
+      return
+    }
     setSaving(true)
-    const { data, error: e } = await supabase.rpc(
-      'apply_board_change',
-      rpcArgs(request, toShipped ? shipDate : null, toShipped && markBuilt),
-    )
+    const args = rpcArgs(request, toShipped ? shipDate : null, toShipped && markBuilt)
+    const { data, error: e } = blocked
+      ? await supabase.rpc('apply_board_change_override', { ...args, p_reason: overrideReason.trim() })
+      : await supabase.rpc('apply_board_change', args)
     setSaving(false)
     if (e) {
       setError(friendlyError(e))
       return
+    }
+    if (toReady && notStarted.length) {
+      toast.warning(`Remember the final check for: ${notStarted.join(', ')}.`, { duration: 10000 })
     }
     refreshAlerts()
     onDone((data as unknown[] | null)?.length ?? 0)
@@ -220,6 +274,35 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
           </div>
         )}
 
+        <Can permission="checklist.ready_reminder">
+          {toReady && notStarted.length > 0 && (
+            <div className="mt-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900" role="status">
+              Final check not started yet for: <strong>{notStarted.join(', ')}</strong>. Start it from the order page or
+              the machine chip on the board.
+            </div>
+          )}
+        </Can>
+
+        {gateMove && notSigned.length > 0 && (
+          <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-900" role="alert">
+            <p>
+              Every machine’s final check must be signed first. Not signed yet: <strong>{notSigned.join(', ')}</strong>.
+            </p>
+            <Can permission="checklist.override" level="edit">
+              <label className="mt-3 block">
+                <span className="mb-1 block font-medium">Move anyway? Give a reason (it is recorded):</span>
+                <textarea
+                  rows={2}
+                  className={inputClass}
+                  value={overrideReason}
+                  onChange={(e) => setOverrideReason(e.target.value)}
+                  placeholder="e.g. Customer is checking the machine on pick-up"
+                />
+              </label>
+            </Can>
+          </div>
+        )}
+
         {error && <p className="mt-4 text-sm font-medium text-red-600">{error}</p>}
 
         <div className="mt-6 flex justify-end gap-3">
@@ -231,9 +314,9 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
             type="button"
             className={buttonClass}
             onClick={confirm}
-            disabled={!preview || saving}
+            disabled={!preview || saving || (gateMove && notSigned.length > 0 && (!canOverride || !overrideReason.trim()))}
           >
-            {saving ? 'Saving…' : 'Confirm move'}
+            {saving ? 'Saving…' : gateMove && notSigned.length > 0 ? 'Override and move' : 'Confirm move'}
           </button>
         </div>
       </div>

@@ -52,6 +52,11 @@ const LABELS: Record<string, string> = {
   received_date: 'Received date',
   received_amount: 'Received amount',
   short_name: 'Short name',
+  general_notes: 'General notes',
+  signed_name: 'Signed by',
+  signed_at: 'Signed at',
+  section: 'Section',
+  item_text: 'Item',
   length_cm: 'Length (cm)',
   width_cm: 'Width (cm)',
   height_cm: 'Height (cm)',
@@ -75,11 +80,13 @@ const THING: Record<string, string> = {
   app_settings: 'settings',
   crates: 'crate',
   permission_templates: 'permission template',
+  machine_checklists: 'final check',
+  checklist_template_items: 'checklist template item',
   user_permissions: 'permissions',
 }
 
 /** Fields that are filled in automatically and only add noise. */
-const HIDDEN = new Set(['id', 'created_at', 'archived_at', 'archived_by', 'order_id', 'order_code', 'checklist_done_at', 'checklist_done_by'])
+const HIDDEN = new Set(['id', 'created_at', 'archived_at', 'archived_by', 'order_id', 'order_code', 'checklist_done_at', 'checklist_done_by', 'last_worked_at', 'last_worked_by_name', 'signed_by', 'signature_path', 'machine_id', 'started_by', 'started_by_name', 'started_at'])
 
 export const activityTime = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Halifax',
@@ -131,7 +138,15 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     for (const s of ((ch.serials ?? ch.serial_changes) as { order: string; old: string | null; new: string | null }[]) ?? []) {
       lines.push(`Serial (order ${s.order}): ${s.old ?? 'none'} → ${s.new ?? 'none'}`)
     }
-    return { title: `Admin: ${String(ch.action ?? 'change')}`, lines }
+    // Final checks: unlock / override / one-off item
+    if (typeof ch.serial === 'string') lines.push(`Machine ${ch.serial}`)
+    if (ch.signed_name) lines.push(`Was signed by ${ch.signed_name}`)
+    if (Array.isArray(ch.not_signed) && ch.not_signed.length) lines.push(`Not signed: ${ch.not_signed.join(', ')}`)
+    if (typeof ch.stage === 'string') lines.push(`Moved to ${stageLabel(ch.stage)}`)
+    if (typeof ch.item === 'string') lines.push(`${ch.section ? `${ch.section}: ` : ''}${ch.item}`)
+    if (typeof ch.reason === 'string') lines.push(`Reason: ${ch.reason}`)
+    const action = String(ch.action ?? 'change')
+    return { title: action.startsWith('final check') ? action[0].toUpperCase() + action.slice(1) : `Admin: ${action}`, lines }
   }
 
   const thing =
@@ -168,6 +183,10 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
           c.crated_by ? `Crated by ${c.crated_by}` : '',
         ].filter(Boolean),
       }
+    if (e.table_name === 'machine_checklists')
+      return { title: e.action === 'insert' ? `Final check started by ${c.started_by_name ?? 'someone'}` : 'Final check deleted', lines: [] }
+    if (e.table_name === 'checklist_template_items')
+      return { title: `${verb} checklist template item`, lines: [`${c.section}: ${c.item_text}`] }
     if (e.table_name === 'payments')
       return { title: `${verb} payment: ${c.payment_type} ${c.amount ?? ''}`, lines: c.due_date ? [`Due ${c.due_date}`] : [] }
     return { title: `${verb} ${thing}`, lines: [] }
