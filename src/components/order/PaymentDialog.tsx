@@ -1,11 +1,12 @@
+// @permission-scope payments.action.add, payments.action.edit
 import { useState } from 'react'
 import { useAlerts } from '../../lib/alerts'
-import { useAuth } from '../../lib/auth'
 import { formatMoney, friendlyError } from '../../lib/format'
 import { parseMoney, round2 } from '../../lib/money'
 import { supabase } from '../../lib/supabase'
 import type { OrderSummaryRow, PaymentRow } from '../../lib/types'
 import { useOptionList } from '../../lib/useOptionList'
+import Can from '../Can'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
 
 type Props = {
@@ -21,7 +22,8 @@ type Props = {
 /** Add a payment, or change one's type, amount, due date or note. */
 export default function PaymentDialog({ order, payment, existingTypes, onClose, onDone }: Props) {
   const { refresh: refreshAlerts } = useAlerts()
-  const { isAdmin } = useAuth()
+  // Without "order.field.order_total" the total is unknown here, so no % amounts.
+  const total = order.order_total ?? 0
   const typeList = useOptionList('payment_type', payment?.payment_type)
   const [type, setType] = useState(payment?.payment_type ?? '')
   const [amountMode, setAmountMode] = useState<'amount' | 'percent'>('amount')
@@ -40,7 +42,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
 
   const num = parseMoney(amount)
   const amountValue =
-    num === null || Number.isNaN(num) ? num : amountMode === 'percent' ? round2((order.order_total * num) / 100) : num
+    num === null || Number.isNaN(num) ? num : amountMode === 'percent' ? round2((total * num) / 100) : num
 
   async function save() {
     if (!supabase) return
@@ -81,11 +83,13 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
       busy={saving}
       footer={
         <>
-          {payment && isAdmin && (
-            <button type="button" className="mr-auto text-sm text-red-700 underline" onClick={remove} disabled={saving}>
-              Delete payment
-            </button>
-          )}
+          <Can permission="payments.action.delete" level="edit">
+            {payment && (
+              <button type="button" className="mr-auto text-sm text-red-700 underline" onClick={remove} disabled={saving}>
+                Delete payment
+              </button>
+            )}
+          </Can>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
             Cancel
           </button>
@@ -106,7 +110,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
         {isBalance ? (
           <Field label="Amount" hint="Order total − down payment, calculated automatically.">
             <p className="py-2 text-sm">
-              {formatMoney(order.order_total - (order.down_payment_amount ?? 0), order.currency)}
+              {order.order_total === null ? 'Calculated automatically' : formatMoney(total - (order.down_payment_amount ?? 0), order.currency)}
             </p>
           </Field>
         ) : (
@@ -116,8 +120,8 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
             hint={
               amountMode === 'percent' && amountValue !== null && !Number.isNaN(amountValue)
                 ? `= ${formatMoney(amountValue, order.currency)}`
-                : chosenType === 'Down payment' && amountValue && order.order_total > 0
-                  ? `= ${Math.round((amountValue / order.order_total) * 1000) / 10}% of the total`
+                : chosenType === 'Down payment' && amountValue && total > 0
+                  ? `= ${Math.round((amountValue / total) * 1000) / 10}% of the total`
                   : undefined
             }
           >
@@ -130,7 +134,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
                 onChange={(e) => setAmountMode(e.target.value as 'amount' | 'percent')}
               >
                 <option value="amount">{order.currency}</option>
-                <option value="percent">%</option>
+                {order.order_total !== null && <option value="percent">%</option>}
               </select>
             </div>
           </Field>

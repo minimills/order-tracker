@@ -1,3 +1,4 @@
+// @permission-scope crating
 import { useState } from 'react'
 import type { CrateMachine, NumberedCrate } from '../../lib/crates'
 import { todayISO } from '../../lib/dates'
@@ -14,6 +15,7 @@ import {
   type Units,
 } from '../../lib/units'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
+import Can from '../Can'
 import UnitsSwitch from './UnitsSwitch'
 
 type Props = {
@@ -171,7 +173,9 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <span className="text-sm font-medium text-slate-700">Size and weight</span>
-            <UnitsSwitch />
+            <Can permission="crating.units">
+              <UnitsSwitch />
+            </Can>
           </div>
           <div className="grid grid-cols-3 gap-3">
             {MEASURES.filter((m) => m.kind === 'length').map((m) => (

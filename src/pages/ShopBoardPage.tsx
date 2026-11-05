@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { badgeClass, orderBadges } from '../components/board/badges'
+import Can from '../components/Can'
 import MachineCrating from '../components/crating/MachineCrating'
 import { useCompany } from '../lib/company'
 import { countryFlag } from '../lib/country'
@@ -8,6 +9,7 @@ import { CRATING_STAGES, loadCrates, type NumberedCrate } from '../lib/crates'
 import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
+import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import type { OrderSummaryRow } from '../lib/types'
 
@@ -32,6 +34,8 @@ export default function ShopBoardPage() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const company = useCompany()
+  const { can } = usePermissions()
+  const seesCrating = can('crating')
 
   useEffect(() => {
     if (!supabase) return
@@ -57,7 +61,9 @@ export default function ShopBoardPage() {
           )
         : { data: [], error: null }
       // Crating is only asked for on orders that are ready to ship.
-      const c = await loadCrates(o.data.filter((x) => CRATING_STAGES.includes(x.stage)).map((x) => x.id))
+      const c = await loadCrates(
+        seesCrating ? o.data.filter((x) => CRATING_STAGES.includes(x.stage)).map((x) => x.id) : [],
+      )
       if (cancelled) return
       const e = o.error ?? m.error ?? c.error
       if (e) setError(friendlyError(e))
@@ -69,7 +75,7 @@ export default function ShopBoardPage() {
     return () => {
       cancelled = true
     }
-  }, [reloadKey])
+  }, [reloadKey, seesCrating])
 
   const machinesByOrder = new Map<string, Machine[]>()
   for (const m of machines) {
@@ -86,112 +92,145 @@ export default function ShopBoardPage() {
   }
 
   return (
-    <div className="min-h-full bg-white p-4 text-slate-900 md:p-8 print:p-0">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:mb-3">
-        <div className="flex items-center gap-4">
-          {company.logo && <img src={company.logo} alt="" className="max-h-14" />}
-          <div>
-          <div className="text-sm font-medium text-slate-600">{company.name}</div>
-          <h1 className="text-3xl font-bold">Shop board</h1>
-          <p className="text-slate-600">
-            {orders.length} order{orders.length === 1 ? '' : 's'} in the queue · {showDate(todayISO(), 'EEEE, MMMM d, yyyy')}
-          </p>
+    <Can permission="shop_board">
+      <div className="min-h-full bg-white p-4 text-slate-900 md:p-8 print:p-0">
+        <div className="mb-6 flex flex-wrap items-center justify-between gap-3 print:mb-3">
+          <div className="flex items-center gap-4">
+            {company.logo && <img src={company.logo} alt="" className="max-h-14" />}
+            <div>
+              <div className="text-sm font-medium text-slate-600">{company.name}</div>
+              <h1 className="text-3xl font-bold">Shop board</h1>
+              <p className="text-slate-600">
+                {orders.length} order{orders.length === 1 ? '' : 's'} in the queue · {showDate(todayISO(), 'EEEE, MMMM d, yyyy')}
+              </p>
+            </div>
+          </div>
+          <div className="flex gap-2 print:hidden">
+            <Can
+              permission="orders.board"
+              fallback={
+                <Link to="/" className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
+                  ← Back
+                </Link>
+              }
+            >
+              <Link to="/board" className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
+                ← Back to board
+              </Link>
+            </Can>
+            <Can permission="shop_board.print">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+              >
+                🖨 Print
+              </button>
+            </Can>
           </div>
         </div>
-        <div className="flex gap-2 print:hidden">
-          <Link to="/board" className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
-            ← Back to board
-          </Link>
-          <button
-            type="button"
-            onClick={() => window.print()}
-            className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
-          >
-            🖨 Print
-          </button>
+
+        {loading && <p className="text-xl text-slate-500">Loading…</p>}
+        {error && <p className="text-xl text-red-700">{error}</p>}
+        {!loading && orders.length === 0 && <p className="text-xl text-slate-500">The board is empty.</p>}
+
+        <div className="divide-y-2 divide-slate-300 border-y-2 border-slate-900">
+          {orders.map((o) => {
+            const list = machinesByOrder.get(o.id) ?? []
+            const badges = orderBadges(o).filter((b) => b.kind !== 'payment')
+            const crating = seesCrating && CRATING_STAGES.includes(o.stage)
+            const orderCrates = crates.get(o.id) ?? []
+            const crateMachines = list.map((m) => ({
+              id: m.id,
+              label: `${m.machine_types?.name ?? 'Machine'}${m.serial_number ? ` ${m.serial_number}` : ''}`,
+            }))
+            return (
+              <section key={o.id} className="grid grid-cols-[5.5rem_1fr] gap-4 py-4 break-inside-avoid md:grid-cols-[8rem_1fr]">
+                <div className="text-center text-4xl leading-none font-black md:text-5xl">{o.order_code}</div>
+                <div>
+                  <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                    <Can permission="shop_board.detail.customer">
+                      <span className="text-xl md:text-2xl">
+                        {o.customer_name}
+                        {o.customer_company && <span className="text-slate-600"> · {o.customer_company}</span>}
+                      </span>
+                    </Can>
+                    <Can permission="shop_board.detail.country">
+                      <span className="text-lg text-slate-600">
+                        {countryFlag(o.customer_country)} {o.customer_country}
+                      </span>
+                    </Can>
+                  </div>
+                  <div className="mt-1 flex flex-wrap gap-x-6 text-lg text-slate-700">
+                    <Can permission="shop_board.detail.stage">
+                      <span>{o.stage}</span>
+                    </Can>
+                    <Can permission="shop_board.detail.ship_date">
+                      <span>Ship by {showDate(o.expected_ship_date)}</span>
+                    </Can>
+                    <Can permission="shop_board.detail.voltage">
+                      <span>Voltage: {o.voltage}</span>
+                    </Can>
+                    <Can permission="shop_board.detail.built">
+                      <span>
+                        Built {o.machines_ready_count}/{o.machines_count}
+                      </span>
+                    </Can>
+                  </div>
+                  <Can permission="shop_board.detail.badges">
+                    {badges.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {badges.map((b) => (
+                          <span key={b.label} className={`rounded px-2 py-0.5 text-base font-semibold ring-1 ${badgeClass[b.tone]}`}>
+                            {b.label}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </Can>
+                  <Can permission="shop_board.detail.machines">
+                    <ul className={`mt-3 grid gap-x-8 ${crating ? 'gap-y-3' : 'gap-y-1 sm:grid-cols-2'}`}>
+                      {list.map((m) => (
+                        <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xl">
+                          <span
+                            className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border-2 text-lg font-bold ${
+                              m.ready ? 'border-green-700 bg-green-700 text-white' : 'border-slate-500'
+                            }`}
+                            aria-label={m.ready ? 'Built' : 'Not built'}
+                          >
+                            {m.ready ? '✓' : ''}
+                          </span>
+                          <span className="font-mono font-semibold">{m.serial_number ?? '—'}</span>
+                          <span className="text-slate-700">{m.machine_types?.name}</span>
+                          {crating && (
+                            <Can permission="crating">
+                              <div className="basis-full pl-10">
+                                <MachineCrating
+                                  orderId={o.id}
+                                  orderCode={o.order_code}
+                                  machine={crateMachines.find((x) => x.id === m.id)!}
+                                  orderMachines={crateMachines}
+                                  crates={orderCrates}
+                                  onChanged={() => setReloadKey((k) => k + 1)}
+                                  large
+                                />
+                              </div>
+                            </Can>
+                          )}
+                        </li>
+                      ))}
+                      {list.length === 0 && <li className="text-lg text-slate-500">No machines</li>}
+                    </ul>
+                  </Can>
+                  <Can permission="shop_board.detail.notes">
+                    {o.notes && <p className="mt-2 text-base whitespace-pre-wrap text-slate-700">{o.notes}</p>}
+                  </Can>
+                </div>
+              </section>
+            )
+          })}
         </div>
       </div>
-
-      {loading && <p className="text-xl text-slate-500">Loading…</p>}
-      {error && <p className="text-xl text-red-700">{error}</p>}
-      {!loading && orders.length === 0 && <p className="text-xl text-slate-500">The board is empty.</p>}
-
-      <div className="divide-y-2 divide-slate-300 border-y-2 border-slate-900">
-        {orders.map((o) => {
-          const list = machinesByOrder.get(o.id) ?? []
-          const badges = orderBadges(o).filter((b) => !b.label.startsWith('Payment'))
-          const crating = CRATING_STAGES.includes(o.stage)
-          const orderCrates = crates.get(o.id) ?? []
-          const crateMachines = list.map((m) => ({
-            id: m.id,
-            label: `${m.machine_types?.name ?? 'Machine'}${m.serial_number ? ` ${m.serial_number}` : ''}`,
-          }))
-          return (
-            <section key={o.id} className="grid grid-cols-[5.5rem_1fr] gap-4 py-4 break-inside-avoid md:grid-cols-[8rem_1fr]">
-              <div className="text-center text-4xl leading-none font-black md:text-5xl">{o.order_code}</div>
-              <div>
-                <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
-                                    <span className="text-xl md:text-2xl">
-                    {o.customer_name}
-                    {o.customer_company && <span className="text-slate-600"> · {o.customer_company}</span>}
-                  </span>
-                  <span className="text-lg text-slate-600">
-                    {countryFlag(o.customer_country)} {o.customer_country}
-                  </span>
-                </div>
-                <div className="mt-1 flex flex-wrap gap-x-6 text-lg text-slate-700">
-                  <span>{o.stage}</span>
-                  <span>Ship by {showDate(o.expected_ship_date)}</span>
-                  <span>Voltage: {o.voltage}</span>
-                  <span>
-                    Built {o.machines_ready_count}/{o.machines_count}
-                  </span>
-                </div>
-                {badges.length > 0 && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {badges.map((b) => (
-                      <span key={b.label} className={`rounded px-2 py-0.5 text-base font-semibold ring-1 ${badgeClass[b.tone]}`}>
-                        {b.label}
-                      </span>
-                    ))}
-                  </div>
-                )}
-                <ul className={`mt-3 grid gap-x-8 ${crating ? 'gap-y-3' : 'gap-y-1 sm:grid-cols-2'}`}>
-                  {list.map((m) => (
-                    <li key={m.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xl">
-                      <span
-                        className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border-2 text-lg font-bold ${
-                          m.ready ? 'border-green-700 bg-green-700 text-white' : 'border-slate-500'
-                        }`}
-                        aria-label={m.ready ? 'Built' : 'Not built'}
-                      >
-                        {m.ready ? '✓' : ''}
-                      </span>
-                      <span className="font-mono font-semibold">{m.serial_number ?? '—'}</span>
-                      <span className="text-slate-700">{m.machine_types?.name}</span>
-                      {crating && (
-                        <div className="basis-full pl-10">
-                          <MachineCrating
-                            orderId={o.id}
-                            orderCode={o.order_code}
-                            machine={crateMachines.find((x) => x.id === m.id)!}
-                            orderMachines={crateMachines}
-                            crates={orderCrates}
-                            onChanged={() => setReloadKey((k) => k + 1)}
-                            large
-                          />
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                  {list.length === 0 && <li className="text-lg text-slate-500">No machines</li>}
-                </ul>
-                {o.notes && <p className="mt-2 text-base whitespace-pre-wrap text-slate-700">{o.notes}</p>}
-              </div>
-            </section>
-          )
-        })}
-      </div>
-    </div>
+    </Can>
   )
 }

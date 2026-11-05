@@ -1,3 +1,4 @@
+// @permission-scope admin.dropdowns
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'

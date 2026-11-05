@@ -1,27 +1,22 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
+import { usePermissions } from '../lib/permissions'
+import { NAV_ITEMS } from '../lib/permissions/nav'
 import AlertsBell from './alerts/AlertsBell'
 import AlertsProvider from './alerts/AlertsProvider'
 import NotificationPrompt from './alerts/NotificationPrompt'
 import { isSupabaseConfigured } from '../lib/supabase'
 
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: '🏠' },
-  { to: '/board', label: 'Orders board', icon: '📋' },
-  { to: '/orders/new', label: 'New order', icon: '➕' },
-  { to: '/orders', label: 'Orders list', icon: '📄', end: true },
-  { to: '/payments', label: 'Payments', icon: '💵' },
-  { to: '/crating', label: 'Crating report', icon: '📦' },
-  { to: '/agent', label: 'Agent', icon: '💬' },
-  { to: '/settings', label: 'Settings', icon: '⚙️' },
-]
 
 export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
-  const { session, role, isAdmin, signOut } = useAuth()
-  // The Admin menu item is only shown to admins.
-  const items = isAdmin ? [...navItems, { to: '/admin', label: 'Admin', icon: '🛠' }] : navItems
+  const { session, role, signOut } = useAuth()
+  const { can, canAny } = usePermissions()
+  // The menu is built from permissions: pages someone can't see are not in it.
+  const items = NAV_ITEMS.filter(
+    (i) => (!i.permission || can(i.permission, i.level)) && (!i.anyOf || canAny(i.anyOf, i.level)),
+  )
   const page = (
     <div className="flex h-full">
       {/* Dark backdrop behind the menu on phones */}
@@ -65,7 +60,7 @@ export default function Layout() {
             <div className="truncate text-slate-400" title={session.user.email}>
               {session.user.email}
             </div>
-            {role && <div className="text-xs text-slate-500">{role === 'admin' ? 'Admin' : 'Staff'}</div>}
+            {role && <div className="text-xs text-slate-500">{role === 'admin' ? 'Admin (everything)' : 'User'}</div>}
             <button type="button" onClick={signOut} className="mt-2 text-slate-300 underline hover:text-white">
               Sign out
             </button>
@@ -84,9 +79,9 @@ export default function Layout() {
             ☰ Menu
           </button>
           <span className="font-semibold md:hidden">Belfast Mini Mills</span>
-          <div className="ml-auto">{isSupabaseConfigured && <AlertsBell />}</div>
+          <div className="ml-auto">{isSupabaseConfigured && can('alerts.bell') && <AlertsBell />}</div>
         </header>
-        {isSupabaseConfigured && <NotificationPrompt />}
+        {isSupabaseConfigured && can('alerts.popups') && <NotificationPrompt />}
 
         {!isSupabaseConfigured && (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">

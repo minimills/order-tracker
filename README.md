@@ -77,6 +77,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0015_change_order_machines.sql` | Add or remove machines on an existing order |
 | `0016_departments.sql` | Departments, who belongs to which, department on every activity line |
 | `0017_crating.sql` | Crates per machine (sizes, weight, plywood, hours), Imperial/Metric choice per person, crating report |
+| `0018_permissions.sql` | Fine-grained permissions: each user sees only what an admin ticks (enforced by the database for money, contacts, edits, crating and Admin) |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
@@ -86,8 +87,8 @@ insert into public.allowed_users (email, name) values ('you@example.com', 'Your 
 
 After the first admin exists, add and manage people in the app under **Admin → Users** instead.
 
-New users are **staff** (can add and edit). Admins can also delete, change machine types, dropdown lists,
-settings and users. To make someone an admin:
+New users are **users** and see **nothing** until an admin ticks what they need in **Admin → Users → Permissions**
+(start from a department preset, a template, or another person). Admins see and do everything. To make someone an admin:
 
 ```sql
 update public.allowed_users set role = 'admin' where email = 'them@example.com';
@@ -149,6 +150,7 @@ One-time setup:
 | `npm run build` | Checks the code and builds the site into the `dist` folder |
 | `npm run preview` | Shows the built site at <http://localhost:4173> |
 | `npm run lint` | Checks the code for common mistakes |
+| `npm run check:perms` | Checks every screen element has a permission (runs by itself before each commit) |
 
 ## Project layout
 

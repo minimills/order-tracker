@@ -1,4 +1,6 @@
+// @permission-scope orders.new
 import type { MachineType } from '../../lib/types'
+import Can from '../Can'
 import { Field, inputClass, secondaryButtonClass } from '../form'
 import { MAX_QUANTITY, newMachineRow, parseQuantity, type MachineRow } from './machines'
 
@@ -99,13 +101,15 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                                   ? '—'
                                   : 'Serial given when confirmed')}
                           </span>
-                          <button
-                            type="button"
-                            className="text-xs text-slate-600 underline"
-                            onClick={() => setManual(i, j, '')}
-                          >
-                            Type serial by hand
-                          </button>
+                          <Can permission="orders.new.serial_by_hand" level="edit">
+                            <button
+                              type="button"
+                              className="text-xs text-slate-600 underline"
+                              onClick={() => setManual(i, j, '')}
+                            >
+                              Type serial by hand
+                            </button>
+                          </Can>
                         </>
                       ) : (
                         <>

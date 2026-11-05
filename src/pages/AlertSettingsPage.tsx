@@ -1,9 +1,10 @@
+// @permission-scope admin.alerts
 import { useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { buttonClass, Field } from '../components/form'
 import { DEFAULT_THRESHOLDS, useAlerts, type AlertThresholds } from '../lib/alerts'
-import { useAuth } from '../lib/auth'
+import { usePermissions } from '../lib/permissions'
 import { friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 
@@ -17,7 +18,8 @@ const toDraft = (t: AlertThresholds): Draft => ({
 
 /** Settings > Alerts: how many days ahead to warn. Admins can change it. */
 export default function AlertSettingsPage() {
-  const { isAdmin } = useAuth()
+  // Full admins, or people given this admin page.
+  const isAdmin = usePermissions().can('admin.alerts', 'edit')
   const { refresh } = useAlerts()
   const [draft, setDraft] = useState<Draft>(toDraft(DEFAULT_THRESHOLDS))
   const [errors, setErrors] = useState<Partial<Draft>>({})

@@ -1,0 +1,9 @@
+#!/bin/sh
+# Runs before every commit (set up automatically by `npm install`).
+# Stops the commit if a screen element has no permission, or a permission key
+# is not in src/lib/permissions/catalog.ts. See scripts/check-permissions.mjs.
+npm run --silent check:perms || {
+  echo ""
+  echo "Commit stopped: fix the permission problems above, then commit again."
+  exit 1
+}

@@ -1,8 +1,9 @@
+// @permission-scope admin.machine_types
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../components/form'
-import { useAuth } from '../lib/auth'
+import { usePermissions } from '../lib/permissions'
 import { formatSerial, friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import type { MachineType } from '../lib/types'
@@ -31,7 +32,8 @@ function check(d: Draft, others: MachineType[]) {
 }
 
 export default function MachineTypesPage() {
-  const { isAdmin } = useAuth()
+  // Full admins, or people given this admin page.
+  const isAdmin = usePermissions().can('admin.machine_types', 'edit')
   const [types, setTypes] = useState<MachineType[]>([])
   const [usage, setUsage] = useState<Record<string, Usage>>({})
   const [drafts, setDrafts] = useState<Record<string, Draft>>({})

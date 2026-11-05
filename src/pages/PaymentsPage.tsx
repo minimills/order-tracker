@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import Can from '../components/Can'
 import { buttonClass, secondaryButtonClass } from '../components/form'
 import { dueText } from '../components/payments/dueText'
 import PaymentStatus from '../components/payments/PaymentStatus'
@@ -74,6 +75,7 @@ export default function PaymentsPage() {
   }, [rows])
 
   return (
+    <Can permission="payments.page">
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -82,9 +84,11 @@ export default function PaymentsPage() {
             Every payment still owed, soonest first. Cancelled and archived orders are left out.
           </p>
         </div>
-        <button type="button" className={secondaryButtonClass} onClick={load}>
-          Refresh
-        </button>
+        <Can permission="payments.page.refresh">
+          <button type="button" className={secondaryButtonClass} onClick={load}>
+            Refresh
+          </button>
+        </Can>
       </div>
 
       {/* Totals at a glance */}
@@ -133,9 +137,11 @@ export default function PaymentsPage() {
                       <div className="text-xs text-slate-500">{p.due_date ? dueText(p) : 'No due date'}</div>
                     </div>
                     <div className="min-w-0">
-                      <Link to={`/orders/${p.order_id}`} className="font-medium hover:underline">
-                        Order {p.order_code}
-                      </Link>{' '}
+                      <Can permission="order.page" fallback={<span className="font-medium">Order {p.order_code}</span>}>
+                        <Link to={`/orders/${p.order_id}`} className="font-medium hover:underline">
+                          Order {p.order_code}
+                        </Link>
+                      </Can>{' '}
                       <span className="text-slate-500">· {p.payment_type}</span>
                       <div className="truncate text-slate-600">
                         {p.customer_name}
@@ -161,9 +167,11 @@ export default function PaymentsPage() {
                       <PaymentStatus payment={p} />
                     </div>
                     <div className="md:text-right">
-                      <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
-                        Mark received
-                      </button>
+                      <Can permission="payments.action.mark_received" level="edit">
+                        <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
+                          Mark received
+                        </button>
+                      </Can>
                     </div>
                   </li>
                 ))}
@@ -184,5 +192,6 @@ export default function PaymentsPage() {
         />
       )}
     </div>
+    </Can>
   )
 }

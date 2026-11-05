@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import Can from '../components/Can'
 import UnitsSwitch from '../components/crating/UnitsSwitch'
 import { inputClass, secondaryButtonClass } from '../components/form'
 import { contentsLabel, type CrateRow } from '../lib/crates'
@@ -167,6 +168,7 @@ export default function CratingReportPage() {
   }
 
   return (
+    <Can permission="reports.crating">
     <div className="mx-auto max-w-7xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -175,9 +177,12 @@ export default function CratingReportPage() {
             What our crates weigh, measure and take to build, from every crate entered so far.
           </p>
         </div>
-        <UnitsSwitch />
+        <Can permission="crating.units">
+          <UnitsSwitch />
+        </Can>
       </div>
 
+      <Can permission="reports.crating.filters">
       <div className="grid gap-2 sm:grid-cols-[auto_auto_1fr_auto] sm:items-end">
         <label className="text-sm">
           <span className="mb-1 block text-slate-600">Crated from</span>
@@ -204,12 +209,14 @@ export default function CratingReportPage() {
           </button>
         )}
       </div>
+      </Can>
 
       {loading ? (
         <p className="py-8 text-center text-slate-500">Loading…</p>
       ) : (
         <>
           {/* ---------- Per machine type ---------- */}
+          <Can permission="reports.crating.by_type">
           <section className="rounded-lg border border-slate-200 bg-white">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-4">
               <div>
@@ -219,9 +226,11 @@ export default function CratingReportPage() {
                   everything it holds. “1 of 2” means only 1 of the 2 crates has that box filled in.
                 </p>
               </div>
-              <button type="button" className={secondaryButtonClass} onClick={exportSummary} disabled={groups.length === 0}>
-                ⬇ Summary CSV
-              </button>
+              <Can permission="reports.crating.export_summary">
+                <button type="button" className={secondaryButtonClass} onClick={exportSummary} disabled={groups.length === 0}>
+                  ⬇ Summary CSV
+                </button>
+              </Can>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -275,16 +284,20 @@ export default function CratingReportPage() {
               </table>
             </div>
           </section>
+          </Can>
 
           {/* ---------- Every crate ---------- */}
+          <Can permission="reports.crating.every_crate">
           <section className="rounded-lg border border-slate-200 bg-white">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-4">
               <h2 className="font-semibold">
                 Every crate <span className="font-normal text-slate-500">({rows.length})</span>
               </h2>
-              <button type="button" className={secondaryButtonClass} onClick={exportCrates} disabled={rows.length === 0}>
-                ⬇ Export CSV
-              </button>
+              <Can permission="reports.crating.export_csv">
+                <button type="button" className={secondaryButtonClass} onClick={exportCrates} disabled={rows.length === 0}>
+                  ⬇ Export CSV
+                </button>
+              </Can>
             </div>
             <div className="overflow-x-auto">
               <table className="min-w-full text-sm">
@@ -306,9 +319,11 @@ export default function CratingReportPage() {
                     <tr key={c.id} className="align-top">
                       <td className="px-3 py-2 whitespace-nowrap">{showDate(c.crated_on)}</td>
                       <td className="px-3 py-2 whitespace-nowrap">
-                        <Link to={`/orders/${c.order_id}`} className="font-medium text-blue-700 underline">
-                          {c.order_code}
-                        </Link>
+                        <Can permission="order.page" fallback={<span className="font-medium">{c.order_code}</span>}>
+                          <Link to={`/orders/${c.order_id}`} className="font-medium text-blue-700 underline">
+                            {c.order_code}
+                          </Link>
+                        </Can>
                         <div className="text-xs text-slate-500">{c.customer_name}</div>
                       </td>
                       <td className="px-3 py-2">
@@ -334,8 +349,10 @@ export default function CratingReportPage() {
               </table>
             </div>
           </section>
+          </Can>
         </>
       )}
     </div>
+    </Can>
   )
 }

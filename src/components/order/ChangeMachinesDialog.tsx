@@ -1,3 +1,4 @@
+// @permission-scope order.machines.add, order.machines.remove
 import { useEffect, useState } from 'react'
 import { useAlerts } from '../../lib/alerts'
 import { friendlyError } from '../../lib/format'

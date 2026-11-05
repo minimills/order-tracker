@@ -1,3 +1,4 @@
+// @permission-scope admin.import
 import { useState } from 'react'
 import { formatMoney } from '../../../lib/format'
 import { NOT_A_MACHINE, type DraftMachine, type DraftOrder, type Msg } from '../../../lib/sheetImport/types'

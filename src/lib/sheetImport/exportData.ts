@@ -77,7 +77,7 @@ export async function backupSheets(): Promise<OutSheet[]> {
       supabase!.from('order_machines').select('order_id, serial_number, ready, notes, created_at, machine_types(name)').eq('archived', false).order('created_at'),
     ),
     fetchAll<PaymentRow>(() => supabase!.from('payment_overview').select('*').eq('order_archived', false).order('order_number')),
-    fetchAll<Record<string, unknown>>(() => supabase!.from('customers').select('name, company, emails, phone, country, state_province, notes, archived').order('name')),
+    fetchAll<Record<string, unknown>>(() => supabase!.from('customer_list').select('name, company, emails, phone, country, state_province, notes, archived').order('name')),
   ])
   const error = o.error ?? m.error ?? p.error ?? c.error
   if (error) throw new Error(error.message)

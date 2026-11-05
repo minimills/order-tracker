@@ -1,11 +1,15 @@
+// @permission-scope admin.users
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
+import PermissionEditor, { type OtherUser, type Template } from '../../components/admin/PermissionEditor'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../../components/form'
 import { emailPattern } from '../../components/order/customer'
 import { useAuth } from '../../lib/auth'
 import { showDate } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
+import type { Perms } from '../../lib/permissions'
+import { CATALOG } from '../../lib/permissions/catalog'
 import { supabase } from '../../lib/supabase'
 import type { Role } from '../../lib/auth'
 import { useDepartments } from '../../lib/useDepartments'
@@ -16,7 +20,9 @@ const selectClass = 'rounded-md border border-slate-300 bg-white px-2 py-1.5 tex
 const NO_DEPARTMENT = '__none'
 
 export default function UsersPage() {
-  const { session } = useAuth()
+  // Only full admins change roles and permissions (the database checks this too);
+  // people given "admin.users" can add and remove people and set departments.
+  const { session, isAdmin } = useAuth()
   const me = session?.user.email?.toLowerCase()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
@@ -25,13 +31,19 @@ export default function UsersPage() {
   const [role, setRole] = useState<Role>('staff')
   const [error, setError] = useState<string | null>(null)
   const [removing, setRemoving] = useState<User | null>(null)
-  const { departments } = useDepartments()
+  const { departments, reload: reloadDepartments } = useDepartments()
   const activeDepartments = departments.filter((d) => !d.archived)
   // email → department ids
   const [memberships, setMemberships] = useState<Record<string, string[]>>({})
   const [newDepts, setNewDepts] = useState<string[]>([])
   const [filter, setFilter] = useState('')
   const [editingDepts, setEditingDepts] = useState<{ user: User; chosen: string[] } | null>(null)
+  // Permissions (full admins only)
+  const [permsByUser, setPermsByUser] = useState<Record<string, Perms>>({})
+  const [templates, setTemplates] = useState<Template[]>([])
+  const [reviewed, setReviewed] = useState<Set<string>>(new Set())
+  const [editingPerms, setEditingPerms] = useState<User | null>(null)
+  const [startWith, setStartWith] = useState('')
 
   const load = useCallback(async () => {
     if (!supabase) return
@@ -46,8 +58,43 @@ export default function UsersPage() {
       m[l.user_email] = [...(m[l.user_email] ?? []), l.department_id]
     }
     setMemberships(m)
+    if (isAdmin) {
+      const [up, tp, rv] = await Promise.all([
+        supabase.from('user_permissions').select('user_email, perms'),
+        supabase.from('permission_templates').select('id, name, perms').order('name'),
+        supabase.from('app_settings').select('value').eq('key', 'permissions_reviewed').maybeSingle(),
+      ])
+      const pm: Record<string, Perms> = {}
+      for (const r of (up.data as { user_email: string; perms: Perms }[]) ?? []) pm[r.user_email] = r.perms
+      setPermsByUser(pm)
+      setTemplates((tp.data as Template[]) ?? [])
+      setReviewed(new Set(((rv.data?.value as { keys?: string[] } | null)?.keys ?? []) as string[]))
+    }
     setLoading(false)
-  }, [])
+  }, [isAdmin])
+
+  async function markReviewed(keys: string[]) {
+    if (!supabase) return
+    const { error: e } = await supabase.from('app_settings').upsert({ key: 'permissions_reviewed', value: { keys } })
+    if (e) return toast.error(friendlyError(e))
+    setReviewed(new Set(keys))
+    toast.success('Marked as reviewed. New items will get a “New” badge again when the app adds them.')
+  }
+
+  /** Ticks from a "Start with" choice: dept:<id>, tpl:<id> or user:<email>. */
+  function startingPerms(choice: string): { perms: Perms; source: string } | null {
+    const [kind, id] = [choice.slice(0, choice.indexOf(':')), choice.slice(choice.indexOf(':') + 1)]
+    if (kind === 'dept') {
+      const d = departments.find((x) => x.id === id)
+      return d ? { perms: d.default_permissions as Perms, source: `department preset ${d.name}` } : null
+    }
+    if (kind === 'tpl') {
+      const t = templates.find((x) => x.id === id)
+      return t ? { perms: t.perms, source: `template ${t.name}` } : null
+    }
+    if (kind === 'user') return { perms: permsByUser[id] ?? {}, source: `copied from ${id}` }
+    return null
+  }
   useEffect(() => {
     // load() only sets state after the database answers.
     // oxlint-disable-next-line react/set-state-in-effect
@@ -68,7 +115,20 @@ export default function UsersPage() {
         .insert(newDepts.map((department_id) => ({ user_email: address, department_id })))
       if (e2) toast.error(`Added, but the departments could not be saved: ${friendlyError(e2)}`)
     }
-    toast.success(`${address} can now sign in as ${role}.`)
+    // New people start with nothing ticked, unless a starting point was chosen.
+    const start = role === 'staff' && isAdmin ? startingPerms(startWith) : null
+    if (start) {
+      const { error: e3 } = await supabase.rpc('set_user_permissions', { p_email: address, p_perms: start.perms, p_source: start.source })
+      if (e3) toast.error(`Added, but the permissions could not be saved: ${friendlyError(e3)}`)
+    }
+    toast.success(
+      role === 'admin'
+        ? `${address} can now sign in as an admin.`
+        : start
+          ? `${address} added, starting from ${start.source}.`
+          : `${address} added with nothing ticked yet. Click “Permissions” to choose what they see.`,
+    )
+    setStartWith('')
     setNewDepts([])
     setEmail('')
     setName('')
@@ -81,7 +141,7 @@ export default function UsersPage() {
     if (!supabase) return
     const { error: e } = await supabase.from('allowed_users').update({ role: newRole }).eq('email', u.email)
     if (e) return toast.error(friendlyError(e))
-    toast.success(`${u.email} is now ${newRole}.`)
+    toast.success(`${u.email} is now ${newRole === 'admin' ? 'an admin (sees and does everything)' : 'a user (sees only what is ticked)'}.`)
     load()
   }
 
@@ -139,10 +199,18 @@ export default function UsersPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <AdminPageHeader title="Users">
-        Only people on this list can use the app. They sign in with a code sent to their email, no password. <strong>Staff</strong>{' '}
-        can add and edit orders, customers, machines and payments. <strong>Admins</strong> can also use these Admin pages
-        and delete things.
+        Only people on this list can use the app. They sign in with a code sent to their email, no password.{' '}
+        <strong>Admins</strong> can see and do everything. Everyone else (<strong>users</strong>) sees only what is ticked
+        for them under <strong>Permissions</strong>; new people start with nothing ticked.
       </AdminPageHeader>
+
+      {isAdmin && !loading && CATALOG.some((i) => !reviewed.has(i.key)) && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
+          <span className="mr-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-semibold text-white">New</span>
+          {CATALOG.filter((i) => !reviewed.has(i.key)).length} permission item(s) are new since you last reviewed. They
+          are off for everyone until you tick them. Open anyone’s <strong>Permissions</strong> to see them.
+        </div>
+      )}
 
       <form onSubmit={add} className="rounded-lg border border-slate-200 bg-white p-4" noValidate>
         <h2 className="mb-3 font-semibold">Add a person</h2>
@@ -153,12 +221,16 @@ export default function UsersPage() {
           <Field label="Name (optional)" htmlFor="new-name">
             <input id="new-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
-          <Field label="Role" htmlFor="new-role">
-            <select id="new-role" className={inputClass} value={role} onChange={(e) => setRole(e.target.value as Role)}>
-              <option value="staff">Staff</option>
-              <option value="admin">Admin</option>
-            </select>
-          </Field>
+          {isAdmin ? (
+            <Field label="Role" htmlFor="new-role">
+              <select id="new-role" className={inputClass} value={role} onChange={(e) => setRole(e.target.value as Role)}>
+                <option value="staff">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            </Field>
+          ) : (
+            <span />
+          )}
           <div className="flex items-start md:pt-6">
             <button type="submit" className={buttonClass}>
               Add
@@ -169,6 +241,41 @@ export default function UsersPage() {
           <div className="mt-3">
             <div className="mb-1 text-sm font-medium text-slate-700">Departments</div>
             {deptCheckboxes(newDepts, setNewDepts)}
+          </div>
+        )}
+        {isAdmin && role === 'staff' && (
+          <div className="mt-3 max-w-md">
+            <Field label="Start with" htmlFor="new-start" hint="Nothing is ticked unless you choose a starting point. You can fine-tune afterwards.">
+              <select id="new-start" className={inputClass} value={startWith} onChange={(e) => setStartWith(e.target.value)}>
+                <option value="">Nothing ticked</option>
+                <optgroup label="Department presets">
+                  {activeDepartments.map((d) => (
+                    <option key={d.id} value={`dept:${d.id}`}>
+                      {d.name}
+                      {Object.keys(d.default_permissions ?? {}).length === 0 ? ' (empty)' : ''}
+                    </option>
+                  ))}
+                </optgroup>
+                {templates.length > 0 && (
+                  <optgroup label="Templates">
+                    {templates.map((t) => (
+                      <option key={t.id} value={`tpl:${t.id}`}>
+                        {t.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
+                <optgroup label="Copy from">
+                  {users
+                    .filter((u) => u.role === 'staff')
+                    .map((u) => (
+                      <option key={u.email} value={`user:${u.email}`}>
+                        {u.name ? `${u.name} (${u.email})` : u.email}
+                      </option>
+                    ))}
+                </optgroup>
+              </select>
+            </Field>
           </div>
         )}
         {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
@@ -223,21 +330,61 @@ export default function UsersPage() {
                 </button>
               </div>
             </div>
-            <select
-              aria-label={`Role for ${u.email}`}
-              className={selectClass}
-              value={u.role}
-              onChange={(e) => changeRole(u, e.target.value as Role)}
-            >
-              <option value="staff">Staff</option>
-              <option value="admin">Admin</option>
-            </select>
+            {isAdmin && u.role === 'staff' && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-slate-500">
+                  {Object.keys(permsByUser[u.email] ?? {}).length} ticked
+                </span>
+                <button type="button" className={secondaryButtonClass} onClick={() => setEditingPerms(u)}>
+                  Permissions
+                </button>
+              </div>
+            )}
+            {u.role === 'admin' && <span className="text-xs text-slate-500">Sees and does everything</span>}
+            {isAdmin ? (
+              <select
+                aria-label={`Role for ${u.email}`}
+                className={selectClass}
+                value={u.role}
+                onChange={(e) => changeRole(u, e.target.value as Role)}
+              >
+                <option value="staff">User</option>
+                <option value="admin">Admin</option>
+              </select>
+            ) : (
+              <span className="text-xs text-slate-600">{u.role === 'admin' ? 'Admin' : 'User'}</span>
+            )}
             <button type="button" className="text-sm text-red-700 underline" onClick={() => setRemoving(u)}>
               Remove access
             </button>
           </div>
         ))}
       </div>
+
+      {editingPerms && (
+        <PermissionEditor
+          email={editingPerms.email}
+          name={editingPerms.name}
+          initial={permsByUser[editingPerms.email] ?? {}}
+          departments={departments}
+          memberOf={memberships[editingPerms.email] ?? []}
+          templates={templates}
+          otherUsers={users
+            .filter((u) => u.role === 'staff' && u.email !== editingPerms.email)
+            .map((u): OtherUser => ({ email: u.email, name: u.name, perms: permsByUser[u.email] ?? {} }))}
+          reviewed={reviewed}
+          onReviewed={markReviewed}
+          onTemplatesChanged={() => {
+            load()
+            reloadDepartments()
+          }}
+          onClose={() => setEditingPerms(null)}
+          onSaved={() => {
+            setEditingPerms(null)
+            load()
+          }}
+        />
+      )}
 
       {editingDepts && (
         <Modal

@@ -1,3 +1,4 @@
+// @permission-scope order.tab.activity, admin.activity
 import { useEffect, useState } from 'react'
 import { friendlyError } from '../../lib/format'
 import { activityTime, activityWho, describeActivity, type ActivityEntry } from '../../lib/activity'
@@ -15,7 +16,7 @@ export default function ActivityList({ orderId, reloadKey }: { orderId: string; 
     let cancelled = false
     Promise.all([
       supabase
-        .from('activity_log')
+        .from('activity_feed')
         .select('id, at, user_email, user_departments, table_name, record_id, action, changes')
         .eq('order_id', orderId)
         .order('at', { ascending: false })
