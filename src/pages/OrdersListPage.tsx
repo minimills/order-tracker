@@ -9,6 +9,7 @@ import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
+import { stageLabel, useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { PAYMENT_STATUSES, STAGES, type OrderSummaryRow } from '../lib/types'
 import { useOptionList } from '../lib/useOptionList'
@@ -46,7 +47,7 @@ const COLUMNS: ColumnDef[] = [
     value: (o) => o.order_number * 1000 + (o.split_number ?? 0),
     render: /* @rendered-inside-can */ (o) => <span className="font-medium">{o.order_code}</span>,
   },
-  { key: 'stage', permission: 'orders.list.column.stage', label: 'Stage', value: (o) => o.stage },
+  { key: 'stage', permission: 'orders.list.column.stage', label: 'Stage', value: (o) => stageLabel(o.stage) },
   { key: 'customer', permission: 'orders.list.column.customer', label: 'Customer', value: (o) => o.customer_name },
   { key: 'company', permission: 'orders.list.column.company', label: 'Company', value: (o) => o.customer_company },
   {
@@ -169,6 +170,7 @@ function compare(a: Value, b: Value) {
 export default function OrdersListPage() {
   const navigate = useNavigate()
   const { can } = usePermissions()
+  useStageLabels()
   // Only the columns this person may see (on screen and in the CSV file).
   const allowedColumns = COLUMNS.filter((c) => can(c.permission))
   const visibleColumns = allowedColumns.filter((c) => !c.csvOnly)
@@ -310,7 +312,7 @@ export default function OrdersListPage() {
               <option value="all">All stages</option>
               {STAGES.map((s) => (
                 <option key={s} value={s}>
-                  {s}
+                  {stageLabel(s)}
                 </option>
               ))}
             </select>

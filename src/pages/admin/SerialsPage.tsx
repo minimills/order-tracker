@@ -1,4 +1,5 @@
 // @permission-scope admin.serials
+import { stageLabel } from '../../lib/stages'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -247,7 +248,7 @@ export default function SerialsPage() {
                     (m.needs_serial ? (
                       <span className="rounded bg-amber-100 px-1.5 py-0.5 font-sans text-xs font-medium text-amber-900">Needs serial</span>
                     ) : (
-                      <span className="font-sans text-slate-400">none ({m.orders?.stage})</span>
+                      <span className="font-sans text-slate-400">none ({stageLabel(m.orders?.stage)})</span>
                     ))}
                   {m.serial_manual && m.serial_number && <span className="ml-1 font-sans text-xs text-slate-500">(by hand)</span>}
                 </td>

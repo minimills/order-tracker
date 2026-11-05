@@ -1,4 +1,5 @@
 // @permission-scope admin.archive
+import { stageLabel } from '../../lib/stages'
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
@@ -57,7 +58,7 @@ export default function ArchivePage() {
     const error = o.error ?? c.error ?? m.error
     if (error) toast.error(friendlyError(error))
     const all: Item[] = [
-      ...o.data.map((x) => ({ table: 'orders' as const, id: x.id, label: `Order ${x.order_code}`, detail: `${x.customer_name} · ${x.stage}`, archived_at: x.archived_at, archived_by: x.archived_by })),
+      ...o.data.map((x) => ({ table: 'orders' as const, id: x.id, label: `Order ${x.order_code}`, detail: `${x.customer_name} · ${stageLabel(x.stage)}`, archived_at: x.archived_at, archived_by: x.archived_by })),
       ...c.data.map((x) => ({ table: 'customers' as const, id: x.id, label: x.name, detail: x.company ?? '', archived_at: x.archived_at, archived_by: x.archived_by })),
       ...m.data.map((x) => ({
         table: 'order_machines' as const,

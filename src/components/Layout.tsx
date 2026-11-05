@@ -3,6 +3,7 @@ import { NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { usePermissions } from '../lib/permissions'
 import { NAV_ITEMS } from '../lib/permissions/nav'
+import { useStageLabels } from '../lib/stages'
 import AlertsBell from './alerts/AlertsBell'
 import AlertsProvider from './alerts/AlertsProvider'
 import NotificationPrompt from './alerts/NotificationPrompt'
@@ -13,6 +14,8 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false)
   const { session, role, signOut } = useAuth()
   const { can, canAny } = usePermissions()
+  // Loads the stage names an admin may have renamed (Admin → Stage names).
+  useStageLabels()
   // The menu is built from permissions: pages someone can't see are not in it.
   const items = NAV_ITEMS.filter(
     (i) => (!i.permission || can(i.permission, i.level)) && (!i.anyOf || canAny(i.anyOf, i.level)),

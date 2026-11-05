@@ -3,12 +3,17 @@ import type { DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { countryFlag } from '../../lib/country'
 import { showDate } from '../../lib/dates'
+import { usePermissions } from '../../lib/permissions'
+import { stageLabel } from '../../lib/stages'
 import { STAGES, type OrderSummaryRow, type Stage } from '../../lib/types'
 import Can from '../Can'
 import { badgeClass, orderBadges, type Badge } from './badges'
+import MachineChips, { type ChipMachine } from './MachineChips'
 
 type Props = {
   order: OrderSummaryRow
+  /** This order's machines, for the chips. */
+  machines: ChipMachine[]
   canMoveUp: boolean
   canMoveDown: boolean
   onMoveUp: () => void
@@ -47,6 +52,7 @@ export default function OrderCard(props: Props) {
   const badges = orderBadges(o)
   const allReady = o.machines_count > 0 && o.machines_ready_count === o.machines_count
   const STAGE_SET = new Set(props.stageChoices)
+  const { can } = usePermissions()
 
   return (
     <div
@@ -87,7 +93,12 @@ export default function OrderCard(props: Props) {
         </div>
       </Can>
       <Can permission="orders.board.card.machines">
-        {o.machines_list && <div className="mt-1 text-xs text-slate-600">{o.machines_list}</div>}
+        <MachineChips
+          machines={props.machines}
+          showStatus={can('orders.board.card.chip_status')}
+          showCrated={can('crating')}
+          showSerials={can('orders.board.card.chip_serials')}
+        />
       </Can>
       <Can permission="orders.board.card.ship_date">
         <div className="mt-1 text-xs text-slate-600">
@@ -146,7 +157,7 @@ export default function OrderCard(props: Props) {
                 <option value="">Move to…</option>
                 {STAGES.filter((s) => s !== o.stage && STAGE_SET.has(s)).map((s) => (
                   <option key={s} value={s}>
-                    {s}
+                    {stageLabel(s)}
                   </option>
                 ))}
               </select>

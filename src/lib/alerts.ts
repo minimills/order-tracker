@@ -1,3 +1,4 @@
+import { stageLabel } from './stages'
 import { createContext, useContext } from 'react'
 import { showDate } from './dates'
 import { formatMoney } from './format'
@@ -69,7 +70,7 @@ export function alertText(a: AlertRow): { title: string; detail: string } {
         detail: `Expected ship date ${showDate(a.alert_date)} · ${who}`,
       }
     case 'voltage_unknown':
-      return { title: `Voltage unknown · ${order}`, detail: `${a.stage} order with no voltage set · ${who}` }
+      return { title: `Voltage unknown · ${order}`, detail: `${stageLabel(a.stage)} order with no voltage set · ${who}` }
   }
 }
 

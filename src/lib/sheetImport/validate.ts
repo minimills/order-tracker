@@ -1,3 +1,5 @@
+import { stageLabel } from '../stages'
+import { BOARD_STAGES, STAGES } from '../types'
 import { readPlace } from './places'
 import { NOT_A_MACHINE, type DraftMachine, type DraftOrder, type Level, type Msg } from './types'
 
@@ -76,8 +78,7 @@ export type CheckResult = {
   boardOrder: CheckedOrder[]
 }
 
-const STAGES = ['Quote', 'Confirmed', 'In production', 'Ready to ship', 'Shipped', 'Cancelled']
-const BOARD = new Set(['Confirmed', 'In production', 'Ready to ship'])
+const BOARD = new Set<string>(BOARD_STAGES)
 
 const words = (s: string) =>
   s
@@ -335,17 +336,19 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
     const wantedStage = d.stage.trim()
     const included = machines.filter((x) => x.action === 'new' || x.action === 'update')
     if (wantedStage) {
-      stage = STAGES.find((s) => s.toLowerCase() === wantedStage.toLowerCase()) ?? ''
-      if (!stage) add('error', `Stage "${wantedStage}" is not one of: ${STAGES.join(', ')}.`)
+      // The stored name ("Ready") or the name shown in the app ("Ready / testing") both work.
+      const w = wantedStage.toLowerCase()
+      stage = STAGES.find((s) => s.toLowerCase() === w || stageLabel(s).toLowerCase() === w) ?? ''
+      if (!stage) add('error', `Stage "${wantedStage}" is not one of: ${STAGES.map((s) => stageLabel(s)).join(', ')}.`)
     } else if (d.actual) stage = 'Shipped'
     else if (/cancel+ed|\bcancel\b/i.test(d.notes)) stage = 'Cancelled'
     else if (included.length > 0 && included.every((x) => x.draft.built)) stage = 'Ready to ship'
     else if (included.some((x) => x.draft.built)) stage = 'In production'
     else stage = 'Confirmed'
     if (existing) {
-      if ((stage === 'Shipped' || stage === 'Cancelled') && existing.stage !== stage) add('info', `Stage will change from ${existing.stage} to ${stage}.`)
+      if ((stage === 'Shipped' || stage === 'Cancelled') && existing.stage !== stage) add('info', `Stage will change from ${stageLabel(existing.stage)} to ${stageLabel(stage)}.`)
       else if (stage !== existing.stage) {
-        add('info', `The app has this order as ${existing.stage}; that is kept.`)
+        add('info', `The app has this order as ${stageLabel(existing.stage)}; that is kept.`)
         stage = existing.stage
       }
     } else if (!wantedStage) {

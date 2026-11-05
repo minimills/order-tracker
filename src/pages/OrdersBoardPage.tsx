@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState, type DragEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import MoveDialog, { type MoveRequest } from '../components/board/MoveDialog'
+import { ChipLegend, type ChipMachine } from '../components/board/MachineChips'
 import OrderCard from '../components/board/OrderCard'
 import Can from '../components/Can'
 import { secondaryButtonClass } from '../components/form'
@@ -9,6 +10,7 @@ import { addDaysISO, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
+import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { BOARD_STAGES, STAGES, type OrderSummaryRow, type Stage } from '../lib/types'
 
@@ -18,6 +20,7 @@ const COLUMNS: Column[] = [
   { stage: 'Quote', title: 'Quote', permission: 'orders.board.column.quote' },
   { stage: 'Confirmed', title: 'Confirmed', permission: 'orders.board.column.confirmed' },
   { stage: 'In production', title: 'In production', permission: 'orders.board.column.in_production' },
+  { stage: 'Ready', title: 'Ready', permission: 'orders.board.column.ready' },
   { stage: 'Ready to ship', title: 'Ready to ship', permission: 'orders.board.column.ready_to_ship' },
   { stage: 'Shipped', title: 'Shipped', hint: 'last 30 days', permission: 'orders.board.column.shipped' },
 ]
@@ -36,6 +39,9 @@ export default function OrdersBoardPage() {
   const { can } = usePermissions()
   const canReorder = can('orders.board.reorder', 'edit')
   const canChangeStage = can('orders.board.change_stage', 'edit')
+  const seesChips = can('orders.board.card.machines')
+  const label = useStageLabels()
+  const [machines, setMachines] = useState<Map<string, ChipMachine[]>>(new Map())
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
   const [loading, setLoading] = useState(true)
   const [dragId, setDragId] = useState<string | null>(null)
@@ -64,11 +70,26 @@ export default function OrdersBoardPage() {
           .order('id'),
       ),
     ])
-    const error = open.error ?? shipped.error
+    const all = [...open.data, ...shipped.data]
+    // Machines for the chips (only when this person may see them).
+    const byOrder = new Map<string, ChipMachine[]>()
+    let machineError = null
+    if (seesChips) {
+      const ids = all.map((o) => o.id)
+      for (let i = 0; i < ids.length; i += 150) {
+        const m = await fetchAll<ChipMachine>(() =>
+          supabase!.from('order_machine_status').select('*').in('order_id', ids.slice(i, i + 150)).order('id'),
+        )
+        machineError ??= m.error
+        for (const row of m.data) byOrder.set(row.order_id, [...(byOrder.get(row.order_id) ?? []), row])
+      }
+    }
+    const error = open.error ?? shipped.error ?? machineError
     if (error) toast.error(friendlyError(error))
-    setOrders([...open.data, ...shipped.data])
+    setMachines(byOrder)
+    setOrders(all)
     setLoading(false)
-  }, [])
+  }, [seesChips])
 
   useEffect(() => {
     // load() only sets state after the database answers.
@@ -85,7 +106,7 @@ export default function OrdersBoardPage() {
     const stageChange = stage !== null && stage !== order.stage
     const where = anchor ? `${place === 'before' ? 'above' : 'below'} order ${anchor.order_code}` : ''
     const description = stageChange
-      ? `move to ${stage}${where ? `, ${where}` : ''}`
+      ? `move to ${label(stage)}${where ? `, ${where}` : ''}`
       : `move ${where}`
     setRequest({ order, stage: stageChange ? stage : null, anchor, place, description })
   }
@@ -163,6 +184,11 @@ export default function OrdersBoardPage() {
                 {canChangeStage ? ' and “Move to…”' : ''}.
               </p>
             )}
+            <Can permission="orders.board.card.chip_status">
+              <div className="mt-1">
+                <ChipLegend showCrated={can('crating')} />
+              </div>
+            </Can>
           </div>
           <div className="flex gap-2">
             <Can permission="orders.board.refresh">
@@ -202,7 +228,7 @@ export default function OrdersBoardPage() {
                   >
                     <div className="flex items-baseline justify-between px-3 pt-3 pb-2">
                       <h2 className="font-semibold">
-                        {column.title}
+                        {label(column.stage)}
                         {column.hint && <span className="ml-1 text-xs font-normal text-slate-500">({column.hint})</span>}
                       </h2>
                       <span className="text-xs text-slate-500">{column.orders.length}</span>
@@ -217,6 +243,7 @@ export default function OrdersBoardPage() {
                           <OrderCard
                             key={o.id}
                             order={o}
+                            machines={machines.get(o.id) ?? []}
                             canMoveUp={canReorder && onBoard && i > 0}
                             canMoveDown={canReorder && onBoard && i < column.orders.length - 1}
                             onMoveUp={() => moveWithin(o, 'up')}

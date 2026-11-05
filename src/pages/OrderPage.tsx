@@ -19,6 +19,7 @@ import { CRATING_STAGES, loadCrates, type CrateMachine, type NumberedCrate } fro
 import { showDate } from '../lib/dates'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
+import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { STAGES, type Customer, type OrderSummaryRow, type PaymentRow, type Stage } from '../lib/types'
 
@@ -28,6 +29,7 @@ type Machine = {
   serial_manual: boolean
   needs_serial: boolean
   ready: boolean
+  checklist_done: boolean
   machine_types: { name: string; code: string | null } | null
 }
 
@@ -44,6 +46,7 @@ const stageTone: Record<Stage, string> = {
   Quote: 'bg-slate-100 text-slate-700',
   Confirmed: 'bg-blue-100 text-blue-800',
   'In production': 'bg-indigo-100 text-indigo-800',
+  Ready: 'bg-cyan-100 text-cyan-800',
   'Ready to ship': 'bg-teal-100 text-teal-800',
   Shipped: 'bg-green-100 text-green-800',
   Cancelled: 'bg-slate-200 text-slate-500',
@@ -75,6 +78,7 @@ export default function OrderPage() {
   const { refresh: refreshAlerts } = useAlerts()
   const [params, setParams] = useSearchParams()
   const { can } = usePermissions()
+  const label = useStageLabels()
   const tabs = TABS.filter((t) => can(t.permission))
   const tab = (tabs.some((t) => t.key === params.get('tab')) ? params.get('tab') : 'details') as TabKey
   const seesPayments = can('payments')
@@ -115,7 +119,7 @@ export default function OrderPage() {
       supabase.from('customer_list').select('*').eq('id', o.customer_id).maybeSingle(),
       supabase
         .from('order_machines')
-        .select('id, serial_number, serial_manual, needs_serial, ready, machine_types(name, code)')
+        .select('id, serial_number, serial_manual, needs_serial, ready, checklist_done, machine_types(name, code)')
         .eq('order_id', id)
         .eq('archived', false)
         .order('created_at'),
@@ -168,7 +172,14 @@ export default function OrderPage() {
     )
   }
 
-  const askMove = (stage: Stage) => setMove({ order, stage, anchor: null, place: 'after', description: `move to ${stage}` })
+  const askMove = (stage: Stage) => setMove({ order, stage, anchor: null, place: 'after', description: `move to ${label(stage)}` })
+
+  async function toggleChecklist(m: Machine) {
+    if (!supabase || !canTickChecklist) return
+    const { error: e } = await supabase.from('order_machines').update({ checklist_done: !m.checklist_done }).eq('id', m.id)
+    if (e) return toast.error(friendlyError(e))
+    load()
+  }
 
   async function toggleReady(m: Machine) {
     if (!supabase || !canTickBuilt) return
@@ -208,6 +219,7 @@ export default function OrderPage() {
   const canShip = order.stage !== 'Shipped' && order.stage !== 'Cancelled'
   const canEditNotes = can('order.field.notes', 'edit')
   const canTickBuilt = can('order.machines.built', 'edit')
+  const canTickChecklist = can('order.machines.checklist', 'edit')
 
   // Crating: shown on Ready to ship and Shipped orders (and on any order that already has crates).
   const showCrating = seesCrating && (CRATING_STAGES.includes(order.stage) || crates.length > 0)
@@ -231,7 +243,7 @@ export default function OrderPage() {
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-2xl font-semibold">Order {order.order_code}</h1>
-                <span className={`rounded px-2 py-0.5 text-sm font-medium ${stageTone[order.stage]}`}>{order.stage}</span>
+                <span className={`rounded px-2 py-0.5 text-sm font-medium ${stageTone[order.stage]}`}>{label(order.stage)}</span>
                 {order.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-sm">Archived</span>}
               </div>
               <Can permission="order.header.customer">
@@ -297,7 +309,7 @@ export default function OrderPage() {
                   <option value="">Change stage…</option>
                   {STAGES.filter((s) => s !== order.stage).map((s) => (
                     <option key={s} value={s}>
-                      {s}
+                      {label(s)}
                     </option>
                   ))}
                 </select>
@@ -389,6 +401,20 @@ export default function OrderPage() {
                               />
                               <span className={m.ready ? 'font-medium text-green-700' : 'text-slate-500'}>
                                 {m.ready ? 'Built' : 'Not built'}
+                              </span>
+                            </label>
+                          </Can>
+                          <Can permission="order.machines.checklist">
+                            <label className={`flex items-center gap-2 ${canTickChecklist ? 'cursor-pointer' : ''}`}>
+                              <input
+                                type="checkbox"
+                                className="h-5 w-5 accent-blue-700"
+                                checked={m.checklist_done}
+                                disabled={!canTickChecklist}
+                                onChange={() => toggleChecklist(m)}
+                              />
+                              <span className={m.checklist_done ? 'font-medium text-blue-700' : 'text-slate-500'}>
+                                {m.checklist_done ? 'Checklist done' : 'Final checklist'}
                               </span>
                             </label>
                           </Can>

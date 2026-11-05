@@ -1,4 +1,5 @@
 // @permission-scope admin.import
+import { stageLabel } from '../../../lib/stages'
 import { useState } from 'react'
 import { formatMoney } from '../../../lib/format'
 import { NOT_A_MACHINE, type DraftMachine, type DraftOrder, type Msg } from '../../../lib/sheetImport/types'
@@ -81,7 +82,7 @@ export default function OrderPreview({ checked: c, types, options, onOrder, onMa
         <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${c.existing ? 'bg-blue-100 text-blue-800' : 'bg-slate-100 text-slate-700'}`}>
           {c.existing ? 'Update' : 'New'}
         </span>
-        <span className="text-xs text-slate-600">{c.stage}</span>
+        <span className="text-xs text-slate-600">{stageLabel(c.stage)}</span>
         <button type="button" className="ml-auto text-xs underline" onClick={() => setEditing((e) => !e)}>
           {editing ? 'Done editing' : 'Edit'}
         </button>

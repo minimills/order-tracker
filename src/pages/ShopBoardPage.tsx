@@ -10,6 +10,7 @@ import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
+import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import type { OrderSummaryRow } from '../lib/types'
 
@@ -36,6 +37,7 @@ export default function ShopBoardPage() {
   const company = useCompany()
   const { can } = usePermissions()
   const seesCrating = can('crating')
+  const label = useStageLabels()
 
   useEffect(() => {
     if (!supabase) return
@@ -163,7 +165,7 @@ export default function ShopBoardPage() {
                   </div>
                   <div className="mt-1 flex flex-wrap gap-x-6 text-lg text-slate-700">
                     <Can permission="shop_board.detail.stage">
-                      <span>{o.stage}</span>
+                      <span>{label(o.stage)}</span>
                     </Can>
                     <Can permission="shop_board.detail.ship_date">
                       <span>Ship by {showDate(o.expected_ship_date)}</span>
