@@ -7,6 +7,7 @@ import { ADMIN_KEYS } from './lib/permissions/catalog'
 import ActivityPage from './pages/admin/ActivityPage'
 import AdminHomePage from './pages/admin/AdminHomePage'
 import ArchivePage from './pages/admin/ArchivePage'
+import ChecklistTemplatesPage from './pages/admin/ChecklistTemplatesPage'
 import BoardAdminPage from './pages/admin/BoardAdminPage'
 import CompanyPage from './pages/admin/CompanyPage'
 import DepartmentsPage from './pages/admin/DepartmentsPage'
@@ -18,6 +19,8 @@ import StagesPage from './pages/admin/StagesPage'
 import UsersPage from './pages/admin/UsersPage'
 import AgentPage from './pages/AgentPage'
 import AlertSettingsPage from './pages/AlertSettingsPage'
+import ChecklistPage from './pages/ChecklistPage'
+import ChecklistPrintPage from './pages/ChecklistPrintPage'
 import CratingReportPage from './pages/CratingReportPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
@@ -47,6 +50,17 @@ export default function App() {
           </RequireAuth>
         }
       />
+      {/* Printable signed final check (no sidebar). */}
+      <Route
+        path="checklists/:machineId/print"
+        element={
+          <RequireAuth>
+            <Page permission="checklist.print">
+              <ChecklistPrintPage />
+            </Page>
+          </RequireAuth>
+        }
+      />
       <Route
         element={
           <RequireAuth>
@@ -61,6 +75,7 @@ export default function App() {
         <Route path="orders/new" element={<Page permission="orders.new" level="edit"><NewOrderPage /></Page>} />
         <Route path="orders/:id" element={<Page permission="order.page"><OrderPage /></Page>} />
         <Route path="payments" element={<Page permission="payments.page"><PaymentsPage /></Page>} />
+        <Route path="checklists/:machineId" element={<Page permission="checklist"><ChecklistPage /></Page>} />
         <Route path="crating" element={<Page permission="reports.crating"><CratingReportPage /></Page>} />
         <Route path="agent" element={<Page permission="agent"><AgentPage /></Page>} />
         <Route path="settings" element={<Page permission="settings"><SettingsPage /></Page>} />
@@ -75,6 +90,7 @@ export default function App() {
           <Route path="machine-types" element={<Page permission="admin.machine_types" level="edit"><MachineTypesPage /></Page>} />
           <Route path="dropdowns" element={<Page permission="admin.dropdowns" level="edit"><OptionListsPage /></Page>} />
           <Route path="stages" element={<Page permission="admin.stages" level="edit"><StagesPage /></Page>} />
+          <Route path="checklists" element={<Page permission="admin.checklists" level="edit"><ChecklistTemplatesPage /></Page>} />
           <Route path="records" element={<Page permission="admin.records" level="edit"><RecordsPage /></Page>} />
           <Route path="serials" element={<Page permission="admin.serials" level="edit"><SerialsPage /></Page>} />
           <Route path="board" element={<Page permission="admin.board" level="edit"><BoardAdminPage /></Page>} />

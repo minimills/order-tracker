@@ -15,6 +15,7 @@ import PaymentStatus from '../components/payments/PaymentStatus'
 import ReceivePaymentDialog from '../components/payments/ReceivePaymentDialog'
 import { useAlerts } from '../lib/alerts'
 import { countryFlag } from '../lib/country'
+import { checklistStatusText, type ChecklistStatusRow } from '../lib/checklists'
 import { CRATING_STAGES, loadCrates, type CrateMachine, type NumberedCrate } from '../lib/crates'
 import { showDate } from '../lib/dates'
 import { formatMoney, friendlyError } from '../lib/format'
@@ -83,12 +84,14 @@ export default function OrderPage() {
   const tab = (tabs.some((t) => t.key === params.get('tab')) ? params.get('tab') : 'details') as TabKey
   const seesPayments = can('payments')
   const seesCrating = can('crating')
+  const seesChecks = can('checklist')
 
   const [order, setOrder] = useState<OrderSummaryRow | null>(null)
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [machines, setMachines] = useState<Machine[]>([])
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [crates, setCrates] = useState<NumberedCrate[]>([])
+  const [checks, setChecks] = useState<Map<string, ChecklistStatusRow>>(new Map())
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
@@ -115,7 +118,7 @@ export default function OrderPage() {
       return
     }
     const o = data as OrderSummaryRow
-    const [c, m, p, cr] = await Promise.all([
+    const [c, m, p, cr, ck] = await Promise.all([
       supabase.from('customer_list').select('*').eq('id', o.customer_id).maybeSingle(),
       supabase
         .from('order_machines')
@@ -127,6 +130,9 @@ export default function OrderPage() {
         ? supabase.from('payment_overview').select('*').eq('order_id', id).order('due_date', { nullsFirst: false })
         : Promise.resolve({ data: [] as PaymentRow[], error: null }),
       loadCrates(seesCrating ? [id] : []),
+      seesChecks
+        ? supabase.from('machine_checklist_status').select('*').eq('order_id', id)
+        : Promise.resolve({ data: [] as ChecklistStatusRow[], error: null }),
     ])
     const firstError = c.error ?? m.error ?? p.error ?? cr.error
     if (firstError) toast.error(friendlyError(firstError))
@@ -142,10 +148,11 @@ export default function OrderPage() {
     )
     setPayments((p.data as PaymentRow[]) ?? [])
     setCrates(cr.byOrder.get(id) ?? [])
+    setChecks(new Map(((ck.data as ChecklistStatusRow[] | null) ?? []).map((r) => [r.machine_id, r])))
     setError(null)
     setLoading(false)
     setReloadKey((k) => k + 1)
-  }, [id, seesPayments, seesCrating])
+  }, [id, seesPayments, seesCrating, seesChecks])
 
   useEffect(() => {
     // load() only sets state after the database answers.
@@ -173,13 +180,6 @@ export default function OrderPage() {
   }
 
   const askMove = (stage: Stage) => setMove({ order, stage, anchor: null, place: 'after', description: `move to ${label(stage)}` })
-
-  async function toggleChecklist(m: Machine) {
-    if (!supabase || !canTickChecklist) return
-    const { error: e } = await supabase.from('order_machines').update({ checklist_done: !m.checklist_done }).eq('id', m.id)
-    if (e) return toast.error(friendlyError(e))
-    load()
-  }
 
   async function toggleReady(m: Machine) {
     if (!supabase || !canTickBuilt) return
@@ -219,7 +219,6 @@ export default function OrderPage() {
   const canShip = order.stage !== 'Shipped' && order.stage !== 'Cancelled'
   const canEditNotes = can('order.field.notes', 'edit')
   const canTickBuilt = can('order.machines.built', 'edit')
-  const canTickChecklist = can('order.machines.checklist', 'edit')
 
   // Crating: shown on Ready to ship and Shipped orders (and on any order that already has crates).
   const showCrating = seesCrating && (CRATING_STAGES.includes(order.stage) || crates.length > 0)
@@ -404,20 +403,6 @@ export default function OrderPage() {
                               </span>
                             </label>
                           </Can>
-                          <Can permission="order.machines.checklist">
-                            <label className={`flex items-center gap-2 ${canTickChecklist ? 'cursor-pointer' : ''}`}>
-                              <input
-                                type="checkbox"
-                                className="h-5 w-5 accent-blue-700"
-                                checked={m.checklist_done}
-                                disabled={!canTickChecklist}
-                                onChange={() => toggleChecklist(m)}
-                              />
-                              <span className={m.checklist_done ? 'font-medium text-blue-700' : 'text-slate-500'}>
-                                {m.checklist_done ? 'Checklist done' : 'Final checklist'}
-                              </span>
-                            </label>
-                          </Can>
                           <span className="font-mono font-semibold sm:min-w-36">
                             {m.serial_number ??
                               (m.needs_serial ? (
@@ -430,6 +415,33 @@ export default function OrderPage() {
                           </span>
                           <span className="flex-1">{m.machine_types?.name}</span>
                           {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">serial typed by hand</span>}
+                          <Can permission="order.machines.checklist">
+                            {(m.ready || checks.get(m.id)?.checklist_id) && (
+                              <div className="order-last basis-full border-l-2 border-blue-200 pl-2 text-sm sm:ml-8">
+                                <span
+                                  className={
+                                    checks.get(m.id)?.status === 'signed'
+                                      ? 'font-medium text-green-700'
+                                      : checks.get(m.id)?.status === 'in_progress'
+                                        ? 'text-blue-800'
+                                        : 'text-slate-500'
+                                  }
+                                >
+                                  Final check:{' '}
+                                  {checks.get(m.id) ? checklistStatusText(checks.get(m.id)!) : 'Not started'}
+                                </span>{' '}
+                                <Can permission="checklist">
+                                  <Link to={`/checklists/${m.id}`} className="ml-1 inline-block rounded-md border border-slate-300 px-2 py-0.5 text-xs font-medium hover:bg-slate-50">
+                                    {checks.get(m.id)?.status === 'signed'
+                                      ? 'View final check'
+                                      : checks.get(m.id)?.status === 'in_progress'
+                                        ? 'Continue final check'
+                                        : 'Final check'}
+                                  </Link>
+                                </Can>
+                              </div>
+                            )}
+                          </Can>
                           {showCrating && (
                             <Can permission="crating">
                               <div className="order-last basis-full border-l-2 border-teal-200 pl-2 sm:ml-8">

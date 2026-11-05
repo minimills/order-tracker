@@ -26,6 +26,7 @@ export const GROUPS = [
   'New order',
   'Orders list',
   'Order page',
+  'Final check',
   'Payments',
   'Crating',
   'Reports',
@@ -204,7 +205,7 @@ export const CATALOG: PermissionItem[] = [
     Machines: [
       { key: 'order.section.machines', label: 'Machines section', levels: V, requires: 'order.page' },
       { key: 'order.machines.built', label: 'Built tick boxes (see / tick)', levels: VE, requires: 'order.section.machines', db: true },
-      { key: 'order.machines.checklist', label: '“Final checklist done” tick boxes (see / tick)', levels: VE, requires: 'order.section.machines', db: true },
+      { key: 'order.machines.checklist', label: 'Final check status per machine (and the “Final check” button with “Final check: see”)', levels: V, requires: 'order.section.machines', needs: ['checklist'] },
       { key: 'order.machines.add', label: '“+ Add machines”', levels: E, requires: 'order.section.machines', db: true },
       { key: 'order.machines.remove', label: '“Remove” a machine', levels: E, requires: 'order.section.machines', db: true },
     ],
@@ -223,6 +224,29 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.field.order_total', label: 'Order total (everywhere in the app)', levels: VE, db: true },
       { key: 'order.field.notes', label: 'Notes', levels: VE, db: true },
       { key: 'order.section.payments', label: 'Payments section on the order page', levels: V, requires: 'order.page', needs: ['payments'] },
+    ],
+  }),
+
+  ...group('Final check', {
+    'Checklist screen': [
+      { key: 'checklist', label: 'See final checks (checklist screen, progress on orders and board chips)', levels: V, db: true, page: true },
+      { key: 'checklist.filters', label: '“Show only items still to do”, open / close sections', levels: V, requires: 'checklist' },
+      { key: 'checklist.col.notes', label: 'Notes column', levels: V, requires: 'checklist' },
+      { key: 'checklist.col.who', label: 'Who ticked each item and when', levels: V, requires: 'checklist' },
+      { key: 'checklist.general_notes', label: 'General notes for the machine', levels: V, requires: 'checklist' },
+      { key: 'checklist.photos', label: 'Photo spots (photos come in a later update)', levels: V, requires: 'checklist' },
+      { key: 'checklist.print', label: 'Print / PDF of a signed checklist', levels: V, requires: 'checklist' },
+    ],
+    Actions: [
+      { key: 'checklist.start', label: 'Start a machine’s final check', levels: E, requires: 'checklist', db: true },
+      { key: 'checklist.tick', label: 'Tick items, mark N/A, write item notes and general notes', levels: E, requires: 'checklist', db: true },
+      { key: 'checklist.add_item', label: 'Add a one-off item to one machine’s checklist', levels: E, requires: 'checklist', db: true },
+      { key: 'checklist.sign', label: 'Sign off a final check (locks it)', levels: E, requires: 'checklist', db: true },
+      { key: 'checklist.unlock', label: 'Unlock a signed final check (with a reason, logged)', levels: E, requires: 'checklist', db: true },
+    ],
+    'Moving orders': [
+      { key: 'checklist.ready_reminder', label: 'Reminder of machines whose final check hasn’t started, when moving an order to Ready', levels: V, needs: ['checklist'] },
+      { key: 'checklist.override', label: 'Move an order to Ready to ship without all final checks signed (with a reason, logged)', levels: E, db: true },
     ],
   }),
 
@@ -287,6 +311,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.departments', label: 'Departments', levels: E, db: true },
       { key: 'admin.machine_types', label: 'Machine types', levels: E, db: true },
       { key: 'admin.dropdowns', label: 'Dropdown lists', levels: E, db: true },
+      { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
       { key: 'admin.stages', label: 'Stage names (rename what people see, e.g. “Ready / testing”)', levels: E, db: true },
       { key: 'admin.records', label: 'Orders, customers & machines: edit any field, archive', levels: E, db: true },
       { key: 'admin.serials', label: 'Serial numbers', levels: E, db: true },
