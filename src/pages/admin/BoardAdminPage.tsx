@@ -1,4 +1,5 @@
 // @permission-scope admin.board
+import { stageLabel } from '../../lib/stages'
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -107,7 +108,7 @@ export default function BoardAdminPage() {
                 </Link>{' '}
                 <span className="text-slate-600">· {r.customer_name}</span>
                 <div className="truncate text-xs text-slate-500">
-                  {r.stage}
+                  {stageLabel(r.stage)}
                   {r.machines_list && ` · ${r.machines_list}`}
                 </div>
               </div>

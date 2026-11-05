@@ -1,4 +1,5 @@
 import { CATALOG_BY_KEY } from './permissions/catalog'
+import { stageLabel } from './stages'
 
 export type ActivityEntry = {
   id: number
@@ -50,6 +51,7 @@ const LABELS: Record<string, string> = {
   due_date: 'Due date',
   received_date: 'Received date',
   received_amount: 'Received amount',
+  short_name: 'Short name',
   length_cm: 'Length (cm)',
   width_cm: 'Width (cm)',
   height_cm: 'Height (cm)',
@@ -77,7 +79,7 @@ const THING: Record<string, string> = {
 }
 
 /** Fields that are filled in automatically and only add noise. */
-const HIDDEN = new Set(['id', 'created_at', 'archived_at', 'archived_by', 'order_id', 'order_code'])
+const HIDDEN = new Set(['id', 'created_at', 'archived_at', 'archived_by', 'order_id', 'order_code', 'checklist_done_at', 'checklist_done_by'])
 
 export const activityTime = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Halifax',
@@ -100,7 +102,7 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     const stage = c.stage as Change | undefined
     const pos = c.board_position as Change | undefined
     const ship = c.actual_ship_date as Change | undefined
-    if (stage && stage.old !== stage.new) lines.push(`Stage: ${stage.old} → ${stage.new}`)
+    if (stage && stage.old !== stage.new) lines.push(`Stage: ${stageLabel(String(stage.old))} → ${stageLabel(String(stage.new))}`)
     if (pos && pos.old !== pos.new) lines.push(`Place in shop queue: ${pos.old ?? 'not in queue'} → ${pos.new ?? 'left the queue'}`)
     if (ship && ship.old !== ship.new) lines.push(`Actual ship date: ${show(ship.old, typeNames)} → ${show(ship.new, typeNames)}`)
     for (const s of (c.serial_changes as { order: string; old: string | null; new: string | null }[]) ?? []) {
@@ -177,6 +179,8 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
       const ch = v as Change
       if (k === 'ready') return ch.new ? 'Marked built' : 'Marked not built'
       if (k === 'archived') return ch.new ? 'Archived' : 'Brought back from archive'
+      if (k === 'stage') return `Stage: ${stageLabel(String(ch.old))} → ${stageLabel(String(ch.new))}`
+      if (k === 'checklist_done') return ch.new ? 'Final checklist done' : 'Final checklist un-ticked'
       if (k === 'default_permissions' || k === 'perms') {
         const o = (ch.old ?? {}) as Perms
         const n = (ch.new ?? {}) as Perms

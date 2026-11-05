@@ -14,6 +14,7 @@ import ImportPage from './pages/admin/ImportPage'
 import OptionListsPage from './pages/admin/OptionListsPage'
 import RecordsPage from './pages/admin/RecordsPage'
 import SerialsPage from './pages/admin/SerialsPage'
+import StagesPage from './pages/admin/StagesPage'
 import UsersPage from './pages/admin/UsersPage'
 import AgentPage from './pages/AgentPage'
 import AlertSettingsPage from './pages/AlertSettingsPage'
@@ -73,6 +74,7 @@ export default function App() {
           <Route path="departments" element={<Page permission="admin.departments" level="edit"><DepartmentsPage /></Page>} />
           <Route path="machine-types" element={<Page permission="admin.machine_types" level="edit"><MachineTypesPage /></Page>} />
           <Route path="dropdowns" element={<Page permission="admin.dropdowns" level="edit"><OptionListsPage /></Page>} />
+          <Route path="stages" element={<Page permission="admin.stages" level="edit"><StagesPage /></Page>} />
           <Route path="records" element={<Page permission="admin.records" level="edit"><RecordsPage /></Page>} />
           <Route path="serials" element={<Page permission="admin.serials" level="edit"><SerialsPage /></Page>} />
           <Route path="board" element={<Page permission="admin.board" level="edit"><BoardAdminPage /></Page>} />

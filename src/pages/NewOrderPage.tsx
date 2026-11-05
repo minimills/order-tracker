@@ -9,13 +9,13 @@ import MachinesSection from '../components/order/MachinesSection'
 import { cleanSerial, newMachineRow, parseQuantity, previewSerials, type MachineRow } from '../components/order/machines'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
+import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
-import { CURRENCIES, type Currency, type Customer, type MachineType, type Stage } from '../lib/types'
+import { BOARD_STAGES, CURRENCIES, type Currency, type Customer, type MachineType, type Stage } from '../lib/types'
 import { useOptionList } from '../lib/useOptionList'
 
 /** Stages a brand-new order can start in. */
-const NEW_ORDER_STAGES: Stage[] = ['Quote', 'Confirmed', 'In production', 'Ready to ship']
-const BOARD_STAGES: Stage[] = ['Confirmed', 'In production', 'Ready to ship']
+const NEW_ORDER_STAGES: Stage[] = ['Quote', ...BOARD_STAGES]
 
 /** "10,000.50" or "$10000" -> 10000.5; empty -> null; nonsense -> NaN */
 function parseMoney(text: string) {
@@ -35,6 +35,7 @@ export default function NewOrderPage() {
   // "Split shipment" on an order page opens /orders/new?split=76
   const [searchParams] = useSearchParams()
   const { can } = usePermissions()
+  const label = useStageLabels()
   // What this person may fill in; everything else keeps its default.
   const may = {
     number: can('orders.new.field.order_number', 'edit'),
@@ -410,14 +411,16 @@ export default function NewOrderPage() {
               level="edit"
               fallback={
                 <Field label="Stage">
-                  <p className="py-2 text-sm text-slate-700">{stage}</p>
+                  <p className="py-2 text-sm text-slate-700">{label(stage)}</p>
                 </Field>
               }
             >
               <Field label="Stage" htmlFor="stage" hint={getsSerials ? 'Goes to the bottom of the shop board.' : undefined}>
                 <select id="stage" className={inputClass} value={stage} onChange={(e) => setStage(e.target.value as Stage)}>
                   {NEW_ORDER_STAGES.map((s) => (
-                    <option key={s}>{s}</option>
+                    <option key={s} value={s}>
+                      {label(s)}
+                    </option>
                   ))}
                 </select>
               </Field>

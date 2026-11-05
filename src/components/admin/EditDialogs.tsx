@@ -5,6 +5,7 @@ import { friendlyError } from '../../lib/format'
 import { parseMoney } from '../../lib/money'
 import { supabase } from '../../lib/supabase'
 import { CURRENCIES, STAGES, type Currency, type Customer, type MachineType, type Stage } from '../../lib/types'
+import { stageLabel } from '../../lib/stages'
 import { useOptionList } from '../../lib/useOptionList'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
 import { emailPattern, parseEmails } from '../order/customer'
@@ -143,7 +144,9 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
         <Field label="Stage" htmlFor="ao-stage" hint="Changing it here skips the serial preview; the board shows it first.">
           <select id="ao-stage" className={inputClass} value={f.stage} onChange={set('stage')}>
             {STAGES.map((s) => (
-              <option key={s}>{s}</option>
+              <option key={s} value={s}>
+                {stageLabel(s)}
+              </option>
             ))}
           </select>
         </Field>

@@ -10,11 +10,12 @@ import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
+import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
-import type { OrderSummaryRow, PaymentRow } from '../lib/types'
+import { BOARD_STAGES, type OrderSummaryRow, type PaymentRow } from '../lib/types'
 
 /** Stages where the money is really owed (not quotes, not cancelled). */
-const OWED_STAGES = ['Confirmed', 'In production', 'Ready to ship', 'Shipped']
+const OWED_STAGES = ['Confirmed', 'In production', 'Ready', 'Ready to ship', 'Shipped']
 
 function sumByCurrency<T>(rows: T[], currency: (r: T) => string, amount: (r: T) => number) {
   const sums: Record<string, number> = {}
@@ -96,6 +97,7 @@ function Box({ title, children, aside }: { title: string; children: ReactNode; a
 export default function DashboardPage() {
   const { can } = usePermissions()
   const seesPayments = can('payments')
+  const label = useStageLabels()
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -135,6 +137,7 @@ export default function DashboardPage() {
   const stats = useMemo(() => {
     const year = today.slice(0, 4)
     const inProduction = orders.filter((o) => o.stage === 'In production').length
+    const ready = orders.filter((o) => o.stage === 'Ready').length
     const readyToShip = orders.filter((o) => o.stage === 'Ready to ship').length
     const outstanding = sumByCurrency(
       orders.filter((o) => OWED_STAGES.includes(o.stage) && (o.amount_outstanding ?? 0) > 0),
@@ -170,7 +173,7 @@ export default function DashboardPage() {
       .slice(0, 5)
 
     const upcomingShips = orders
-      .filter((o) => ['Confirmed', 'In production', 'Ready to ship'].includes(o.stage) && o.expected_ship_date)
+      .filter((o) => BOARD_STAGES.includes(o.stage) && o.expected_ship_date)
       .sort((a, b) => a.expected_ship_date!.localeCompare(b.expected_ship_date!))
       .slice(0, 10)
 
@@ -179,6 +182,7 @@ export default function DashboardPage() {
     return {
       year,
       inProduction,
+      ready,
       readyToShip,
       outstanding,
       overdue,
@@ -212,14 +216,19 @@ export default function DashboardPage() {
         </div>
 
         {/* ---------- Cards ---------- */}
-        <div className="grid grid-cols-2 gap-3 empty:hidden lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 empty:hidden sm:grid-cols-3 xl:grid-cols-6">
           <Can permission="dashboard.card.in_production">
-            <Card title="In production" to={boardLink}>
+            <Card title={label('In production')} to={boardLink}>
               <Big>{stats.inProduction}</Big>
             </Card>
           </Can>
+          <Can permission="dashboard.card.ready">
+            <Card title={label('Ready')} to={boardLink}>
+              <Big>{stats.ready}</Big>
+            </Card>
+          </Can>
           <Can permission="dashboard.card.ready_to_ship">
-            <Card title="Ready to ship" to={boardLink}>
+            <Card title={label('Ready to ship')} to={boardLink}>
               <Big>{stats.readyToShip}</Big>
             </Card>
           </Can>
@@ -249,7 +258,7 @@ export default function DashboardPage() {
             </Card>
           </Can>
           <Can permission="dashboard.card.average_delay">
-            <Card title={`Average delay (${stats.year})`} to={shippedLink}>
+            <Card title={`Average delay (${stats.year})`} to={shippedLink} className="col-span-2 sm:col-span-1">
               {stats.avgDelay === null ? (
                 <Big>—</Big>
               ) : (
@@ -334,7 +343,7 @@ export default function DashboardPage() {
                           <span className="min-w-0">
                             <span className="font-medium">Order {o.order_code}</span>
                             <span className="block truncate text-slate-600">
-                              {o.customer_name} · {o.machines_ready_count}/{o.machines_count} built · {o.stage}
+                              {o.customer_name} · {o.machines_ready_count}/{o.machines_count} built · {label(o.stage)}
                             </span>
                           </span>
                           <span className="shrink-0 text-right">

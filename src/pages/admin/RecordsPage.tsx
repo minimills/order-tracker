@@ -1,4 +1,5 @@
 // @permission-scope admin.records
+import { stageLabel } from '../../lib/stages'
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -166,7 +167,7 @@ export default function RecordsPage() {
                         </Link>
                       </td>
                       <td className="px-3 py-2">{o.customer_name}</td>
-                      <td className="px-3 py-2">{o.stage}</td>
+                      <td className="px-3 py-2">{stageLabel(o.stage)}</td>
                       <td className="px-3 py-2 text-right tabular-nums">{formatMoney(o.order_total, o.currency)}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button type="button" className={small} onClick={() => setEditOrder(o)}>

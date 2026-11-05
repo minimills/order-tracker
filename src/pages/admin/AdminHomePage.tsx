@@ -1,4 +1,4 @@
-// @permission-scope admin.users, admin.departments, admin.machine_types, admin.dropdowns, admin.records, admin.serials, admin.board, admin.alerts, admin.company, admin.import, admin.archive, admin.activity
+// @permission-scope admin.users, admin.departments, admin.machine_types, admin.dropdowns, admin.stages, admin.records, admin.serials, admin.board, admin.alerts, admin.company, admin.import, admin.archive, admin.activity
 import { Link } from 'react-router-dom'
 import Can from '../../components/Can'
 
@@ -7,6 +7,7 @@ const sections = [
   { to: '/admin/departments', permission: 'admin.departments', icon: '🏭', title: 'Departments', text: 'Office, Fabrication Shop, Shipping… Add, rename, reorder.' },
   { to: '/admin/machine-types', permission: 'admin.machine_types', icon: '⚙️', title: 'Machine types', text: 'Names, codes and next serial numbers.' },
   { to: '/admin/dropdowns', permission: 'admin.dropdowns', icon: '📝', title: 'Dropdown lists', text: 'Voltage, delivery equipment, freight and payment types.' },
+  { to: '/admin/stages', permission: 'admin.stages', icon: '🏷', title: 'Stage names', text: 'Rename what people see for each stage, e.g. “Ready / testing”.' },
   { to: '/admin/records', permission: 'admin.records', icon: '🗂', title: 'Orders, customers & machines', text: 'Edit any field, or archive.' },
   { to: '/admin/serials', permission: 'admin.serials', icon: '🔢', title: 'Serial numbers', text: 'Fix one serial by hand, or re-sequence a machine type.' },
   { to: '/admin/board', permission: 'admin.board', icon: '📋', title: 'Shop queue', text: 'Put an order at a set place in the queue, or tidy the whole queue.' },

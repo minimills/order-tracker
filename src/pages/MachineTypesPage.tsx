@@ -10,12 +10,12 @@ import type { MachineType } from '../lib/types'
 
 type Usage = { machine_type_id: string; machines_count: number; highest_serial_number: number | null }
 
-type Draft = { name: string; code: string; next: string }
+type Draft = { name: string; short: string; code: string; next: string }
 
 const codePattern = /^[A-Z0-9]*$/
 
 function toDraft(t: MachineType): Draft {
-  return { name: t.name, code: t.code ?? '', next: String(t.next_serial_number) }
+  return { name: t.name, short: t.short_name ?? '', code: t.code ?? '', next: String(t.next_serial_number) }
 }
 
 /** Checks a draft; returns error messages by field. */
@@ -41,13 +41,13 @@ export default function MachineTypesPage() {
   const [showArchived, setShowArchived] = useState(false)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [newType, setNewType] = useState<Draft>({ name: '', code: '', next: '1' })
+  const [newType, setNewType] = useState<Draft>({ name: '', short: '', code: '', next: '1' })
   const [newErrors, setNewErrors] = useState<Partial<Record<keyof Draft, string>>>({})
 
   const load = useCallback(async () => {
     if (!supabase) return
     const [t, u] = await Promise.all([
-      supabase.from('machine_types').select('id, name, code, next_serial_number, archived').order('name'),
+      supabase.from('machine_types').select('id, name, short_name, code, next_serial_number, archived').order('name'),
       supabase.from('machine_type_usage').select('*'),
     ])
     if (t.error) toast.error(friendlyError(t.error))
@@ -69,7 +69,12 @@ export default function MachineTypesPage() {
     const d = drafts[t.id]
     if (!d) return false
     const o = toDraft(t)
-    return d.name.trim() !== o.name || d.code.trim().toUpperCase() !== o.code || d.next.trim() !== o.next
+    return (
+      d.name.trim() !== o.name ||
+      d.short.trim() !== o.short ||
+      d.code.trim().toUpperCase() !== o.code ||
+      d.next.trim() !== o.next
+    )
   }
 
   async function save(t: MachineType) {
@@ -89,7 +94,7 @@ export default function MachineTypesPage() {
     setSavingId(t.id)
     const { error } = await supabase
       .from('machine_types')
-      .update({ name: d.name.trim(), code: code || null, next_serial_number: Number(d.next) })
+      .update({ name: d.name.trim(), short_name: d.short.trim() || null, code: code || null, next_serial_number: Number(d.next) })
       .eq('id', t.id)
     setSavingId(null)
     if (error) return toast.error(friendlyError(error))
@@ -120,7 +125,7 @@ export default function MachineTypesPage() {
     setSavingId(null)
     if (error) return toast.error(friendlyError(error))
     toast.success(`${newType.name.trim()} added.`)
-    setNewType({ name: '', code: '', next: '1' })
+    setNewType({ name: '', short: '', code: '', next: '1' })
     load()
   }
 
@@ -219,6 +224,15 @@ export default function MachineTypesPage() {
                     value={d.name}
                     disabled={!isAdmin}
                     onChange={(ev) => set('name', ev.target.value)}
+                  />
+                  <input
+                    aria-label="Short name for board chips"
+                    className={`${inputClass} mt-1 text-xs`}
+                    value={d.short}
+                    maxLength={30}
+                    placeholder="Short name for board chips (optional)"
+                    disabled={!isAdmin}
+                    onChange={(ev) => set('short', ev.target.value)}
                   />
                 </Field>
                 <Field label="Code" error={e.code} className="[&>label]:md:hidden">

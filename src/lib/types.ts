@@ -4,6 +4,8 @@ export type MachineType = {
   id: string
   name: string
   code: string | null
+  /** Short name for the machine chips on the board (empty = full name). */
+  short_name?: string | null
   next_serial_number: number
   archived: boolean
 }
@@ -32,13 +34,14 @@ export type OptionItem = {
 export type OptionListName = 'voltage' | 'delivery_equipment' | 'freight_type' | 'payment_type'
 
 /** Stages are fixed (the board and serial rules depend on them). */
-export const STAGES = ['Quote', 'Confirmed', 'In production', 'Ready to ship', 'Shipped', 'Cancelled'] as const
+/** Stored values. Names shown on screen can be renamed in Admin → Stage names (see src/lib/stages.ts). */
+export const STAGES = ['Quote', 'Confirmed', 'In production', 'Ready', 'Ready to ship', 'Shipped', 'Cancelled'] as const
 export type Stage = (typeof STAGES)[number]
 
 export const CURRENCIES = ['CAD', 'USD'] as const
 export type Currency = (typeof CURRENCIES)[number]
 
-export const BOARD_STAGES: Stage[] = ['Confirmed', 'In production', 'Ready to ship']
+export const BOARD_STAGES: Stage[] = ['Confirmed', 'In production', 'Ready', 'Ready to ship']
 
 export const PAYMENT_STATUSES = ['Overdue', 'Due soon', 'Open', 'Paid', 'No total'] as const
 export type PaymentStatus = (typeof PAYMENT_STATUSES)[number]
