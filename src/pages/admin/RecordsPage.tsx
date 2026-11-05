@@ -1,3 +1,4 @@
+// @permission-scope admin.records
 import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -52,7 +53,7 @@ export default function RecordsPage() {
           .order('order_number', { ascending: false })
           .order('split_number', { ascending: false, nullsFirst: false }),
       ),
-      fetchAll<Customer>(() => supabase!.from('customers').select('*').eq('archived', false).order('name')),
+      fetchAll<Customer>(() => supabase!.from('customer_list').select('*').eq('archived', false).order('name')),
       fetchAll<MachineRow>(() =>
         supabase!
           .from('order_machines')

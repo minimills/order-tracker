@@ -8,6 +8,7 @@ const place = (n: number | null) => {
 export type PositionChange = { order: string; old: number | null; new: number | null }
 
 /** Lists queue-place and serial changes (old → new) for a confirm box. */
+/* @layout-helper */
 export default function ChangeList({ positions = [], serials = [] }: { positions?: PositionChange[]; serials?: SerialChange[] }) {
   if (positions.length === 0 && serials.length === 0) {
     return <p className="text-sm text-slate-500">Nothing would change.</p>

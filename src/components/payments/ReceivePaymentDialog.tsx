@@ -1,3 +1,4 @@
+// @permission-scope payments.action.mark_received
 import { useState } from 'react'
 import { useAlerts } from '../../lib/alerts'
 import { todayISO } from '../../lib/dates'

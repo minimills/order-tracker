@@ -1,9 +1,12 @@
+// @permission-scope orders.board.reorder, orders.board.change_stage, order.action.change_stage, order.action.mark_shipped
 import { useEffect, useRef, useState } from 'react'
 import { useAlerts } from '../../lib/alerts'
 import { todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
+import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
 import type { OrderSummaryRow, Stage } from '../../lib/types'
+import Can from '../Can'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../form'
 
 /** What the user asked for: a new stage and/or a new place on the board. */
@@ -56,6 +59,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
   const [preview, setPreview] = useState<Preview | null>(null)
   // Machines on the order with no crate yet (only checked when marking Shipped).
   const [notCrated, setNotCrated] = useState(0)
+  const warnCrating = usePermissions().can('crating.ship_warning')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const confirmRef = useRef<HTMLButtonElement>(null)
@@ -74,7 +78,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
   }, [request])
 
   useEffect(() => {
-    if (!supabase || !toShipped) return
+    if (!supabase || !toShipped || !warnCrating) return
     let cancelled = false
     supabase
       .from('machine_crating')
@@ -87,7 +91,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
     return () => {
       cancelled = true
     }
-  }, [request, toShipped])
+  }, [request, toShipped, warnCrating])
 
   useEffect(() => {
     if (preview) confirmRef.current?.focus()
@@ -141,12 +145,14 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
                 onChange={(e) => setShipDate(e.target.value)}
               />
             </Field>
+            <Can permission="crating.ship_warning">
             {notCrated > 0 && (
               <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900" role="alert">
                 ⚠️ {notCratedText(notCrated, request.order.machines_count)} You can still mark it shipped; you can also
                 fill in the crates later from the order page.
               </p>
             )}
+            </Can>
             {request.order.machines_ready_count < request.order.machines_count && (
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-0.5" checked={markBuilt} onChange={(e) => setMarkBuilt(e.target.checked)} />

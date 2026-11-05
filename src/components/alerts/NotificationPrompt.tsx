@@ -1,3 +1,4 @@
+// @permission-scope alerts.popups
 import { useState } from 'react'
 import {
   askNotificationPermission,

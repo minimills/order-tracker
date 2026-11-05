@@ -1,9 +1,10 @@
+// @permission-scope alerts.bell
 import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { alertText, useAlerts, type AlertRow } from '../../lib/alerts'
-import { useAuth } from '../../lib/auth'
 import { askNotificationPermission, notificationPermission } from '../../lib/browserNotifications'
 import { showDate } from '../../lib/dates'
+import Can from '../Can'
 
 const smallButton = 'rounded border border-slate-300 bg-white px-2 py-0.5 text-xs hover:bg-slate-50'
 
@@ -12,10 +13,21 @@ function AlertItem({ alert, onOpen }: { alert: AlertRow; onOpen: () => void }) {
   const t = alertText(alert)
   return (
     <li className={`border-l-4 px-3 py-2.5 ${alert.severity === 'red' ? 'border-red-500' : 'border-amber-400'}`}>
-      <Link to={`/orders/${alert.order_id}`} onClick={onOpen} className="block hover:underline">
-        <div className={`text-sm font-medium ${alert.severity === 'red' ? 'text-red-800' : 'text-slate-900'}`}>{t.title}</div>
-        <div className="text-xs text-slate-600">{t.detail}</div>
-      </Link>
+      <Can
+        permission="order.page"
+        fallback={
+          <div>
+            <div className={`text-sm font-medium ${alert.severity === 'red' ? 'text-red-800' : 'text-slate-900'}`}>{t.title}</div>
+            <div className="text-xs text-slate-600">{t.detail}</div>
+          </div>
+        }
+      >
+        <Link to={`/orders/${alert.order_id}`} onClick={onOpen} className="block hover:underline">
+          <div className={`text-sm font-medium ${alert.severity === 'red' ? 'text-red-800' : 'text-slate-900'}`}>{t.title}</div>
+          <div className="text-xs text-slate-600">{t.detail}</div>
+        </Link>
+      </Can>
+      <Can permission="alerts.snooze" level="edit">
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
         {alert.hidden ? (
           <>
@@ -40,6 +52,7 @@ function AlertItem({ alert, onOpen }: { alert: AlertRow; onOpen: () => void }) {
           </>
         )}
       </div>
+      </Can>
     </li>
   )
 }
@@ -47,7 +60,6 @@ function AlertItem({ alert, onOpen }: { alert: AlertRow; onOpen: () => void }) {
 /** The bell in the top bar: shows how many alerts there are and lists them. */
 export default function AlertsBell() {
   const { visible, hidden, loading } = useAlerts()
-  const { isAdmin } = useAuth()
   const [open, setOpen] = useState(false)
   const [showHidden, setShowHidden] = useState(false)
   const [permission, setPermission] = useState(notificationPermission())
@@ -92,11 +104,11 @@ export default function AlertsBell() {
         <div className="absolute right-0 z-30 mt-2 w-[min(26rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
             <span className="font-semibold">Alerts</span>
-            {isAdmin && (
+            <Can permission="admin.alerts" level="edit">
               <Link to="/admin/alerts" onClick={() => setOpen(false)} className="text-xs text-slate-600 underline">
                 Alert settings
               </Link>
-            )}
+            </Can>
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto">
@@ -129,6 +141,7 @@ export default function AlertsBell() {
             )}
           </div>
 
+          <Can permission="alerts.popups">
           <div className="border-t border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
             {permission === 'granted' && 'Desktop notifications are on for new overdue items.'}
             {permission === 'denied' && 'Desktop notifications are blocked. Allow them in your browser’s site settings.'}
@@ -143,6 +156,7 @@ export default function AlertsBell() {
               </button>
             )}
           </div>
+          </Can>
         </div>
       )}
     </div>

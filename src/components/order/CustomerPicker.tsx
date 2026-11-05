@@ -1,4 +1,6 @@
+// @permission-scope orders.new
 import { useEffect, useState } from 'react'
+import Can from '../Can'
 import { supabase } from '../../lib/supabase'
 import type { Customer } from '../../lib/types'
 import { Field, inputClass, secondaryButtonClass } from '../form'
@@ -25,7 +27,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
     const timer = setTimeout(async () => {
       setSearching(true)
       const { data } = await supabase!
-        .from('customers')
+        .from('customer_list')
         .select('id, name, company, emails, phone, country, state_province, notes, archived')
         .eq('archived', false)
         .or(`name.ilike.%${cleaned}%,company.ilike.%${cleaned}%`)
@@ -69,21 +71,23 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
               onChange={(e) => set('company', e.target.value)}
             />
           </Field>
-          <Field
-            label="Email addresses"
-            htmlFor="cust-emails"
-            hint="Separate several emails with commas."
-            error={errors.emails}
-            className="md:col-span-2"
-          >
-            <input
-              id="cust-emails"
-              className={inputClass}
-              value={c.emails}
-              placeholder="jane@farm.com, orders@farm.com"
-              onChange={(e) => set('emails', e.target.value)}
-            />
-          </Field>
+          <Can permission="customer.contact" level="edit">
+            <Field
+              label="Email addresses"
+              htmlFor="cust-emails"
+              hint="Separate several emails with commas."
+              error={errors.emails}
+              className="md:col-span-2"
+            >
+              <input
+                id="cust-emails"
+                className={inputClass}
+                value={c.emails}
+                placeholder="jane@farm.com, orders@farm.com"
+                onChange={(e) => set('emails', e.target.value)}
+              />
+            </Field>
+          </Can>
           <Field label="Country" htmlFor="cust-country">
             <input
               id="cust-country"
@@ -164,15 +168,17 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
           ))}
         </ul>
       )}
-      <button
-        type="button"
-        className="text-sm font-medium text-slate-700 underline"
-        onClick={() =>
-          onChange({ mode: 'new', customer: { ...emptyNewCustomer, name: results.length === 0 ? query.trim() : '' } })
-        }
-      >
-        + Add a new customer
-      </button>
+      <Can permission="orders.new.customer.new" level="edit">
+        <button
+          type="button"
+          className="text-sm font-medium text-slate-700 underline"
+          onClick={() =>
+            onChange({ mode: 'new', customer: { ...emptyNewCustomer, name: results.length === 0 ? query.trim() : '' } })
+          }
+        >
+          + Add a new customer
+        </button>
+      </Can>
     </div>
   )
 }

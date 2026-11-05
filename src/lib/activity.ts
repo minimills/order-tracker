@@ -1,3 +1,5 @@
+import { CATALOG_BY_KEY } from './permissions/catalog'
+
 export type ActivityEntry = {
   id: number
   at: string
@@ -70,6 +72,8 @@ const THING: Record<string, string> = {
   allowed_users: 'user',
   app_settings: 'settings',
   crates: 'crate',
+  permission_templates: 'permission template',
+  user_permissions: 'permissions',
 }
 
 /** Fields that are filled in automatically and only add noise. */
@@ -103,6 +107,14 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
       lines.push(`Serial (order ${s.order}): ${s.old ?? 'none'} → ${s.new ?? 'none'}`)
     }
     return { title: 'Moved on the board', lines }
+  }
+
+  if (e.action === 'admin' && (c as Record<string, unknown>).action === 'permissions') {
+    const ch = c as { user?: string; source?: string | null; added?: Perms; removed?: Perms; changed?: Record<string, { old: string; new: string }> }
+    return {
+      title: `Permissions changed for ${ch.user ?? e.record_id}${ch.source ? ` (${ch.source})` : ''}`,
+      lines: permissionLines(ch.added ?? {}, ch.removed ?? {}, ch.changed ?? {}),
+    }
   }
 
   if (e.action === 'admin') {
@@ -165,12 +177,41 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
       const ch = v as Change
       if (k === 'ready') return ch.new ? 'Marked built' : 'Marked not built'
       if (k === 'archived') return ch.new ? 'Archived' : 'Brought back from archive'
+      if (k === 'default_permissions' || k === 'perms') {
+        const o = (ch.old ?? {}) as Perms
+        const n = (ch.new ?? {}) as Perms
+        const added = Object.fromEntries(Object.entries(n).filter(([key]) => !(key in o)))
+        const removed = Object.fromEntries(Object.entries(o).filter(([key]) => !(key in n)))
+        const changed = Object.fromEntries(
+          Object.entries(n)
+            .filter(([key, v]) => key in o && o[key] !== v)
+            .map(([key, v]) => [key, { old: o[key], new: v }]),
+        )
+        return `Permissions: ${permissionLines(added, removed, changed).join('; ') || 'no change'}`
+      }
       return `${LABELS[k] ?? k}: ${show(ch.old, typeNames)} → ${show(ch.new, typeNames)}`
     })
   const name = c.name ?? c.email ?? c.value ?? c.key
   return { title: `Changed ${thing}${typeof name === 'string' ? ` ${name}` : ''}`, lines }
 }
 
+
+type Perms = Record<string, string>
+
+const permName = (key: string) => {
+  const item = CATALOG_BY_KEY.get(key)
+  return item ? `${item.group}: ${item.label}` : key
+}
+const levelWord = (v: string) => (v === 'edit' ? 'can change' : 'can see')
+
+/** "+ Dashboard: Next ship dates (can see)", "− …", "… : can see → can change". */
+function permissionLines(added: Perms, removed: Perms, changed: Record<string, { old: string; new: string }>) {
+  return [
+    ...Object.entries(added).map(([k, v]) => `+ ${permName(k)} (${levelWord(v)})`),
+    ...Object.entries(removed).map(([k]) => `− ${permName(k)}`),
+    ...Object.entries(changed).map(([k, v]) => `${permName(k)}: ${levelWord(v.old)} → ${levelWord(v.new)}`),
+  ]
+}
 
 /** "anna@x.com (Office, Shipping)" or "automatic / database". */
 export function activityWho(e: ActivityEntry) {

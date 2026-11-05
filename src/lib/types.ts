@@ -58,7 +58,8 @@ export type OrderSummaryRow = {
   customer_country: string | null
   customer_state_province: string | null
   currency: Currency
-  order_total: number
+  /** Empty without the "order.field.order_total" permission. */
+  order_total: number | null
   expected_ship_date: string | null
   actual_ship_date: string | null
   delay_days: number | null
@@ -73,10 +74,11 @@ export type OrderSummaryRow = {
   serials: string | null
   down_payment_amount: number | null
   down_payment_percent: number | null
-  total_paid: number
-  amount_outstanding: number
+  /** Payment columns are empty without the "payments" permission. */
+  total_paid: number | null
+  amount_outstanding: number | null
   next_due_date: string | null
-  payment_status: PaymentStatus
+  payment_status: PaymentStatus | null
   archived: boolean
 }
 

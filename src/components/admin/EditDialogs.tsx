@@ -1,3 +1,4 @@
+// @permission-scope admin.records, admin.archive
 import { useEffect, useState } from 'react'
 import { useAlerts } from '../../lib/alerts'
 import { friendlyError } from '../../lib/format'
@@ -35,7 +36,7 @@ export type AdminOrder = {
   stage: Stage
   order_date: string
   currency: Currency
-  order_total: number
+  order_total: number | null
   expected_ship_date: string | null
   actual_ship_date: string | null
   voltage: string
@@ -53,7 +54,7 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
     stage: order.stage,
     order_date: order.order_date,
     currency: order.currency,
-    order_total: String(order.order_total),
+    order_total: order.order_total === null ? '' : String(order.order_total),
     expected_ship_date: order.expected_ship_date ?? '',
     actual_ship_date: order.actual_ship_date ?? '',
     voltage: order.voltage,
@@ -84,8 +85,10 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
     if (!/^\d+$/.test(f.order_number) || Number(f.order_number) < 1) return setError('The order number must be a whole number.')
     if (f.split_number && (!/^\d+$/.test(f.split_number) || Number(f.split_number) < 1))
       return setError('The split number must be a whole number, or empty.')
-    const total = parseMoney(f.order_total)
-    if (total === null || Number.isNaN(total)) return setError('Enter the order total as a number.')
+    // People without "order.field.order_total" don't see the total; it is then left as it is.
+    const keepTotal = order.order_total === null && f.order_total.trim() === ''
+    const total = keepTotal ? null : parseMoney(f.order_total)
+    if (!keepTotal && (total === null || Number.isNaN(total))) return setError('Enter the order total as a number.')
     if (!f.order_date) return setError('Enter the order date.')
     setSaving(true)
     const { error: e } = await supabase
@@ -97,7 +100,7 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
         stage: f.stage,
         order_date: f.order_date,
         currency: f.currency,
-        order_total: total,
+        ...(keepTotal ? {} : { order_total: total }),
         expected_ship_date: f.expected_ship_date || null,
         actual_ship_date: f.actual_ship_date || null,
         voltage: f.voltage,

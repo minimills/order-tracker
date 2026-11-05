@@ -1,3 +1,4 @@
+// @permission-scope dashboard.chart.delay_by_month
 import { useState } from 'react'
 
 export type MonthDelay = {

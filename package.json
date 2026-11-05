@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run check:perms && tsc -b && vite build",
     "lint": "oxlint",
+    "check:perms": "node --experimental-strip-types --no-warnings scripts/check-permissions.mjs",
+    "prepare": "git config core.hooksPath .githooks || true",
     "preview": "vite preview"
   },
   "dependencies": {

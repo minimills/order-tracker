@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import Can from '../components/Can'
 import { buttonClass, Field, inputClass, Section } from '../components/form'
 import CustomerPicker from '../components/order/CustomerPicker'
 import { emailPattern, parseEmails, type CustomerChoice } from '../components/order/customer'
 import MachinesSection from '../components/order/MachinesSection'
 import { cleanSerial, newMachineRow, parseQuantity, previewSerials, type MachineRow } from '../components/order/machines'
 import { formatMoney, friendlyError } from '../lib/format'
+import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { CURRENCIES, type Currency, type Customer, type MachineType, type Stage } from '../lib/types'
 import { useOptionList } from '../lib/useOptionList'
@@ -32,13 +34,28 @@ export default function NewOrderPage() {
   const navigate = useNavigate()
   // "Split shipment" on an order page opens /orders/new?split=76
   const [searchParams] = useSearchParams()
+  const { can } = usePermissions()
+  // What this person may fill in; everything else keeps its default.
+  const may = {
+    number: can('orders.new.field.order_number', 'edit'),
+    split: can('orders.new.split', 'edit'),
+    stage: can('orders.new.field.stage', 'edit'),
+    voltage: can('order.field.voltage', 'edit'),
+    delivery: can('order.field.delivery_equipment', 'edit'),
+    freight: can('order.field.freight_type', 'edit'),
+    shipDate: can('order.field.expected_ship_date', 'edit'),
+    notes: can('order.field.notes', 'edit'),
+    total: can('order.field.order_total', 'edit'),
+    currency: can('order.field.currency', 'edit'),
+    payments: can('payments', 'edit'),
+  }
   const splitParam = /^\d+$/.test(searchParams.get('split') ?? '') ? searchParams.get('split')! : ''
 
   // --- Form state ---------------------------------------------------------
   const [customer, setCustomer] = useState<CustomerChoice>({ mode: 'existing', customer: null })
   const [orderNumber, setOrderNumber] = useState('')
   const [nextNumber, setNextNumber] = useState<number | null>(null)
-  const [isSplit, setIsSplit] = useState(Boolean(splitParam))
+  const [isSplit, setIsSplit] = useState(Boolean(splitParam) && may.split)
   const [splitOf, setSplitOf] = useState(splitParam)
   const [stage, setStage] = useState<Stage>('Confirmed')
   const [rows, setRows] = useState<MachineRow[]>(() => [newMachineRow()])
@@ -104,7 +121,8 @@ export default function NewOrderPage() {
     const timer = setTimeout(async () => {
       const { data } = await supabase!
         .from('orders')
-        .select('order_code, split_number, customers(id, name, company, emails, phone, country, state_province, notes, archived)')
+        // Emails and phone are not readable from the customers table (see customer_list).
+        .select('order_code, split_number, customers(id, name, company, country, state_province, notes, archived)')
         .eq('order_number', splitOfInt)
         .order('split_number', { nullsFirst: true })
       if (cancelled) return
@@ -112,7 +130,8 @@ export default function NewOrderPage() {
         setSplitInfo('not-found')
         return
       }
-      const first = data[0] as unknown as { customers: Customer | null }
+      const raw = data[0] as unknown as { customers: Omit<Customer, 'emails' | 'phone'> | null }
+      const first = { customers: raw.customers ? { ...raw.customers, emails: [], phone: null } : null }
       setSplitInfo({ codes: data.map((d) => d.order_code as string), customer: first.customers })
       setCustomer((c) =>
         c.mode === 'existing' && !c.customer && first.customers ? { mode: 'existing', customer: first.customers } : c,
@@ -209,6 +228,8 @@ export default function NewOrderPage() {
     if (isSplit) {
       if (splitOfInt === null) e.splitOf = 'Enter the number of the original order, e.g. 76.'
       else if (activeSplitInfo === 'not-found') e.splitOf = `There is no order ${splitOfInt}.`
+    } else if (!may.number) {
+      // the next free number is picked automatically
     } else if (orderNumberInt === null || orderNumberInt < 1) {
       e.orderNumber = 'Enter a whole number, e.g. 77.'
     } else if (takenNumbers[orderNumberInt]) {
@@ -235,7 +256,9 @@ export default function NewOrderPage() {
     })
     if (rows.length === 0) e.machines = 'Add at least one machine.'
 
-    if (totalNum === null) e.total = 'Enter the order total (0 if not known yet).'
+    if (!may.total) {
+      // no order total for this person
+    } else if (totalNum === null) e.total = 'Enter the order total (0 if not known yet).'
     else if (Number.isNaN(totalNum)) e.total = 'Enter a number, e.g. 12500 or 12,500.00'
     if (downNum !== null && Number.isNaN(downNum)) e.down = 'Enter a number.'
     else if (downMode === 'percent' && downNum !== null && downNum > 100) e.down = 'The percent can’t be more than 100.'
@@ -272,25 +295,25 @@ export default function NewOrderPage() {
               state_province: customer.customer.state_province.trim(),
             }
           : undefined,
-      order_number: isSplit ? undefined : orderNumberInt,
+      order_number: isSplit || !may.number ? undefined : orderNumberInt,
       split_of: isSplit ? splitOfInt : undefined,
-      stage,
-      currency,
-      order_total: totalNum ?? 0,
-      expected_ship_date: expectedShipDate || undefined,
-      voltage,
-      delivery_equipment: deliveryEquipment,
-      freight_type: freightType || undefined,
-      notes: notes.trim() || undefined,
+      stage: may.stage ? stage : undefined,
+      currency: may.currency ? currency : undefined,
+      order_total: may.total ? (totalNum ?? 0) : 0,
+      expected_ship_date: may.shipDate ? expectedShipDate || undefined : undefined,
+      voltage: may.voltage ? voltage : undefined,
+      delivery_equipment: may.delivery ? deliveryEquipment : undefined,
+      freight_type: may.freight ? freightType || undefined : undefined,
+      notes: may.notes ? notes.trim() || undefined : undefined,
       machines: rows.flatMap((row) =>
         row.manual.map((m) => ({
           machine_type_id: row.machineTypeId,
           serial_number: m !== null && m.trim() ? cleanSerial(m) : undefined,
         })),
       ),
-      down_payment_amount: downAmount ?? undefined,
-      down_payment_due_date: downDue || undefined,
-      balance_due_date: balanceDue || undefined,
+      down_payment_amount: may.payments ? (downAmount ?? undefined) : undefined,
+      down_payment_due_date: may.payments ? downDue || undefined : undefined,
+      balance_due_date: may.payments ? balanceDue || undefined : undefined,
     }
 
     setSaving(true)
@@ -312,235 +335,279 @@ export default function NewOrderPage() {
   const err = (key: string): string | undefined => errors[key]
 
   return (
-    <form onSubmit={onSubmit} className="mx-auto max-w-4xl space-y-6 pb-24" noValidate>
-      <div className="flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold">New order</h1>
-        <Link to="/orders" className="text-sm text-slate-600 underline">
-          Cancel
-        </Link>
-      </div>
+    <Can permission="orders.new" level="edit">
+      <form onSubmit={onSubmit} className="mx-auto max-w-4xl space-y-6 pb-24" noValidate>
+        <div className="flex items-center justify-between gap-3">
+          <h1 className="text-2xl font-semibold">New order</h1>
+          <Can permission="orders.list" fallback={<Link to="/" className="text-sm text-slate-600 underline">Cancel</Link>}>
+            <Link to="/orders" className="text-sm text-slate-600 underline">
+              Cancel
+            </Link>
+          </Can>
+        </div>
 
-      <Section title="Customer">
-        <CustomerPicker
-          value={customer}
-          onChange={setCustomer}
-          errors={{ customer: err('customer'), name: err('name'), emails: err('emails') }}
-        />
-      </Section>
+        <Section title="Customer">
+          <CustomerPicker
+            value={customer}
+            onChange={setCustomer}
+            errors={{ customer: err('customer'), name: err('name'), emails: err('emails') }}
+          />
+        </Section>
 
-      <Section title="Order">
-        <div className="grid gap-4 md:grid-cols-2">
-          {!isSplit ? (
-            <Field
-              label="Order number"
-              htmlFor="order-number"
-              error={
-                err('orderNumber') ??
-                (orderNumberInt !== null && takenNumbers[orderNumberInt]
-                  ? `Order ${orderNumberInt} already exists.${nextNumber ? ` The next free number is ${nextNumber}.` : ''}`
-                  : undefined)
+        <Section title="Order">
+          <div className="grid gap-4 md:grid-cols-2">
+            {!isSplit ? (
+              <Can
+                permission="orders.new.field.order_number"
+                level="edit"
+                fallback={
+                  <Field label="Order number">
+                    <p className="py-2 text-sm text-slate-700">{nextNumber ? `${nextNumber} (the next number)` : 'The next number'}</p>
+                  </Field>
+                }
+              >
+                <Field
+                  label="Order number"
+                  htmlFor="order-number"
+                  error={
+                    err('orderNumber') ??
+                    (orderNumberInt !== null && takenNumbers[orderNumberInt]
+                      ? `Order ${orderNumberInt} already exists.${nextNumber ? ` The next free number is ${nextNumber}.` : ''}`
+                      : undefined)
+                  }
+                  hint={nextNumber ? `The next number is ${nextNumber}.` : undefined}
+                >
+                  <input
+                    id="order-number"
+                    inputMode="numeric"
+                    className={inputClass}
+                    value={orderNumber}
+                    onChange={(e) => setOrderNumber(e.target.value)}
+                  />
+                </Field>
+              </Can>
+            ) : (
+              <Can permission="orders.new.split" level="edit">
+                <Field
+                  label="Split shipment of order #"
+                  htmlFor="split-of"
+                  error={err('splitOf') ?? (activeSplitInfo === 'not-found' ? `There is no order ${splitOfInt}.` : undefined)}
+                  hint={splitPreview ?? 'The new order gets the next suffix, e.g. 76-2.'}
+                >
+                  <input
+                    id="split-of"
+                    inputMode="numeric"
+                    className={inputClass}
+                    value={splitOf}
+                    placeholder="e.g. 76"
+                    onChange={(e) => setSplitOf(e.target.value)}
+                  />
+                </Field>
+              </Can>
+            )}
+            <Can
+              permission="orders.new.field.stage"
+              level="edit"
+              fallback={
+                <Field label="Stage">
+                  <p className="py-2 text-sm text-slate-700">{stage}</p>
+                </Field>
               }
-              hint={nextNumber ? `The next number is ${nextNumber}.` : undefined}
             >
-              <input
-                id="order-number"
-                inputMode="numeric"
-                className={inputClass}
-                value={orderNumber}
-                onChange={(e) => setOrderNumber(e.target.value)}
-              />
-            </Field>
-          ) : (
-            <Field
-              label="Split shipment of order #"
-              htmlFor="split-of"
-              error={err('splitOf') ?? (activeSplitInfo === 'not-found' ? `There is no order ${splitOfInt}.` : undefined)}
-              hint={splitPreview ?? 'The new order gets the next suffix, e.g. 76-2.'}
-            >
-              <input
-                id="split-of"
-                inputMode="numeric"
-                className={inputClass}
-                value={splitOf}
-                placeholder="e.g. 76"
-                onChange={(e) => setSplitOf(e.target.value)}
-              />
-            </Field>
-          )}
-          <Field label="Stage" htmlFor="stage" hint={getsSerials ? 'Goes to the bottom of the shop board.' : undefined}>
-            <select id="stage" className={inputClass} value={stage} onChange={(e) => setStage(e.target.value as Stage)}>
-              {NEW_ORDER_STAGES.map((s) => (
-                <option key={s}>{s}</option>
-              ))}
-            </select>
-          </Field>
-          <label className="flex items-center gap-2 text-sm md:col-span-2">
-            <input
-              type="checkbox"
-              checked={isSplit}
-              onChange={(e) => setIsSplit(e.target.checked)}
-              className="h-4 w-4"
-            />
-            This is a split shipment of another order
-          </label>
-        </div>
-      </Section>
+              <Field label="Stage" htmlFor="stage" hint={getsSerials ? 'Goes to the bottom of the shop board.' : undefined}>
+                <select id="stage" className={inputClass} value={stage} onChange={(e) => setStage(e.target.value as Stage)}>
+                  {NEW_ORDER_STAGES.map((s) => (
+                    <option key={s}>{s}</option>
+                  ))}
+                </select>
+              </Field>
+            </Can>
+            <Can permission="orders.new.split" level="edit">
+              <label className="flex items-center gap-2 text-sm md:col-span-2">
+                <input type="checkbox" checked={isSplit} onChange={(e) => setIsSplit(e.target.checked)} className="h-4 w-4" />
+                This is a split shipment of another order
+              </label>
+            </Can>
+          </div>
+        </Section>
 
-      <Section title="Machines">
-        <MachinesSection
-          rows={rows}
-          onChange={setRows}
-          machineTypes={machineTypes}
-          preview={preview}
-          getsSerials={getsSerials}
-          errors={errors}
-        />
-      </Section>
+        <Section title="Machines">
+          <MachinesSection
+            rows={rows}
+            onChange={setRows}
+            machineTypes={machineTypes}
+            preview={preview}
+            getsSerials={getsSerials}
+            errors={errors}
+          />
+        </Section>
 
-      <Section title="Shipping">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Voltage" htmlFor="voltage">
-            <select id="voltage" className={inputClass} value={voltage} onChange={(e) => setVoltage(e.target.value)}>
-              {voltageOptions.options.map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Delivery equipment" htmlFor="delivery">
-            <select
-              id="delivery"
-              className={inputClass}
-              value={deliveryEquipment}
-              onChange={(e) => setDeliveryEquipment(e.target.value)}
-            >
-              {deliveryOptions.options.map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Freight type" htmlFor="freight">
-            <select id="freight" className={inputClass} value={freightType} onChange={(e) => setFreightType(e.target.value)}>
-              <option value="">Not decided yet</option>
-              {freightOptions.options.map((o) => (
-                <option key={o}>{o}</option>
-              ))}
-            </select>
-          </Field>
-          <Field label="Expected ship date" htmlFor="ship-date">
-            <input
-              id="ship-date"
-              type="date"
-              className={inputClass}
-              value={expectedShipDate}
-              onChange={(e) => setExpectedShipDate(e.target.value)}
-            />
-          </Field>
-          <Field label="Notes" htmlFor="notes" className="md:col-span-2">
-            <textarea
-              id="notes"
-              rows={3}
-              className={inputClass}
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-            />
-          </Field>
-        </div>
-      </Section>
-
-      <Section title="Payments">
-        <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Order total" htmlFor="total" error={err('total')}>
-            <div className="flex gap-2">
-              <input
-                id="total"
-                inputMode="decimal"
-                className={inputClass}
-                value={total}
-                placeholder="0.00"
-                onChange={(e) => setTotal(e.target.value)}
-              />
-              <select
-                aria-label="Currency"
-                className={`${inputClass} w-24`}
-                value={currency}
-                onChange={(e) => setCurrency(e.target.value as Currency)}
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
+        <Can
+          anyOf={[
+            'order.field.voltage',
+            'order.field.delivery_equipment',
+            'order.field.freight_type',
+            'order.field.expected_ship_date',
+            'order.field.notes',
+          ]}
+          level="edit"
+        >
+          <Section title="Shipping">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Can permission="order.field.voltage" level="edit">
+                <Field label="Voltage" htmlFor="voltage">
+                  <select id="voltage" className={inputClass} value={voltage} onChange={(e) => setVoltage(e.target.value)}>
+                    {voltageOptions.options.map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                </Field>
+              </Can>
+              <Can permission="order.field.delivery_equipment" level="edit">
+                <Field label="Delivery equipment" htmlFor="delivery">
+                  <select
+                    id="delivery"
+                    className={inputClass}
+                    value={deliveryEquipment}
+                    onChange={(e) => setDeliveryEquipment(e.target.value)}
+                  >
+                    {deliveryOptions.options.map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                </Field>
+              </Can>
+              <Can permission="order.field.freight_type" level="edit">
+                <Field label="Freight type" htmlFor="freight">
+                  <select id="freight" className={inputClass} value={freightType} onChange={(e) => setFreightType(e.target.value)}>
+                    <option value="">Not decided yet</option>
+                    {freightOptions.options.map((o) => (
+                      <option key={o}>{o}</option>
+                    ))}
+                  </select>
+                </Field>
+              </Can>
+              <Can permission="order.field.expected_ship_date" level="edit">
+                <Field label="Expected ship date" htmlFor="ship-date">
+                  <input
+                    id="ship-date"
+                    type="date"
+                    className={inputClass}
+                    value={expectedShipDate}
+                    onChange={(e) => setExpectedShipDate(e.target.value)}
+                  />
+                </Field>
+              </Can>
+              <Can permission="order.field.notes" level="edit">
+                <Field label="Notes" htmlFor="notes" className="md:col-span-2">
+                  <textarea id="notes" rows={3} className={inputClass} value={notes} onChange={(e) => setNotes(e.target.value)} />
+                </Field>
+              </Can>
             </div>
-          </Field>
-          <Field
-            label="Down payment"
-            htmlFor="down"
-            error={err('down')}
-            hint={
-              downMode === 'percent'
-                ? downAmount !== null
-                  ? `= ${formatMoney(downAmount, currency)}`
-                  : undefined
-                : downPercent !== null
-                  ? `= ${downPercent}% of the total`
-                  : undefined
-            }
-          >
-            <div className="flex gap-2">
-              <input
-                id="down"
-                inputMode="decimal"
-                className={inputClass}
-                value={downValue}
-                placeholder={downMode === 'percent' ? 'e.g. 30' : '0.00'}
-                onChange={(e) => setDownValue(e.target.value)}
-              />
-              <select
-                aria-label="Down payment as"
-                className={`${inputClass} w-24`}
-                value={downMode}
-                onChange={(e) => {
-                  // Convert what's typed so switching doesn't lose the number.
-                  const mode = e.target.value as 'amount' | 'percent'
-                  if (mode === 'amount' && downAmount !== null) setDownValue(String(downAmount))
-                  if (mode === 'percent' && downPercent !== null) setDownValue(String(downPercent))
-                  setDownMode(mode)
-                }}
-              >
-                <option value="percent">%</option>
-                <option value="amount">{currency}</option>
-              </select>
-            </div>
-          </Field>
-          <Field label="Down payment due" htmlFor="down-due">
-            <input
-              id="down-due"
-              type="date"
-              className={inputClass}
-              value={downDue}
-              onChange={(e) => setDownDue(e.target.value)}
-            />
-          </Field>
-          <Field label="Balance due" htmlFor="balance-due" error={err('balanceDue')}>
-            <input
-              id="balance-due"
-              type="date"
-              className={inputClass}
-              value={balanceDue}
-              onChange={(e) => setBalanceDue(e.target.value)}
-            />
-          </Field>
-        </div>
-        <div className="mt-4 rounded-md bg-slate-50 px-3 py-2 text-sm">
-          Balance: <strong>{formatMoney(balance, currency)}</strong>
-          <span className="text-slate-500"> (order total − down payment, calculated automatically)</span>
-        </div>
-      </Section>
+          </Section>
+        </Can>
 
-      <div className="sticky bottom-0 -mx-4 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 px-4 py-3 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
-        <button type="submit" className={buttonClass} disabled={saving}>
-          {saving ? 'Saving…' : 'Save order'}
-        </button>
-      </div>
-    </form>
+        <Can anyOf={['order.field.order_total', 'payments']} level="edit">
+          <Section title="Payments">
+            <div className="grid gap-4 md:grid-cols-2">
+              <Can permission="order.field.order_total" level="edit">
+                <Field label="Order total" htmlFor="total" error={err('total')}>
+                  <div className="flex gap-2">
+                    <input
+                      id="total"
+                      inputMode="decimal"
+                      className={inputClass}
+                      value={total}
+                      placeholder="0.00"
+                      onChange={(e) => setTotal(e.target.value)}
+                    />
+                    <Can permission="order.field.currency" level="edit">
+                      <select
+                        aria-label="Currency"
+                        className={`${inputClass} w-24`}
+                        value={currency}
+                        onChange={(e) => setCurrency(e.target.value as Currency)}
+                      >
+                        {CURRENCIES.map((c) => (
+                          <option key={c}>{c}</option>
+                        ))}
+                      </select>
+                    </Can>
+                  </div>
+                </Field>
+              </Can>
+              <Can permission="payments" level="edit">
+                <Field
+                  label="Down payment"
+                  htmlFor="down"
+                  error={err('down')}
+                  hint={
+                    downMode === 'percent'
+                      ? downAmount !== null
+                        ? `= ${formatMoney(downAmount, currency)}`
+                        : undefined
+                      : downPercent !== null
+                        ? `= ${downPercent}% of the total`
+                        : undefined
+                  }
+                >
+                  <div className="flex gap-2">
+                    <input
+                      id="down"
+                      inputMode="decimal"
+                      className={inputClass}
+                      value={downValue}
+                      placeholder={downMode === 'percent' ? 'e.g. 30' : '0.00'}
+                      onChange={(e) => setDownValue(e.target.value)}
+                    />
+                    <select
+                      aria-label="Down payment as"
+                      className={`${inputClass} w-24`}
+                      value={downMode}
+                      onChange={(e) => {
+                        // Convert what's typed so switching doesn't lose the number.
+                        const mode = e.target.value as 'amount' | 'percent'
+                        if (mode === 'amount' && downAmount !== null) setDownValue(String(downAmount))
+                        if (mode === 'percent' && downPercent !== null) setDownValue(String(downPercent))
+                        setDownMode(mode)
+                      }}
+                    >
+                      <option value="percent">%</option>
+                      <option value="amount">{currency}</option>
+                    </select>
+                  </div>
+                </Field>
+                <Field label="Down payment due" htmlFor="down-due">
+                  <input id="down-due" type="date" className={inputClass} value={downDue} onChange={(e) => setDownDue(e.target.value)} />
+                </Field>
+                <Field label="Balance due" htmlFor="balance-due" error={err('balanceDue')}>
+                  <input
+                    id="balance-due"
+                    type="date"
+                    className={inputClass}
+                    value={balanceDue}
+                    onChange={(e) => setBalanceDue(e.target.value)}
+                  />
+                </Field>
+              </Can>
+            </div>
+            <Can permission="payments" level="edit">
+              <Can permission="order.field.order_total" level="edit">
+                <div className="mt-4 rounded-md bg-slate-50 px-3 py-2 text-sm">
+                  Balance: <strong>{formatMoney(balance, currency)}</strong>
+                  <span className="text-slate-500"> (order total − down payment, calculated automatically)</span>
+                </div>
+              </Can>
+            </Can>
+          </Section>
+        </Can>
+
+        <div className="sticky bottom-0 -mx-4 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 px-4 py-3 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
+          <button type="submit" className={buttonClass} disabled={saving}>
+            {saving ? 'Saving…' : 'Save order'}
+          </button>
+        </div>
+      </form>
+    </Can>
   )
 }

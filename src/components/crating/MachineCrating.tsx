@@ -1,10 +1,13 @@
+// @permission-scope crating
 import { useState } from 'react'
 import { toast } from 'sonner'
 import { crateLine, type CrateMachine, type NumberedCrate } from '../../lib/crates'
 import { showDate } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
+import { usePermissions } from '../../lib/permissions'
 import { usePreferences } from '../../lib/preferences'
 import { supabase } from '../../lib/supabase'
+import Can from '../Can'
 import CrateDialog from './CrateDialog'
 
 type Props = {
@@ -27,6 +30,8 @@ type Props = {
  */
 export default function MachineCrating({ orderId, orderCode, machine, orderMachines, crates, onChanged, large = false }: Props) {
   const { units } = usePreferences()
+  // People with "crating" view see the crates; only "edit" can tick or change them.
+  const canEdit = usePermissions().can('crating', 'edit')
   const [dialog, setDialog] = useState<{ crate: NumberedCrate | null } | null>(null)
   const [busy, setBusy] = useState(false)
   const mine = crates.filter((c) => c.machine_ids.includes(machine.id))
@@ -49,12 +54,12 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
 
   return (
     <div className={large ? 'text-lg' : 'text-sm'}>
-      <label className="inline-flex cursor-pointer items-center gap-2">
+      <label className={`inline-flex items-center gap-2 ${canEdit ? 'cursor-pointer' : ''}`}>
         <input
           type="checkbox"
           className={large ? 'h-6 w-6 accent-teal-700' : 'h-5 w-5 accent-teal-700'}
           checked={crated}
-          disabled={busy}
+          disabled={busy || !canEdit}
           onChange={() => (crated ? untick() : setDialog({ crate: null }))}
         />
         <span className={crated ? 'font-medium text-teal-800' : 'text-slate-500'}>{crated ? 'Crated' : 'Crated?'}</span>
@@ -76,17 +81,21 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
                   <span className="text-slate-500"> · also holds {shared.map(labelOf).join(', ')}</span>
                 )}
                 {c.notes && <span className="text-slate-500"> · {c.notes}</span>}{' '}
-                <button type="button" className="text-blue-700 underline print:hidden" onClick={() => setDialog({ crate: c })}>
-                  Edit
-                </button>
+                <Can permission="crating" level="edit">
+                  <button type="button" className="text-blue-700 underline print:hidden" onClick={() => setDialog({ crate: c })}>
+                    Edit
+                  </button>
+                </Can>
               </li>
             )
           })}
-          <li className="print:hidden">
-            <button type="button" className="text-blue-700 underline" onClick={() => setDialog({ crate: null })}>
-              + Add another crate
-            </button>
-          </li>
+          <Can permission="crating" level="edit">
+            <li className="print:hidden">
+              <button type="button" className="text-blue-700 underline" onClick={() => setDialog({ crate: null })}>
+                + Add another crate
+              </button>
+            </li>
+          </Can>
         </ul>
       )}
 

@@ -1,3 +1,4 @@
+// @permission-scope payments
 import type { PaymentRow } from '../../lib/types'
 import { dueText } from './dueText'
 

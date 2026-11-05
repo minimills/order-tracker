@@ -1,3 +1,4 @@
+// @permission-scope admin.board
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'

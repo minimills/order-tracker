@@ -1,3 +1,4 @@
+// @permission-scope crating.units
 import { usePreferences } from '../../lib/preferences'
 import type { Units } from '../../lib/units'
 

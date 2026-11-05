@@ -44,6 +44,10 @@ jobs:
 
       - run: npm ci
 
+      # Every screen element must have a permission from the catalog (also part of the build).
+      - name: Permission check
+        run: npm run check:perms
+
       - name: Build
         env:
           VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}

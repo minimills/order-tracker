@@ -1,8 +1,10 @@
+// @permission-scope crating.summary
 import { toast } from 'sonner'
 import { contentsLabel, freightSummary, type NumberedCrate } from '../../lib/crates'
 import { usePreferences } from '../../lib/preferences'
 import { showDims, showNumber, showWeight, weightFromKg, weightUnit } from '../../lib/units'
 import { secondaryButtonClass, Section } from '../form'
+import Can from '../Can'
 import UnitsSwitch from './UnitsSwitch'
 
 type Props = {
@@ -33,15 +35,19 @@ export default function CratingSummary({ order, crates, notCrated }: Props) {
       title="Crating summary"
       aside={
         crates.length > 0 && (
-          <button type="button" className={secondaryButtonClass} onClick={copy}>
-            📋 Copy
-          </button>
+          <Can permission="crating.summary.copy">
+            <button type="button" className={secondaryButtonClass} onClick={copy}>
+              📋 Copy
+            </button>
+          </Can>
         )
       }
     >
-      <div className="mb-3">
-        <UnitsSwitch />
-      </div>
+      <Can permission="crating.units">
+        <div className="mb-3">
+          <UnitsSwitch />
+        </div>
+      </Can>
       {crates.length === 0 ? (
         <p className="text-sm text-slate-500">
           No crates yet. Tick “Crated?” next to a machine above to enter its crate.

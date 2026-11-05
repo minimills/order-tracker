@@ -1,3 +1,4 @@
+// @permission-scope admin.activity
 import { useCallback, useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -86,7 +87,7 @@ export default function ActivityPage() {
         }
       }
       let q = supabase
-        .from('activity_log')
+        .from('activity_feed')
         .select('id, at, user_email, user_departments, table_name, record_id, order_id, action, changes')
         .order('at', { ascending: false })
         .order('id', { ascending: false })

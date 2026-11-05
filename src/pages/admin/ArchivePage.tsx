@@ -1,3 +1,4 @@
+// @permission-scope admin.archive
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'

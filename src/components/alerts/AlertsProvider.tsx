@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import { useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { AlertsContext, alertText, type AlertRow } from '../../lib/alerts'
+import { usePermissions } from '../../lib/permissions'
 import { notificationPermission, readStorage, writeStorage } from '../../lib/browserNotifications'
 import { fetchAll } from '../../lib/fetchAll'
 import { friendlyError } from '../../lib/format'
@@ -30,6 +31,10 @@ function sortAlerts(list: AlertRow[]) {
 export default function AlertsProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const location = useLocation()
+  const { can } = usePermissions()
+  const seesAlerts = can('alerts.bell')
+  const popups = can('alerts.popups')
+  const opensOrders = can('order.page')
   const [alerts, setAlerts] = useState<AlertRow[]>([])
   const [loading, setLoading] = useState(true)
   const lastLoad = useRef(0)
@@ -37,6 +42,8 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
 
   const handleNew = useCallback(
     (list: AlertRow[]) => {
+      // Pop-ups and desktop notifications only for people with "alerts.popups".
+      if (!popups) return
       const red = list.filter((a) => !a.hidden && a.severity === 'red')
 
       // 1. Pop-ups once per browser session (i.e. when the app is opened).
@@ -49,7 +56,7 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
               toast.error(t.title, {
                 description: t.detail,
                 duration: 10000,
-                action: { label: 'Open', onClick: () => navigate(`/orders/${a.order_id}`) },
+                action: opensOrders ? { label: 'Open', onClick: () => navigate(`/orders/${a.order_id}`) } : undefined,
               }),
             i * 300,
           )
@@ -80,7 +87,7 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
             const n = new Notification(t.title, { body: t.detail, tag: a.alert_key })
             n.onclick = () => {
               window.focus()
-              navigate(`/orders/${a.order_id}`)
+              if (opensOrders) navigate(`/orders/${a.order_id}`)
               n.close()
             }
           } catch {
@@ -94,11 +101,16 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
       writeStorage(NOTIFIED_KEY, JSON.stringify(keep.slice(-500)))
       firstLoadDone.current = true
     },
-    [navigate],
+    [navigate, popups, opensOrders],
   )
 
   const load = useCallback(async () => {
     if (!supabase) return
+    if (!seesAlerts) {
+      setAlerts([])
+      setLoading(false)
+      return
+    }
     lastLoad.current = Date.now()
     const { data, error } = await fetchAll<AlertRow>(() =>
       supabase!.from('my_alerts').select('*').order('alert_key'),
@@ -112,7 +124,7 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
     setAlerts(sortAlerts(data))
     setLoading(false)
     handleNew(data)
-  }, [handleNew])
+  }, [handleNew, seesAlerts])
 
   // First load, then every 10 minutes, and when the window gets focus again.
   useEffect(() => {

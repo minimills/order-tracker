@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 
 /** Title block used on every admin page, with a link back to the Admin home. */
+/* @layout-helper */
 export default function AdminPageHeader({ title, children, aside }: { title: string; children?: ReactNode; aside?: ReactNode }) {
   return (
     <div className="flex flex-wrap items-end justify-between gap-3">
