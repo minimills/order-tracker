@@ -8,12 +8,14 @@ export type MachineRow = {
   quantity: string
   /** One entry per machine: null = automatic serial, text = typed by hand. */
   manual: (string | null)[]
+  /** “Crate?”: only crated machines get a crating deadline. */
+  needsCrate: boolean
 }
 
 let counter = 0
-export function newMachineRow(): MachineRow {
+export function newMachineRow(needsCrate = true): MachineRow {
   counter += 1
-  return { key: `row-${counter}-${Date.now()}`, machineTypeId: '', quantity: '1', manual: [null] }
+  return { key: `row-${counter}-${Date.now()}`, machineTypeId: '', quantity: '1', manual: [null], needsCrate }
 }
 
 export const MAX_QUANTITY = 50

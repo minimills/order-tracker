@@ -234,6 +234,12 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
                       ? `Order ${request.order.order_code} joins the shop queue${request.anchor ? ` ${request.place === 'before' ? 'above' : 'below'} order ${request.anchor.order_code}` : ' at the end'}.`
                       : `Order ${request.order.order_code} moves ${me.new < me.old ? 'up' : 'down'} the queue${request.anchor ? `, ${request.place === 'before' ? 'above' : 'below'} order ${request.anchor.order_code}` : ''}.`}
               </p>
+              {me && (
+                <p className="mt-1 text-xs text-slate-500">
+                  Promised ship dates and department deadlines do not change by themselves. If the new queue gives
+                  different dates, they show as suggestions (Order page and Dashboard) to accept or keep.
+                </p>
+              )}
             </div>
 
             <div>

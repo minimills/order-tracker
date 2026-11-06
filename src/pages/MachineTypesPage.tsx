@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
+import BuildTimesSection from '../components/admin/BuildTimesSection'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../components/form'
 import { usePermissions } from '../lib/permissions'
 import { formatSerial, friendlyError } from '../lib/format'
@@ -312,6 +313,7 @@ export default function MachineTypesPage() {
           })}
         </div>
       )}
+      {isAdmin && <BuildTimesSection />}
     </div>
   )
 }

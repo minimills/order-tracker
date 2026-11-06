@@ -9,11 +9,14 @@ import { STAGES, type OrderSummaryRow, type Stage } from '../../lib/types'
 import Can from '../Can'
 import { badgeClass, orderBadges, type Badge } from './badges'
 import MachineChips, { type ChipMachine } from './MachineChips'
+import { DEADLINE_TONE, STEP_LABEL, type PromisedItem } from '../../lib/schedule'
 
 type Props = {
   order: OrderSummaryRow
   /** This order's machines, for the chips. */
   machines: ChipMachine[]
+  /** The next promised department deadline (amber = close, red = missed). */
+  deadline?: PromisedItem | null
   canMoveUp: boolean
   canMoveDown: boolean
   onMoveUp: () => void
@@ -120,6 +123,17 @@ export default function OrderCard(props: Props) {
           {o.stage === 'Shipped' ? <>Shipped {showDate(o.actual_ship_date)}</> : <>Ship by {showDate(o.expected_ship_date)}</>}
         </div>
       </Can>
+
+      {props.deadline && (
+        <Can permission="orders.board.card.deadline">
+          <div className="mt-1 text-xs">
+            <span className={`rounded px-1.5 py-0.5 ring-1 ${DEADLINE_TONE[props.deadline.state]}`}>
+              {props.deadline.state === 'missed' ? 'Missed: ' : 'Next: '}
+              {STEP_LABEL[props.deadline.step]} {showDate(props.deadline.due, 'MMM d')}
+            </span>
+          </div>
+        </Can>
+      )}
 
       {badges.length > 0 && (
         <div className="mt-2 flex flex-wrap gap-1 empty:hidden">

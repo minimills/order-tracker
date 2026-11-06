@@ -4,6 +4,8 @@ import { toast } from 'sonner'
 import MoveDialog, { type MoveRequest } from '../components/board/MoveDialog'
 import { ChipLegend, type ChipMachine } from '../components/board/MachineChips'
 import OrderCard from '../components/board/OrderCard'
+import { nextDeadline, orderPromised } from '../lib/schedule'
+import { useSchedule } from '../lib/useSchedule'
 import Can from '../components/Can'
 import { secondaryButtonClass } from '../components/form'
 import { addDaysISO, todayISO } from '../lib/dates'
@@ -40,6 +42,8 @@ export default function OrdersBoardPage() {
   const canReorder = can('orders.board.reorder', 'edit')
   const canChangeStage = can('orders.board.change_stage', 'edit')
   const seesChips = can('orders.board.card.machines')
+  // Promised department deadlines, for the next one on each card.
+  const schedule = useSchedule(can('orders.board.card.deadline'))
   const label = useStageLabels()
   const [machines, setMachines] = useState<Map<string, ChipMachine[]>>(new Map())
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
@@ -244,6 +248,7 @@ export default function OrdersBoardPage() {
                             key={o.id}
                             order={o}
                             machines={machines.get(o.id) ?? []}
+                            deadline={onBoard ? nextDeadline(orderPromised(schedule.promised(o.id), schedule.stepsOf(o.id), schedule.today, schedule.settings)) : null}
                             canMoveUp={canReorder && onBoard && i > 0}
                             canMoveDown={canReorder && onBoard && i < column.orders.length - 1}
                             onMoveUp={() => moveWithin(o, 'up')}
@@ -286,6 +291,7 @@ export default function OrdersBoardPage() {
               )
               setRequest(null)
               load()
+              schedule.reload()
             }}
           />
         )}
