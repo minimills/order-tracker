@@ -11,6 +11,8 @@ const inputClass =
 const buttonClass =
   'w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-60'
 
+const NO_ACCESS = 'This email doesn’t have access. Contact the office.'
+
 /** Turns a Supabase sign-in error into a sentence a person can act on. */
 function friendly(error: { message?: string; code?: string; status?: number }) {
   const msg = (error.message ?? '').toLowerCase()
@@ -20,8 +22,9 @@ function friendly(error: { message?: string; code?: string; status?: number }) {
   if (error.status === 429 || msg.includes('rate limit') || msg.includes('security purposes')) {
     return 'Too many tries. Please wait a minute, then try again.'
   }
-  if (msg.includes('signups not allowed') || msg.includes('not allowed for otp')) {
-    return 'This email is not set up for the app yet. Ask an admin to add you.'
+  // No login for this email (sign-ups are off), or the login was blocked.
+  if (msg.includes('signups not allowed') || msg.includes('not allowed for otp') || msg.includes('user not found') || msg.includes('banned')) {
+    return NO_ACCESS
   }
   return error.message || 'Something went wrong. Please try again.'
 }
@@ -61,10 +64,21 @@ export default function LoginPage() {
     if (!supabase) return
     setBusy(true)
     setError(null)
+    // Only people on the users list get a code.
+    const { data: allowed, error: checkError } = await supabase.rpc('can_sign_in', { p_email: address })
+    if (!checkError && allowed === false) {
+      setBusy(false)
+      setError(NO_ACCESS)
+      return
+    }
     const { error: e } = await supabase.auth.signInWithOtp({
       email: address,
-      // If the email still contains a link, it brings you back to this site.
-      options: { emailRedirectTo: window.location.origin + window.location.pathname },
+      options: {
+        // Never make a new account from here (admins add people in Admin → Users).
+        shouldCreateUser: false,
+        // If the email still contains a link, it brings you back to this site.
+        emailRedirectTo: window.location.origin + window.location.pathname,
+      },
     })
     setBusy(false)
     if (e) {

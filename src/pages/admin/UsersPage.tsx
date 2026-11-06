@@ -14,6 +14,7 @@ import { CATALOG } from '../../lib/permissions/catalog'
 import { supabase } from '../../lib/supabase'
 import type { Role } from '../../lib/auth'
 import { useDepartments } from '../../lib/useDepartments'
+import { adminUsers } from '../../lib/adminUsers'
 
 type User = { email: string; name: string | null; role: Role; created_at: string }
 
@@ -45,6 +46,9 @@ export default function UsersPage() {
   const [reviewed, setReviewed] = useState<Set<string>>(new Set())
   const [editingPerms, setEditingPerms] = useState<User | null>(null)
   const [startWith, setStartWith] = useState('')
+  const [newStartPage, setNewStartPage] = useState('')
+  const [adding, setAdding] = useState(false)
+  const [busyEmail, setBusyEmail] = useState<string | null>(null)
   // email → start page ('/board'…; empty = first allowed page)
   const [startPages, setStartPages] = useState<Record<string, string | null>>({})
 
@@ -110,38 +114,44 @@ export default function UsersPage() {
 
   async function add(event: FormEvent) {
     event.preventDefault()
-    if (!supabase) return
+    if (!supabase || adding) return
     const address = email.trim().toLowerCase()
     if (!emailPattern.test(address)) return setError('Enter a full email address, e.g. name@minimills.net')
-    if (users.some((u) => u.email === address)) return setError('This person is already on the list.')
-    const { error: e } = await supabase.from('allowed_users').insert({ email: address, name: name.trim() || null, role })
-    if (e) return setError(friendlyError(e))
-    if (newDepts.length) {
-      const { error: e2 } = await supabase
-        .from('user_departments')
-        .insert(newDepts.map((department_id) => ({ user_email: address, department_id })))
-      if (e2) toast.error(`Added, but the departments could not be saved: ${friendlyError(e2)}`)
-    }
+    if (users.some((u) => u.email === address)) return setError(`${address} already has access to the app.`)
     // New people start with nothing ticked, unless a starting point was chosen.
     const start = role === 'staff' && isAdmin ? startingPerms(startWith) : null
-    if (start) {
-      const { error: e3 } = await supabase.rpc('set_user_permissions', { p_email: address, p_perms: start.perms, p_source: start.source })
-      if (e3) toast.error(`Added, but the permissions could not be saved: ${friendlyError(e3)}`)
-    }
-    toast.success(
-      role === 'admin'
-        ? `${address} can now sign in as an admin.`
-        : start
-          ? `${address} added, starting from ${start.source}.`
-          : `${address} added with nothing ticked yet. Click “Permissions” to choose what they see.`,
-    )
+    // One step on the server: the login (Supabase Auth), the users list,
+    // departments, start page and permissions, then the login code email.
+    setAdding(true)
+    const result = await adminUsers('create', {
+      email: address,
+      name: name.trim() || null,
+      role,
+      departments: newDepts,
+      start_page: newStartPage || null,
+      perms: start?.perms ?? null,
+      perms_source: start?.source ?? null,
+    })
+    setAdding(false)
+    if (!result.ok) return setError(result.message)
+    if (result.emailed === false) toast.warning(result.message, { duration: 12000 })
+    else toast.success(`${result.message}${role === 'staff' && !start ? ' Nothing is ticked yet: click “Permissions” to choose what they see.' : ''}`, { duration: 8000 })
     setStartWith('')
     setNewDepts([])
+    setNewStartPage('')
     setEmail('')
     setName('')
     setRole('staff')
     setError(null)
     load()
+  }
+
+  async function resend(u: User) {
+    setBusyEmail(u.email)
+    const result = await adminUsers('resend', { email: u.email })
+    setBusyEmail(null)
+    if (result.ok) toast.success(result.message)
+    else toast.error(result.message, { duration: 10000 })
   }
 
   async function changeStartPage(u: User, page: string | null) {
@@ -203,18 +213,20 @@ export default function UsersPage() {
   )
 
   async function remove(u: User) {
-    if (!supabase) return
-    const { error: e } = await supabase.from('allowed_users').delete().eq('email', u.email)
+    setBusyEmail(u.email)
+    const result = await adminUsers('remove', { email: u.email })
+    setBusyEmail(null)
     setRemoving(null)
-    if (e) return toast.error(friendlyError(e))
-    toast.success(`${u.email} can no longer use the app.`)
+    if (!result.ok) return toast.error(result.message, { duration: 10000 })
+    toast.success(result.message)
     load()
   }
 
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <AdminPageHeader title="Users">
-        Only people on this list can use the app. They sign in with a code sent to their email, no password.{' '}
+        Only people on this list can use the app. Adding someone makes their login and emails them a 6-digit code (they
+        sign in with a code each time, no password; nobody can sign themselves up).{' '}
         <strong>Admins</strong> can see and do everything. Everyone else (<strong>users</strong>) sees only what is ticked
         for them under <strong>Permissions</strong>; new people start with nothing ticked.
       </AdminPageHeader>
@@ -247,8 +259,8 @@ export default function UsersPage() {
             <span />
           )}
           <div className="flex items-start md:pt-6">
-            <button type="submit" className={buttonClass}>
-              Add
+            <button type="submit" className={buttonClass} disabled={adding}>
+              {adding ? 'Adding…' : 'Add'}
             </button>
           </div>
         </div>
@@ -293,8 +305,23 @@ export default function UsersPage() {
             </Field>
           </div>
         )}
+        <div className="mt-3 max-w-md">
+          <Field label="Start page" htmlFor="new-start-page" hint="The page they see after signing in (if they are allowed to open it).">
+            <select id="new-start-page" className={inputClass} value={newStartPage} onChange={(e) => setNewStartPage(e.target.value)}>
+              <option value="">Automatic (first page they may open)</option>
+              {startPageChoices(() => true).map((p) => (
+                <option key={p.to} value={p.to}>
+                  {p.label}
+                </option>
+              ))}
+            </select>
+          </Field>
+        </div>
         {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
-        <p className="mt-2 text-xs text-slate-500">Then tell them to open the app and sign in with that email.</p>
+        <p className="mt-2 text-xs text-slate-500">
+          Add makes their login and emails them a 6-digit code. They open https://order.minimills.net, type their email and
+          the code. No password.
+        </p>
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -391,6 +418,9 @@ export default function UsersPage() {
             ) : (
               <span className="text-xs text-slate-600">{u.role === 'admin' ? 'Admin' : 'User'}</span>
             )}
+            <button type="button" className="text-sm text-blue-700 underline disabled:opacity-50" disabled={busyEmail === u.email} onClick={() => resend(u)}>
+              {busyEmail === u.email ? 'Sending…' : 'Resend login code'}
+            </button>
             <button type="button" className="text-sm text-red-700 underline" onClick={() => setRemoving(u)}>
               Remove access
             </button>
@@ -457,14 +487,20 @@ export default function UsersPage() {
               <button type="button" className={secondaryButtonClass} onClick={() => setRemoving(null)}>
                 Cancel
               </button>
-              <button type="button" className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800" onClick={() => remove(removing)}>
-                Remove access
+              <button
+                type="button"
+                className="rounded-md bg-red-700 px-4 py-2 text-sm font-medium text-white hover:bg-red-800 disabled:opacity-60"
+                disabled={busyEmail === removing.email}
+                onClick={() => remove(removing)}
+              >
+                {busyEmail === removing.email ? 'Removing…' : 'Remove access'}
               </button>
             </>
           }
         >
           <p className="text-sm">
-            <strong>{removing.email}</strong> will no longer be able to see or change anything.
+            <strong>{removing.email}</strong> will no longer be able to sign in, see or change anything (their login is
+            blocked and they leave the users list).
             {removing.email === me && ' This is you: you will lose access straight away.'} Their past changes stay in
             the activity log.
           </p>
