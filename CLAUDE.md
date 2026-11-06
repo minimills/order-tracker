@@ -114,7 +114,7 @@ Belfast Mini Mills (Prince Edward Island, Canada) builds fibre-processing machin
 - Messages: errors say calmly what happened and what to do next (never "Oops" / "Something went wrong"); empty states say what is missing ("No orders in this stage.", "No payments are outstanding.").
 - ONE wording file: `src/lib/wording.ts` (`ACTION`, `STATUS`, `MESSAGE`, `confirmText`) holds the words for common actions, statuses and standard messages; use it in new screens and add to it rather than typing a common word again.
 - Confirmation boxes: never `window.confirm` / `window.prompt` / `window.alert`. Use `confirmAction(message, { confirmLabel, danger })` and `askText(message, { initial, label, confirmLabel })` from `src/lib/confirm.ts` (drawn by `components/ConfirmHost`, mounted in `main.tsx`).
-- Icons: simple single-colour line icons from `components/Icon.tsx` (`<Icon name="…" />`, add new shapes there), never emojis. Plain arrows (↑ ↓ ← →), × / ✕ for close and remove, ▸ ▾ for expand / collapse and ▲ ▼ for sorting are allowed.
+- Icons: simple single-colour line icons from `components/Icon.tsx` (`<Icon name="…" />`, add new shapes there), never emojis. Plain arrows (↑ ↓ ← →), × / ✕ for close and remove, ▸ ▾ for expand / collapse and ▲ ▼ for sorting are allowed. Country flags next to customer countries (`countryFlag()` in `src/lib/country.ts`) are the one approved emoji exception (owner's decision) and stay.
 - Emails and printouts follow the same rules. The sign-in email lives in Supabase (Authentication → Emails → Magic Link); the recommended text is in the README.
 - Internal names (permission keys such as `checklist.tick`, database columns) are not shown to people and are not renamed.
 
