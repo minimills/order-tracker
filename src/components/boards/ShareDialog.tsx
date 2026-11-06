@@ -27,13 +27,13 @@ export default function ShareDialog({ board, onClose, onChanged }: { board: Boar
 
   async function add() {
     if (!supabase) return
-    if (target.type !== 'everyone' && !target.target) return toast.error('Choose who to share with.')
+    if (target.type !== 'everyone' && !target.target) return toast.error('Select who to share the board with.')
     setBusy(true)
     const { error } = await supabase
       .from('board_shares')
       .insert({ board_id: board.id, share_type: target.type, target: target.type === 'everyone' ? null : target.target, level })
     setBusy(false)
-    if (error) return toast.error(error.code === '23505' ? 'The board is already shared with them. Change the level in the list.' : friendlyError(error))
+    if (error) return toast.error(error.code === '23505' ? 'The board is already shared with them. Change their access level in the list.' : friendlyError(error))
     setTarget({ type: target.type, target: null })
     load()
     onChanged()
@@ -57,7 +57,7 @@ export default function ShareDialog({ board, onClose, onChanged }: { board: Boar
       onClose={onClose}
       footer={
         <button type="button" className={secondaryButtonClass} onClick={onClose}>
-          Done
+          Close
         </button>
       }
     >
@@ -81,11 +81,11 @@ export default function ShareDialog({ board, onClose, onChanged }: { board: Boar
               ))}
             </select>
             <button type="button" className="text-xs text-red-700 underline" onClick={() => remove(s)}>
-              Stop sharing
+              Stop Sharing
             </button>
           </li>
         ))}
-        {shares.length === 0 && <li className="px-3 py-2 text-sm text-slate-500">Not shared with anyone yet.</li>}
+        {shares.length === 0 && <li className="px-3 py-2 text-sm text-slate-500">This board has not been shared with anyone yet.</li>}
       </ul>
       <div className="mt-4 space-y-2 rounded-md bg-slate-50 p-3">
         <div className="text-sm font-medium">Share with</div>

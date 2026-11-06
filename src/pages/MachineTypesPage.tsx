@@ -8,6 +8,7 @@ import { usePermissions } from '../lib/permissions'
 import { formatSerial, friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import type { MachineType } from '../lib/types'
+import { confirmAction } from '../lib/confirm'
 
 type Usage = { machine_type_id: string; machines_count: number; highest_serial_number: number | null }
 
@@ -26,7 +27,7 @@ function check(d: Draft, others: MachineType[]) {
   const code = d.code.trim().toUpperCase()
   if (!name) e.name = 'Enter a name.'
   else if (others.some((t) => t.name.toLowerCase() === name.toLowerCase())) e.name = 'Another type has this name.'
-  if (!codePattern.test(code)) e.code = 'Use only capital letters and numbers, e.g. LCR.'
+  if (!codePattern.test(code)) e.code = 'Use only capital letters and numbers, for example LCR.'
   else if (code && others.some((t) => t.code === code)) e.code = 'Another type uses this code.'
   if (!/^\d+$/.test(d.next.trim()) || Number(d.next) < 1) e.next = 'Enter a whole number, 1 or more.'
   return e
@@ -87,8 +88,8 @@ export default function MachineTypesPage() {
     const code = d.code.trim().toUpperCase()
     const used = usage[t.id]?.machines_count ?? 0
     if (t.code && code !== t.code && used > 0) {
-      const ok = window.confirm(
-        `${used} machine(s) already have ${t.code} serials. They keep their old serials; only new machines get ${code || 'no'} serials. Change the code?`,
+      const ok = await confirmAction(
+        `${used} machine(s) already have ${t.code} serial numbers. They keep their current serial numbers; only new machines get ${code || 'no'} serial numbers. Change the code?`,
       )
       if (!ok) return
     }
@@ -138,9 +139,9 @@ export default function MachineTypesPage() {
         <Link to="/admin" className="text-sm text-slate-600 underline">
           ← Admin
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Machine types</h1>
+        <h1 className="mt-2 text-2xl font-semibold">Machine Types</h1>
         <p className="mt-1 text-sm text-slate-600">
-          The code and next serial number decide the serials new machines get, e.g. code LCR and next number 2073 gives
+          The code and next serial number decide the serial numbers new machines receive, for example code LCR and next number 2073 gives
           LCR-2073.
           {!isAdmin && ' Only admins can make changes.'}
         </p>
@@ -148,7 +149,7 @@ export default function MachineTypesPage() {
 
       {isAdmin && (
         <form onSubmit={add} className="rounded-lg border border-slate-200 bg-white p-4" noValidate>
-          <h2 className="mb-3 text-base font-semibold">Add a machine type</h2>
+          <h2 className="mb-3 text-base font-semibold">Add a Machine Type</h2>
           <div className="grid gap-3 md:grid-cols-[1fr_8rem_9rem_auto]">
             <Field label="Name" htmlFor="new-name" error={newErrors.name}>
               <input
@@ -287,7 +288,7 @@ export default function MachineTypesPage() {
                           disabled={savingId === t.id}
                           onClick={() => save(t)}
                         >
-                          {savingId === t.id ? 'Saving…' : 'Save'}
+                          {savingId === t.id ? 'Saving…' : 'Save Changes'}
                         </button>
                         <button
                           type="button"
@@ -303,7 +304,7 @@ export default function MachineTypesPage() {
                     )}
                     {!isChanged(t) && (
                       <button type="button" className={secondaryButtonClass} onClick={() => setArchived(t, !t.archived)}>
-                        {t.archived ? 'Bring back' : 'Archive'}
+                        {t.archived ? 'Restore' : 'Archive'}
                       </button>
                     )}
                   </div>

@@ -29,15 +29,15 @@ export default function SettingsPage() {
 
         <Can permission="settings.account">
           <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <h2 className="mb-2 font-semibold">Your account</h2>
+            <h2 className="mb-2 font-semibold">Your Account</h2>
             <p>
               Signed in as <strong>{session?.user.email ?? '—'}</strong>
-              {role && <> · {role === 'admin' ? 'Admin (can see and do everything)' : 'User (sees what an admin has ticked)'}</>}
+              {role && <> · {role === 'admin' ? 'Admin (full access)' : 'User (sees what an administrator has allowed)'}</>}
             </p>
             {departments !== null && (
               <p className="mt-1 text-slate-600">
                 Department{departments.length === 1 ? '' : 's'}:{' '}
-                {departments.length ? departments.join(', ') : 'none yet (an admin can add you)'}
+                {departments.length ? departments.join(', ') : 'none yet (an administrator can add you)'}
               </p>
             )}
           </section>
@@ -45,7 +45,7 @@ export default function SettingsPage() {
 
         <Can permission="settings.start_page" level="edit">
           <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <h2 className="mb-2 font-semibold">Start page</h2>
+            <h2 className="mb-2 font-semibold">Start Page</h2>
             <p className="mb-2 text-slate-600">The page that opens after you sign in.</p>
             <select
               aria-label="Start page"
@@ -53,7 +53,7 @@ export default function SettingsPage() {
               value={startPage ?? ''}
               onChange={(e) => setStartPage(e.target.value || null)}
             >
-              <option value="">Automatic (the first page I can see)</option>
+              <option value="">Automatic (the first page I can open)</option>
               {startPageChoices((p) => (!p.permission || can(p.permission, p.level)) && (!p.anyOf || canAny(p.anyOf, p.level))).map(
                 (p) => (
                   <option key={p.to} value={p.to}>
@@ -67,21 +67,21 @@ export default function SettingsPage() {
 
         <Can permission="settings.units">
           <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <h2 className="mb-2 font-semibold">Units for crate sizes and weights</h2>
+            <h2 className="mb-2 font-semibold">Units for Crate Sizes and Weights</h2>
             <UnitsSwitch />
             <p className="mt-2 text-slate-600">
-              Only changes what you see. Everything is saved in metric, so others can pick their own.
+              This only changes what you see. Everything is stored in metric, so each person can choose their own units.
             </p>
           </section>
         </Can>
 
         <Can permission="settings.notifications">
           <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <h2 className="mb-2 font-semibold">Desktop notifications</h2>
+            <h2 className="mb-2 font-semibold">Desktop Notifications</h2>
             {permission === 'granted' && (
-              <p>On: this browser shows a notification when a payment becomes overdue or a ship date passes.</p>
+              <p>Enabled: this browser shows a notification when a payment becomes overdue or a ship date passes.</p>
             )}
-            {permission === 'denied' && <p>Blocked in this browser. Allow notifications for this site in your browser’s settings.</p>}
+            {permission === 'denied' && <p>Blocked in this browser. Allow notifications for this site in your browser settings.</p>}
             {permission === 'unsupported' && <p>This browser can’t show desktop notifications.</p>}
             {permission === 'default' && (
               <button
@@ -89,7 +89,7 @@ export default function SettingsPage() {
                 className={secondaryButtonClass}
                 onClick={async () => setPermission(await askNotificationPermission())}
               >
-                Turn on desktop notifications
+                Enable Desktop Notifications
               </button>
             )}
           </section>
@@ -97,8 +97,8 @@ export default function SettingsPage() {
 
         <Can anyOf={ADMIN_KEYS}>
           <Link to="/admin" className="block rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-400">
-            <div className="font-semibold">🛠 Admin</div>
-            <div className="mt-1 text-sm text-slate-600">The admin pages you have access to.</div>
+            <div className="font-semibold">Admin</div>
+            <div className="mt-1 text-sm text-slate-600">The admin pages you can open.</div>
           </Link>
         </Can>
 
@@ -108,7 +108,7 @@ export default function SettingsPage() {
             {isSupabaseConfigured ? (
               <span className="font-medium text-green-700">settings found</span>
             ) : (
-              <span className="font-medium text-amber-700">not set up (.env.local missing)</span>
+              <span className="font-medium text-amber-700">not configured (.env.local is missing)</span>
             )}
           </section>
         </Can>

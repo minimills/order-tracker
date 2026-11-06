@@ -17,16 +17,16 @@ const NO_ACCESS = 'This email doesn’t have access. Contact the office.'
 function friendly(error: { message?: string; code?: string; status?: number }) {
   const msg = (error.message ?? '').toLowerCase()
   if (error.code === 'otp_expired' || msg.includes('expired') || msg.includes('invalid')) {
-    return 'That code is wrong or has expired. Check the latest email, or ask for a new code.'
+    return 'That code is incorrect or has expired. Check the most recent email, or request a new code.'
   }
   if (error.status === 429 || msg.includes('rate limit') || msg.includes('security purposes')) {
-    return 'Too many tries. Please wait a minute, then try again.'
+    return 'Too many attempts. Wait one minute, then try again.'
   }
   // No login for this email (sign-ups are off), or the login was blocked.
   if (msg.includes('signups not allowed') || msg.includes('not allowed for otp') || msg.includes('user not found') || msg.includes('banned')) {
     return NO_ACCESS
   }
-  return error.message || 'Something went wrong. Please try again.'
+  return error.message || 'Sign-in could not be completed. Check your internet connection and try again.'
 }
 
 /**
@@ -102,7 +102,7 @@ export default function LoginPage() {
     if (!supabase || !sentTo) return
     const token = code.replace(/\D/g, '')
     if (token.length < 6) {
-      setError('Enter the code from the email (6 digits).')
+      setError('Enter the 6-digit code from the email.')
       return
     }
     setBusy(true)
@@ -117,7 +117,7 @@ export default function LoginPage() {
     <div className="flex min-h-full items-center justify-center p-4">
       <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
         <div className="text-lg font-semibold">Belfast Mini Mills</div>
-        <div className="text-sm text-slate-500">Order tracker</div>
+        <div className="text-sm text-slate-500">Order Tracker</div>
 
         {!isSupabaseConfigured ? (
           <p className="mt-6 text-sm text-amber-800">
@@ -128,10 +128,10 @@ export default function LoginPage() {
         ) : sentTo ? (
           <form onSubmit={onCode} className="mt-6 space-y-3" noValidate>
             <p className="text-sm">
-              We emailed a sign-in code to <strong>{sentTo}</strong>.
+              A sign-in code was emailed to <strong>{sentTo}</strong>.
             </p>
             <label className="block text-sm font-medium" htmlFor="code">
-              Code from the email
+              Code From the Email
             </label>
             <input
               ref={codeInput}
@@ -147,7 +147,7 @@ export default function LoginPage() {
             />
             {error && <p className="text-sm text-red-700">{error}</p>}
             <button type="submit" disabled={busy} className={buttonClass}>
-              {busy ? 'Checking…' : 'Sign in'}
+              {busy ? 'Checking…' : 'Sign In'}
             </button>
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <button
@@ -156,7 +156,7 @@ export default function LoginPage() {
                 disabled={busy || waitSeconds > 0}
                 onClick={() => sendCode(sentTo)}
               >
-                {waitSeconds > 0 ? `Send a new code in ${waitSeconds}s` : 'Send a new code'}
+                {waitSeconds > 0 ? `Send a New Code in ${waitSeconds}s` : 'Send a New Code'}
               </button>
               <button
                 type="button"
@@ -166,17 +166,17 @@ export default function LoginPage() {
                   setError(null)
                 }}
               >
-                Use a different email
+                Use a Different Email
               </button>
             </div>
             <p className="text-xs text-slate-500">
-              The code works once and expires after a while. Check your spam folder if it doesn’t arrive.
+              The code can be used once and expires after a short time. If it does not arrive, check your spam folder.
             </p>
           </form>
         ) : (
           <form onSubmit={onEmail} className="mt-6 space-y-3">
             <label className="block text-sm font-medium" htmlFor="email">
-              Your email
+              Email Address
             </label>
             <input
               id="email"
@@ -190,9 +190,9 @@ export default function LoginPage() {
             />
             {error && <p className="text-sm text-red-700">{error}</p>}
             <button type="submit" disabled={busy} className={buttonClass}>
-              {busy ? 'Sending…' : 'Email me a sign-in code'}
+              {busy ? 'Sending…' : 'Email Me a Sign-In Code'}
             </button>
-            <p className="text-xs text-slate-500">No password needed. We email you a 6-digit code to type in here.</p>
+            <p className="text-xs text-slate-500">No password is needed. A 6-digit code is emailed to you to enter here.</p>
           </form>
         )}
       </div>

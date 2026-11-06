@@ -15,6 +15,7 @@ import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import type { OrderSummaryRow } from '../lib/types'
 import SerialNumber from '../components/SerialNumber'
+import Icon from '../components/Icon'
 
 type Machine = {
   id: string
@@ -27,7 +28,7 @@ type Machine = {
 
 /**
  * The shop board in large print, in queue order: order, customer and every
- * machine with its serial and a "built" tick. Made for printing or a big screen.
+ * machine with its serial and its built status. Made for printing or a big screen.
  */
 export default function ShopBoardPage() {
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
@@ -103,7 +104,7 @@ export default function ShopBoardPage() {
             {company.logo && <img src={company.logo} alt="" className="max-h-14" />}
             <div>
               <div className="text-sm font-medium text-slate-600">{company.name}</div>
-              <h1 className="text-3xl font-bold">Shop board</h1>
+              <h1 className="text-3xl font-bold">Shop Board</h1>
               <p className="text-slate-600">
                 {orders.length} order{orders.length === 1 ? '' : 's'} in the queue · {showDate(todayISO(), 'EEEE, MMMM d, yyyy')}
               </p>
@@ -119,7 +120,7 @@ export default function ShopBoardPage() {
               }
             >
               <Link to="/board" className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
-                ← Back to board
+                ← Back to Orders Board
               </Link>
             </Can>
             <Can permission="shop_board.print">
@@ -128,7 +129,7 @@ export default function ShopBoardPage() {
                 onClick={() => window.print()}
                 className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
               >
-                🖨 Print
+                Print
               </button>
             </Can>
           </div>
@@ -136,7 +137,7 @@ export default function ShopBoardPage() {
 
         {loading && <p className="text-xl text-slate-500">Loading…</p>}
         {error && <p className="text-xl text-red-700">{error}</p>}
-        {!loading && orders.length === 0 && <p className="text-xl text-slate-500">The board is empty.</p>}
+        {!loading && orders.length === 0 && <p className="text-xl text-slate-500">There are no orders in the shop queue.</p>}
 
         <div className="divide-y-2 divide-slate-300 border-y-2 border-slate-900">
           {orders.map((o) => {
@@ -202,7 +203,7 @@ export default function ShopBoardPage() {
                             }`}
                             aria-label={m.ready ? 'Built' : 'Not built'}
                           >
-                            {m.ready ? '✓' : ''}
+                            {m.ready && <Icon name="check" className="h-5 w-5" />}
                           </span>
                           {m.serial_number ? <SerialNumber serial={m.serial_number} className="font-semibold" /> : <span>—</span>}
                           <span className="text-slate-700">{m.machine_types?.name}</span>

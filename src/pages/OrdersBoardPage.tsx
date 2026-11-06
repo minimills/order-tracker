@@ -180,7 +180,7 @@ export default function OrdersBoardPage() {
       <div className="-m-4 flex h-[calc(100%+2rem)] flex-col p-4 md:-m-8 md:h-[calc(100%+4rem)] md:p-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Orders board</h1>
+            <h1 className="text-2xl font-semibold">Orders Board</h1>
             {canDrag && (
               <p className="text-sm text-slate-600">
                 Drag a card to {canChangeStage ? 'change its stage or ' : ''}its place in the queue
@@ -202,12 +202,12 @@ export default function OrdersBoardPage() {
             </Can>
             <Can permission="shop_board">
               <Link to="/shop-board" className={secondaryButtonClass}>
-                🖨 Shop board
+                Shop Board
               </Link>
             </Can>
             <Can permission="orders.new" level="edit">
               <Link to="/orders/new" className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700">
-                + New order
+                New Order
               </Link>
             </Can>
           </div>
@@ -216,7 +216,7 @@ export default function OrdersBoardPage() {
         {loading ? (
           <p className="text-center text-slate-500">Loading…</p>
         ) : columns.length === 0 ? (
-          <p className="text-center text-slate-500">No columns of the board are switched on for you.</p>
+          <p className="text-center text-slate-500">No columns of the board are enabled for your account.</p>
         ) : (
           <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2">
             {columns.map((column) => {
@@ -239,7 +239,7 @@ export default function OrdersBoardPage() {
                     </div>
                     <div className="flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-3">
                       {column.orders.length === 0 && (
-                        <p className="px-1 py-4 text-center text-xs text-slate-400">No orders</p>
+                        <p className="px-1 py-4 text-center text-xs text-slate-400">No orders in this stage.</p>
                       )}
                       {column.orders.map((o, i) => {
                         const onBoard = BOARD_STAGES.includes(column.stage)

@@ -5,7 +5,7 @@ import { STAGES, type Stage } from './types'
 /**
  * Stage names shown on screen. The database always stores the fixed values in
  * STAGES ("Ready"); an admin can rename what people see in Admin → Stage names
- * (app_settings key 'stage_labels', e.g. {"Ready": "Ready / testing"}).
+ * (app_settings key 'stage_labels', for example {"Ready": "Ready / testing"}).
  */
 export type StageLabels = Record<Stage, string>
 

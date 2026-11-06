@@ -81,7 +81,7 @@ export default function PaymentsPage() {
         <div>
           <h1 className="text-2xl font-semibold">Payments</h1>
           <p className="text-sm text-slate-600">
-            Every payment still owed, soonest first. Cancelled and archived orders are left out.
+            Every outstanding payment, soonest first. Cancelled and archived orders are not included.
           </p>
         </div>
         <Can permission="payments.page.refresh">
@@ -112,7 +112,7 @@ export default function PaymentsPage() {
       {loading && <p className="text-center text-slate-500">Loading…</p>}
       {!loading && rows.length === 0 && (
         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-          Nothing is owed right now. 🎉
+          No payments are outstanding.
         </div>
       )}
 
@@ -169,7 +169,7 @@ export default function PaymentsPage() {
                     <div className="md:text-right">
                       <Can permission="payments.action.mark_received" level="edit">
                         <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
-                          Mark received
+                          Mark as Received
                         </button>
                       </Can>
                     </div>
@@ -185,7 +185,7 @@ export default function PaymentsPage() {
           payment={receiving}
           onClose={() => setReceiving(null)}
           onDone={() => {
-            toast.success(`Order ${receiving.order_code}: ${receiving.payment_type} marked received.`)
+            toast.success(`Order ${receiving.order_code}: ${receiving.payment_type} marked as received.`)
             setReceiving(null)
             load()
           }}

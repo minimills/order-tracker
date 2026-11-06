@@ -54,7 +54,7 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
   function add() {
     const t = chosen ?? (results.length === 1 ? results[0] : null)
     if (!t) {
-      setError(query.trim() ? 'Pick a machine type from the list.' : 'Type a machine type first.')
+      setError(query.trim() ? 'Select a machine type from the list.' : 'Enter a machine type first.')
       search.current?.focus()
       return
     }
@@ -97,7 +97,7 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
       <div className="grid grid-cols-[1fr_5rem] gap-2 sm:grid-cols-[1fr_6rem_auto]">
         <div className="relative">
           <label htmlFor={`${id}-search`} className="mb-1 block text-sm font-medium text-slate-700">
-            Add a machine
+            Add a Machine
           </label>
           <input
             ref={search}
@@ -109,7 +109,7 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
             aria-activedescendant={open && results[highlight] ? `${id}-opt-${highlight}` : undefined}
             autoComplete="off"
             className={inputClass}
-            placeholder="Type to search, e.g. card"
+            placeholder="Search, for example card"
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -176,13 +176,13 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
         </div>
         <div className="col-span-2 flex items-end sm:col-span-1">
           <button type="button" className={secondaryButtonClass} onClick={add}>
-            + Add
+            Add
           </button>
         </div>
       </div>
       {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
       <p className="mt-1 text-xs text-slate-500">
-        Type a name, pick with ↑ ↓ and press Enter, type how many, press Enter again. The box is then ready for the next
+        Enter a name, choose with ↑ ↓ and press Enter, enter the quantity and press Enter again. The box is then ready for the next
         machine.
       </p>
     </div>

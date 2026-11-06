@@ -56,7 +56,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
             className="text-sm text-slate-600 underline"
             onClick={() => onChange({ mode: 'existing', customer: null })}
           >
-            Pick an existing customer instead
+            Select an Existing Customer Instead
           </button>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
@@ -75,7 +75,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
             <Field
               label="Email addresses"
               htmlFor="cust-emails"
-              hint="Separate several emails with commas."
+              hint="Separate multiple email addresses with commas."
               error={errors.emails}
               className="md:col-span-2"
             >
@@ -142,7 +142,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
           id="cust-search"
           className={inputClass}
           value={query}
-          placeholder="Type a name or company"
+          placeholder="Enter a name or company"
           autoComplete="off"
           onChange={(e) => setQuery(e.target.value)}
         />
@@ -151,7 +151,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
         <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
           {searching && results.length === 0 && <li className="px-3 py-2 text-sm text-slate-500">Searching…</li>}
           {!searching && results.length === 0 && (
-            <li className="px-3 py-2 text-sm text-slate-500">No customer found.</li>
+            <li className="px-3 py-2 text-sm text-slate-500">No matching customers found.</li>
           )}
           {results.map((c) => (
             <li key={c.id}>
@@ -176,7 +176,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
             onChange({ mode: 'new', customer: { ...emptyNewCustomer, name: results.length === 0 ? query.trim() : '' } })
           }
         >
-          + Add a new customer
+          Create New Customer
         </button>
       </Can>
     </div>

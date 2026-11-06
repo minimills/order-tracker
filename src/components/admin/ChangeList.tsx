@@ -11,7 +11,7 @@ export type PositionChange = { order: string; old: number | null; new: number | 
 /* @layout-helper */
 export default function ChangeList({ positions = [], serials = [] }: { positions?: PositionChange[]; serials?: SerialChange[] }) {
   if (positions.length === 0 && serials.length === 0) {
-    return <p className="text-sm text-slate-500">Nothing would change.</p>
+    return <p className="text-sm text-slate-500">No changes would be made.</p>
   }
   return (
     <div className="space-y-4 text-sm">

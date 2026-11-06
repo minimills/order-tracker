@@ -6,6 +6,7 @@ import { buttonClass, inputClass, secondaryButtonClass } from '../../components/
 import type { Group, Person } from '../../lib/boards'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { confirmAction } from '../../lib/confirm'
 
 type Member = { group_id: string; user_email: string }
 
@@ -58,14 +59,14 @@ export default function GroupsPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <AdminPageHeader title="Groups">
-        Groups of people, e.g. Procurement or Techs. Use them to share boards and choose who gets board notifications. A
+        Groups of people, for example Procurement or Techs. Use them to share boards and choose who gets board notifications. A
         person can be in any number of groups. (Departments are set in Admin → Departments.)
       </AdminPageHeader>
 
       <form onSubmit={add} className="flex gap-2 rounded-lg border border-slate-200 bg-white p-4">
-        <input aria-label="New group name" className={inputClass} placeholder="New group, e.g. Procurement" value={name} onChange={(e) => setName(e.target.value)} />
+        <input aria-label="New group name" className={inputClass} placeholder="New group, for example Procurement" value={name} onChange={(e) => setName(e.target.value)} />
         <button type="submit" className={buttonClass} disabled={busy}>
-          Add group
+          Create Group
         </button>
       </form>
 
@@ -95,12 +96,12 @@ export default function GroupsPage() {
                     type="button"
                     className={`${secondaryButtonClass} ml-auto`}
                     disabled={busy}
-                    onClick={() =>
-                      (g.archived || window.confirm(`Archive the group “${g.name}”? Boards shared with it stop being shared with its people.`)) &&
+                    onClick={async () =>
+                      (g.archived || (await confirmAction(`Archive the group “${g.name}”? Boards shared with this group are no longer shared with its members.`, { confirmLabel: 'Archive' }))) &&
                       run(() => supabase!.from('user_groups').update({ archived: !g.archived }).eq('id', g.id))
                     }
                   >
-                    {g.archived ? 'Bring back' : 'Archive'}
+                    {g.archived ? 'Restore' : 'Archive'}
                   </button>
                 </div>
                 <ul className="mt-2 flex flex-wrap gap-1.5">
@@ -129,7 +130,7 @@ export default function GroupsPage() {
                     disabled={busy}
                     onChange={(e) => e.target.value && run(() => supabase!.from('user_group_members').insert({ group_id: g.id, user_email: e.target.value }))}
                   >
-                    <option value="">+ Add a person…</option>
+                    <option value="">Add a person…</option>
                     {people
                       .filter((p) => !mine.some((m) => m.user_email === p.email))
                       .map((p) => (
@@ -142,7 +143,7 @@ export default function GroupsPage() {
               </li>
             )
           })}
-        {groups.length === 0 && <li className="text-sm text-slate-500">No groups yet.</li>}
+        {groups.length === 0 && <li className="text-sm text-slate-500">No groups have been created yet.</li>}
       </ul>
     </div>
   )

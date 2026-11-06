@@ -62,7 +62,7 @@ export function alertText(a: AlertRow): { title: string; detail: string } {
     case 'ship_passed':
       return {
         title: `Ship date passed · ${order}`,
-        detail: `Expected to ship ${showDate(a.alert_date)} (${plural(-days, 'day')} ago), not marked shipped · ${who}`,
+        detail: `Expected to ship ${showDate(a.alert_date)} (${plural(-days, 'day')} ago), not marked as shipped · ${who}`,
       }
     case 'ship_soon':
       return {

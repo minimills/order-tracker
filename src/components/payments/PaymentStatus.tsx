@@ -10,7 +10,7 @@ const tone: Record<string, string> = {
   'Nothing due': 'bg-white text-slate-400 ring-slate-200',
 }
 
-/** Coloured status label, e.g. "Overdue · 4 days overdue". */
+/** Coloured status label, for example "Overdue · 4 days overdue". */
 export default function PaymentStatus({ payment }: { payment: Pick<PaymentRow, 'status' | 'days_until_due'> }) {
   const extra = dueText(payment)
   return (

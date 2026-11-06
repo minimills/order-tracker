@@ -1,4 +1,4 @@
-/** One spreadsheet cell, already simplified (formula results, real dates, ticks…). */
+/** One spreadsheet cell, already simplified (formula results, real dates, check marks…). */
 export type Cell =
   | { kind: 'empty' }
   | { kind: 'text'; text: string }
@@ -51,7 +51,7 @@ export type DraftOrder = {
   freight: string
   /** '' = CAD */
   currency: string
-  /** '' = worked out (ship date / ticks); from the optional Stage column of a backup */
+  /** '' = worked out (ship date / check marks); from the optional Stage column of a backup */
   stage: string
   /** Messages about how cells were read; they don't change when you edit. */
   readMessages: Msg[]

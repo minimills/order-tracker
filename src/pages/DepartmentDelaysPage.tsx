@@ -74,9 +74,9 @@ export default function DepartmentDelaysPage() {
       <div className="mx-auto max-w-5xl space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Department delays</h1>
+            <h1 className="text-2xl font-semibold">Department Delays</h1>
             <p className="text-sm text-slate-600">
-              How often each department finishes by its deadline. A step counts when it is ticked done on the Order page;
+              How often each department finishes by its deadline. A step counts when it is marked complete on the Order page;
               Shipping compares the actual ship date with the expected one.
             </p>
           </div>
@@ -134,15 +134,15 @@ export default function DepartmentDelaysPage() {
               </table>
             </div>
             <p className="text-xs text-slate-500">
-              Days are calendar days. “Overdue now” = deadlines already passed on orders in the shop queue, not yet ticked
-              done. {from && `Showing work finished since ${showDate(from)}.`}
+              Days are calendar days. “Overdue now” means deadlines that have passed on orders in the shop queue and are
+              not yet marked complete. {from && `Showing work finished since ${showDate(from)}.`}
             </p>
 
             <Can permission="reports.department_delays.by_month">
               <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 className="mb-2 font-semibold">By month (on time %, how many finished)</h2>
+                <h2 className="mb-2 font-semibold">By Month (On-Time %, Number Finished)</h2>
                 {months.length === 0 ? (
-                  <p className="text-sm text-slate-500">Nothing finished in this period yet.</p>
+                  <p className="text-sm text-slate-500">No work was finished in this period.</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">

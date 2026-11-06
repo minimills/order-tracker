@@ -194,7 +194,7 @@ export default function ImportPage() {
     const { data, error } = await supabase.rpc('import_sheet', { p_orders: plan.payload, p_skipped: plan.skipped })
     setBusy(null)
     setConfirming(false)
-    if (error) return toast.error(`Nothing was imported: ${friendlyError(error)}`)
+    if (error) return toast.error(`No data was imported: ${friendlyError(error)}`)
     setResult(data as Summary)
     setDrafts([])
     setGrids([])
@@ -218,9 +218,9 @@ export default function ImportPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <AdminPageHeader title="Import & backup">
+      <AdminPageHeader title="Import and Backup">
         Bring orders in from a spreadsheet laid out like the old Google Sheet, or download everything as a backup in the
-        same layout. Nothing is saved until you press Import and confirm.
+        same layout. Nothing is saved until you select Import and confirm.
       </AdminPageHeader>
 
       <div className="grid gap-3 md:grid-cols-3">
@@ -261,7 +261,7 @@ export default function ImportPage() {
 
       {result && (
         <section className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm">
-          <h2 className="text-lg font-semibold text-green-900">Import finished</h2>
+          <h2 className="text-lg font-semibold text-green-900">Import Finished</h2>
           <p className="mt-1">
             <strong>{n('orders_created') + n('orders_updated')}</strong> orders ({n('orders_created')} new, {n('orders_updated')} updated),{' '}
             <strong>{n('machines_created') + n('machines_updated')}</strong> machines, <strong>{n('payments_created') + n('payments_updated')}</strong>{' '}
@@ -271,7 +271,7 @@ export default function ImportPage() {
             <p className="mt-1">
               {n('needs_serial')} machine{n('needs_serial') === 1 ? '' : 's'} need a serial:{' '}
               <Link to="/admin/serials" className="underline">
-                Admin → Serial numbers
+                Admin → Serial Numbers
               </Link>
               .
             </p>
@@ -287,7 +287,7 @@ export default function ImportPage() {
           )}
           <p className="mt-2">
             <Link to="/orders?stage=all" className="underline">
-              See the orders
+              View the Orders
             </Link>{' '}
             · This import is recorded in{' '}
             <Link to="/admin/activity" className="underline">
@@ -356,13 +356,13 @@ export default function ImportPage() {
                 Import…
               </button>
             </div>
-            {errors > 0 && <p className="text-sm text-red-700">Fix the red rows (or untick them) before importing.</p>}
+            {errors > 0 && <p className="text-sm text-red-700">Fix the red rows (or deselect them) before importing.</p>}
             {check.codeSuggestions.length > 0 && (
               <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900">
                 These machine types have no code in the app yet, but your serials use one:{' '}
                 {check.codeSuggestions.map((s) => `${s.type.name} → ${s.code}`).join(', ')}.{' '}
                 <button type="button" className="font-medium underline" onClick={fillCodes} disabled={!!busy}>
-                  Save these codes
+                  Save These Codes
                 </button>{' '}
                 (then those serials follow the normal numbering).
               </div>
@@ -385,14 +385,14 @@ export default function ImportPage() {
                 onUseForAll={applyTypeToName}
               />
             ))}
-            {shown.length === 0 && <p className="text-center text-sm text-slate-500">Nothing to show with this filter.</p>}
+            {shown.length === 0 && <p className="text-center text-sm text-slate-500">No rows match this filter.</p>}
           </div>
         </>
       )}
 
       {confirming && (
         <Modal
-          title="Import now?"
+          title="Import Now?"
           onClose={() => setConfirming(false)}
           busy={!!busy}
           footer={
@@ -401,7 +401,7 @@ export default function ImportPage() {
                 Cancel
               </button>
               <button type="button" className={buttonClass} onClick={runImport} disabled={!!busy}>
-                {busy ? 'Importing…' : 'Yes, import'}
+                {busy ? 'Importing…' : 'Confirm Import'}
               </button>
             </>
           }
@@ -414,10 +414,10 @@ export default function ImportPage() {
               <strong>{plan.counts.machines}</strong> machines and <strong>{plan.counts.payments}</strong> payments
             </li>
             {plan.counts.notMachines > 0 && <li>{plan.counts.notMachines} non-machine rows added to order notes</li>}
-            <li>{plan.skipped} unticked rows skipped</li>
+            <li>{plan.skipped} rows not selected were skipped</li>
           </ul>
           <p className="mt-3 text-sm text-slate-600">
-            Everything is saved in one go: if anything goes wrong, nothing is saved. Afterwards each machine type’s next
+            Everything is saved in one step: if any part fails, nothing is saved. Afterwards each machine type’s next
             serial is set one above the highest imported number.
           </p>
         </Modal>
@@ -425,7 +425,7 @@ export default function ImportPage() {
 
       {creating && (
         <Modal
-          title="Create a machine type"
+          title="Create a Machine Type"
           onClose={() => setCreating(null)}
           footer={
             <>
@@ -442,7 +442,7 @@ export default function ImportPage() {
             <Field label="Name" htmlFor="ct-name">
               <input id="ct-name" className={inputClass} value={creating.name} onChange={(e) => setCreating({ ...creating, name: e.target.value })} />
             </Field>
-            <Field label="Code (optional)" htmlFor="ct-code" hint="Capital letters and numbers, e.g. SSD.">
+            <Field label="Code (optional)" htmlFor="ct-code" hint="Capital letters and numbers, for example SSD.">
               <input
                 id="ct-code"
                 className={`${inputClass} uppercase`}

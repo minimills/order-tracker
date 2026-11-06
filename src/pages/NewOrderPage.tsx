@@ -257,7 +257,7 @@ export default function NewOrderPage() {
   function validate() {
     const e: Record<string, string> = {}
 
-    if (customer.mode === 'existing' && !customer.customer) e.customer = 'Pick a customer, or add a new one.'
+    if (customer.mode === 'existing' && !customer.customer) e.customer = 'Select a customer, or create a new one.'
     if (customer.mode === 'new') {
       if (!customer.customer.name.trim()) e.name = 'Enter the customer’s name.'
       const bad = parseEmails(customer.customer.emails).filter((m) => !emailPattern.test(m))
@@ -265,12 +265,12 @@ export default function NewOrderPage() {
     }
 
     if (isSplit) {
-      if (splitOfInt === null) e.splitOf = 'Enter the number of the original order, e.g. 76.'
+      if (splitOfInt === null) e.splitOf = 'Enter the number of the original order, for example 76.'
       else if (activeSplitInfo === 'not-found') e.splitOf = `There is no order ${splitOfInt}.`
     } else if (!may.number) {
       // the next free number is picked automatically
     } else if (orderNumberInt === null || orderNumberInt < 1) {
-      e.orderNumber = 'Enter a whole number, e.g. 77.'
+      e.orderNumber = 'Enter a whole number, for example 77.'
     } else if (takenNumbers[orderNumberInt]) {
       e.orderNumber = `Order ${orderNumberInt} already exists.${nextNumber ? ` The next free number is ${nextNumber}.` : ''}`
     }
@@ -285,11 +285,11 @@ export default function NewOrderPage() {
         if (m === null) return
         const s = cleanSerial(m)
         const key = `row-${i}-unit-${j}`
-        if (!s) e[key] = 'Type the serial, or switch back to automatic.'
-        else if (seen.has(s)) e[key] = `${s} is typed twice on this order.`
-        else if (takenSerials[s]) e[key] = `${s} is already used by order ${takenSerials[s]}.`
+        if (!s) e[key] = 'Enter the serial number, or switch back to automatic numbering.'
+        else if (seen.has(s)) e[key] = `${s} is entered twice on this order.`
+        else if (takenSerials[s]) e[key] = `${s} is already in use on order ${takenSerials[s]}.`
         else if (type?.code && !s.startsWith(`${type.code}-`))
-          e[key] = `Serials for ${type.name} start with ${type.code}-`
+          e[key] = `Serial numbers for ${type.name} start with ${type.code}-`
         seen.set(s, key)
       })
     })
@@ -297,12 +297,12 @@ export default function NewOrderPage() {
 
     if (!may.total) {
       // no order total for this person
-    } else if (totalNum === null) e.total = 'Enter the order total (0 if not known yet).'
-    else if (Number.isNaN(totalNum)) e.total = 'Enter a number, e.g. 12500 or 12,500.00'
+    } else if (totalNum === null) e.total = 'Enter the order total (enter 0 if it is not known yet).'
+    else if (Number.isNaN(totalNum)) e.total = 'Enter a number, for example 12500 or 12,500.00'
     if (downNum !== null && Number.isNaN(downNum)) e.down = 'Enter a number.'
-    else if (downMode === 'percent' && downNum !== null && downNum > 100) e.down = 'The percent can’t be more than 100.'
+    else if (downMode === 'percent' && downNum !== null && downNum > 100) e.down = 'The percentage cannot be more than 100.'
     else if (downAmount !== null && totalNum !== null && downAmount > totalNum)
-      e.down = 'The down payment can’t be more than the order total.'
+      e.down = 'The down payment cannot be more than the order total.'
     if (downDue && balanceDue && balanceDue < downDue) e.balanceDue = 'The balance would be due before the down payment.'
 
     return e
@@ -317,7 +317,7 @@ export default function NewOrderPage() {
     const blocking = Object.keys(e).filter((k) => k !== 'balanceDue')
     setTriedToSave(true)
     if (blocking.length) {
-      toast.error('Please fix the fields marked in red.')
+      toast.error('Correct the fields marked in red, then save again.')
       setTimeout(() => document.querySelector('.text-red-600')?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
       return
     }
@@ -392,7 +392,7 @@ export default function NewOrderPage() {
       p_deadlines: deadlinesOf(p),
       p_initial: true,
     })
-    if (error) toast.error(`The order is saved, but its department deadlines were not: ${friendlyError(error)}`)
+    if (error) toast.error(`The order was saved, but its department deadlines were not: ${friendlyError(error)}`)
   }
 
   const errors: Record<string, string> = triedToSave ? validate() : {}
@@ -402,7 +402,7 @@ export default function NewOrderPage() {
     <Can permission="orders.new" level="edit">
       <form onSubmit={onSubmit} className="mx-auto max-w-4xl space-y-6 pb-24" noValidate>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">New order</h1>
+          <h1 className="text-2xl font-semibold">New Order</h1>
           <Can permission="orders.list" fallback={<Link to="/" className="text-sm text-slate-600 underline">Cancel</Link>}>
             <Link to="/orders" className="text-sm text-slate-600 underline">
               Cancel
@@ -456,14 +456,14 @@ export default function NewOrderPage() {
                   label="Split shipment of order #"
                   htmlFor="split-of"
                   error={err('splitOf') ?? (activeSplitInfo === 'not-found' ? `There is no order ${splitOfInt}.` : undefined)}
-                  hint={splitPreview ?? 'The new order gets the next suffix, e.g. 76-2.'}
+                  hint={splitPreview ?? 'The new order receives the next suffix, for example 76-2.'}
                 >
                   <input
                     id="split-of"
                     inputMode="numeric"
                     className={inputClass}
                     value={splitOf}
-                    placeholder="e.g. 76"
+                    placeholder="For example 76"
                     onChange={(e) => setSplitOf(e.target.value)}
                   />
                 </Field>
@@ -478,7 +478,7 @@ export default function NewOrderPage() {
                 </Field>
               }
             >
-              <Field label="Stage" htmlFor="stage" hint={getsSerials ? 'Goes to the bottom of the shop board.' : undefined}>
+              <Field label="Stage" htmlFor="stage" hint={getsSerials ? 'Added at the end of the shop queue.' : undefined}>
                 <select id="stage" className={inputClass} value={stage} onChange={(e) => setStage(e.target.value as Stage)}>
                   {NEW_ORDER_STAGES.map((s) => (
                     <option key={s} value={s}>
@@ -560,11 +560,11 @@ export default function NewOrderPage() {
                   htmlFor="ship-date"
                   hint={
                     shipHand !== null && plan
-                      ? `Typed by hand. Worked out: ${showDate(plan.ship_date)}.`
+                      ? `Entered manually. Calculated date: ${showDate(plan.ship_date)}.`
                       : plan
-                        ? 'Worked out from the shop queue (see Schedule below).'
+                        ? 'Calculated from the shop queue (see Schedule below).'
                         : getsSerials
-                          ? 'Worked out once machines are added.'
+                          ? 'Calculated once machines are added.'
                           : undefined
                   }
                 >
@@ -578,7 +578,7 @@ export default function NewOrderPage() {
                     />
                     {shipHand !== null && plan && (
                       <button type="button" className="shrink-0 text-xs text-slate-600 underline" onClick={() => setExpectedShipDate(null)}>
-                        Use worked-out date
+                        Use Calculated Date
                       </button>
                     )}
                   </div>
@@ -586,7 +586,7 @@ export default function NewOrderPage() {
               </Can>
               <Can permission="order.field.notes" level="edit">
                 <Field label="Notes" htmlFor="notes" className="md:col-span-2">
-                  <RichTextEditor label="Notes" value="" onChange={setNotes} placeholder="Anything worth remembering about this order" />
+                  <RichTextEditor label="Notes" value="" onChange={setNotes} placeholder="Anything worth recording about this order" />
                 </Field>
               </Can>
             </div>
@@ -666,7 +666,7 @@ export default function NewOrderPage() {
                       inputMode="decimal"
                       className={inputClass}
                       value={downValue}
-                      placeholder={downMode === 'percent' ? 'e.g. 30' : '0.00'}
+                      placeholder={downMode === 'percent' ? 'For example 30' : '0.00'}
                       onChange={(e) => setDownValue(e.target.value)}
                     />
                     <select
@@ -701,7 +701,7 @@ export default function NewOrderPage() {
                     balanceDueHand === null && expectedShipDate
                       ? `${defaults.balance_days_before_ship} days before the expected ship date.`
                       : !expectedShipDate
-                        ? 'Filled in once there is an expected ship date.'
+                        ? 'Filled in once the order has an expected ship date.'
                         : undefined
                   }
                 >
@@ -737,7 +737,7 @@ export default function NewOrderPage() {
 
         <div className="sticky bottom-0 -mx-4 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 px-4 py-3 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
           <button type="submit" className={buttonClass} disabled={saving}>
-            {saving ? 'Saving…' : 'Save order'}
+            {saving ? 'Saving…' : 'Save Order'}
           </button>
         </div>
       </form>

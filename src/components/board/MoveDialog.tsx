@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase'
 import type { OrderSummaryRow, Stage } from '../../lib/types'
 import Can from '../Can'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../form'
+import Icon from '../Icon'
 
 /** What the user asked for: a new stage and/or a new place on the board. */
 export type MoveRequest = {
@@ -16,7 +17,7 @@ export type MoveRequest = {
   stage: Stage | null
   anchor: OrderSummaryRow | null
   place: 'before' | 'after'
-  /** Plain-words description, e.g. "Move up, above order 76". */
+  /** Plain-words description, for example "Move up, above order 76". */
   description: string
 }
 
@@ -157,7 +158,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
     }
     const blocked = gateMove && notSigned.length > 0
     if (blocked && (!canOverride || !overrideReason.trim())) {
-      setError(canOverride ? 'Give a reason for moving on without signed final checks.' : 'Sign the final checks first.')
+      setError(canOverride ? 'Enter a reason for moving on without signed final checks.' : 'Sign the final checks first, then try again.')
       return
     }
     setSaving(true)
@@ -202,8 +203,9 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
             <Can permission="crating.ship_warning">
             {notCrated > 0 && (
               <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900" role="alert">
-                ⚠️ {notCratedText(notCrated, request.order.machines_count)} You can still mark it shipped; you can also
-                fill in the crates later from the order page.
+                <Icon name="alert" className="mr-1 h-4 w-4" />
+                {notCratedText(notCrated, request.order.machines_count)} You can still mark it as shipped and enter the crates
+                later from the Order page.
               </p>
             )}
             </Can>
@@ -219,12 +221,12 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
           </div>
         )}
 
-        {!preview && !error && <p className="mt-4 text-sm text-slate-500">Working out what will change…</p>}
+        {!preview && !error && <p className="mt-4 text-sm text-slate-500">Calculating the changes…</p>}
 
         {preview && (
           <div className="mt-4 space-y-4 text-sm">
             <div>
-              <h3 className="font-medium">Shop queue</h3>
+              <h3 className="font-medium">Shop Queue</h3>
               <p className="mt-1">
                 {!me
                   ? 'The order of the shop queue does not change.'
@@ -237,13 +239,13 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
               {me && (
                 <p className="mt-1 text-xs text-slate-500">
                   Promised ship dates and department deadlines do not change by themselves. If the new queue gives
-                  different dates, they show as suggestions (Order page and Dashboard) to accept or keep.
+                  different dates, they appear as suggestions on the Order page and the Dashboard, where they can be accepted or kept.
                 </p>
               )}
             </div>
 
             <div>
-              <h3 className="font-medium">Serial numbers</h3>
+              <h3 className="font-medium">Serial Numbers</h3>
               {preview.serials.length === 0 ? (
                 <p className="mt-1 text-slate-500">No serial numbers change.</p>
               ) : (
@@ -296,13 +298,13 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
             </p>
             <Can permission="checklist.override" level="edit">
               <label className="mt-3 block">
-                <span className="mb-1 block font-medium">Move anyway? Give a reason (it is recorded):</span>
+                <span className="mb-1 block font-medium">Move anyway? Enter a reason (it is recorded):</span>
                 <textarea
                   rows={2}
                   className={inputClass}
                   value={overrideReason}
                   onChange={(e) => setOverrideReason(e.target.value)}
-                  placeholder="e.g. Customer is checking the machine on pick-up"
+                  placeholder="For example: the customer is checking the machine at pick-up"
                 />
               </label>
             </Can>
@@ -322,7 +324,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
             onClick={confirm}
             disabled={!preview || saving || (gateMove && notSigned.length > 0 && (!canOverride || !overrideReason.trim()))}
           >
-            {saving ? 'Saving…' : gateMove && notSigned.length > 0 ? 'Override and move' : 'Confirm move'}
+            {saving ? 'Saving…' : gateMove && notSigned.length > 0 ? 'Override and Move' : 'Confirm Move'}
           </button>
         </div>
       </div>

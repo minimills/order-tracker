@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { formatMoney } from '../../../lib/format'
 import { NOT_A_MACHINE, type DraftMachine, type DraftOrder, type Msg } from '../../../lib/sheetImport/types'
 import type { CheckedOrder, ImportType } from '../../../lib/sheetImport/validate'
+import Icon from '../../Icon'
 
 const CREATE = '__create'
 
@@ -15,7 +16,7 @@ const tone = {
   off: 'border-slate-300 bg-slate-50 opacity-70',
 }
 const msgTone = { error: 'text-red-700', warning: 'text-amber-800', info: 'text-slate-500' }
-const icon = { error: '✖', warning: '⚠', info: 'ℹ' }
+const icon = { error: <Icon name="error" className="h-3.5 w-3.5" />, warning: <Icon name="alert" className="h-3.5 w-3.5" />, info: <Icon name="info" className="h-3.5 w-3.5" /> }
 
 const small = 'rounded border border-slate-300 bg-white px-1.5 py-1 text-xs focus:border-slate-500 focus:outline-none'
 
@@ -25,7 +26,7 @@ function Messages({ msgs }: { msgs: Msg[] }) {
     <ul className="mt-1 space-y-0.5 text-xs">
       {msgs.map((m, i) => (
         <li key={i} className={msgTone[m.level]}>
-          <span aria-hidden="true">{icon[m.level]} </span>
+          <span aria-hidden="true">{icon[m.level]}</span>{' '}
           Row {m.row}: {m.text}
         </li>
       ))}
@@ -84,7 +85,7 @@ export default function OrderPreview({ checked: c, types, options, onOrder, onMa
         </span>
         <span className="text-xs text-slate-600">{stageLabel(c.stage)}</span>
         <button type="button" className="ml-auto text-xs underline" onClick={() => setEditing((e) => !e)}>
-          {editing ? 'Done editing' : 'Edit'}
+          {editing ? 'Done Editing' : 'Edit'}
         </button>
       </div>
 

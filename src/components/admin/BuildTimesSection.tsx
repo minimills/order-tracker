@@ -47,7 +47,7 @@ export default function BuildTimesSection() {
       const raw = d[s.key].trim()
       if (raw === '') continue
       const n = Number(raw)
-      if (!Number.isFinite(n) || n < 0 || n > 365) return toast.error(`${t.name}: ${s.label} must be 0 to 365 days.`)
+      if (!Number.isFinite(n) || n < 0 || n > 365) return toast.error(`${t.name}: ${s.label} must be between 0 and 365 days.`)
       value[s.key] = Math.round(n)
     }
     setSaving(t.id)
@@ -62,7 +62,7 @@ export default function BuildTimesSection() {
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4">
-      <h2 className="text-base font-semibold">Build times (working days per step)</h2>
+      <h2 className="text-base font-semibold">Build Times (Working Days per Step)</h2>
       <p className="mt-1 text-sm text-slate-600">
         The default time each step takes for one machine. Once a type has at least 3 completed builds of a step, the
         schedule uses the average of the last 5 instead; the line under each box shows which is used.
@@ -107,14 +107,14 @@ export default function BuildTimesSection() {
                           onChange={(e) => setDrafts((all) => ({ ...all, [t.id]: { ...d, [s.key]: e.target.value } }))}
                         />
                         <div className={`mt-0.5 text-[11px] ${used.source === 'average' ? 'text-blue-700' : 'text-slate-500'}`}>
-                          {used.source === 'average' ? `avg of ${used.builds}: ${used.days}` : 'default used'}
+                          {used.source === 'average' ? `average of ${used.builds}: ${used.days}` : 'default used'}
                         </div>
                       </td>
                     )
                   })}
                   <td className="py-2 pl-2">
                     <button type="button" className={secondaryButtonClass} disabled={!changed || saving === t.id} onClick={() => save(t)}>
-                      {saving === t.id ? 'Saving…' : 'Save'}
+                      {saving === t.id ? 'Saving…' : 'Save Changes'}
                     </button>
                   </td>
                 </tr>

@@ -47,7 +47,7 @@ export default function BoardsPage() {
         <div className="font-semibold">{b.name}</div>
         {b.description && <div className="mt-0.5 line-clamp-2 text-sm text-slate-600">{b.description}</div>}
         <div className="mt-2 text-xs text-slate-500">
-          {b.owner_email === me ? 'Yours' : `Owner: ${b.owner_email ?? 'nobody'}`}
+          {b.owner_email === me ? 'Yours' : `Owner: ${b.owner_email ?? 'none'}`}
           {b.board_shares.length > 0 && ' · shared'}
           {b.archived && ' · archived'}
         </div>
@@ -61,7 +61,7 @@ export default function BoardsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold">Boards</h1>
-            <p className="text-sm text-slate-600">Cards in stages: your own to-do boards and boards shared with you.</p>
+            <p className="text-sm text-slate-600">Your own boards and boards shared with you, with cards organised in stages.</p>
           </div>
           <div className="flex items-center gap-4">
             <Can permission="boards.show_archived">
@@ -72,7 +72,7 @@ export default function BoardsPage() {
             </Can>
             <Can permission="boards.create" level="edit">
               <button type="button" className={buttonClass} onClick={() => setCreating(true)}>
-                + New board
+                Create Board
               </button>
             </Can>
           </div>
@@ -83,17 +83,17 @@ export default function BoardsPage() {
         ) : (
           <>
             <section>
-              <h2 className="mb-2 font-semibold">My boards</h2>
+              <h2 className="mb-2 font-semibold">My Boards</h2>
               {mine.length === 0 ? (
-                <p className="text-sm text-slate-500">You have no boards of your own yet.</p>
+                <p className="text-sm text-slate-500">You have not created any boards yet.</p>
               ) : (
                 <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{mine.map(tile)}</ul>
               )}
             </section>
             <section>
-              <h2 className="mb-2 font-semibold">Shared with me</h2>
+              <h2 className="mb-2 font-semibold">Shared with Me</h2>
               {others.length === 0 ? (
-                <p className="text-sm text-slate-500">No boards are shared with you yet.</p>
+                <p className="text-sm text-slate-500">No boards have been shared with you yet.</p>
               ) : (
                 <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{others.map(tile)}</ul>
               )}

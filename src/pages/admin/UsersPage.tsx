@@ -89,10 +89,10 @@ export default function UsersPage() {
     const { error: e } = await supabase.from('app_settings').upsert({ key: 'permissions_reviewed', value: { keys } })
     if (e) return toast.error(friendlyError(e))
     setReviewed(new Set(keys))
-    toast.success('Marked as reviewed. New items will get a “New” badge again when the app adds them.')
+    toast.success('Marked as reviewed. Items added to the app later will show a “New” badge again.')
   }
 
-  /** Ticks from a "Start with" choice: dept:<id>, tpl:<id> or user:<email>. */
+  /** Permissions from a "Start with" choice: dept:<id>, tpl:<id> or user:<email>. */
   function startingPerms(choice: string): { perms: Perms; source: string } | null {
     const [kind, id] = [choice.slice(0, choice.indexOf(':')), choice.slice(choice.indexOf(':') + 1)]
     if (kind === 'dept') {
@@ -116,7 +116,7 @@ export default function UsersPage() {
     event.preventDefault()
     if (!supabase || adding) return
     const address = email.trim().toLowerCase()
-    if (!emailPattern.test(address)) return setError('Enter a full email address, e.g. name@minimills.net')
+    if (!emailPattern.test(address)) return setError('Enter a full email address, for example name@minimills.net')
     if (users.some((u) => u.email === address)) return setError(`${address} already has access to the app.`)
     // New people start with nothing ticked, unless a starting point was chosen.
     const start = role === 'staff' && isAdmin ? startingPerms(startWith) : null
@@ -135,7 +135,7 @@ export default function UsersPage() {
     setAdding(false)
     if (!result.ok) return setError(result.message)
     if (result.emailed === false) toast.warning(result.message, { duration: 12000 })
-    else toast.success(`${result.message}${role === 'staff' && !start ? ' Nothing is ticked yet: click “Permissions” to choose what they see.' : ''}`, { duration: 8000 })
+    else toast.success(`${result.message}${role === 'staff' && !start ? ' No permissions are allowed yet: select “Permissions” to choose what they can see.' : ''}`, { duration: 8000 })
     setStartWith('')
     setNewDepts([])
     setNewStartPage('')
@@ -166,7 +166,7 @@ export default function UsersPage() {
     if (!supabase) return
     const { error: e } = await supabase.from('allowed_users').update({ role: newRole }).eq('email', u.email)
     if (e) return toast.error(friendlyError(e))
-    toast.success(`${u.email} is now ${newRole === 'admin' ? 'an admin (sees and does everything)' : 'a user (sees only what is ticked)'}.`)
+    toast.success(`${u.email} is now ${newRole === 'admin' ? 'an admin (full access)' : 'a user (sees only what is allowed)'}.`)
     load()
   }
 
@@ -225,22 +225,22 @@ export default function UsersPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <AdminPageHeader title="Users">
-        Only people on this list can use the app. Adding someone makes their login and emails them a 6-digit code (they
+        Only people on this list can use the app. Adding someone creates their login and emails them a 6-digit code (they
         sign in with a code each time, no password; nobody can sign themselves up).{' '}
-        <strong>Admins</strong> can see and do everything. Everyone else (<strong>users</strong>) sees only what is ticked
-        for them under <strong>Permissions</strong>; new people start with nothing ticked.
+        <strong>Admins</strong> have full access. Everyone else (<strong>users</strong>) sees only what is allowed
+        for them under <strong>Permissions</strong>; new users start with no access.
       </AdminPageHeader>
 
       {isAdmin && !loading && CATALOG.some((i) => !reviewed.has(i.key)) && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
           <span className="mr-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-semibold text-white">New</span>
           {CATALOG.filter((i) => !reviewed.has(i.key)).length} permission item(s) are new since you last reviewed. They
-          are off for everyone until you tick them. Open anyone’s <strong>Permissions</strong> to see them.
+          are not permitted for anyone until you allow them. Open anyone’s <strong>Permissions</strong> to see them.
         </div>
       )}
 
       <form onSubmit={add} className="rounded-lg border border-slate-200 bg-white p-4" noValidate>
-        <h2 className="mb-3 font-semibold">Add a person</h2>
+        <h2 className="mb-3 font-semibold">Add a User</h2>
         <div className="grid gap-3 md:grid-cols-[2fr_1.5fr_8rem_auto]">
           <Field label="Email" htmlFor="new-email">
             <input id="new-email" type="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
@@ -260,7 +260,7 @@ export default function UsersPage() {
           )}
           <div className="flex items-start md:pt-6">
             <button type="submit" className={buttonClass} disabled={adding}>
-              {adding ? 'Adding…' : 'Add'}
+              {adding ? 'Adding…' : 'Add User'}
             </button>
           </div>
         </div>
@@ -272,9 +272,9 @@ export default function UsersPage() {
         )}
         {isAdmin && role === 'staff' && (
           <div className="mt-3 max-w-md">
-            <Field label="Start with" htmlFor="new-start" hint="Nothing is ticked unless you choose a starting point. You can fine-tune afterwards.">
+            <Field label="Start with" htmlFor="new-start" hint="No permissions are allowed unless you choose a starting point. You can adjust them afterwards.">
               <select id="new-start" className={inputClass} value={startWith} onChange={(e) => setStartWith(e.target.value)}>
-                <option value="">Nothing ticked</option>
+                <option value="">No access granted</option>
                 <optgroup label="Department presets">
                   {activeDepartments.map((d) => (
                     <option key={d.id} value={`dept:${d.id}`}>
@@ -319,8 +319,8 @@ export default function UsersPage() {
         </div>
         {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
         <p className="mt-2 text-xs text-slate-500">
-          Add makes their login and emails them a 6-digit code. They open https://order.minimills.net, type their email and
-          the code. No password.
+          Add User creates their login and emails them a 6-digit code. They open https://order.minimills.net and enter their email and
+          the code. No password is needed.
         </p>
       </form>
 
@@ -341,7 +341,7 @@ export default function UsersPage() {
 
       <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
         {loading && <p className="p-4 text-sm text-slate-500">Loading…</p>}
-        {shownUsers.length === 0 && !loading && <p className="p-4 text-sm text-slate-500">Nobody in this department.</p>}
+        {shownUsers.length === 0 && !loading && <p className="p-4 text-sm text-slate-500">No users in this department.</p>}
         {shownUsers.map((u) => (
           <div key={u.email} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
             <div className="min-w-0 flex-1">
@@ -375,14 +375,14 @@ export default function UsersPage() {
             {isAdmin && u.role === 'staff' && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500">
-                  {Object.keys(permsByUser[u.email] ?? {}).length} ticked
+                  {Object.keys(permsByUser[u.email] ?? {}).length} allowed
                 </span>
                 <button type="button" className={secondaryButtonClass} onClick={() => setEditingPerms(u)}>
                   Permissions
                 </button>
               </div>
             )}
-            {u.role === 'admin' && <span className="text-xs text-slate-500">Sees and does everything</span>}
+            {u.role === 'admin' && <span className="text-xs text-slate-500">Full access</span>}
             <label className="flex items-center gap-1 text-xs text-slate-600">
               Start page
               <select
@@ -419,10 +419,10 @@ export default function UsersPage() {
               <span className="text-xs text-slate-600">{u.role === 'admin' ? 'Admin' : 'User'}</span>
             )}
             <button type="button" className="text-sm text-blue-700 underline disabled:opacity-50" disabled={busyEmail === u.email} onClick={() => resend(u)}>
-              {busyEmail === u.email ? 'Sending…' : 'Resend login code'}
+              {busyEmail === u.email ? 'Sending…' : 'Resend Login Code'}
             </button>
             <button type="button" className="text-sm text-red-700 underline" onClick={() => setRemoving(u)}>
-              Remove access
+              Revoke Access
             </button>
           </div>
         ))}
@@ -463,7 +463,7 @@ export default function UsersPage() {
                 Cancel
               </button>
               <button type="button" className={buttonClass} onClick={saveDepartments}>
-                Save
+                Save Changes
               </button>
             </>
           }
@@ -474,13 +474,13 @@ export default function UsersPage() {
             // archived departments only show if the person is still in one
             departments.filter((d) => !d.archived || editingDepts.chosen.includes(d.id)),
           )}
-          <p className="mt-3 text-xs text-slate-500">A person can be in more than one department.</p>
+          <p className="mt-3 text-xs text-slate-500">A user can belong to more than one department.</p>
         </Modal>
       )}
 
       {removing && (
         <Modal
-          title="Remove access?"
+          title="Revoke Access?"
           onClose={() => setRemoving(null)}
           footer={
             <>
@@ -493,7 +493,7 @@ export default function UsersPage() {
                 disabled={busyEmail === removing.email}
                 onClick={() => remove(removing)}
               >
-                {busyEmail === removing.email ? 'Removing…' : 'Remove access'}
+                {busyEmail === removing.email ? 'Revoking…' : 'Revoke Access'}
               </button>
             </>
           }
@@ -501,7 +501,7 @@ export default function UsersPage() {
           <p className="text-sm">
             <strong>{removing.email}</strong> will no longer be able to sign in, see or change anything (their login is
             blocked and they leave the users list).
-            {removing.email === me && ' This is you: you will lose access straight away.'} Their past changes stay in
+            {removing.email === me && ' This is your own account: you will lose access immediately.'} Their past changes stay in
             the activity log.
           </p>
         </Modal>

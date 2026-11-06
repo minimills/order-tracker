@@ -90,18 +90,18 @@ export const BOARD_COLOURS = ['#2563eb', '#0891b2', '#059669', '#65a30d', '#d977
 export const LABEL_COLOURS = ['#dc2626', '#d97706', '#ca8a04', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#db2777', '#64748b']
 
 export const SHARE_LEVEL_TEXT: Record<ShareLevel, string> = {
-  view: 'Can see',
+  view: 'Can view',
   edit: 'Can work on cards',
   manage: 'Can manage the board',
 }
 
 export const NOTIFY_EVENTS: { value: NotifyEvent; label: string }[] = [
-  { value: 'card_created', label: 'A card is added' },
+  { value: 'card_created', label: 'A card is created' },
   { value: 'card_moved', label: 'A card is moved to…' },
-  { value: 'assigned', label: 'Someone is put on a card' },
+  { value: 'assigned', label: 'Someone is assigned to a card' },
   { value: 'due_soon', label: 'A card is due soon' },
   { value: 'overdue', label: 'A card is overdue' },
-  { value: 'comment', label: 'Someone comments' },
+  { value: 'comment', label: 'Someone adds a comment' },
 ]
 
 // ---------------------------------------------------------------------------
@@ -189,17 +189,17 @@ export function eventText(e: CardEvent) {
     case 'finished': return `Finished (took ${formatDuration(Number(d.seconds))})`
     case 'timing_reset': return 'Start / Finish cleared'
     case 'archived': return 'Archived'
-    case 'restored': return 'Brought back from archive'
-    case 'assigned': return `${d.name} put on the card`
-    case 'unassigned': return `${d.name} taken off the card`
+    case 'restored': return 'Restored from the archive'
+    case 'assigned': return `${d.name} assigned to the card`
+    case 'unassigned': return `${d.name} removed from the card`
     case 'label_added': return `Label “${d.name}” added`
     case 'label_removed': return `Label “${d.name}” removed`
     case 'checklist_added': return `Checklist “${d.title}” added`
     case 'checklist_removed': return `Checklist “${d.title}” removed`
     case 'task_started': return `Started “${d.task}”`
     case 'task_done': return `Finished “${d.task}”${d.seconds != null ? ` (took ${formatDuration(Number(d.seconds))})` : ''}`
-    case 'task_reopened': return `Re-opened “${d.task}”`
-    case 'comment': return `Commented: “${d.excerpt}”`
+    case 'task_reopened': return `Marked “${d.task}” incomplete`
+    case 'comment': return `Added a comment: “${d.excerpt}”`
     default: return e.kind
   }
 }

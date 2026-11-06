@@ -36,7 +36,7 @@ export default function OrderDefaultsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <AdminPageHeader title="Order defaults">
+      <AdminPageHeader title="Order Defaults">
         What a new order starts with. Everything can still be changed on the New order form. Calculated dates follow the
         weekend rule: Saturday moves back to Friday, Sunday forward to Monday.
       </AdminPageHeader>
@@ -63,10 +63,10 @@ export default function OrderDefaultsPage() {
               ))}
             </select>
           </Field>
-          <Field label="“Crate?” on each machine" htmlFor="od-crate">
+          <Field label="“Crate” on each machine" htmlFor="od-crate">
             <select id="od-crate" className={inputClass} value={f.crate ? 'yes' : 'no'} onChange={(e) => setF({ ...f, crate: e.target.value === 'yes' })}>
-              <option value="yes">Ticked (machines are crated)</option>
-              <option value="no">Not ticked</option>
+              <option value="yes">Enabled (machines are crated)</option>
+              <option value="no">Disabled</option>
             </select>
           </Field>
           <Field label="Down payment due (days after the order is created)" htmlFor="od-down">
@@ -78,7 +78,7 @@ export default function OrderDefaultsPage() {
         </div>
         <div className="flex justify-end">
           <button type="submit" className={buttonClass} disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
       </form>

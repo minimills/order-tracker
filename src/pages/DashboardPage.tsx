@@ -238,7 +238,7 @@ export default function DashboardPage() {
             </Card>
           </Can>
           <Can permission="dashboard.card.payments_overdue">
-            <Card title="Payments overdue" to={paymentsLink} tone={stats.overdue.length ? 'border-red-300 bg-red-50' : ''}>
+            <Card title="Payments Overdue" to={paymentsLink} tone={stats.overdue.length ? 'border-red-300 bg-red-50' : ''}>
               <Big>
                 <span className={stats.overdue.length ? 'text-red-800' : ''}>{stats.overdue.length}</span>
               </Big>
@@ -250,7 +250,7 @@ export default function DashboardPage() {
             </Card>
           </Can>
           <Can permission="dashboard.card.money_owed">
-            <Card title="Money still owed" to={paymentsLink}>
+            <Card title="Amount Outstanding" to={paymentsLink}>
               {stats.outstanding.length === 0 ? (
                 <Big>—</Big>
               ) : (
@@ -263,7 +263,7 @@ export default function DashboardPage() {
             </Card>
           </Can>
           <Can permission="dashboard.card.average_delay">
-            <Card title={`Average delay (${stats.year})`} to={shippedLink} className="col-span-2 sm:col-span-1">
+            <Card title={`Average Delay (${stats.year})`} to={shippedLink} className="col-span-2 sm:col-span-1">
               {stats.avgDelay === null ? (
                 <Big>—</Big>
               ) : (
@@ -285,14 +285,14 @@ export default function DashboardPage() {
         {/* ---------- Delay chart + latest shipped ---------- */}
         <div className="grid gap-5 empty:hidden lg:grid-cols-2">
           <Can permission="dashboard.chart.delay_by_month">
-            <Box title="Average delay by month" aside={<span className="text-xs text-slate-500">last 12 months</span>}>
+            <Box title="Average Delay by Month" aside={<span className="text-xs text-slate-500">last 12 months</span>}>
               <DelayChart months={stats.months} />
             </Box>
           </Can>
           <Can permission="dashboard.list.latest_shipped">
-            <Box title="Latest shipped">
+            <Box title="Latest Shipped">
               {stats.latestShipped.length === 0 ? (
-                <p className="text-sm text-slate-500">Nothing shipped yet.</p>
+                <p className="text-sm text-slate-500">No orders have shipped yet.</p>
               ) : (
                 <ul className="divide-y divide-slate-100 text-sm">
                   {stats.latestShipped.map((o) => (
@@ -327,7 +327,7 @@ export default function DashboardPage() {
         <div className="grid gap-5 empty:hidden lg:grid-cols-2">
           <Can permission="dashboard.list.next_ship_dates">
             <Box
-              title="Next ship dates"
+              title="Next Ship Dates"
               aside={
                 boardLink && (
                   <Link to={boardLink} className="text-xs text-slate-600 underline">
@@ -337,7 +337,7 @@ export default function DashboardPage() {
               }
             >
               {stats.upcomingShips.length === 0 ? (
-                <p className="text-sm text-slate-500">No expected ship dates set.</p>
+                <p className="text-sm text-slate-500">No orders have an expected ship date yet.</p>
               ) : (
                 <ul className="divide-y divide-slate-100 text-sm">
                   {stats.upcomingShips.map((o) => {
@@ -368,17 +368,17 @@ export default function DashboardPage() {
 
           <Can permission="dashboard.list.next_payments">
             <Box
-              title="Next payments due"
+              title="Next Payments Due"
               aside={
                 paymentsLink && (
                   <Link to={paymentsLink} className="text-xs text-slate-600 underline">
-                    All payments
+                    All Payments
                   </Link>
                 )
               }
             >
               {stats.upcomingPayments.length === 0 ? (
-                <p className="text-sm text-slate-500">No upcoming due dates.</p>
+                <p className="text-sm text-slate-500">No payments are due soon.</p>
               ) : (
                 <ul className="divide-y divide-slate-100 text-sm">
                   {stats.upcomingPayments.map((p) => (

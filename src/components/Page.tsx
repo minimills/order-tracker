@@ -29,12 +29,12 @@ export default function Page({
 export function NoAccess() {
   return (
     <div className="mx-auto mt-16 max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center">
-      <h1 className="text-lg font-semibold">You don’t have access</h1>
+      <h1 className="text-lg font-semibold">You Don’t Have Access</h1>
       <p className="mt-2 text-sm text-slate-600">
-        This page isn’t switched on for you. If you need it, ask an admin to tick it for you in Admin → Users.
+        This page is not enabled for your account. If you need it, ask an administrator to allow it in Admin → Users.
       </p>
       <Link to="/" className="mt-4 inline-block text-sm underline">
-        Go to your start page
+        Go to Your Start Page
       </Link>
     </div>
   )

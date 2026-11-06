@@ -28,7 +28,7 @@ export default function ReceivePaymentDialog({ payment, onClose, onDone }: Props
   async function save() {
     if (!supabase) return
     if (!date) return setError('Enter the date the money arrived.')
-    if (value === null || Number.isNaN(value) || value <= 0) return setError('Enter the amount received, e.g. 2500.')
+    if (value === null || Number.isNaN(value) || value <= 0) return setError('Enter the amount received, for example 2500.')
     setSaving(true)
     const { error: e } = await supabase.rpc('record_payment_received', {
       p_payment_id: payment.id,
@@ -52,7 +52,7 @@ export default function ReceivePaymentDialog({ payment, onClose, onDone }: Props
             Cancel
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Mark received'}
+            {saving ? 'Saving…' : 'Mark as Received'}
           </button>
         </>
       }
@@ -73,9 +73,9 @@ export default function ReceivePaymentDialog({ payment, onClose, onDone }: Props
             after === null
               ? undefined
               : after > 0
-                ? `Part payment: ${formatMoney(after, payment.currency)} will still be owed.`
+                ? `Part payment: ${formatMoney(after, payment.currency)} will remain outstanding.`
                 : after < 0
-                  ? `That is ${formatMoney(-after, payment.currency)} more than owed.`
+                  ? `That is ${formatMoney(-after, payment.currency)} more than the amount owed.`
                   : 'Paid in full.'
           }
         >

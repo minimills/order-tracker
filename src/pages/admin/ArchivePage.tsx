@@ -82,7 +82,7 @@ export default function ArchivePage() {
     if (!supabase) return
     const { error } = await supabase.from(item.table).update({ archived: false }).eq('id', item.id)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`${item.label} is back.${item.table === 'orders' ? ' If it is a confirmed order it joins the bottom of the board.' : ''}`)
+    toast.success(`${item.label} restored.${item.table === 'orders' ? ' If it is a confirmed order, it is added at the end of the shop queue.' : ''}`)
     refreshAlerts()
     load()
   }
@@ -103,8 +103,8 @@ export default function ArchivePage() {
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <AdminPageHeader title="Archive">
-        Archived records are hidden from normal screens. <strong>Bring back</strong> restores one.{' '}
-        <strong>Delete forever</strong> removes it for good (an order takes its machines and payments with it); this
+        Archived records are hidden from normal screens. <strong>Restore</strong> restores one.{' '}
+        <strong>Permanently Delete</strong> removes it permanently (an order takes its machines and payments with it); this
         cannot be undone.
       </AdminPageHeader>
 
@@ -125,7 +125,7 @@ export default function ArchivePage() {
 
       <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
         {loading && <p className="p-4 text-sm text-slate-500">Loading…</p>}
-        {!loading && shown.length === 0 && <p className="p-6 text-center text-sm text-slate-500">Nothing archived.</p>}
+        {!loading && shown.length === 0 && <p className="p-6 text-center text-sm text-slate-500">There are no archived records.</p>}
         {shown.map((i) => (
           <div key={`${i.table}-${i.id}`} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
             <div className="min-w-0 flex-1">
@@ -140,7 +140,7 @@ export default function ArchivePage() {
               </div>
             </div>
             <button type="button" className={secondaryButtonClass} onClick={() => restore(i)}>
-              Bring back
+              Restore
             </button>
             <button
               type="button"
@@ -150,7 +150,7 @@ export default function ArchivePage() {
                 setTyped('')
               }}
             >
-              Delete forever
+              Permanently Delete
             </button>
           </div>
         ))}
@@ -158,7 +158,7 @@ export default function ArchivePage() {
 
       {deleting && (
         <Modal
-          title={`Delete ${deleting.label} forever?`}
+          title={`Permanently Delete ${deleting.label}?`}
           onClose={() => setDeleting(null)}
           busy={busy}
           footer={
@@ -172,18 +172,18 @@ export default function ArchivePage() {
                 onClick={remove}
                 disabled={busy || typed !== 'DELETE'}
               >
-                {busy ? 'Deleting…' : 'Delete forever'}
+                {busy ? 'Deleting…' : 'Permanently Delete'}
               </button>
             </>
           }
         >
           <p className="text-sm text-slate-700">
             This cannot be undone.
-            {deleting.table === 'orders' && ' The order’s machines and payments are deleted too.'}
-            {deleting.table === 'customers' && ' A customer can only be deleted once they have no orders.'} The activity
+            {deleting.table === 'orders' && ' The order’s machines and payments are permanently deleted as well.'}
+            {deleting.table === 'customers' && ' A customer can only be permanently deleted once they have no orders.'} The activity
             log keeps a record that it was deleted.
           </p>
-          <Field label="Type DELETE to confirm" htmlFor="confirm-delete" className="mt-4">
+          <Field label="Enter DELETE to confirm" htmlFor="confirm-delete" className="mt-4">
             <input
               id="confirm-delete"
               className={inputClass}

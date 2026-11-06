@@ -9,6 +9,8 @@ import NotificationsBell from './NotificationsBell'
 import AlertsProvider from './alerts/AlertsProvider'
 import NotificationPrompt from './alerts/NotificationPrompt'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { ACTION } from '../lib/wording'
+import Icon from './Icon'
 
 
 export default function Layout() {
@@ -39,7 +41,7 @@ export default function Layout() {
       >
         <div className="px-5 py-5">
           <div className="text-lg font-semibold">Belfast Mini Mills</div>
-          <div className="text-sm text-slate-400">Order tracker</div>
+          <div className="text-sm text-slate-400">Order Tracker</div>
         </div>
         <nav className="flex-1 space-y-1 px-3">
           {items.map((item) => (
@@ -54,7 +56,7 @@ export default function Layout() {
                 }`
               }
             >
-              <span aria-hidden="true">{item.icon}</span>
+              <Icon name={item.icon} className="h-4 w-4 opacity-80" />
               {item.label}
             </NavLink>
           ))}
@@ -64,9 +66,9 @@ export default function Layout() {
             <div className="truncate text-slate-400" title={session.user.email}>
               {session.user.email}
             </div>
-            {role && <div className="text-xs text-slate-500">{role === 'admin' ? 'Admin (everything)' : 'User'}</div>}
+            {role && <div className="text-xs text-slate-500">{role === 'admin' ? 'Admin (full access)' : 'User'}</div>}
             <button type="button" onClick={signOut} className="mt-2 text-slate-300 underline hover:text-white">
-              Sign out
+              {ACTION.signOut}
             </button>
           </div>
         )}
@@ -80,7 +82,9 @@ export default function Layout() {
             onClick={() => setMenuOpen(true)}
             className="rounded-md border border-slate-300 px-3 py-1 text-sm md:hidden"
           >
-            ☰ Menu
+            <span className="flex items-center gap-1.5">
+              <Icon name="menu" /> Menu
+            </span>
           </button>
           <span className="font-semibold md:hidden">Belfast Mini Mills</span>
           <div className="ml-auto flex items-center gap-2">
@@ -92,8 +96,8 @@ export default function Layout() {
 
         {!isSupabaseConfigured && (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-            Not connected to the database yet. Copy <code>.env.example</code> to <code>.env.local</code> and fill in
-            your Supabase details (see README).
+            The app is not connected to the database. Copy <code>.env.example</code> to <code>.env.local</code> and
+            enter your Supabase details (see the README).
           </div>
         )}
 

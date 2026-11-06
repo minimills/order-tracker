@@ -8,6 +8,7 @@ import type { OrderSummaryRow, PaymentRow } from '../../lib/types'
 import { useOptionList } from '../../lib/useOptionList'
 import Can from '../Can'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
+import { confirmAction } from '../../lib/confirm'
 
 type Props = {
   order: OrderSummaryRow
@@ -48,7 +49,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
     if (!supabase) return
     if (!chosenType) return setError('Choose a payment type.')
     if (!isBalance && (amountValue === null || Number.isNaN(amountValue)))
-      return setError('Enter the amount, e.g. 2500.')
+      return setError('Enter the amount, for example 2500.')
     setSaving(true)
     const row = {
       payment_type: chosenType,
@@ -68,7 +69,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
 
   async function remove() {
     if (!supabase || !payment) return
-    if (!window.confirm(`Delete this ${payment.payment_type} payment? This can't be undone.`)) return
+    if (!(await confirmAction(`Permanently delete this ${payment.payment_type} payment? This cannot be undone.`, { confirmLabel: 'Permanently Delete', danger: true }))) return
     setSaving(true)
     const { error: e } = await supabase.from('payments').delete().eq('id', payment.id)
     setSaving(false)
@@ -78,7 +79,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
 
   return (
     <Modal
-      title={payment ? `Edit ${payment.payment_type}` : `Add a payment to order ${order.order_code}`}
+      title={payment ? `Edit ${payment.payment_type}` : `Add a Payment to Order ${order.order_code}`}
       onClose={onClose}
       busy={saving}
       footer={
@@ -86,7 +87,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
           <Can permission="payments.action.delete" level="edit">
             {payment && (
               <button type="button" className="mr-auto text-sm text-red-700 underline" onClick={remove} disabled={saving}>
-                Delete payment
+                Permanently Delete Payment
               </button>
             )}
           </Can>
@@ -94,7 +95,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
             Cancel
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </>
       }
@@ -143,7 +144,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
           <input id="pay-due" type="date" className={inputClass} value={due} onChange={(e) => setDue(e.target.value)} />
         </Field>
         <Field label="Note" htmlFor="pay-notes">
-          <input id="pay-notes" className={inputClass} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="e.g. wire transfer" />
+          <input id="pay-notes" className={inputClass} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="For example: wire transfer" />
         </Field>
       </div>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}

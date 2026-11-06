@@ -70,7 +70,7 @@ export type CheckedOrder = {
 
 export type CheckResult = {
   orders: CheckedOrder[]
-  /** Machine types without a code whose serials suggest one, e.g. 4 Spinner/Plyer → 4SPP. */
+  /** Machine types without a code whose serials suggest one, for example 4 Spinner/Plyer → 4SPP. */
   codeSuggestions: { type: ImportType; code: string; count: number }[]
   /** File-wide messages */
   general: Msg[]
@@ -154,7 +154,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
     const existing = orderNumber ? (ctx.existing.get(code) ?? null) : null
     if (d.include && orderNumber) {
       const prev = seenCodes.get(code)
-      if (prev) add('error', `Order ${code} appears twice in the file (also row ${prev}). Untick one of them.`)
+      if (prev) add('error', `Order ${code} appears twice in the file (also row ${prev}). Deselect one of them.`)
       else seenCodes.set(code, d.row)
     }
     if (existing) add('info', `Order ${code} is already in the app: it will be updated. Empty cells keep what the app has.`)
@@ -356,7 +356,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
     }
     if (stage === 'Shipped') {
       const unticked = machines.filter((x) => (x.action === 'new' || x.action === 'update') && !x.draft.built).length
-      if (unticked) add('info', `The order is shipped, so its ${unticked} unticked machine${unticked === 1 ? '' : 's'} will be saved as built.`)
+      if (unticked) add('info', `The order is shipped, so its ${unticked} machine${unticked === 1 ? '' : 's'} not marked as built will be saved as built.`)
     }
     if (!d.expected && !existing && BOARD.has(stage)) add('warning', 'No expected ship date.')
     if (total === null && !existing) {
@@ -415,7 +415,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
           mc.msgs.push({
             row: mc.draft.row,
             level: 'warning',
-            text: `Will become ${sorted[i]} so that lower board numbers get lower serials. Tick "Keep serials exactly as in the file" to stop this.`,
+            text: `Will become ${sorted[i]} so that lower board numbers get lower serials. Select "Keep serials exactly as in the file" to prevent this.`,
           })
           mc.level = worst([mc.level, 'warning'])
         }

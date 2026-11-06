@@ -89,12 +89,12 @@ export default function OrderSchedule({ order, machines, onChanged }: Props) {
           {plan.averages.length > 0 && <span className="text-slate-500"> Uses recent build averages for: {plan.averages.join(', ')}.</span>}
         </p>
       ) : (
-        <p className="text-sm text-slate-500">Not in the shop queue, so nothing is worked out. Promised dates:</p>
+        <p className="text-sm text-slate-500">This order is not in the shop queue, so no schedule is calculated. Promised dates:</p>
       )}
 
       {items.length > 0 && (
         <div className="mt-3">
-          <p className="mb-1 text-xs font-medium text-slate-500">Promised deadlines</p>
+          <p className="mb-1 text-xs font-medium text-slate-500">Promised Deadlines</p>
           <Timeline items={items} />
         </div>
       )}
@@ -109,7 +109,7 @@ export default function OrderSchedule({ order, machines, onChanged }: Props) {
             </p>
           ) : (
             <p>
-              <strong>Suggested new dates</strong> (the queue, machines or progress changed): ship{' '}
+              <strong>Suggested New Dates</strong> (the queue, machines or progress changed): ship{' '}
               {promised.ship ? showDate(promised.ship) : 'no date'} → <strong>{showDate(suggest.ship_date)}</strong>
               {later && <span className="font-medium text-red-800"> – later than promised</span>}.
             </p>
@@ -120,11 +120,11 @@ export default function OrderSchedule({ order, machines, onChanged }: Props) {
           <Can permission="schedule.accept" level="edit">
             <div className="mt-3 flex gap-2">
               <button type="button" className={buttonClass} disabled={busy} onClick={() => run(() => acceptPlan(order.id, suggest, promised))}>
-                Accept new dates
+                Accept New Dates
               </button>
               {!noDeadlines && (
                 <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => run(() => keepPlan(order.id, suggest))}>
-                  Keep promised dates
+                  Keep Promised Dates
                 </button>
               )}
             </div>
@@ -148,7 +148,7 @@ export default function OrderSchedule({ order, machines, onChanged }: Props) {
                   <Can permission="order.machines.crate_flag" level="edit">
                     <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600" title="Only crated machines get a crating deadline">
                       <input type="checkbox" className="h-4 w-4" checked={m.needs_crate} disabled={busy} onChange={(e) => run(() => setCrate(m.id, e.target.checked))} />
-                      Crate?
+                      Crate
                     </label>
                   </Can>
                 </div>
@@ -163,7 +163,7 @@ export default function OrderSchedule({ order, machines, onChanged }: Props) {
                       >
                         <label
                           className="flex cursor-pointer items-center gap-1 text-xs"
-                          title={x.done === STATUS_DONE ? `${STEP_LABEL[x.step]} done (machine marked built / checked / crated)` : x.done ? `${STEP_LABEL[x.step]} done ${showDate(x.done)} – untick to undo` : `Tick when ${STEP_LABEL[x.step].toLowerCase()} is done`}
+                          title={x.done === STATUS_DONE ? `${STEP_LABEL[x.step]} completed (machine marked as built, checked or crated)` : x.done ? `${STEP_LABEL[x.step]} completed ${showDate(x.done)} – clear to mark incomplete` : `Mark complete when ${STEP_LABEL[x.step].toLowerCase()} is finished`}
                         >
                           <input
                             type="checkbox"
@@ -184,7 +184,7 @@ export default function OrderSchedule({ order, machines, onChanged }: Props) {
         </ul>
         <Can permission="schedule.step_done" level="edit">
           <p className="mt-2 text-xs text-slate-500">
-            Tick a step when it is finished. Recorded times become the build-time averages, and late steps show on Reports
+            Mark each step complete when it is finished. Recorded times become the build-time averages, and late steps appear on Reports
             → Department delays.
           </p>
         </Can>

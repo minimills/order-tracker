@@ -20,7 +20,7 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
   if (!allowed) {
     return (
       <div className="mx-auto mt-16 max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-        <h1 className="text-lg font-semibold">No access</h1>
+        <h1 className="text-lg font-semibold">No Access</h1>
         <p className="mt-2 text-sm text-slate-600">
           You are signed in as <strong>{session.user.email}</strong>, but this email doesn’t have access. Contact the
           office.
@@ -30,7 +30,7 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
           onClick={signOut}
           className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
         >
-          Sign out
+          Sign Out
         </button>
       </div>
     )

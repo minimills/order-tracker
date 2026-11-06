@@ -18,9 +18,9 @@ export default function HomeRedirect() {
   if (first) return <Navigate to={first.to} replace />
   return (
     <div className="mx-auto mt-16 max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center">
-      <h1 className="text-lg font-semibold">Nothing switched on yet</h1>
+      <h1 className="text-lg font-semibold">No Pages Enabled Yet</h1>
       <p className="mt-2 text-sm text-slate-600">
-        You can sign in, but no pages have been switched on for you yet. Ask an admin to tick what you need in Admin →
+        You can sign in, but no pages have been enabled for your account yet. Ask an administrator to allow what you need in Admin →
         Users.
       </p>
     </div>

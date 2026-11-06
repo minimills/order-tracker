@@ -36,7 +36,7 @@ export type NumberedCrate = CrateRow & { number: number }
 /** A machine as the crating screens need it. */
 export type CrateMachine = { id: string; label: string }
 
-/** Stages where crating is shown and can be ticked. */
+/** Stages where crating is shown and can be marked. */
 export const CRATING_STAGES: Stage[] = ['Ready to ship', 'Shipped']
 
 /** The order's crates numbered 1, 2, 3… in the order they were made. */

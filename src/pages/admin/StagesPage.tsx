@@ -7,7 +7,7 @@ import { friendlyError } from '../../lib/format'
 import { saveStageLabels, STAGE_HINTS, useStageLabels, type StageLabels } from '../../lib/stages'
 import { STAGES } from '../../lib/types'
 
-/** Rename what people see for each stage, e.g. "Ready" → "Ready / testing". */
+/** Rename what people see for each stage, for example "Ready" → "Ready / testing". */
 export default function StagesPage() {
   const label = useStageLabels()
   const [draft, setDraft] = useState<Partial<StageLabels> | null>(null)
@@ -23,12 +23,12 @@ export default function StagesPage() {
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
     setDraft(null)
-    toast.success('Stage names saved. Everyone sees them the next time a page opens.')
+    toast.success('Stage names saved. Everyone sees them the next time a page is opened.')
   }
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <AdminPageHeader title="Stage names">
+      <AdminPageHeader title="Stage Names">
         Rename what people see for each stage. The order of the stages and what they do (shop queue, serial numbers,
         alerts) stay the same. Leave a box empty to use the standard name.
       </AdminPageHeader>
@@ -48,11 +48,11 @@ export default function StagesPage() {
         <div className="flex justify-end gap-3">
           {draft && (
             <button type="button" className="text-sm underline" onClick={() => setDraft(null)}>
-              Undo changes
+              Undo Changes
             </button>
           )}
           <button type="submit" className={buttonClass} disabled={saving || !draft}>
-            {saving ? 'Saving…' : 'Save names'}
+            {saving ? 'Saving…' : 'Save Names'}
           </button>
         </div>
       </form>

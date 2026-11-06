@@ -12,17 +12,17 @@ export default function SaveTemplateDialog({ board, onClose }: { board: Board; o
   const [description, setDescription] = useState(board.description ?? '')
   const [busy, setBusy] = useState(false)
   async function save() {
-    if (!supabase || !name.trim()) return toast.error('Give the template a name.')
+    if (!supabase || !name.trim()) return toast.error('Enter a name for the template.')
     setBusy(true)
     const { error } = await supabase.rpc('save_board_as_template', { p_board: board.id, p_name: name.trim(), p_description: description.trim() || null })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`Template “${name.trim()}” saved. It is offered when people make a new board.`)
+    toast.success(`Template “${name.trim()}” saved. It is offered when people create a new board.`)
     onClose()
   }
   return (
     <Modal
-      title="Save as template"
+      title="Save as Template"
       onClose={onClose}
       busy={busy}
       footer={
@@ -31,14 +31,14 @@ export default function SaveTemplateDialog({ board, onClose }: { board: Board; o
             Cancel
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={busy}>
-            Save template
+            Save Template
           </button>
         </>
       }
     >
       <p className="mb-3 text-sm text-slate-600">
         Saves this board’s stages, labels and the checklists used on its cards (as ready-made checklists). Cards are not
-        copied. Edit templates in Admin → Board templates.
+        copied. Edit templates in Admin → Board Templates.
       </p>
       <div className="space-y-3">
         <Field label="Template name" htmlFor="st-name">

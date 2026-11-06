@@ -63,7 +63,7 @@ export default function ChecklistPrintPage() {
       <div className="mx-auto min-h-full max-w-4xl bg-white p-6 text-slate-900 print:max-w-none print:p-0">
         <div className="mb-4 flex justify-end gap-2 print:hidden">
           <Link to={`/checklists/${machineId}`} className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
-            ← Back to the checklist
+            ← Back to the Final Check
           </Link>
           <button
             type="button"
@@ -71,14 +71,14 @@ export default function ChecklistPrintPage() {
             disabled={!signed}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            🖨 Print / Save as PDF
+            Print or Save as PDF
           </button>
         </div>
 
         {error && <p className="text-red-700">{error}</p>}
         {!error && !status && <p className="text-slate-500">Loading…</p>}
         {status && !signed && (
-          <p className="rounded-md bg-amber-50 p-4 text-amber-900">This final check is not signed yet. Only signed checklists can be printed.</p>
+          <p className="rounded-md bg-amber-50 p-4 text-amber-900">This final check has not been signed. Only signed final checks can be printed.</p>
         )}
 
         {status && checklist && signed && (
@@ -95,7 +95,7 @@ export default function ChecklistPrintPage() {
               {company.logo && <img src={company.logo} alt="" className="max-h-16" />}
             </header>
 
-            <h1 className="mt-4 text-2xl font-bold">Final check</h1>
+            <h1 className="mt-4 text-2xl font-bold">Final Check</h1>
             <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-4 print:grid-cols-4">
               <div>
                 <dt className="text-xs text-slate-500">Machine</dt>
@@ -127,7 +127,7 @@ export default function ChecklistPrintPage() {
               <div>
                 <dt className="text-xs text-slate-500">Items</dt>
                 <dd>
-                  {items.filter((i) => i.status === 'done').length} done · {items.filter((i) => i.status === 'na').length} N/A ·{' '}
+                  {items.filter((i) => i.status === 'done').length} completed · {items.filter((i) => i.status === 'na').length} not applicable ·{' '}
                   {items.length} in total
                 </dd>
               </div>
@@ -140,7 +140,7 @@ export default function ChecklistPrintPage() {
             <table className="mt-4 w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-slate-400 text-xs text-slate-600">
-                  <th className="w-10 py-1">Done</th>
+                  <th className="w-28 py-1">Status</th>
                   <th className="py-1">Item</th>
                   <th className="py-1">Notes</th>
                   <th className="w-44 py-1">By / when</th>
@@ -155,7 +155,7 @@ export default function ChecklistPrintPage() {
                   </tr>
                   {list.map((i) => (
                     <tr key={i.id} className="border-b border-slate-200 align-top">
-                      <td className="py-1 font-semibold">{i.status === 'done' ? '✔' : i.status === 'na' ? 'N/A' : '☐'}</td>
+                      <td className="py-1 font-semibold">{i.status === 'done' ? 'Completed' : i.status === 'na' ? 'Not applicable' : 'Open'}</td>
                       <td className="py-1 pr-2">
                         {i.item_text}
                         {i.is_one_off && <span className="text-xs text-slate-500"> (added for this machine)</span>}
@@ -173,13 +173,13 @@ export default function ChecklistPrintPage() {
 
             {checklist.general_notes && (
               <section className="mt-4 break-inside-avoid">
-                <h2 className="font-semibold">General notes</h2>
+                <h2 className="font-semibold">General Notes</h2>
                 <RichText value={checklist.general_notes} className="text-slate-800" />
               </section>
             )}
 
             <section className="mt-6 break-inside-avoid border-t-2 border-slate-900 pt-3">
-              <h2 className="font-semibold">Sign-off</h2>
+              <h2 className="font-semibold">Sign-Off</h2>
               <div className="mt-2 flex flex-wrap items-end gap-8">
                 {sig && <img src={sig} alt={`Signature of ${checklist.signed_name}`} className="h-20" />}
                 <div>

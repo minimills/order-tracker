@@ -6,6 +6,7 @@ import { buttonClass, inputClass } from '../../components/form'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { OptionItem, OptionListName } from '../../lib/types'
+import Icon from '../../components/Icon'
 
 const LISTS: { name: OptionListName; title: string }[] = [
   { name: 'voltage', title: 'Voltage' },
@@ -99,7 +100,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
               />
               {draft.trim() !== item.value && (
                 <button type="button" className={buttonClass} onClick={() => rename(item)}>
-                  Save
+                  Save Changes
                 </button>
               )}
               {!item.archived && (
@@ -114,7 +115,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
               )}
               {item.locked ? (
                 <span className="text-xs text-slate-500" title="The app relies on this choice">
-                  🔒 built in
+                  <Icon name="lock" className="h-3.5 w-3.5" /> built in
                 </span>
               ) : (
                 <button
@@ -128,7 +129,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
                     )
                   }
                 >
-                  {item.archived ? 'Bring back' : 'Archive'}
+                  {item.archived ? 'Restore' : 'Archive'}
                 </button>
               )}
             </li>
@@ -171,9 +172,9 @@ export default function OptionListsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <AdminPageHeader title="Dropdown lists">
+      <AdminPageHeader title="Dropdown Lists">
         The choices offered in the order forms. Renaming a choice updates every order that uses it. Archiving hides it
-        from new orders but keeps it on orders that already have it. Built-in choices (🔒) can be moved but not renamed.
+        from new orders but keeps it on orders that already have it. Built-in choices (marked with a lock) can be moved but not renamed.
       </AdminPageHeader>
       <div className="grid gap-4 md:grid-cols-2">
         {LISTS.map((l) => (

@@ -126,7 +126,7 @@ export default function AlertSettingsPage() {
         {isAdmin && (
           <div className="flex justify-end">
             <button type="submit" className={buttonClass} disabled={saving || loading}>
-              {saving ? 'Saving…' : 'Save'}
+              {saving ? 'Saving…' : 'Save Changes'}
             </button>
           </div>
         )}

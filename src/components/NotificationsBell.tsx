@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { activityTime } from '../lib/activity'
 import { supabase } from '../lib/supabase'
+import Icon from './Icon'
 
 type Note = { id: string; kind: string; title: string; body: string | null; link: string | null; created_at: string; read_at: string | null }
 
@@ -63,11 +64,12 @@ export default function NotificationsBell() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-lg leading-none hover:bg-slate-50"
+        className="relative flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm leading-none hover:bg-slate-50"
         aria-label={`Notifications: ${unread.length} new`}
         aria-expanded={open}
       >
-        <span aria-hidden="true">📬</span>
+        <Icon name="inbox" />
+        <span className="hidden sm:inline">Notifications</span>
         {unread.length > 0 && (
           <span className="absolute -top-2 -right-2 min-w-5 rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-xs font-bold text-white">
             {unread.length > 99 ? '99+' : unread.length}
@@ -80,12 +82,12 @@ export default function NotificationsBell() {
             <span className="font-semibold">Notifications</span>
             {unread.length > 0 && (
               <button type="button" className="text-xs text-slate-600 underline" onClick={() => markRead(null)}>
-                Mark all as read
+                Mark All as Read
               </button>
             )}
           </div>
           <ul className="max-h-[60vh] divide-y divide-slate-100 overflow-y-auto">
-            {notes.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-500">No notifications yet.</li>}
+            {notes.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-500">You have no notifications.</li>}
             {notes.map((n) => (
               <li key={n.id}>
                 <button
@@ -98,7 +100,7 @@ export default function NotificationsBell() {
                   }}
                 >
                   <div className={`text-sm ${n.read_at ? 'text-slate-700' : 'font-medium text-slate-900'}`}>
-                    {n.kind === 'board_overdue' && '❗ '}
+                    {n.kind === 'board_overdue' && <Icon name="alert" className="mr-1 h-3.5 w-3.5 text-red-700" label="Overdue" />}
                     {n.title}
                   </div>
                   {n.body && <div className="text-xs text-slate-600">{n.body}</div>}

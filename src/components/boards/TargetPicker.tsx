@@ -32,11 +32,11 @@ export default function TargetPicker({ value, onChange, withAssignees = false }:
         {withAssignees && <option value="assignees">The people on the card</option>}
       </select>
       {value.type === 'user' && people.length > 12 && (
-        <input aria-label="Find a person" className={`${narrowInputClass} w-36`} placeholder="Find…" value={filter} onChange={(e) => setFilter(e.target.value)} />
+        <input aria-label="Find a person" className={`${narrowInputClass} w-36`} placeholder="Search…" value={filter} onChange={(e) => setFilter(e.target.value)} />
       )}
       {['user', 'group', 'department'].includes(value.type) && (
         <select aria-label="Which" className={`${narrowInputClass} min-w-48 flex-1`} value={value.target ?? ''} onChange={(e) => onChange({ ...value, target: e.target.value || null })}>
-          <option value="">Choose…</option>
+          <option value="">Select…</option>
           {list.map((x) => (
             <option key={x.id} value={x.id}>
               {x.name}

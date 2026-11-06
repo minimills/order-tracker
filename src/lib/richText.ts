@@ -13,7 +13,7 @@ const ALLOWED_ATTR = ['data-type', 'data-checked', 'type', 'checked']
 let hooked = false
 function purifier() {
   if (!hooked) {
-    // Only tick boxes are allowed as inputs.
+    // Only checkboxes are allowed as inputs.
     DOMPurify.addHook('uponSanitizeElement', (node, data) => {
       if (data.tagName === 'input' && (node as Element).getAttribute('type') !== 'checkbox') node.parentNode?.removeChild(node)
     })
@@ -52,7 +52,7 @@ export function isEmptyRichText(html: string | null | undefined) {
   return !html || richTextToPlain(html).trim() === ''
 }
 
-/** Plain text of a note, e.g. for CSV files and the activity history. */
+/** Plain text of a note, for example for CSV files and the activity history. */
 export function richTextToPlain(text: string | null | undefined) {
   if (!text) return ''
   if (!isRichText(text)) return text

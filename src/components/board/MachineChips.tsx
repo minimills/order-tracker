@@ -1,8 +1,9 @@
 // @permission-scope orders.board.card.machines
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import Can from '../Can'
 import SerialNumber from '../SerialNumber'
+import Icon from '../Icon'
 
 /** One machine, as the chips need it (a row of the order_machine_status view). */
 export type ChipMachine = {
@@ -24,11 +25,11 @@ export type ChipMachine = {
 /** 0 not built · 1 built · 2 final checklist done · 3 crated */
 type Status = 0 | 1 | 2 | 3
 
-const STATUS_STYLE: Record<Status, { chip: string; icon: string; word: string }> = {
-  0: { chip: 'bg-slate-100 text-slate-700 ring-slate-300', icon: '○', word: 'Not built' },
-  1: { chip: 'bg-green-50 text-green-800 ring-green-300', icon: '✓', word: 'Built' },
-  2: { chip: 'bg-blue-50 text-blue-800 ring-blue-300', icon: '☑', word: 'Final check signed' },
-  3: { chip: 'bg-teal-50 text-teal-900 ring-teal-400', icon: '📦', word: 'Crated' },
+const STATUS_STYLE: Record<Status, { chip: string; icon: ReactNode; word: string }> = {
+  0: { chip: 'bg-slate-100 text-slate-700 ring-slate-300', icon: <span aria-hidden>○</span>, word: 'Not built' },
+  1: { chip: 'bg-green-50 text-green-800 ring-green-300', icon: <Icon name="check" className="h-3 w-3" />, word: 'Built' },
+  2: { chip: 'bg-blue-50 text-blue-800 ring-blue-300', icon: <Icon name="checklist" className="h-3 w-3" />, word: 'Final check complete' },
+  3: { chip: 'bg-teal-50 text-teal-900 ring-teal-400', icon: <Icon name="box" className="h-3 w-3" />, word: 'Crated' },
 }
 
 function statusOf(m: ChipMachine, countCrates: boolean): Status {
@@ -73,7 +74,7 @@ type Props = {
 
 /**
  * Machine chips on a board card: one rounded chip per machine type with a
- * quantity badge, e.g. "Carder - Large ×2". Hover or tap a chip for its serials.
+ * quantity badge, for example "Carder - Large ×2". Hover or tap a chip for its serials.
  */
 export default function MachineChips({ machines, showStatus, showCrated, showSerials, max = 4 }: Props) {
   const groups = groupMachines(machines, showCrated)
@@ -182,10 +183,10 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                             className="w-full rounded border border-slate-300 px-1.5 py-0.5 text-center text-[11px] font-medium hover:bg-slate-50"
                           >
                             {m.checklist_status === 'signed'
-                              ? 'View final check'
+                              ? 'View Final Check'
                               : m.checklist_status === 'in_progress'
-                                ? 'Continue final check'
-                                : 'Final check'}
+                                ? 'Continue Final Check'
+                                : 'Final Check'}
                           </Link>
                         )}
                       </Can>
@@ -218,7 +219,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
           }}
           className="rounded-full px-2 py-0.5 text-xs text-slate-500 underline"
         >
-          show less
+          Show less
         </button>
       )}
     </div>
@@ -241,7 +242,7 @@ export function ChipLegend({ showCrated }: { showCrated: boolean }) {
   const list: Status[] = showCrated ? [0, 1, 2, 3] : [0, 1, 2]
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
-      <span>Chips:</span>
+      <span>Key:</span>
       {list.map((s) => (
         <span key={s} className={`rounded-full px-2 py-0.5 ring-1 ${STATUS_STYLE[s].chip}`}>
           {STATUS_STYLE[s].icon} {STATUS_STYLE[s].word}

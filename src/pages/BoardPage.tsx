@@ -15,6 +15,8 @@ import { todayISO } from '../lib/dates'
 import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
+import { confirmAction } from '../lib/confirm'
+import Icon from '../components/Icon'
 
 type Drop = { stageId: string; cardId: string | null; place: 'before' | 'after' }
 type Dialog = 'share' | 'notify' | 'settings' | 'template' | null
@@ -45,7 +47,7 @@ export default function BoardPage() {
     try {
       const d = await loadBoard(id, { comments: seesComments })
       if (!d.board) {
-        setError('This board was not found, or it is not shared with you.')
+        setError('This board could not be found, or it has not been shared with you.')
         return
       }
       setData(d)
@@ -162,10 +164,10 @@ export default function BoardPage() {
 
   async function archiveBoard() {
     if (!supabase) return
-    if (!board.archived && !window.confirm(`Archive the board “${board.name}”? It disappears from the Boards page (it can be brought back).`)) return
+    if (!board.archived && !(await confirmAction(`Archive the board “${board.name}”? It is removed from the Boards page and can be restored later.`, { confirmLabel: 'Archive' }))) return
     const { error: err } = await supabase.from('boards').update({ archived: !board.archived }).eq('id', board.id)
     if (err) return toast.error(friendlyError(err))
-    toast.success(board.archived ? 'Board brought back.' : 'Board archived.')
+    toast.success(board.archived ? 'Board restored.' : 'Board archived.')
     load()
   }
 
@@ -190,29 +192,29 @@ export default function BoardPage() {
               <>
                 <Can permission="boards.share" level="edit">
                   <button type="button" className={secondaryButtonClass} onClick={() => setDialog('share')}>
-                    👥 Share
+                    <Icon name="share" /> Share
                   </button>
                 </Can>
                 <Can permission="boards.notifications">
                   <button type="button" className={secondaryButtonClass} onClick={() => setDialog('notify')}>
-                    🔔 Notifications
+                    <Icon name="bell" /> Notifications
                   </button>
                 </Can>
                 <Can permission="boards.manage" level="edit">
                   <button type="button" className={secondaryButtonClass} onClick={() => setDialog('settings')}>
-                    ⚙️ Stages and labels
+                    <Icon name="settings" /> Stages and Labels
                   </button>
                 </Can>
                 <Can permission="boards.archive" level="edit">
                   <button type="button" className={secondaryButtonClass} onClick={archiveBoard}>
-                    {board.archived ? 'Bring back' : 'Archive board'}
+                    {board.archived ? 'Restore Board' : 'Archive Board'}
                   </button>
                 </Can>
               </>
             )}
             <Can permission="admin.board_templates" level="edit">
               <button type="button" className={secondaryButtonClass} onClick={() => setDialog('template')}>
-                Save as template
+                Save as Template
               </button>
             </Can>
           </div>
@@ -223,7 +225,7 @@ export default function BoardPage() {
             <input aria-label="Search cards" className={`${inputClass} max-w-xs`} placeholder="Search cards" value={q} onChange={(e) => setQ(e.target.value)} />
             <Can permission="boards.card.labels">
               <select aria-label="Label" className={`${narrowInputClass} w-44`} value={labelFilter} onChange={(e) => setLabelFilter(e.target.value)}>
-                <option value="">All labels</option>
+                <option value="">All Labels</option>
                 {data.labels
                   .filter((l) => !l.archived)
                   .map((l) => (
@@ -236,7 +238,7 @@ export default function BoardPage() {
             <Can permission="boards.card.assignees">
               <select aria-label="Person" className={`${narrowInputClass} w-48`} value={personFilter} onChange={(e) => setPersonFilter(e.target.value)}>
                 <option value="">Everyone</option>
-                <option value="me">My cards</option>
+                <option value="me">My Cards</option>
                 {data.people.map((p) => (
                   <option key={p.email} value={p.email}>
                     {p.name}
@@ -250,7 +252,7 @@ export default function BoardPage() {
         {stages.length === 0 && (
           <p className="rounded-md border border-dashed border-slate-300 p-6 text-center text-sm text-slate-600">
             This board has no stages yet.
-            {level >= 3 && can('boards.manage', 'edit') && ' Use “Stages and labels” to add some (e.g. To do, Doing, Done).'}
+            {level >= 3 && can('boards.manage', 'edit') && ' Use “Stages and Labels” to add stages (for example To do, Doing, Done).'}
           </p>
         )}
 
@@ -314,7 +316,7 @@ export default function BoardPage() {
                           <input
                             aria-label={`New card in ${stage.name}`}
                             className={inputClass}
-                            placeholder="Card title, then Enter"
+                            placeholder="Enter a card title, then press Enter"
                             value={newTitle}
                             autoFocus
                             onChange={(e) => setNewTitle(e.target.value)}
@@ -322,7 +324,7 @@ export default function BoardPage() {
                           />
                           <div className="flex gap-2">
                             <button type="submit" className="rounded-md bg-slate-900 px-3 py-1 text-xs font-medium text-white">
-                              Add card
+                              Add Card
                             </button>
                             <button type="button" className="text-xs text-slate-600 underline" onClick={() => setAdding(null)}>
                               Cancel
@@ -338,7 +340,7 @@ export default function BoardPage() {
                             setNewTitle('')
                           }}
                         >
-                          + Add a card
+                          Add Card
                         </button>
                       )}
                     </div>
@@ -351,7 +353,7 @@ export default function BoardPage() {
         {canMove && (
           <Can permission="boards.card.move" level="edit">
             <p className="text-xs text-slate-500">
-              Drag cards between stages or up and down. A card can move on even when its checklist is not finished.
+              Drag cards between stages or up and down. A card can move to the next stage even when its checklist is not complete.
             </p>
           </Can>
         )}
