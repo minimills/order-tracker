@@ -82,6 +82,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0020_final_checklists.sql` | Final checklist per machine: templates, ticks, sign-off with signature (Storage), lock/unlock, no Ready to ship until signed |
 | `0021_start_page_and_safe_notes.sql` | Start page per person; formatted notes are checked so no scripts can be saved |
 | `0022_scheduling.sql` | Order defaults, scheduling settings, build times, department deadlines, “Crate?” per machine, department delays report; fixes staff creating orders |
+| `0023_kanban_boards.sql` | Boards (personal now; production, parts and service later): stages, cards, labels, people, due dates, checklists, Start / Finish times, comments, history, sharing, groups, notifications bell, board templates |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

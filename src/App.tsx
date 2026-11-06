@@ -13,6 +13,8 @@ import CompanyPage from './pages/admin/CompanyPage'
 import DepartmentsPage from './pages/admin/DepartmentsPage'
 import ImportPage from './pages/admin/ImportPage'
 import OptionListsPage from './pages/admin/OptionListsPage'
+import BoardTemplatesPage from './pages/admin/BoardTemplatesPage'
+import GroupsPage from './pages/admin/GroupsPage'
 import OrderDefaultsPage from './pages/admin/OrderDefaultsPage'
 import SchedulingPage from './pages/admin/SchedulingPage'
 import RecordsPage from './pages/admin/RecordsPage'
@@ -23,6 +25,8 @@ import AgentPage from './pages/AgentPage'
 import AlertSettingsPage from './pages/AlertSettingsPage'
 import ChecklistPage from './pages/ChecklistPage'
 import ChecklistPrintPage from './pages/ChecklistPrintPage'
+import BoardPage from './pages/BoardPage'
+import BoardsPage from './pages/BoardsPage'
 import DepartmentDelaysPage from './pages/DepartmentDelaysPage'
 import CratingReportPage from './pages/CratingReportPage'
 import DashboardPage from './pages/DashboardPage'
@@ -80,6 +84,8 @@ export default function App() {
         <Route path="payments" element={<Page permission="payments.page"><PaymentsPage /></Page>} />
         <Route path="checklists/:machineId" element={<Page permission="checklist"><ChecklistPage /></Page>} />
         <Route path="crating" element={<Page permission="reports.crating"><CratingReportPage /></Page>} />
+        <Route path="boards" element={<Page permission="boards"><BoardsPage /></Page>} />
+        <Route path="boards/:id" element={<Page permission="boards"><BoardPage /></Page>} />
         <Route path="reports/department-delays" element={<Page permission="reports.department_delays"><DepartmentDelaysPage /></Page>} />
         <Route path="agent" element={<Page permission="agent"><AgentPage /></Page>} />
         <Route path="settings" element={<Page permission="settings"><SettingsPage /></Page>} />
@@ -95,6 +101,8 @@ export default function App() {
           <Route path="dropdowns" element={<Page permission="admin.dropdowns" level="edit"><OptionListsPage /></Page>} />
           <Route path="stages" element={<Page permission="admin.stages" level="edit"><StagesPage /></Page>} />
           <Route path="order-defaults" element={<Page permission="admin.order_defaults" level="edit"><OrderDefaultsPage /></Page>} />
+          <Route path="groups" element={<Page permission="admin.groups" level="edit"><GroupsPage /></Page>} />
+          <Route path="board-templates" element={<Page permission="admin.board_templates" level="edit"><BoardTemplatesPage /></Page>} />
           <Route path="scheduling" element={<Page permission="admin.scheduling" level="edit"><SchedulingPage /></Page>} />
           <Route path="checklists" element={<Page permission="admin.checklists" level="edit"><ChecklistTemplatesPage /></Page>} />
           <Route path="records" element={<Page permission="admin.records" level="edit"><RecordsPage /></Page>} />
