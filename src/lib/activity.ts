@@ -89,6 +89,9 @@ const THING: Record<string, string> = {
   checklist_template_items: 'checklist template item',
   user_permissions: 'permissions',
   machine_steps: 'department step',
+  user_groups: 'group',
+  user_group_members: 'group membership',
+  board_templates: 'board template',
 }
 
 /** Fields that are filled in automatically and only add noise. */
@@ -166,6 +169,10 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     if (e.table_name === 'customers') return { title: `${verb} customer ${c.name}`, lines: [] }
     if (e.table_name === 'machine_types') return { title: `${verb} machine type ${c.name}`, lines: [] }
     if (e.table_name === 'departments') return { title: `${verb} department "${c.name}"`, lines: [] }
+    if (e.table_name === 'user_groups') return { title: `${verb} group "${c.name}"`, lines: [] }
+    if (e.table_name === 'user_group_members')
+      return { title: e.action === 'insert' ? `Added ${c.user_email} to a group` : `Removed ${c.user_email} from a group`, lines: [] }
+    if (e.table_name === 'board_templates') return { title: `${verb} board template "${c.name}"`, lines: [] }
     if (e.table_name === 'user_departments')
       return {
         title: e.action === 'insert'

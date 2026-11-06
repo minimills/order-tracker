@@ -5,6 +5,7 @@ import { usePermissions } from '../lib/permissions'
 import { NAV_ITEMS } from '../lib/permissions/nav'
 import { useStageLabels } from '../lib/stages'
 import AlertsBell from './alerts/AlertsBell'
+import NotificationsBell from './NotificationsBell'
 import AlertsProvider from './alerts/AlertsProvider'
 import NotificationPrompt from './alerts/NotificationPrompt'
 import { isSupabaseConfigured } from '../lib/supabase'
@@ -82,7 +83,10 @@ export default function Layout() {
             ☰ Menu
           </button>
           <span className="font-semibold md:hidden">Belfast Mini Mills</span>
-          <div className="ml-auto">{isSupabaseConfigured && can('alerts.bell') && <AlertsBell />}</div>
+          <div className="ml-auto flex items-center gap-2">
+            {isSupabaseConfigured && can('notifications.bell') && <NotificationsBell />}
+            {isSupabaseConfigured && can('alerts.bell') && <AlertsBell />}
+          </div>
         </header>
         {isSupabaseConfigured && can('alerts.popups') && <NotificationPrompt />}
 

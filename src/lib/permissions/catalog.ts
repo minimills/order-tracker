@@ -29,6 +29,7 @@ export const GROUPS = [
   'Final check',
   'Payments',
   'Crating',
+  'Boards',
   'Reports',
   'Agent',
   'Settings',
@@ -289,6 +290,40 @@ export const CATALOG: PermissionItem[] = [
     ],
   }),
 
+  ...group('Boards', {
+    Pages: [
+      { key: 'boards', label: 'Boards page (boards you own or that are shared with you)', levels: V, page: true, db: true, hint: 'Sharing gives access to a board; the items below decide what can be seen and done on it.' },
+      { key: 'boards.create', label: 'Make your own boards (from scratch or a template)', levels: E, requires: 'boards', db: true },
+      { key: 'boards.show_archived', label: '“Show archived” boards', levels: V, requires: 'boards' },
+    ],
+    'Board tools': [
+      { key: 'boards.manage', label: 'Board settings: name, colour, stages, labels (boards you manage)', levels: E, requires: 'boards', db: true },
+      { key: 'boards.share', label: 'Share boards with people, groups, departments or everyone (boards you manage)', levels: E, requires: 'boards', db: true },
+      { key: 'boards.notifications', label: 'Notification settings of a board (edit: boards you manage)', levels: VE, requires: 'boards', db: true },
+      { key: 'boards.archive', label: 'Archive or bring back a board', levels: E, requires: 'boards', db: true },
+      { key: 'boards.filter', label: 'Search and filter cards (label, person, mine)', levels: V, requires: 'boards' },
+    ],
+    Cards: [
+      { key: 'boards.card.create', label: 'Add cards', levels: E, requires: 'boards', db: true },
+      { key: 'boards.card.open', label: 'Open a card (its full details)', levels: V, requires: 'boards' },
+      { key: 'boards.card.move', label: 'Move cards (drag between stages, up and down)', levels: E, requires: 'boards', db: true },
+      { key: 'boards.card.edit', label: 'Change a card’s title, description and due date', levels: E, requires: 'boards.card.open', db: true },
+      { key: 'boards.card.description', label: 'Card description', levels: V, requires: 'boards.card.open' },
+      { key: 'boards.card.due', label: 'Due dates (amber when close, red when late)', levels: V, requires: 'boards' },
+      { key: 'boards.card.labels', label: 'Labels (edit: put labels on cards)', levels: VE, requires: 'boards', db: true },
+      { key: 'boards.card.assignees', label: 'Who is on a card (edit: assign people)', levels: VE, requires: 'boards', db: true },
+      { key: 'boards.card.checklists', label: 'Checklists and % done (edit: add, tick, remove tasks)', levels: VE, requires: 'boards', db: true },
+      { key: 'boards.card.timing', label: 'Start / Finish and how long it took, with the usual time (edit: press Start / Finish)', levels: VE, requires: 'boards.card.open', db: true },
+      { key: 'boards.card.comments', label: 'Comments (edit: write comments)', levels: VE, requires: 'boards.card.open', db: true },
+      { key: 'boards.card.history', label: 'Card history', levels: V, requires: 'boards.card.open', db: true },
+      { key: 'boards.card.link', label: 'Link to an order, customer or machine (edit: change the link)', levels: VE, requires: 'boards', db: true },
+      { key: 'boards.card.archive', label: 'Archive a card', levels: E, requires: 'boards.card.open', db: true },
+      { key: 'boards.card.attachments', label: 'Photos and files on cards (coming later)', levels: V, requires: 'boards.card.open' },
+    ],
+    Notifications: [
+      { key: 'notifications.bell', label: 'Notifications bell in the top bar (board messages)', levels: V },
+    ],
+  }),
   ...group('Reports', {
     'Department delays': [
       { key: 'reports.department_delays', label: 'Department delays report (on-time %, days late per department)', levels: V, page: true, db: true },
@@ -335,6 +370,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
       { key: 'admin.stages', label: 'Stage names (rename what people see, e.g. “Ready / testing”)', levels: E, db: true },
       { key: 'admin.order_defaults', label: 'Order defaults (currency, voltage, crate, payment due days)', levels: E, db: true },
+      { key: 'admin.groups', label: 'Groups of people (e.g. Procurement, Techs) for sharing and notifications', levels: E, db: true },
+      { key: 'admin.board_templates', label: 'Board templates (save a board as a template, edit, archive)', levels: E, db: true },
       { key: 'admin.scheduling', label: 'Scheduling (working days, holidays, buffer, machines one after another)', levels: E, db: true },
       { key: 'admin.records', label: 'Orders, customers & machines: edit any field, archive', levels: E, db: true },
       { key: 'admin.serials', label: 'Serial numbers', levels: E, db: true },

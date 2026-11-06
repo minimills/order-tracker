@@ -1,4 +1,4 @@
-// @permission-scope admin.users, admin.departments, admin.machine_types, admin.dropdowns, admin.stages, admin.order_defaults, admin.scheduling, admin.checklists, admin.records, admin.serials, admin.board, admin.alerts, admin.company, admin.import, admin.archive, admin.activity
+// @permission-scope admin.users, admin.departments, admin.machine_types, admin.dropdowns, admin.stages, admin.order_defaults, admin.scheduling, admin.groups, admin.board_templates, admin.checklists, admin.records, admin.serials, admin.board, admin.alerts, admin.company, admin.import, admin.archive, admin.activity
 import { Link } from 'react-router-dom'
 import Can from '../../components/Can'
 
@@ -9,6 +9,8 @@ const sections = [
   { to: '/admin/dropdowns', permission: 'admin.dropdowns', icon: '📝', title: 'Dropdown lists', text: 'Voltage, delivery equipment, freight and payment types.' },
   { to: '/admin/stages', permission: 'admin.stages', icon: '🏷', title: 'Stage names', text: 'Rename what people see for each stage, e.g. “Ready / testing”.' },
   { to: '/admin/checklists', permission: 'admin.checklists', icon: '✅', title: 'Checklists', text: 'Final check templates: general items for every machine, plus extras per machine type.' },
+  { to: '/admin/groups', permission: 'admin.groups', icon: '👥', title: 'Groups', text: 'Groups of people (e.g. Procurement, Techs) for sharing boards and notifications.' },
+  { to: '/admin/board-templates', permission: 'admin.board_templates', icon: '🗂', title: 'Board templates', text: 'Stages, labels and checklists new boards can start with.' },
   { to: '/admin/order-defaults', permission: 'admin.order_defaults', icon: '🧾', title: 'Order defaults', text: 'Currency, voltage, crate and payment due days for new orders.' },
   { to: '/admin/scheduling', permission: 'admin.scheduling', icon: '📅', title: 'Scheduling', text: 'Working days, holidays, buffer, and how machines are built.' },
   { to: '/admin/records', permission: 'admin.records', icon: '🗂', title: 'Orders, customers & machines', text: 'Edit any field, or archive.' },

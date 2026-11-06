@@ -1,0 +1,255 @@
+/**
+ * Kanban boards (migration 0023): row types and small helpers shared by the
+ * Boards page, the board page, the card window and the admin pages.
+ * Board access (owner / shared / admin) is worked out by the database
+ * (`board_level()`); permissions decide which parts each person sees.
+ */
+import { addDays, differenceInCalendarDays, parseISO } from 'date-fns'
+import { supabase } from './supabase'
+
+export type ChecklistPreset = { title: string; items: string[] }
+
+export type Board = {
+  id: string
+  name: string
+  description: string | null
+  colour: string
+  owner_email: string | null
+  purpose: string
+  template_id: string | null
+  checklist_presets: ChecklistPreset[]
+  due_soon_days: number
+  archived: boolean
+  created_at: string
+}
+export type Stage = { id: string; board_id: string; name: string; sort_order: number; archived: boolean }
+export type Label = { id: string; board_id: string; name: string; colour: string; sort_order: number; archived: boolean }
+export type Card = {
+  id: string
+  board_id: string
+  stage_id: string
+  title: string
+  description: string | null
+  due_date: string | null
+  sort_order: number
+  order_id: string | null
+  customer_id: string | null
+  machine_id: string | null
+  started_at: string | null
+  started_by_name: string | null
+  finished_at: string | null
+  finished_by_name: string | null
+  archived: boolean
+  created_at: string
+  created_by_name: string | null
+}
+export type Checklist = { id: string; card_id: string; title: string; sort_order: number }
+export type ChecklistItem = {
+  id: string
+  checklist_id: string
+  item_text: string
+  sort_order: number
+  started_at: string | null
+  started_by_name: string | null
+  finished_at: string | null
+  finished_by_name: string | null
+}
+export type Person = { email: string; name: string }
+export type ShareType = 'user' | 'group' | 'department' | 'everyone'
+export type ShareLevel = 'view' | 'edit' | 'manage'
+export type Share = { id: string; board_id: string; share_type: ShareType; target: string | null; level: ShareLevel }
+export type NotifyEvent = 'card_created' | 'card_moved' | 'assigned' | 'due_soon' | 'overdue' | 'comment'
+export type NotifyTarget = ShareType | 'assignees'
+export type NotifyRule = {
+  id: string
+  board_id: string
+  event: NotifyEvent
+  stage_id: string | null
+  target_type: NotifyTarget
+  target: string | null
+  channels: string[]
+}
+export type BoardTemplate = {
+  id: string
+  name: string
+  description: string | null
+  colour: string
+  stages: string[]
+  labels: { name: string; colour: string }[]
+  checklists: ChecklistPreset[]
+  archived: boolean
+}
+export type CardEvent = { id: number; card_id: string; kind: string; details: Record<string, unknown>; actor_name: string | null; created_at: string }
+export type Comment = { id: string; card_id: string; body: string; author_email: string | null; author_name: string | null; created_at: string; edited_at: string | null }
+export type Group = { id: string; name: string; description: string | null; archived: boolean }
+
+/** 0 = none, 1 = view, 2 = edit (cards), 3 = manage (settings, sharing, notifications). */
+export type BoardLevel = 0 | 1 | 2 | 3
+
+export const BOARD_COLOURS = ['#2563eb', '#0891b2', '#059669', '#65a30d', '#d97706', '#dc2626', '#db2777', '#7c3aed', '#475569']
+export const LABEL_COLOURS = ['#dc2626', '#d97706', '#ca8a04', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#db2777', '#64748b']
+
+export const SHARE_LEVEL_TEXT: Record<ShareLevel, string> = {
+  view: 'Can see',
+  edit: 'Can work on cards',
+  manage: 'Can manage the board',
+}
+
+export const NOTIFY_EVENTS: { value: NotifyEvent; label: string }[] = [
+  { value: 'card_created', label: 'A card is added' },
+  { value: 'card_moved', label: 'A card is moved to…' },
+  { value: 'assigned', label: 'Someone is put on a card' },
+  { value: 'due_soon', label: 'A card is due soon' },
+  { value: 'overdue', label: 'A card is overdue' },
+  { value: 'comment', label: 'Someone comments' },
+]
+
+// ---------------------------------------------------------------------------
+// Due dates
+// ---------------------------------------------------------------------------
+export type DueState = 'done' | 'late' | 'soon' | 'ok'
+/** Late = past and not finished; soon = within the board's "due soon" days. */
+export function dueState(due: string | null, today: string, soonDays: number, finished: boolean): DueState | null {
+  if (!due) return null
+  if (finished) return 'done'
+  if (due < today) return 'late'
+  return due <= addDays(parseISO(today), soonDays).toISOString().slice(0, 10) ? 'soon' : 'ok'
+}
+export const DUE_TONE: Record<DueState, string> = {
+  done: 'bg-green-50 text-green-800 ring-green-200',
+  late: 'bg-red-50 text-red-800 ring-red-300',
+  soon: 'bg-amber-50 text-amber-900 ring-amber-300',
+  ok: 'bg-slate-50 text-slate-700 ring-slate-200',
+}
+export function dueWords(due: string, today: string) {
+  const d = differenceInCalendarDays(parseISO(due), parseISO(today))
+  if (d === 0) return 'due today'
+  if (d === 1) return 'due tomorrow'
+  if (d < 0) return `${-d} day${d === -1 ? '' : 's'} late`
+  return `due in ${d} days`
+}
+
+// ---------------------------------------------------------------------------
+// Times
+// ---------------------------------------------------------------------------
+/** 0 → "under a minute", 4500 → "1 h 15 min", 200000 → "2 d 7 h". */
+export function formatDuration(seconds: number | null | undefined) {
+  if (seconds == null || seconds < 0) return '—'
+  if (seconds < 60) return 'under a minute'
+  const m = Math.round(seconds / 60)
+  if (m < 60) return `${m} min`
+  const h = Math.floor(m / 60)
+  if (h < 48) return `${h} h${m % 60 ? ` ${m % 60} min` : ''}`
+  const d = Math.floor(h / 24)
+  return `${d} d${h % 24 ? ` ${h % 24} h` : ''}`
+}
+export const secondsBetween = (a: string, b: string) => Math.round((new Date(b).getTime() - new Date(a).getTime()) / 1000)
+export const taskKey = (text: string) => text.trim().toLowerCase()
+
+/** Average time of the same task on other cards (from the board_task_times view). */
+export type TaskTime = { kind: 'card' | 'task'; task_key: string; source_id: string; seconds: number }
+export function averageFor(times: TaskTime[], kind: TaskTime['kind'], key: string, exceptId: string) {
+  const same = times.filter((t) => t.kind === kind && t.task_key === key && t.source_id !== exceptId)
+  if (!same.length) return null
+  return { seconds: Math.round(same.reduce((a, t) => a + Number(t.seconds), 0) / same.length), count: same.length }
+}
+
+// ---------------------------------------------------------------------------
+// Little things
+// ---------------------------------------------------------------------------
+export function initials(name: string) {
+  const parts = name.replace(/@.*/, '').split(/[\s._-]+/).filter(Boolean)
+  return ((parts[0]?.[0] ?? '?') + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase()
+}
+
+/** Checklist progress over all of a card's checklists. */
+export function progress(items: ChecklistItem[]) {
+  const done = items.filter((i) => i.finished_at).length
+  return { done, total: items.length, percent: items.length ? Math.round((done / items.length) * 100) : 0 }
+}
+
+/** Text colour that reads well on a label colour. */
+export function textOn(hex: string) {
+  const n = parseInt(hex.slice(1), 16)
+  const lum = (0.299 * ((n >> 16) & 255) + 0.587 * ((n >> 8) & 255) + 0.114 * (n & 255)) / 255
+  return lum > 0.6 ? '#0f172a' : '#ffffff'
+}
+
+/** One line of card history in plain words. */
+export function eventText(e: CardEvent) {
+  const d = e.details as Record<string, string | number | null>
+  switch (e.kind) {
+    case 'created': return `Card added to ${d.stage}`
+    case 'moved': return `Moved from ${d.from} to ${d.to}`
+    case 'renamed': return `Renamed from “${d.old}” to “${d.new}”`
+    case 'description': return 'Description changed'
+    case 'due': return d.new ? `Due date set to ${d.new}${d.old ? ` (was ${d.old})` : ''}` : 'Due date removed'
+    case 'linked': return [d.order && `Linked to order ${d.order}`, d.customer && `customer ${d.customer}`, d.machine && `machine ${d.machine}`].filter(Boolean).join(', ') || 'Link removed'
+    case 'started': return 'Started'
+    case 'finished': return `Finished (took ${formatDuration(Number(d.seconds))})`
+    case 'timing_reset': return 'Start / Finish cleared'
+    case 'archived': return 'Archived'
+    case 'restored': return 'Brought back from archive'
+    case 'assigned': return `${d.name} put on the card`
+    case 'unassigned': return `${d.name} taken off the card`
+    case 'label_added': return `Label “${d.name}” added`
+    case 'label_removed': return `Label “${d.name}” removed`
+    case 'checklist_added': return `Checklist “${d.title}” added`
+    case 'checklist_removed': return `Checklist “${d.title}” removed`
+    case 'task_started': return `Started “${d.task}”`
+    case 'task_done': return `Finished “${d.task}”${d.seconds != null ? ` (took ${formatDuration(Number(d.seconds))})` : ''}`
+    case 'task_reopened': return `Re-opened “${d.task}”`
+    case 'comment': return `Commented: “${d.excerpt}”`
+    default: return e.kind
+  }
+}
+
+/** Everything the board page shows (one load). */
+export async function loadBoard(id: string, opts: { comments: boolean }) {
+  if (!supabase) throw new Error('Not connected')
+  const [b, lvl, st, lb, cards, people] = await Promise.all([
+    supabase.from('boards').select('*').eq('id', id).maybeSingle(),
+    supabase.rpc('board_level', { p_board: id }),
+    supabase.from('board_stages').select('*').eq('board_id', id).order('sort_order').order('created_at'),
+    supabase.from('board_labels').select('*').eq('board_id', id).order('sort_order').order('created_at'),
+    supabase.from('board_cards').select('*').eq('board_id', id).eq('archived', false).order('sort_order').order('created_at'),
+    supabase.rpc('board_people', { p_board: id }),
+  ])
+  const err = b.error ?? st.error ?? lb.error ?? cards.error
+  if (err) throw err
+  const cardIds = ((cards.data as Card[]) ?? []).map((c) => c.id)
+  const chunk = <T,>(fn: (ids: string[]) => PromiseLike<{ data: T[] | null }>) =>
+    Promise.all(Array.from({ length: Math.ceil(cardIds.length / 150) }, (_, i) => fn(cardIds.slice(i * 150, i * 150 + 150)))).then((r) =>
+      r.flatMap((x) => x.data ?? []),
+    )
+  const [cardLabels, assignees, checklists, comments] = await Promise.all([
+    chunk<{ card_id: string; label_id: string }>((ids) => supabase!.from('board_card_labels').select('card_id, label_id').in('card_id', ids)),
+    chunk<{ card_id: string; user_email: string }>((ids) => supabase!.from('board_card_assignees').select('card_id, user_email').in('card_id', ids)),
+    chunk<Checklist>((ids) => supabase!.from('board_checklists').select('*').in('card_id', ids).order('sort_order')),
+    opts.comments ? chunk<{ card_id: string }>((ids) => supabase!.from('board_comments').select('card_id').in('card_id', ids)) : Promise.resolve([]),
+  ])
+  const listIds = checklists.map((l) => l.id)
+  const items = listIds.length
+    ? (
+        await Promise.all(
+          Array.from({ length: Math.ceil(listIds.length / 150) }, (_, i) =>
+            supabase!.from('board_checklist_items').select('*').in('checklist_id', listIds.slice(i * 150, i * 150 + 150)).order('sort_order'),
+          ),
+        )
+      ).flatMap((r) => (r.data as ChecklistItem[]) ?? [])
+    : []
+  return {
+    board: b.data as Board | null,
+    level: (Number(lvl.data ?? 0) as BoardLevel),
+    stages: (st.data as Stage[]) ?? [],
+    labels: (lb.data as Label[]) ?? [],
+    cards: (cards.data as Card[]) ?? [],
+    people: (people.data as Person[]) ?? [],
+    cardLabels,
+    assignees,
+    checklists,
+    items,
+    commentCounts: comments.reduce<Record<string, number>>((acc, c) => ({ ...acc, [c.card_id]: (acc[c.card_id] ?? 0) + 1 }), {}),
+  }
+}
+export type BoardData = Awaited<ReturnType<typeof loadBoard>>
