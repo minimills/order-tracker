@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import SerialNumber from '../SerialNumber'
 import { inputClass, narrowInputClass } from '../form'
+import Icon from '../Icon'
 
 type Kind = 'order' | 'customer' | 'machine'
 type Hit = { id: string; text: string; serial?: string | null }
@@ -76,13 +77,13 @@ export default function LinkPicker({ card, editable, busy, onSave }: { card: Car
   return (
     <div className="space-y-2">
       <ul className="space-y-1">
-        {card.order_id && row('order', <>📦 Order {current.order ?? '…'}</>)}
-        {card.customer_id && row('customer', <>👤 {current.customer ?? '…'}</>)}
+        {card.order_id && row('order', <><Icon name="box" /> Order {current.order ?? '…'}</>)}
+        {card.customer_id && row('customer', <><Icon name="user" /> {current.customer ?? '…'}</>)}
         {card.machine_id &&
           row(
             'machine',
             <>
-              ⚙️ {current.machineType ?? 'Machine'} {current.machine && <SerialNumber serial={current.machine} />}
+              <Icon name="cog" /> {current.machineType ?? 'Machine'} {current.machine && <SerialNumber serial={current.machine} />}
             </>,
           )}
         {none && <li className="text-xs text-slate-500">Not linked.</li>}
@@ -109,7 +110,7 @@ export default function LinkPicker({ card, editable, busy, onSave }: { card: Car
             </div>
             {q.trim() && (
               <ul className="max-h-40 overflow-y-auto rounded border border-slate-200 text-sm">
-                {hits.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">Nothing found.</li>}
+                {hits.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">No matches found.</li>}
                 {hits.map((h) => (
                   <li key={h.id}>
                     <button

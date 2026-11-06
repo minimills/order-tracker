@@ -39,7 +39,7 @@ export default function NewBoardDialog({ onClose }: { onClose: () => void }) {
   async function save(e: FormEvent) {
     e.preventDefault()
     if (!supabase) return
-    if (!name.trim()) return toast.error('Give the board a name.')
+    if (!name.trim()) return toast.error('Enter a name for the board.')
     setBusy(true)
     const { data, error } = await supabase.rpc('create_board', {
       p_name: name.trim(),
@@ -49,13 +49,13 @@ export default function NewBoardDialog({ onClose }: { onClose: () => void }) {
     })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`Board “${name.trim()}” made.`)
+    toast.success(`Board “${name.trim()}” created.`)
     navigate(`/boards/${data}`)
   }
 
   return (
     <Modal
-      title="New board"
+      title="New Board"
       onClose={onClose}
       busy={busy}
       footer={
@@ -64,14 +64,14 @@ export default function NewBoardDialog({ onClose }: { onClose: () => void }) {
             Cancel
           </button>
           <button type="submit" form="new-board" className={buttonClass} disabled={busy}>
-            {busy ? 'Making…' : 'Make board'}
+            {busy ? 'Creating…' : 'Create Board'}
           </button>
         </>
       }
     >
       <form id="new-board" onSubmit={save} className="space-y-4" noValidate>
         <Field label="Name" htmlFor="nb-name">
-          <input id="nb-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. My jobs" autoFocus />
+          <input id="nb-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} placeholder="For example: My jobs" autoFocus />
         </Field>
         <Field label="Description (optional)" htmlFor="nb-desc">
           <input id="nb-desc" className={inputClass} value={description} onChange={(e) => setDescription(e.target.value)} />
@@ -92,7 +92,7 @@ export default function NewBoardDialog({ onClose }: { onClose: () => void }) {
                 Template: {t.name}
               </option>
             ))}
-            <option value="">Empty board (add your own stages)</option>
+            <option value="">Blank board (add your own stages)</option>
           </select>
         </Field>
         {chosen && (
@@ -105,7 +105,7 @@ export default function NewBoardDialog({ onClose }: { onClose: () => void }) {
         <Field label="Colour">
           <ColourPicker colours={BOARD_COLOURS} value={colour} onChange={setColour} label="Board colour" />
         </Field>
-        <p className="text-xs text-slate-500">Only you can see a new board until you share it.</p>
+        <p className="text-xs text-slate-500">A new board is visible only to you until you share it.</p>
       </form>
     </Modal>
   )

@@ -3,7 +3,7 @@ import { useEffect, type ReactNode } from 'react'
 export const inputClass =
   'w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none disabled:bg-slate-100'
 
-/** The same look without full width (give it its own width, e.g. w-44). */
+/** The same look without full width (give it its own width, for example w-44). */
 export const narrowInputClass =
   'rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none disabled:bg-slate-100'
 

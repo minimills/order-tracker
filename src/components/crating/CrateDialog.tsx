@@ -17,13 +17,14 @@ import {
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
 import Can from '../Can'
 import UnitsSwitch from './UnitsSwitch'
+import { confirmAction } from '../../lib/confirm'
 
 type Props = {
   orderId: string
   orderCode: string
   /** The machine the crate was opened from. */
   machine: CrateMachine
-  /** Every machine on the order (for "This crate also holds…"). */
+  /** Every machine on the order (for "This Crate Also Holds…"). */
   orderMachines: CrateMachine[]
   /** The crate being edited, or null for a new one. */
   crate: NumberedCrate | null
@@ -94,14 +95,14 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
     const e: Record<string, string> = {}
     for (const m of MEASURES) {
       const n = parse(shown(m.key, m.kind))
-      if (n === 'bad') e[m.key] = 'Type a number'
-      else if (n !== null && n <= 0) e[m.key] = 'Must be more than 0'
+      if (n === 'bad') e[m.key] = 'Enter a number'
+      else if (n !== null && n <= 0) e[m.key] = 'Enter a number greater than 0'
     }
     const sheetsN = parse(sheets)
     const hoursN = parse(hours)
-    if (sheetsN === 'bad' || (sheetsN !== null && sheetsN < 0)) e.sheets = 'Type a number (0 or more)'
-    if (hoursN === 'bad' || (hoursN !== null && hoursN < 0)) e.hours = 'Type a number (0 or more)'
-    if (!cratedOn) e.cratedOn = 'Pick the date'
+    if (sheetsN === 'bad' || (sheetsN !== null && sheetsN < 0)) e.sheets = 'Enter a number (0 or more)'
+    if (hoursN === 'bad' || (hoursN !== null && hoursN < 0)) e.hours = 'Enter a number (0 or more)'
+    if (!cratedOn) e.cratedOn = 'Select the date'
     setErrors(e)
     if (Object.keys(e).length) return
 
@@ -131,18 +132,19 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
   async function remove() {
     if (!supabase || !crate) return
     const shared = crate.machine_ids.length > 1
-    const ok = window.confirm(
-      `Remove crate ${crate.number} from order ${orderCode}?${shared ? ' It holds more than one machine; it is removed for all of them.' : ''}`,
+    const ok = await confirmAction(
+      `Archive crate ${crate.number} on order ${orderCode}?${shared ? ' It holds more than one machine, so it is archived for all of them.' : ''}`,
+      { confirmLabel: 'Archive' },
     )
     if (!ok) return
     setSaving(true)
     const { error: err } = await supabase.from('crates').update({ archived: true }).eq('id', crate.id)
     setSaving(false)
     if (err) return setError(friendlyError(err))
-    onDone(`Crate ${crate.number} removed.`)
+    onDone(`Crate ${crate.number} archived.`)
   }
 
-  const title = crate ? `Crate ${crate.number} · order ${orderCode}` : `New crate · order ${orderCode}`
+  const title = crate ? `Crate ${crate.number} · Order ${orderCode}` : `New Crate · Order ${orderCode}`
 
   return (
     <Modal
@@ -153,14 +155,14 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
         <>
           {crate && (
             <button type="button" className="mr-auto text-sm text-red-700 underline" onClick={remove} disabled={saving}>
-              Remove this crate
+              Archive This Crate
             </button>
           )}
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
             Cancel
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Save crate'}
+            {saving ? 'Saving…' : 'Save Crate'}
           </button>
         </>
       }
@@ -172,7 +174,7 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
 
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <span className="text-sm font-medium text-slate-700">Size and weight</span>
+            <span className="text-sm font-medium text-slate-700">Size and Weight</span>
             <Can permission="crating.units">
               <UnitsSwitch />
             </Can>
@@ -207,7 +209,7 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
               <input id="crate-hours" inputMode="decimal" className={inputClass} value={hours} onChange={(e) => setHours(e.target.value)} />
             </Field>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Leave a box empty if you don’t know it yet; you can fill it in later.</p>
+          <p className="mt-1 text-xs text-slate-500">Leave a field empty if the value is not known yet; it can be filled in later.</p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
@@ -221,9 +223,9 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
 
         {others.length > 0 && (
           <fieldset>
-            <legend className="mb-1 text-sm font-medium text-slate-700">This crate also holds…</legend>
+            <legend className="mb-1 text-sm font-medium text-slate-700">This Crate Also Holds…</legend>
             <p className="mb-2 text-xs text-slate-500">
-              Tick other machines from this order that share this crate, so its weight and plywood are counted once.
+              Select other machines from this order that share this crate, so its weight and plywood are counted once.
             </p>
             <div className="space-y-1">
               {others.map((m) => (

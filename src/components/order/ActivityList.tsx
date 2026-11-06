@@ -37,7 +37,7 @@ export default function ActivityList({ orderId, reloadKey }: { orderId: string; 
 
   if (loading) return <p className="text-sm text-slate-500">Loading…</p>
   if (error) return <p className="text-sm text-red-700">{error}</p>
-  if (entries.length === 0) return <p className="text-sm text-slate-500">Nothing recorded yet.</p>
+  if (entries.length === 0) return <p className="text-sm text-slate-500">No changes have been recorded for this order yet.</p>
 
   return (
     <ol className="space-y-3">

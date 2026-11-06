@@ -26,18 +26,18 @@ export default function CratingSummary({ order, crates, notCrated }: Props) {
       await navigator.clipboard.writeText(text)
       toast.success('Crating summary copied. Paste it into your freight quote email.')
     } catch {
-      toast.error('Could not copy. Select the text and copy it by hand.')
+      toast.error('The summary could not be copied. Select the text and copy it manually.')
     }
   }
 
   return (
     <Section
-      title="Crating summary"
+      title="Crating Summary"
       aside={
         crates.length > 0 && (
           <Can permission="crating.summary.copy">
             <button type="button" className={secondaryButtonClass} onClick={copy}>
-              📋 Copy
+              Copy
             </button>
           </Can>
         )
@@ -50,7 +50,7 @@ export default function CratingSummary({ order, crates, notCrated }: Props) {
       </Can>
       {crates.length === 0 ? (
         <p className="text-sm text-slate-500">
-          No crates yet. Tick “Crated?” next to a machine above to enter its crate.
+          No crates have been entered yet. Mark a machine above as crated to enter its crate.
         </p>
       ) : (
         <div className="space-y-3 text-sm">

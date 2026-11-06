@@ -62,10 +62,10 @@ export default function ScheduleChanges({ orders, onChanged }: { orders: OrderSu
               <Can permission="schedule.accept" level="edit">
                 <span className="flex gap-2">
                   <button type="button" className={secondaryButtonClass} disabled={busy === p.order_id} onClick={() => run(p.order_id, () => acceptPlan(p.order_id, p, promised))}>
-                    Accept
+                    Accept New Date
                   </button>
                   <button type="button" className={secondaryButtonClass} disabled={busy === p.order_id} onClick={() => run(p.order_id, () => keepPlan(p.order_id, p))}>
-                    Keep
+                    Keep Promised Date
                   </button>
                 </span>
               </Can>

@@ -52,7 +52,7 @@ function toCell(XLSX: XlsxModule, c: { t?: string; v?: unknown; f?: string; z?: 
   }
 }
 
-/** A cell to write: text, number, date (YYYY-MM-DD), tick, or a number with a formula. */
+/** A cell to write: text, number, date (YYYY-MM-DD), check mark, or a number with a formula. */
 export type OutCell = string | number | boolean | null | { date: string } | { formula: string; value: number }
 
 export type OutSheet = { name: string; rows: OutCell[][]; widths?: number[] }

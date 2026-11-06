@@ -77,7 +77,7 @@ export default function DepartmentsPage() {
     if (!supabase) return
     const name = newName.trim()
     if (!name) return
-    if (taken(name)) return toast.error('There is already a department with that name (it may be archived: tick "Show archived").')
+    if (taken(name)) return toast.error('There is already a department with that name (it may be archived: select "Show archived").')
     const sort = Math.max(0, ...departments.map((d) => d.sort_order)) + 1
     if (await save(supabase.from('departments').insert({ name, sort_order: sort }), `Added “${name}”.`)) setNewName('')
   }
@@ -113,7 +113,7 @@ export default function DepartmentsPage() {
                 />
                 {draft.trim() !== d.name && (
                   <button type="button" className={buttonClass} onClick={() => rename(d)}>
-                    Save
+                    Save Changes
                   </button>
                 )}
                 <span className="w-20 text-xs text-slate-500">
@@ -146,7 +146,7 @@ export default function DepartmentsPage() {
                     )
                   }
                 >
-                  {d.archived ? 'Bring back' : 'Archive'}
+                  {d.archived ? 'Restore' : 'Archive'}
                 </button>
                 <p className="w-full pl-1 text-xs text-slate-500">
                   Default permissions:{' '}

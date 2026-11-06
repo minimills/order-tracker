@@ -9,6 +9,7 @@ import { usePreferences } from '../../lib/preferences'
 import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import CrateDialog from './CrateDialog'
+import { confirmAction } from '../../lib/confirm'
 
 type Props = {
   orderId: string
@@ -24,13 +25,13 @@ type Props = {
 }
 
 /**
- * The "Crated?" tick box for one machine, its crates, and "Add another crate".
- * Ticking opens the crate form; unticking removes the machine's crating
+ * The "Crated" checkbox for one machine, its crates, and "Add another crate".
+ * Selecting it opens the crate form; clearing it removes the machine's crating
  * (a shared crate stays for the other machines in it).
  */
 export default function MachineCrating({ orderId, orderCode, machine, orderMachines, crates, onChanged, large = false }: Props) {
   const { units } = usePreferences()
-  // People with "crating" view see the crates; only "edit" can tick or change them.
+  // People with "crating" view see the crates; only "edit" can mark or change them.
   const canEdit = usePermissions().can('crating', 'edit')
   const [dialog, setDialog] = useState<{ crate: NumberedCrate | null } | null>(null)
   const [busy, setBusy] = useState(false)
@@ -38,10 +39,10 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
   const crated = mine.length > 0
   const labelOf = (id: string) => orderMachines.find((m) => m.id === id)?.label ?? 'another machine'
 
-  async function untick() {
+  async function markNotCrated() {
     if (!supabase) return
-    const ok = window.confirm(
-      `Mark ${machine.label} as NOT crated? Its crating details (${mine.length} crate${mine.length === 1 ? '' : 's'}) are removed. A crate it shares with other machines stays for them.`,
+    const ok = await confirmAction(
+      `Mark ${machine.label} as not crated? Its crating details (${mine.length} crate${mine.length === 1 ? '' : 's'}) are removed. A crate it shares with other machines is kept for them.`,
     )
     if (!ok) return
     setBusy(true)
@@ -60,9 +61,9 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
           className={large ? 'h-6 w-6 accent-teal-700' : 'h-5 w-5 accent-teal-700'}
           checked={crated}
           disabled={busy || !canEdit}
-          onChange={() => (crated ? untick() : setDialog({ crate: null }))}
+          onChange={() => (crated ? markNotCrated() : setDialog({ crate: null }))}
         />
-        <span className={crated ? 'font-medium text-teal-800' : 'text-slate-500'}>{crated ? 'Crated' : 'Crated?'}</span>
+        <span className={crated ? 'font-medium text-teal-800' : 'text-slate-500'}>{crated ? 'Crated' : 'Mark as crated'}</span>
       </label>
 
       {crated && (
@@ -92,7 +93,7 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
           <Can permission="crating" level="edit">
             <li className="print:hidden">
               <button type="button" className="text-blue-700 underline" onClick={() => setDialog({ crate: null })}>
-                + Add another crate
+                Add Another Crate
               </button>
             </li>
           </Can>

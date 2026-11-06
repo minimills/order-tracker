@@ -22,6 +22,8 @@ import { supabase } from '../lib/supabase'
 import RichText from '../components/RichText'
 import RichTextEditor from '../components/RichTextEditor'
 import SerialNumber from '../components/SerialNumber'
+import { askText } from '../lib/confirm'
+import Icon from '../components/Icon'
 
 type OrderInfo = { id: string; order_code: string; customer_name: string; customer_company: string | null; stage: string }
 
@@ -31,7 +33,7 @@ const NEW_SECTION = '__new'
 function PhotoSpot({ label }: { label: string }) {
   return (
     <div className="mt-1 inline-flex items-center gap-1 rounded border border-dashed border-slate-300 px-2 py-0.5 text-[11px] text-slate-400">
-      📷 {label} – coming soon
+      <Icon name="camera" className="h-3 w-3" /> {label} – available in a future update
     </div>
   )
 }
@@ -139,7 +141,7 @@ function RichNoteBox({
 }
 
 /**
- * A machine's final check: tick each item (or N/A), notes, general notes and
+ * A machine's final check: mark each item complete (or not applicable), notes, general notes and
  * sign-off. Everything saves straight away, so it can be done over several days.
  */
 export default function ChecklistPage() {
@@ -268,15 +270,15 @@ export default function ChecklistPage() {
     const { error: e } = await supabase.rpc('start_checklist', { p_machine_id: machineId })
     setBusy(false)
     if (e) return toast.error(friendlyError(e))
-    toast.success('Final check started. Every tick saves straight away.')
+    toast.success('Final check started. Each change is saved automatically.')
     load()
   }
 
   async function addItem() {
     if (!supabase || !checklist) return
     const section = newSection === NEW_SECTION ? newSectionName.trim() : newSection
-    if (!section) return toast.error('Choose or type a section.')
-    if (!newText.trim()) return toast.error('Type the item.')
+    if (!section) return toast.error('Select or enter a section.')
+    if (!newText.trim()) return toast.error('Enter the item.')
     setBusy(true)
     const { error: e } = await supabase.rpc('add_checklist_item', { p_checklist_id: checklist.id, p_section: section, p_text: newText.trim() })
     setBusy(false)
@@ -288,14 +290,14 @@ export default function ChecklistPage() {
 
   async function sign() {
     if (!supabase || !checklist) return
-    if (openCount > 0) return toast.error(`${openCount} item${openCount === 1 ? ' is' : 's are'} still to tick or mark N/A.`)
-    if (fullName.trim().length < 3) return toast.error('Type your full name.')
-    if (!pad.current || pad.current.isEmpty()) return toast.error('Sign in the box with your finger or the mouse.')
+    if (openCount > 0) return toast.error(`${openCount} item${openCount === 1 ? ' is' : 's are'} still need to be marked complete or not applicable.`)
+    if (fullName.trim().length < 3) return toast.error('Enter your full name.')
+    if (!pad.current || pad.current.isEmpty()) return toast.error('Sign in the box using your finger or the mouse.')
     setBusy(true)
     const png = await pad.current.toPng()
     if (!png) {
       setBusy(false)
-      return toast.error('The signature picture is too large. Clear it and sign a little smaller.')
+      return toast.error('The signature image is too large. Clear it and sign a little smaller.')
     }
     const path = `${checklist.id}/${Date.now()}.png`
     const up = await supabase.storage.from(SIGNATURE_BUCKET).upload(path, png, { contentType: 'image/png' })
@@ -312,13 +314,13 @@ export default function ChecklistPage() {
 
   async function unlock() {
     if (!supabase || !checklist) return
-    const reason = window.prompt('Why does this signed final check need to be unlocked? (This is recorded.)')
-    if (!reason?.trim()) return
+    const reason = await askText('Why does this signed final check need to be unlocked? The reason is recorded.', { label: 'Reason for unlocking', confirmLabel: 'Unlock' })
+    if (!reason) return
     setBusy(true)
     const { error: e } = await supabase.rpc('unlock_checklist', { p_checklist_id: checklist.id, p_reason: reason.trim() })
     setBusy(false)
     if (e) return toast.error(friendlyError(e))
-    toast.success('Unlocked. It needs to be signed again.')
+    toast.success('Final check unlocked. It must be signed again.')
     load()
   }
 
@@ -365,7 +367,7 @@ export default function ChecklistPage() {
                 <div className="text-2xl font-semibold tabular-nums">
                   {completed} / {items.length}
                 </div>
-                <div className="text-xs text-slate-500">done or N/A</div>
+                <div className="text-xs text-slate-500">completed or not applicable</div>
               </div>
             )}
           </div>
@@ -377,18 +379,18 @@ export default function ChecklistPage() {
           {!checklist && (
             <div className="mt-3">
               {!status.ready ? (
-                <p className="text-sm text-amber-800">Mark this machine as built on the order page first.</p>
+                <p className="text-sm text-amber-800">Mark this machine as built on the Order page first.</p>
               ) : (
                 <Can
                   permission="checklist.start"
                   level="edit"
-                  fallback={<p className="text-sm text-slate-500">Not started yet.</p>}
+                  fallback={<p className="text-sm text-slate-500">This final check has not been started.</p>}
                 >
                   <button type="button" className={buttonClass} disabled={busy} onClick={start}>
-                    Start final check
+                    Start Final Check
                   </button>
                   <p className="mt-1 text-xs text-slate-500">
-                    The items are copied from the current checklist templates (general + this machine type).
+                    The items are copied from the current checklist templates (general items plus those for this machine type).
                   </p>
                 </Can>
               )}
@@ -407,10 +409,10 @@ export default function ChecklistPage() {
               </label>
               <div className="flex gap-3 text-sm">
                 <button type="button" className="underline" onClick={() => setCollapsed(new Set())}>
-                  Open all sections
+                  Expand All Sections
                 </button>
                 <button type="button" className="underline" onClick={() => setCollapsed(new Set(sectionNames))}>
-                  Close all
+                  Collapse All
                 </button>
               </div>
             </div>
@@ -459,9 +461,9 @@ export default function ChecklistPage() {
                   {!isClosed && (
                     <div>
                       <div className="hidden grid-cols-[3rem_minmax(0,2fr)_4.5rem_minmax(0,1.5fr)_10rem] gap-3 border-b border-slate-100 px-4 py-1.5 text-xs text-slate-500 md:grid">
-                        <span>Done</span>
+                        <span>Completed</span>
                         <span>Item</span>
-                        <span>N/A</span>
+                        <span>Not Applicable</span>
                         <Can permission="checklist.col.notes">
                           <span>Notes</span>
                         </Can>
@@ -482,14 +484,14 @@ export default function ChecklistPage() {
                                 permission="checklist.tick"
                                 level="edit"
                                 fallback={
-                                  <span className="text-xl" aria-label={item.status}>
-                                    {item.status === 'done' ? '✅' : item.status === 'na' ? '➖' : '⬜'}
+                                  <span className="text-xs font-medium text-slate-600">
+                                    {item.status === 'done' ? 'Completed' : item.status === 'na' ? 'Not applicable' : 'Open'}
                                   </span>
                                 }
                               >
                                 <input
                                   type="checkbox"
-                                  aria-label={`Done: ${item.item_text}`}
+                                  aria-label={`Mark complete: ${item.item_text}`}
                                   className="h-7 w-7 accent-green-700"
                                   checked={item.status === 'done'}
                                   disabled={!editable}
@@ -514,7 +516,7 @@ export default function ChecklistPage() {
                               <Can
                                 permission="checklist.tick"
                                 level="edit"
-                                fallback={item.status === 'na' ? <span className="text-sm font-medium">N/A</span> : null}
+                                fallback={item.status === 'na' ? <span className="text-sm font-medium">Not applicable</span> : null}
                               >
                                 <button
                                   type="button"
@@ -525,7 +527,7 @@ export default function ChecklistPage() {
                                   } disabled:opacity-60`}
                                   aria-pressed={item.status === 'na'}
                                 >
-                                  N/A
+                                  Not Applicable
                                 </button>
                               </Can>
                             </div>
@@ -549,7 +551,7 @@ export default function ChecklistPage() {
                               <div className="col-start-2 text-xs text-slate-500 md:col-start-auto">
                                 {item.status_at && (
                                   <div>
-                                    {item.status === 'na' ? 'N/A' : '✓'} {item.status_by_name} · {showDateTime(item.status_at)}
+                                    {item.status === 'na' ? 'Not applicable' : 'Completed'} by {item.status_by_name} · {showDateTime(item.status_at)}
                                   </div>
                                 )}
                                 {item.notes_at && (
@@ -572,7 +574,7 @@ export default function ChecklistPage() {
             {!locked && (
               <Can permission="checklist.add_item" level="edit">
                 <section className="rounded-lg border border-slate-200 bg-white p-4">
-                  <h2 className="font-semibold">Add an item for this machine only</h2>
+                  <h2 className="font-semibold">Add an Item for This Machine Only</h2>
                   <p className="text-xs text-slate-500">It is added to this checklist, not to the templates.</p>
                   <div className="mt-3 grid gap-2 md:grid-cols-[14rem_1fr_auto]">
                     <select aria-label="Section" className={inputClass} value={newSection} onChange={(e) => setNewSection(e.target.value)}>
@@ -595,7 +597,7 @@ export default function ChecklistPage() {
                     )}
                     <input aria-label="Item" className={inputClass} placeholder="What to check" value={newText} onChange={(e) => setNewText(e.target.value)} />
                     <button type="button" className={secondaryButtonClass} onClick={addItem} disabled={busy}>
-                      + Add item
+                      Add Item
                     </button>
                   </div>
                 </section>
@@ -605,7 +607,7 @@ export default function ChecklistPage() {
             {/* ---------- General notes + photos ---------- */}
             <Can permission="checklist.general_notes">
               <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 className="mb-2 font-semibold">General notes for this machine</h2>
+                <h2 className="mb-2 font-semibold">General Notes for This Machine</h2>
                 <Can
                   permission="checklist.tick"
                   level="edit"
@@ -619,14 +621,14 @@ export default function ChecklistPage() {
                   />
                 </Can>
                 <Can permission="checklist.photos">
-                  <PhotoSpot label="Photos for the whole checklist" />
+                  <PhotoSpot label="Photos for the Whole Checklist" />
                 </Can>
               </section>
             </Can>
 
             {/* ---------- Sign-off ---------- */}
             <section className="rounded-lg border border-slate-200 bg-white p-4">
-              <h2 className="mb-2 font-semibold">Sign-off</h2>
+              <h2 className="mb-2 font-semibold">Sign-Off</h2>
               {locked ? (
                 <div className="space-y-3">
                   <p className="text-green-800">
@@ -637,7 +639,7 @@ export default function ChecklistPage() {
                   <div className="flex flex-wrap gap-2">
                     <Can permission="checklist.print">
                       <Link to={`/checklists/${machineId}/print`} target="_blank" className={secondaryButtonClass}>
-                        🖨 Print / PDF
+                        Print or Save as PDF
                       </Link>
                     </Can>
                     <Can permission="checklist.unlock" level="edit">
@@ -651,11 +653,11 @@ export default function ChecklistPage() {
                 <Can
                   permission="checklist.sign"
                   level="edit"
-                  fallback={<p className="text-sm text-slate-500">Not signed yet.</p>}
+                  fallback={<p className="text-sm text-slate-500">This final check has not been signed.</p>}
                 >
                   {openCount > 0 && (
                     <p className="mb-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
-                      {openCount} item{openCount === 1 ? ' is' : 's are'} still to tick or mark N/A before signing.
+                      {openCount} item{openCount === 1 ? ' is' : 's are'} still need to be marked complete or not applicable before signing.
                     </p>
                   )}
                   <div className="space-y-3">
@@ -671,7 +673,7 @@ export default function ChecklistPage() {
                     </label>
                     <div>
                       <div className="mb-1 flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-700">Sign here with your finger or the mouse</span>
+                        <span className="font-medium text-slate-700">Sign here using your finger or the mouse</span>
                         <button type="button" className="text-sm underline" onClick={() => pad.current?.clear()}>
                           Clear
                         </button>
@@ -680,7 +682,7 @@ export default function ChecklistPage() {
                     </div>
                     <p className="text-xs text-slate-500">The date and time are saved automatically. Signing locks the checklist.</p>
                     <button type="button" className={buttonClass} onClick={sign} disabled={busy || openCount > 0}>
-                      {busy ? 'Saving…' : 'Sign and lock'}
+                      {busy ? 'Saving…' : 'Sign and Lock'}
                     </button>
                   </div>
                 </Can>

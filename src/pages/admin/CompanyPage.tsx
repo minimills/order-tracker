@@ -52,7 +52,7 @@ export default function CompanyPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <AdminPageHeader title="Company details">Shown at the top of printouts such as the shop board.</AdminPageHeader>
+      <AdminPageHeader title="Company Details">Shown at the top of printouts such as the shop board.</AdminPageHeader>
 
       <form onSubmit={save} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5" noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -78,7 +78,7 @@ export default function CompanyPage() {
             {f.logo ? (
               <img src={f.logo} alt="Company logo" className="max-h-20 max-w-48 rounded border border-slate-200 bg-white p-1" />
             ) : (
-              <span className="text-sm text-slate-500">No logo yet.</span>
+              <span className="text-sm text-slate-500">No logo has been added.</span>
             )}
             <input id="co-logo" type="file" accept="image/*" className="text-sm" onChange={(e) => pickLogo(e.target.files?.[0])} />
             {f.logo && (
@@ -104,7 +104,7 @@ export default function CompanyPage() {
 
         <div className="flex justify-end">
           <button type="submit" className={buttonClass} disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
       </form>

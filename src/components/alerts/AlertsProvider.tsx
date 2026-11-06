@@ -63,7 +63,7 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
         })
         if (red.length > MAX_OPENING_TOASTS) {
           toast.error(`…and ${red.length - MAX_OPENING_TOASTS} more overdue or due today`, {
-            description: 'Click the bell at the top to see them all.',
+            description: 'Open Alerts at the top of the page to see them all.',
             duration: 10000,
           })
         }
@@ -91,7 +91,7 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
               n.close()
             }
           } catch {
-            // Some browsers (e.g. on phones) only allow notifications from a service worker.
+            // Some browsers (for example on phones) only allow notifications from a service worker.
           }
         }
       }
@@ -140,7 +140,7 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
     }
   }, [load])
 
-  // Re-check after moving to another page (e.g. after marking a payment received).
+  // Re-check after moving to another page (for example after marking a payment received).
   useEffect(() => {
     if (Date.now() - lastLoad.current > MIN_GAP_MS) load()
   }, [location.pathname, load])
@@ -170,7 +170,7 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
       snooze: (a: AlertRow, days: number) =>
         act('snooze_alert', { p_alert_key: a.alert_key, p_days: days }, `Snoozed for ${days === 1 ? '1 day' : `${days} days`}.`),
       dismiss: (a: AlertRow) => act('dismiss_alert', { p_alert_key: a.alert_key }, 'Alert dismissed.'),
-      restore: (a: AlertRow) => act('restore_alert', { p_alert_key: a.alert_key }, 'Alert is back.'),
+      restore: (a: AlertRow) => act('restore_alert', { p_alert_key: a.alert_key }, 'Alert restored.'),
     }),
     [alerts, loading, load, act],
   )

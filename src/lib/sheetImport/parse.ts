@@ -104,7 +104,7 @@ export type ParseResult = {
   orders: DraftOrder[]
   /** Rows above the first order (titles, headings). */
   skippedTop: number
-  /** Optional backup columns found in the header row (e.g. Currency → column O). */
+  /** Optional backup columns found in the header row (for example Currency → column O). */
   extras: Partial<Record<keyof typeof HEADER_EXTRAS, number>>
 }
 
@@ -169,13 +169,13 @@ export function parseGrid(grid: Grid): ParseResult {
         total = dp
       }
 
-      // Received columns: a date, a tick, or an amount.
+      // Received columns: a date, a check mark, or an amount.
       const received = (col: string, what: string, dueIso: string) => {
         const c = at(col)
         if (isEmpty(c) || (c!.kind === 'bool' && !c!.value)) return { date: '', amount: '' }
         if (c!.kind === 'date') return { date: c!.iso, amount: '' }
         if (isTick(c) && !(c!.kind === 'number' && c!.value > 1)) {
-          msgs.push({ row, level: 'warning', text: `${what} is ticked as received but has no date; ${dueIso || 'today'} will be used.` })
+          msgs.push({ row, level: 'warning', text: `${what} is marked as received but has no date; ${dueIso || 'today'} will be used.` })
           return { date: dueIso, amount: '' }
         }
         if (c!.kind === 'number' && c!.value > 0 && !(c!.value > 20000 && c!.value < 80000 && Number.isInteger(c!.value))) {
@@ -246,7 +246,7 @@ export function parseGrid(grid: Grid): ParseResult {
     const name = cellText(at('B'))
     if (!name) {
       if (!isEmpty(at('C')) || isTick(at('D'))) {
-        msgs.push({ row, level: 'warning', text: `Row has a serial or tick but no machine name; it is ignored.` })
+        msgs.push({ row, level: 'warning', text: `Row has a serial number or check mark but no machine name; it is ignored.` })
       }
       return
     }
@@ -263,11 +263,11 @@ export function parseGrid(grid: Grid): ParseResult {
     o.machines.push(machine)
   })
 
-  // An order number with nothing else (e.g. the next empty order) is left out.
+  // An order number with nothing else (for example the next empty order) is left out.
   for (const o of orders) {
     if (!o.customer && o.machines.length === 0) {
       o.include = false
-      o.readMessages.push({ row: o.row, level: 'info', text: `Order ${o.code} has no customer and no machines, so it is left out (tick it to include it).` })
+      o.readMessages.push({ row: o.row, level: 'info', text: `Order ${o.code} has no customer and no machines, so it is left out (select it to include it).` })
     }
   }
   return { orders, skippedTop, extras }

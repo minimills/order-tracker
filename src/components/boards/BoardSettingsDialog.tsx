@@ -44,8 +44,8 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
   async function saveBoard(e: FormEvent) {
     e.preventDefault()
     const n = Number(soon)
-    if (!name.trim()) return toast.error('The board needs a name.')
-    if (!Number.isInteger(n) || n < 0 || n > 60) return toast.error('“Due soon” must be 0 to 60 days.')
+    if (!name.trim()) return toast.error('Enter a name for the board.')
+    if (!Number.isInteger(n) || n < 0 || n > 60) return toast.error('“Due soon” must be between 0 and 60 days.')
     await run(
       () => supabase!.from('boards').update({ name: name.trim(), description: description.trim() || null, colour, due_soon_days: n }).eq('id', board.id),
       'Board saved.',
@@ -65,12 +65,12 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
 
   return (
     <Modal
-      title="Board settings"
+      title="Board Settings"
       onClose={onClose}
       busy={busy}
       footer={
         <button type="button" className={secondaryButtonClass} onClick={onClose}>
-          Done
+          Close
         </button>
       }
     >
@@ -84,11 +84,11 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
         <Field label="Colour">
           <ColourPicker colours={BOARD_COLOURS} value={colour} onChange={setColour} label="Board colour" />
         </Field>
-        <Field label="Due dates turn amber this many days before" htmlFor="bs-soon">
+        <Field label="Number of days before the due date that cards turn amber" htmlFor="bs-soon">
           <input id="bs-soon" type="number" min={0} max={60} className={`${narrowInputClass} w-24`} value={soon} onChange={(e) => setSoon(e.target.value)} />
         </Field>
         <button type="submit" className={buttonClass} disabled={busy}>
-          Save board
+          Save Changes
         </button>
       </form>
 
@@ -96,7 +96,7 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
         <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Show archived stages and labels
       </label>
 
-      <h3 className="mt-3 font-semibold">Stages (columns, left to right)</h3>
+      <h3 className="mt-3 font-semibold">Stages (Columns, Left to Right)</h3>
       <ul className="mt-2 space-y-1.5">
         {stages.map((s) => {
           const i = active.findIndex((x) => x.id === s.id)
@@ -119,7 +119,7 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
                 disabled={busy}
                 onClick={() => run(() => supabase!.from('board_stages').update({ archived: !s.archived }).eq('id', s.id))}
               >
-                {s.archived ? 'Bring back' : 'Archive'}
+                {s.archived ? 'Restore' : 'Archive'}
               </button>
             </li>
           )
@@ -133,9 +133,9 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
           if (await run(() => supabase!.from('board_stages').insert({ board_id: board.id, name: newStage.trim(), sort_order: active.length + 1 }))) setNewStage('')
         }}
       >
-        <input aria-label="New stage" className={`${inputClass} py-1`} placeholder="New stage, e.g. Waiting for parts" value={newStage} onChange={(e) => setNewStage(e.target.value)} />
+        <input aria-label="New stage" className={`${inputClass} py-1`} placeholder="New stage, for example Waiting for parts" value={newStage} onChange={(e) => setNewStage(e.target.value)} />
         <button type="submit" className={small} disabled={busy}>
-          + Stage
+          Add Stage
         </button>
       </form>
 
@@ -161,7 +161,7 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
               ))}
             </select>
             <button type="button" className={small} disabled={busy} onClick={() => run(() => supabase!.from('board_labels').update({ archived: !l.archived }).eq('id', l.id))}>
-              {l.archived ? 'Bring back' : 'Archive'}
+              {l.archived ? 'Restore' : 'Archive'}
             </button>
           </li>
         ))}
@@ -175,15 +175,15 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
         }}
       >
         <div className="flex gap-2">
-          <input aria-label="New label" className={`${inputClass} py-1`} placeholder="New label, e.g. Urgent" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+          <input aria-label="New label" className={`${inputClass} py-1`} placeholder="New label, for example Urgent" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
           <button type="submit" className={small} disabled={busy}>
-            + Label
+            Add Label
           </button>
         </div>
         <ColourPicker colours={LABEL_COLOURS} value={labelColour} onChange={setLabelColour} label="New label colour" />
       </form>
 
-      <h3 className="mt-5 font-semibold">Ready-made checklists</h3>
+      <h3 className="mt-5 font-semibold">Ready-Made Checklists</h3>
       <p className="text-xs text-slate-500">Offered when someone adds a checklist to a card on this board.</p>
       <ul className="mt-2 space-y-1 text-sm">
         {board.checklist_presets.map((p, i) => (
@@ -209,10 +209,10 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
           }
         }}
       >
-        <input aria-label="Checklist name" className={`${inputClass} py-1`} placeholder="Checklist name, e.g. Before shipping" value={presetTitle} onChange={(e) => setPresetTitle(e.target.value)} />
+        <input aria-label="Checklist name" className={`${inputClass} py-1`} placeholder="Checklist name, for example Before shipping" value={presetTitle} onChange={(e) => setPresetTitle(e.target.value)} />
         <textarea aria-label="Checklist tasks" className={inputClass} rows={3} placeholder="One task per line" value={presetItems} onChange={(e) => setPresetItems(e.target.value)} />
         <button type="submit" className={small} disabled={busy}>
-          + Ready-made checklist
+          Add Ready-Made Checklist
         </button>
       </form>
     </Modal>

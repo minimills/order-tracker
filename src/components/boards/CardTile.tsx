@@ -68,20 +68,20 @@ export default function CardTile(p: Props) {
           )}
         </Can>
         <Can permission="boards.card.timing">
-          {card.started_at && !card.finished_at && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-800 ring-1 ring-blue-200">▶ Started</span>}
-          {card.finished_at && <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-800 ring-1 ring-green-200">✓ Finished</span>}
+          {card.started_at && !card.finished_at && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-800 ring-1 ring-blue-200">Started</span>}
+          {card.finished_at && <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-800 ring-1 ring-green-200">Finished</span>}
         </Can>
         <Can permission="boards.card.link">
-          {p.linkText && <span className="rounded bg-slate-100 px-1.5 py-0.5">🔗 {p.linkText}</span>}
+          {p.linkText && <span className="rounded bg-slate-100 px-1.5 py-0.5">Linked: {p.linkText}</span>}
         </Can>
-        <Can permission="boards.card.comments">{p.comments > 0 && <span title="Comments">💬 {p.comments}</span>}</Can>
+        <Can permission="boards.card.comments">{p.comments > 0 && <span>{p.comments} comment{p.comments === 1 ? '' : 's'}</span>}</Can>
       </div>
       <Can permission="boards.card.checklists">
         {prog.total > 0 && (
-          <div className="mt-2" title={`${prog.done} of ${prog.total} tasks done`}>
+          <div className="mt-2" title={`${prog.done} of ${prog.total} tasks completed`}>
             <div className="flex justify-between text-[11px] text-slate-500">
               <span>
-                ☑ {prog.done}/{prog.total}
+                {prog.done} of {prog.total} tasks
               </span>
               <span>{prog.percent}%</span>
             </div>

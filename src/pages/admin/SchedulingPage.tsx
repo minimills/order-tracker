@@ -24,13 +24,13 @@ export default function SchedulingPage() {
   async function save(e?: FormEvent, next = f) {
     e?.preventDefault()
     if (!supabase) return
-    if (next.working_days.length === 0) return toast.error('Tick at least one working day.')
+    if (next.working_days.length === 0) return toast.error('Select at least one working day.')
     if (!Number.isInteger(next.buffer_days) || next.buffer_days < 0 || next.buffer_days > 90) return toast.error('Buffer days: 0 to 90.')
     setSaving(true)
     const { error } = await supabase.from('app_settings').upsert({ key: 'scheduling', value: next })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Scheduling saved. Suggested dates on orders update straight away; promised dates only change when accepted.')
+    toast.success('Scheduling saved. Suggested dates on orders update immediately; promised dates only change when accepted.')
   }
 
   function addHoliday() {
@@ -105,22 +105,22 @@ export default function SchedulingPage() {
         </div>
         <div className="flex justify-end">
           <button type="submit" className={buttonClass} disabled={saving}>
-            {saving ? 'Saving…' : 'Save'}
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
       </form>
 
       <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Company holidays</h2>
+        <h2 className="mb-3 font-semibold">Company Holidays</h2>
         <div className="grid gap-2 sm:grid-cols-[11rem_1fr_auto]">
           <input type="date" aria-label="Holiday date" className={inputClass} value={holidayDate} onChange={(e) => setHolidayDate(e.target.value)} />
-          <input aria-label="Holiday name" className={inputClass} placeholder="e.g. Canada Day" value={holidayName} onChange={(e) => setHolidayName(e.target.value)} />
+          <input aria-label="Holiday name" className={inputClass} placeholder="for example Canada Day" value={holidayName} onChange={(e) => setHolidayName(e.target.value)} />
           <button type="button" className={secondaryButtonClass} onClick={addHoliday}>
-            + Add holiday
+            Add Holiday
           </button>
         </div>
         {f.holidays.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">No holidays yet.</p>
+          <p className="mt-3 text-sm text-slate-500">No holidays have been added.</p>
         ) : (
           <ul className="mt-3 divide-y divide-slate-100 text-sm">
             {f.holidays.map((h) => (

@@ -33,6 +33,8 @@ import RichText from '../RichText'
 import RichTextEditor from '../RichTextEditor'
 import { buttonClass, inputClass, narrowInputClass, secondaryButtonClass } from '../form'
 import LinkPicker from './LinkPicker'
+import { confirmAction } from '../../lib/confirm'
+import Icon from '../Icon'
 
 type Props = { cardId: string; data: BoardData; level: BoardLevel; onClose: () => void; onChanged: () => void }
 
@@ -102,7 +104,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
   if (!card) {
     return (
       <Overlay onClose={onClose} title="Card">
-        <p className="text-sm text-slate-600">This card was not found. It may have been archived.</p>
+        <p className="text-sm text-slate-600">This card could not be found. It may have been archived.</p>
       </Overlay>
     )
   }
@@ -253,7 +255,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                           className={`rounded px-2 py-0.5 text-xs font-medium ${on ? '' : 'opacity-35 hover:opacity-70'}`}
                           style={{ backgroundColor: l.colour, color: textOn(l.colour) }}
                         >
-                          {on ? '✓ ' : ''}
+                          {on && <Icon name="check" className="mr-0.5 h-3 w-3" />}
                           {l.name}
                         </button>
                       </Can>
@@ -290,7 +292,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                       disabled={busy}
                       onClick={async () => (await updateCard({ description: desc || null })) && setDesc(null)}
                     >
-                      Save
+                      Save Changes
                     </button>
                     <button type="button" className={secondaryButtonClass} onClick={() => setDesc(null)}>
                       Cancel
@@ -324,7 +326,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                             <button
                               type="button"
                               className="text-xs text-red-700 underline"
-                              onClick={() => window.confirm(`Remove the checklist “${list.title}” and its tasks?`) && run(() => supabase!.from('board_checklists').delete().eq('id', list.id))}
+                              onClick={async () => (await confirmAction(`Permanently delete the checklist “${list.title}” and its tasks?`, { confirmLabel: 'Permanently Delete', danger: true })) && run(() => supabase!.from('board_checklists').delete().eq('id', list.id))}
                             >
                               Remove
                             </button>
@@ -337,10 +339,10 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                           const took = timing(it.started_at, it.finished_at)
                           return (
                             <li key={it.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-sm">
-                              <Can permission="boards.card.checklists" level="edit" fallback={<span aria-hidden>{it.finished_at ? '☑' : '☐'}</span>}>
+                              <Can permission="boards.card.checklists" level="edit" fallback={<span className="text-xs text-slate-500">{it.finished_at ? 'Completed' : 'Open'}</span>}>
                                 <input
                                   type="checkbox"
-                                  aria-label={`Done: ${it.item_text}`}
+                                  aria-label={`Mark complete: ${it.item_text}`}
                                   className="h-4 w-4"
                                   checked={Boolean(it.finished_at)}
                                   disabled={!mayEdit || busy}
@@ -350,19 +352,19 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                               <span className={`flex-1 ${it.finished_at ? 'text-slate-500 line-through' : ''}`}>{it.item_text}</span>
                               <Can permission="boards.card.timing">
                                 <span className="text-xs text-slate-500" title={[it.started_by_name && `Started by ${it.started_by_name}`, it.finished_by_name && `finished by ${it.finished_by_name}`].filter(Boolean).join(', ')}>
-                                  {took && <>⏱ {took}</>}
+                                  {took && <><Icon name="timer" className="h-3.5 w-3.5" /> {took}</>}
                                   {avg && <> · usual {formatDuration(avg.seconds)} ({avg.count})</>}
-                                  {!took && !avg && it.finished_at && it.finished_by_name && `✓ ${it.finished_by_name}`}
+                                  {!took && !avg && it.finished_at && it.finished_by_name && `Completed by ${it.finished_by_name}`}
                                 </span>
                                 <Can permission="boards.card.timing" level="edit">
                                   {mayEdit && !it.started_at && !it.finished_at && (
                                     <button type="button" className={small} disabled={busy} onClick={() => updateItem(it, { started_at: new Date().toISOString() })}>
-                                      ▶ Start
+                                      Start
                                     </button>
                                   )}
                                   {mayEdit && it.started_at && !it.finished_at && (
                                     <button type="button" className={small} disabled={busy} onClick={() => updateItem(it, { finished_at: new Date().toISOString() })}>
-                                      ■ Finish
+                                      Finish
                                     </button>
                                   )}
                                 </Can>
@@ -410,7 +412,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                       aria-label="New checklist"
                       list={`presets-${board.id}`}
                       className={`${inputClass} py-1`}
-                      placeholder={board.checklist_presets.length ? 'New checklist (type or pick a ready-made one)' : 'New checklist name'}
+                      placeholder={board.checklist_presets.length ? 'New checklist (enter a name or choose a ready-made one)' : 'New checklist name'}
                       value={newList}
                       onChange={(e) => setNewList(e.target.value)}
                     />
@@ -420,7 +422,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                       ))}
                     </datalist>
                     <button type="submit" className={`${small} whitespace-nowrap`} disabled={busy}>
-                      + Checklist
+                      Add Checklist
                     </button>
                   </form>
                 )}
@@ -430,8 +432,8 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
 
           {/* ---------- Photos / files (later) ---------- */}
           <Can permission="boards.card.attachments">
-            <Block title="Photos and files">
-              <div className="rounded-md border border-dashed border-slate-300 p-3 text-center text-xs text-slate-500">📷 Coming soon: add photos and files to cards.</div>
+            <Block title="Photos and Files">
+              <div className="rounded-md border border-dashed border-slate-300 p-3 text-center text-xs text-slate-500">Photos and files on cards will be available in a future update.</div>
             </Block>
           </Can>
 
@@ -467,7 +469,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                               setEditingComment(null)
                             }
                           >
-                            Save
+                            Save Changes
                           </button>
                           <button type="button" className={small} onClick={() => setEditingComment(null)}>
                             Cancel
@@ -486,9 +488,9 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                           <button
                             type="button"
                             className="text-red-700 underline"
-                            onClick={() => window.confirm('Delete this comment?') && run(() => supabase!.from('board_comments').delete().eq('id', c.id))}
+                            onClick={async () => (await confirmAction('Permanently delete this comment?', { confirmLabel: 'Permanently Delete', danger: true })) && run(() => supabase!.from('board_comments').delete().eq('id', c.id))}
                           >
-                            Delete
+                            Permanently Delete
                           </button>
                         </div>
                       </Can>
@@ -507,7 +509,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                     onChange={(e) => setNewComment(e.target.value)}
                   />
                   <button type="submit" className={secondaryButtonClass} disabled={busy || !newComment.trim()}>
-                    Add comment
+                    Add Comment
                   </button>
                 </form>
               </Can>
@@ -518,7 +520,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
           <Can permission="boards.card.history">
             <Block title="History">
               {events.length === 0 ? (
-                <p className="text-xs text-slate-500">Nothing yet.</p>
+                <p className="text-xs text-slate-500">No history recorded for this card yet.</p>
               ) : (
                 <ul className="max-h-64 space-y-1 overflow-y-auto text-xs">
                   {events.map((e) => (
@@ -558,7 +560,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                     </Can>
                   </li>
                 ))}
-                {cardPeople.length === 0 && <li className="text-xs text-slate-500">Nobody yet.</li>}
+                {cardPeople.length === 0 && <li className="text-xs text-slate-500">No one is assigned yet.</li>}
               </ul>
               <Can permission="boards.card.assignees" level="edit">
                 {mayEdit && (
@@ -569,7 +571,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                     disabled={busy}
                     onChange={(e) => e.target.value && run(() => supabase!.from('board_card_assignees').insert({ card_id: card.id, user_email: e.target.value }))}
                   >
-                    <option value="">+ Add a person…</option>
+                    <option value="">Add a person…</option>
                     {data.people
                       .filter((p) => !cardPeople.includes(p.email))
                       .map((p) => (
@@ -585,13 +587,13 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
           </Can>
 
           <Can permission="boards.card.due">
-            <Block title="Due date">
+            <Block title="Due Date">
               {due && card.due_date && (
                 <p className={`mb-2 inline-block rounded px-2 py-0.5 text-xs ring-1 ${DUE_TONE[due]}`}>
                   {showDate(card.due_date, 'EEE, MMM d')} · {due === 'done' ? 'finished' : dueWords(card.due_date, today)}
                 </p>
               )}
-              <Can permission="boards.card.edit" level="edit" fallback={!card.due_date ? <p className="text-xs text-slate-500">No due date.</p> : null}>
+              <Can permission="boards.card.edit" level="edit" fallback={!card.due_date ? <p className="text-xs text-slate-500">No due date set.</p> : null}>
                 <input
                   type="date"
                   aria-label="Due date"
@@ -621,7 +623,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                     {card.finished_by_name && ` by ${card.finished_by_name}`}
                   </p>
                 )}
-                {timing(card.started_at, card.finished_at) && <p className="font-medium">⏱ {timing(card.started_at, card.finished_at)}</p>}
+                {timing(card.started_at, card.finished_at) && <p className="font-medium"><Icon name="timer" /> {timing(card.started_at, card.finished_at)}</p>}
                 {cardAvg && (
                   <p className="text-xs text-slate-600">
                     Usual for “{card.title}”: {formatDuration(cardAvg.seconds)} (average of {cardAvg.count})
@@ -633,19 +635,19 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                   <div className="mt-2 flex flex-wrap gap-2">
                     {!card.started_at && (
                       <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => updateCard({ started_at: new Date().toISOString() })}>
-                        ▶ Start
+                        Start
                       </button>
                     )}
                     {card.started_at && !card.finished_at && (
                       <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => updateCard({ finished_at: new Date().toISOString() })}>
-                        ■ Finish
+                        Finish
                       </button>
                     )}
                     {card.started_at && (
                       <button
                         type="button"
                         className="text-xs text-slate-600 underline"
-                        onClick={() => window.confirm('Clear the start and finish times?') && updateCard({ started_at: null, finished_at: null })}
+                        onClick={async () => (await confirmAction('Clear the start and finish times?')) && updateCard({ started_at: null, finished_at: null })}
                       >
                         Clear
                       </button>
@@ -657,7 +659,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
           </Can>
 
           <Can permission="boards.card.link">
-            <Block title="Linked to">
+            <Block title="Linked To">
               <LinkPicker card={card} editable={mayEdit && can('boards.card.link', 'edit')} busy={busy} onSave={(patch) => updateCard(patch)} />
             </Block>
           </Can>
@@ -669,11 +671,11 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                   type="button"
                   className="text-sm text-red-700 underline"
                   onClick={async () => {
-                    if (!window.confirm(`Archive the card “${card.title}”?`)) return
+                    if (!(await confirmAction(`Archive the card “${card.title}”? It can be restored later.`, { confirmLabel: 'Archive' }))) return
                     if (await updateCard({ archived: true }, 'Card archived.')) onClose()
                   }}
                 >
-                  Archive card
+                  Archive Card
                 </button>
               </div>
             )}
@@ -681,7 +683,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
           <Can permission="order.page">
             {card.order_id && (
               <Link to={`/orders/${card.order_id}`} className="block text-sm text-blue-700 underline">
-                Open the linked order →
+                Open the Linked Order →
               </Link>
             )}
           </Can>

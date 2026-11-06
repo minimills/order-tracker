@@ -27,6 +27,8 @@ import { STAGES, type Customer, type OrderSummaryRow, type PaymentRow, type Stag
 import RichText from '../components/RichText'
 import RichTextEditor from '../components/RichTextEditor'
 import SerialNumber from '../components/SerialNumber'
+import { confirmAction } from '../lib/confirm'
+import Icon from '../components/Icon'
 
 type Machine = {
   id: string
@@ -191,8 +193,8 @@ export default function OrderPage() {
   async function toggleReady(m: Machine) {
     if (!supabase || !canTickBuilt) return
     if (m.ready) {
-      const ok = window.confirm(
-        `Mark ${m.serial_number ?? 'this machine'} as NOT built? Its serial may then change to keep the board order.`,
+      const ok = await confirmAction(
+        `Mark ${m.serial_number ?? 'this machine'} as not built? Its serial number may then change to keep the shop queue order.`,
       )
       if (!ok) return
     }
@@ -203,7 +205,7 @@ export default function OrderPage() {
 
   async function undoReceived(p: PaymentRow) {
     if (!supabase) return
-    if (!window.confirm(`Clear the received amount and date for this ${p.payment_type}?`)) return
+    if (!(await confirmAction(`Clear the received amount and date for this ${p.payment_type}?`))) return
     const { error: e } = await supabase.from('payments').update({ received_date: null, received_amount: null }).eq('id', p.id)
     if (e) return toast.error(friendlyError(e))
     toast.success('Received amount cleared.')
@@ -242,7 +244,7 @@ export default function OrderPage() {
         <div className="space-y-3">
           <Can permission="orders.list">
             <Link to="/orders" className="text-sm text-slate-600 underline">
-              ← Orders list
+              ← Orders List
             </Link>
           </Can>
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -302,7 +304,7 @@ export default function OrderPage() {
             <div className="flex flex-wrap items-center gap-2 lg:max-w-md lg:justify-end">
               <Can permission="order.action.edit" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={() => setEditing(true)}>
-                  ✏️ Edit
+                  <Icon name="pencil" /> Edit
                 </button>
               </Can>
               <Can permission="order.action.change_stage" level="edit">
@@ -312,7 +314,7 @@ export default function OrderPage() {
                   value=""
                   onChange={(e) => e.target.value && askMove(e.target.value as Stage)}
                 >
-                  <option value="">Change stage…</option>
+                  <option value="">Change Stage…</option>
                   {STAGES.filter((s) => s !== order.stage).map((s) => (
                     <option key={s} value={s}>
                       {label(s)}
@@ -323,7 +325,7 @@ export default function OrderPage() {
               <Can permission="order.action.mark_shipped" level="edit">
                 {canShip && (
                   <button type="button" className={buttonClass} onClick={() => askMove('Shipped')}>
-                    🚚 Mark shipped
+                    <Icon name="truck" /> Mark as Shipped
                   </button>
                 )}
               </Can>
@@ -333,7 +335,7 @@ export default function OrderPage() {
                   className={secondaryButtonClass}
                   onClick={() => navigate(`/orders/new?split=${order.order_number}`)}
                 >
-                  ✂️ Split shipment
+                  <Icon name="split" /> Split Shipment
                 </button>
               </Can>
             </div>
@@ -366,11 +368,11 @@ export default function OrderPage() {
         </Can>
         <Can permission="order.tab.emails">
           {tab === 'emails' && (
-            <Placeholder title="Emails" text="Coming in Phase 2: emails with this customer will show here automatically." />
+            <Placeholder title="Emails" text="Emails with this customer will appear here automatically in a future update." />
           )}
         </Can>
         <Can permission="order.tab.ai_notes">
-          {tab === 'ai' && <Placeholder title="AI notes" text="Coming in Phase 3: a short AI summary of this order and its emails." />}
+          {tab === 'ai' && <Placeholder title="AI notes" text="A short AI summary of this order and its emails will appear here in a future update." />}
         </Can>
 
         {tab === 'details' && (
@@ -385,13 +387,13 @@ export default function OrderPage() {
                   aside={
                     <Can permission="order.machines.add" level="edit">
                       <button type="button" className={secondaryButtonClass} onClick={() => setMachineChange({ kind: 'add' })}>
-                        + Add machines
+                        Add Machines
                       </button>
                     </Can>
                   }
                 >
                   {machines.length === 0 ? (
-                    <p className="text-sm text-slate-500">No machines on this order.</p>
+                    <p className="text-sm text-slate-500">This order has no machines.</p>
                   ) : (
                     <ul className="divide-y divide-slate-100">
                       {machines.map((m) => (
@@ -440,10 +442,10 @@ export default function OrderPage() {
                                 <Can permission="checklist">
                                   <Link to={`/checklists/${m.id}`} className="ml-1 inline-block rounded-md border border-slate-300 px-2 py-0.5 text-xs font-medium hover:bg-slate-50">
                                     {checks.get(m.id)?.status === 'signed'
-                                      ? 'View final check'
+                                      ? 'View Final Check'
                                       : checks.get(m.id)?.status === 'in_progress'
-                                        ? 'Continue final check'
-                                        : 'Final check'}
+                                        ? 'Continue Final Check'
+                                        : 'Final Check'}
                                   </Link>
                                 </Can>
                               </div>
@@ -485,7 +487,7 @@ export default function OrderPage() {
                   )}
                   <Can permission="order.machines.built" level="edit">
                     <p className="mt-3 text-xs text-slate-500">
-                      Tick a machine when it is built: its serial is then fixed for good. Serials of machines not yet built
+                      Mark a machine as built when it is finished: its serial number is then fixed permanently. Serial numbers of machines not yet built
                       can change when the order of the shop queue changes, or when machines are added or removed.
                     </p>
                   </Can>
@@ -513,7 +515,7 @@ export default function OrderPage() {
                   aside={
                     <Can permission="payments.action.add" level="edit">
                       <button type="button" className={secondaryButtonClass} onClick={() => setPaymentDialog({ payment: null })}>
-                        + Add payment
+                        Add Payment
                       </button>
                     </Can>
                   }
@@ -536,7 +538,7 @@ export default function OrderPage() {
                     </Item>
                     <Item label="Received">{formatMoney(order.total_paid, order.currency)}</Item>
                     <Can permission="order.field.order_total">
-                      <Item label="Still to pay">
+                      <Item label="Amount outstanding">
                         <span className={(order.amount_outstanding ?? 0) > 0 ? 'font-semibold' : 'text-green-700'}>
                           {formatMoney(order.amount_outstanding, order.currency)}
                         </span>
@@ -572,7 +574,7 @@ export default function OrderPage() {
                             <Can permission="payments.action.mark_received" level="edit">
                               {p.remaining > 0 && (
                                 <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
-                                  Mark received
+                                  Mark as Received
                                 </button>
                               )}
                             </Can>
@@ -584,7 +586,7 @@ export default function OrderPage() {
                             <Can permission="payments.action.undo_received" level="edit">
                               {p.received_amount > 0 && (
                                 <button type="button" className="text-xs text-slate-600 underline" onClick={() => undoReceived(p)}>
-                                  Undo received
+                                  Undo Receipt
                                 </button>
                               )}
                             </Can>
@@ -658,7 +660,7 @@ export default function OrderPage() {
                       value={order.notes}
                       disabled={!canEditNotes}
                       onChange={setNotes}
-                      placeholder="Anything worth remembering about this order"
+                      placeholder="Anything worth recording about this order"
                       minHeight="7rem"
                     />
                     {notes !== (order.notes ?? '') && (
@@ -674,7 +676,7 @@ export default function OrderPage() {
                           Undo
                         </button>
                         <button type="button" className={buttonClass} onClick={saveNotes} disabled={savingNotes}>
-                          {savingNotes ? 'Saving…' : 'Save notes'}
+                          {savingNotes ? 'Saving…' : 'Save Notes'}
                         </button>
                       </div>
                     )}
@@ -740,7 +742,7 @@ export default function OrderPage() {
             payment={receiving}
             onClose={() => setReceiving(null)}
             onDone={() => {
-              toast.success(`${receiving.payment_type} marked received.`)
+              toast.success(`${receiving.payment_type} marked as received.`)
               setReceiving(null)
               load()
             }}

@@ -114,7 +114,7 @@ export default function RecordsPage() {
 
   return (
     <div className="mx-auto max-w-6xl space-y-5">
-      <AdminPageHeader title="Orders, customers & machines">
+      <AdminPageHeader title="Orders, Customers and Machines">
         Edit any field. Archive hides a record from normal screens; it can be brought back from the Archive page.
       </AdminPageHeader>
 
@@ -226,7 +226,7 @@ export default function RecordsPage() {
                               table: 'customers',
                               id: c.id,
                               what: `customer ${c.name}`,
-                              explain: 'The customer is no longer offered on the New order form. Their orders are not changed.',
+                              explain: 'The customer is no longer offered on the New Order form. Their orders are not changed.',
                             })
                           }
                         >
@@ -263,7 +263,7 @@ export default function RecordsPage() {
                           {m.orders?.order_code}
                         </Link>
                       </td>
-                      <td className="px-3 py-2">{m.ready ? '✓' : ''}</td>
+                      <td className="px-3 py-2">{m.ready ? 'Built' : ''}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button type="button" className={small} onClick={() => setEditMachine(m)}>
                           Edit
@@ -296,7 +296,7 @@ export default function RecordsPage() {
               Showing the first {LIMIT} of {counts[tab]}. Search to narrow it down.
             </p>
           )}
-          {counts[tab] === 0 && <p className="px-3 py-6 text-center text-sm text-slate-500">Nothing found.</p>}
+          {counts[tab] === 0 && <p className="px-3 py-6 text-center text-sm text-slate-500">No matching records found.</p>}
         </div>
       )}
 

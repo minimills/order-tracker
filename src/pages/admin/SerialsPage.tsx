@@ -141,7 +141,7 @@ export default function SerialsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
-      <AdminPageHeader title="Serial numbers">
+      <AdminPageHeader title="Serial Numbers">
         Fix a single serial by hand (it then stays fixed), or re-sequence a machine type so its unbuilt machines get
         consecutive serials in board order. Built machines and hand-typed serials are never changed by re-sequencing.
       </AdminPageHeader>
@@ -186,7 +186,7 @@ export default function SerialsPage() {
           {type.name} has no code yet, so it gets no automatic serials. You can still type a serial by hand, or give it a
           code in{' '}
           <Link to="/admin/machine-types" className="underline">
-            Machine types
+            Machine Types
           </Link>
           .
         </p>
@@ -211,7 +211,7 @@ export default function SerialsPage() {
               />
             </Field>
             <button type="button" className={buttonClass} disabled={busy || renumberable.length === 0} onClick={() => runResequence(false)}>
-              Show what would change
+              Preview Changes
             </button>
           </div>
         </section>
@@ -238,7 +238,7 @@ export default function SerialsPage() {
             {!loading && machines.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-3 py-4 text-center text-slate-500">
-                  No machines of this type yet.
+                  There are no machines of this type yet.
                 </td>
               </tr>
             )}
@@ -258,7 +258,7 @@ export default function SerialsPage() {
                     {m.orders?.order_code}
                   </Link>
                 </td>
-                <td className="px-3 py-2">{m.ready ? '✓' : ''}</td>
+                <td className="px-3 py-2">{m.ready ? 'Built' : ''}</td>
                 <td className="px-3 py-2 text-right">
                   <button
                     type="button"
@@ -289,7 +289,7 @@ export default function SerialsPage() {
                 Cancel
               </button>
               <button type="button" className={buttonClass} onClick={saveSerial} disabled={busy}>
-                {busy ? 'Saving…' : 'Save serial'}
+                {busy ? 'Saving…' : 'Save Serial Number'}
               </button>
             </>
           }

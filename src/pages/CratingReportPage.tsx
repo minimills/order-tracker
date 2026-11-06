@@ -173,9 +173,9 @@ export default function CratingReportPage() {
     <div className="mx-auto max-w-7xl space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Crating report</h1>
+          <h1 className="text-2xl font-semibold">Crating Report</h1>
           <p className="text-sm text-slate-600">
-            What our crates weigh, measure and take to build, from every crate entered so far.
+            The weight, size and build time of our crates, based on every crate entered so far.
           </p>
         </div>
         <Can permission="crating.units">
@@ -206,7 +206,7 @@ export default function CratingReportPage() {
         </label>
         {filtersOn && (
           <button type="button" className="text-sm underline sm:pb-2" onClick={() => setParams({}, { replace: true })}>
-            Clear filters
+            Clear Filters
           </button>
         )}
       </div>
@@ -221,15 +221,15 @@ export default function CratingReportPage() {
           <section className="rounded-lg border border-slate-200 bg-white">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-4">
               <div>
-                <h2 className="font-semibold">By machine type</h2>
+                <h2 className="font-semibold">By Machine Type</h2>
                 <p className="text-xs text-slate-500">
                   Average, with the smallest – largest below. A crate holding several machines is counted once, under
-                  everything it holds. “1 of 2” means only 1 of the 2 crates has that box filled in.
+                  everything it holds. “1 of 2” means only 1 of the 2 crates has that field filled in.
                 </p>
               </div>
               <Can permission="reports.crating.export_summary">
                 <button type="button" className={secondaryButtonClass} onClick={exportSummary} disabled={groups.length === 0}>
-                  ⬇ Summary CSV
+                  Export Summary CSV
                 </button>
               </Can>
             </div>
@@ -251,8 +251,8 @@ export default function CratingReportPage() {
                     <tr>
                       <td colSpan={MEASURES.length + 2} className="px-3 py-6 text-center text-slate-500">
                         {crates.length === 0
-                          ? 'No crates entered yet. Tick “Crated?” on a machine of an order that is ready to ship.'
-                          : 'No crates match these filters.'}
+                          ? 'No crates have been entered yet. Mark a machine as crated on an order that is ready to ship.'
+                          : 'No crates match these filters. Clear the filters to see all crates.'}
                       </td>
                     </tr>
                   )}
@@ -296,7 +296,7 @@ export default function CratingReportPage() {
               </h2>
               <Can permission="reports.crating.export_csv">
                 <button type="button" className={secondaryButtonClass} onClick={exportCrates} disabled={rows.length === 0}>
-                  ⬇ Export CSV
+                  Export CSV
                 </button>
               </Can>
             </div>
@@ -348,7 +348,7 @@ export default function CratingReportPage() {
                   {rows.length === 0 && (
                     <tr>
                       <td colSpan={9} className="px-3 py-6 text-center text-slate-500">
-                        No crates to show.
+                        No crates match these filters.
                       </td>
                     </tr>
                   )}

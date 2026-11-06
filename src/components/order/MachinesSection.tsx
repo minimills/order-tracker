@@ -14,7 +14,7 @@ type Props = {
   getsSerials: boolean
   /** Error messages keyed "row-<i>-type", "row-<i>-qty", "row-<i>-unit-<j>", or "machines". */
   errors: Record<string, string>
-  /** “Crate?” for newly added rows (Admin → Order defaults). */
+  /** “Crate” for newly added rows (Admin → Order defaults). */
   crateDefault?: boolean
 }
 
@@ -84,7 +84,7 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                       checked={row.needsCrate}
                       onChange={(e) => updateRow(i, { needsCrate: e.target.checked })}
                     />
-                    Crate?
+                    Crate
                   </label>
                 </Can>
                 <button
@@ -110,10 +110,10 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                           <span className="font-mono">
                             {serial ??
                               (!type.code
-                                ? 'No serial (this type has no code yet)'
+                                ? 'No serial number (this machine type has no code yet)'
                                 : getsSerials
                                   ? '—'
-                                  : 'Serial given when confirmed')}
+                                  : 'Serial number assigned when confirmed')}
                           </span>
                           <Can permission="orders.new.serial_by_hand" level="edit">
                             <button
@@ -121,7 +121,7 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                               className="text-xs text-slate-600 underline"
                               onClick={() => setManual(i, j, '')}
                             >
-                              Type serial by hand
+                              Enter Serial Manually
                             </button>
                           </Can>
                         </>
@@ -139,7 +139,7 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                             className="text-xs text-slate-600 underline"
                             onClick={() => setManual(i, j, null)}
                           >
-                            Use automatic serial
+                            Use Automatic Serial
                           </button>
                           {unitError && <span className="w-full text-xs font-medium text-red-600">{unitError}</span>}
                         </>
@@ -160,8 +160,8 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
       <div>
         <p className="text-xs text-slate-500">
           {getsSerials
-            ? 'Serials shown are a preview. The final numbers are given when you save, so nobody can get the same number.'
-            : 'Quotes do not get serial numbers. They are given when the order is confirmed.'}
+            ? 'Serial numbers shown are a preview. The final numbers are assigned when you save, so no two machines can receive the same number.'
+            : 'Quotes do not receive serial numbers. They are assigned when the order is confirmed.'}
         </p>
       </div>
     </div>

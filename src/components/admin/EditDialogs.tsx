@@ -19,7 +19,7 @@ function Footer({ onClose, onSave, saving }: { onClose: () => void; onSave: () =
         Cancel
       </button>
       <button type="button" className={buttonClass} onClick={onSave} disabled={saving}>
-        {saving ? 'Saving…' : 'Save changes'}
+        {saving ? 'Saving…' : 'Save Changes'}
       </button>
     </>
   )
@@ -113,7 +113,7 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
     setSaving(false)
     if (e) {
       return setError(
-        e.code === '23505' ? 'That order number (with that split number) is already used.' : friendlyError(e),
+        e.code === '23505' ? 'That order number (with that split number) is already in use.' : friendlyError(e),
       )
     }
     refresh()
@@ -121,12 +121,12 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
   }
 
   return (
-    <Modal title={`Edit order ${order.order_code}`} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
+    <Modal title={`Edit Order ${order.order_code}`} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Order number" htmlFor="ao-number">
           <input id="ao-number" inputMode="numeric" className={inputClass} value={f.order_number} onChange={set('order_number')} />
         </Field>
-        <Field label="Split number" htmlFor="ao-split" hint="Empty for a normal order; 1, 2… for 76-1, 76-2.">
+        <Field label="Split number" htmlFor="ao-split" hint="Leave empty for a normal order; enter 1, 2… for 76-1, 76-2.">
           <input id="ao-split" inputMode="numeric" className={inputClass} value={f.split_number} onChange={set('split_number')} />
         </Field>
         <Field label="Customer" htmlFor="ao-customer" className="sm:col-span-2">
@@ -141,7 +141,7 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
               ))}
           </select>
         </Field>
-        <Field label="Stage" htmlFor="ao-stage" hint="Changing it here skips the serial preview; the board shows it first.">
+        <Field label="Stage" htmlFor="ao-stage" hint="Changing it here skips the serial number preview; the Orders Board shows it first.">
           <select id="ao-stage" className={inputClass} value={f.stage} onChange={set('stage')}>
             {STAGES.map((s) => (
               <option key={s} value={s}>
@@ -242,7 +242,7 @@ export function AdminCustomerDialog({ customer, onClose, onDone }: DialogProps &
   }
 
   return (
-    <Modal title={`Edit customer ${customer.name}`} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
+    <Modal title={`Edit Customer ${customer.name}`} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
       <div className="grid gap-4 sm:grid-cols-2">
         <Field label="Name" htmlFor="ac-name">
           <input id="ac-name" className={inputClass} value={f.name} onChange={set('name')} />
@@ -250,7 +250,7 @@ export function AdminCustomerDialog({ customer, onClose, onDone }: DialogProps &
         <Field label="Company" htmlFor="ac-company">
           <input id="ac-company" className={inputClass} value={f.company} onChange={set('company')} />
         </Field>
-        <Field label="Email addresses" htmlFor="ac-emails" hint="Separate several with commas." className="sm:col-span-2">
+        <Field label="Email addresses" htmlFor="ac-emails" hint="Separate multiple addresses with commas." className="sm:col-span-2">
           <input id="ac-emails" className={inputClass} value={f.emails} onChange={set('emails')} />
         </Field>
         <Field label="Phone" htmlFor="ac-phone">
@@ -342,9 +342,9 @@ export function AdminMachineDialog({ machine, onClose, onDone }: DialogProps & {
   }
 
   return (
-    <Modal title="Edit machine" onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
+    <Modal title="Edit Machine" onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Machine type" htmlFor="am-type" hint="Changing the type gives the machine a new automatic serial.">
+        <Field label="Machine type" htmlFor="am-type" hint="Changing the type gives the machine a new automatic serial number.">
           <select
             id="am-type"
             className={inputClass}
@@ -361,7 +361,7 @@ export function AdminMachineDialog({ machine, onClose, onDone }: DialogProps & {
               ))}
           </select>
         </Field>
-        <Field label="On order #" htmlFor="am-order" hint="Type another order number to move it, e.g. 76 or 76-2.">
+        <Field label="On order #" htmlFor="am-order" hint="Enter another order number to move it, for example 76 or 76-2.">
           <input id="am-order" className={inputClass} value={f.order_code} onChange={(e) => setF({ ...f, order_code: e.target.value })} />
         </Field>
         <Field
@@ -369,8 +369,8 @@ export function AdminMachineDialog({ machine, onClose, onDone }: DialogProps & {
           htmlFor="am-serial"
           hint={
             f.machine_type_id !== machine.machine_type_id
-              ? 'Save the new type first, then set a serial.'
-              : 'Typed serials stay fixed. Leave empty to go back to an automatic serial.'
+              ? 'Save the new type first, then set a serial number.'
+              : 'Manually entered serial numbers stay fixed. Leave empty to return to an automatic serial number.'
           }
         >
           <input
@@ -435,7 +435,7 @@ export function ArchiveDialog({
       }
     >
       <p className="text-sm text-slate-700">{explain}</p>
-      <p className="mt-2 text-sm text-slate-600">You can bring it back any time from Admin → Archive.</p>
+      <p className="mt-2 text-sm text-slate-600">You can restore it at any time from Admin → Archive.</p>
     </Modal>
   )
 }

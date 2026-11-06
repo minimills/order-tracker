@@ -5,6 +5,7 @@ import { alertText, useAlerts, type AlertRow } from '../../lib/alerts'
 import { askNotificationPermission, notificationPermission } from '../../lib/browserNotifications'
 import { showDate } from '../../lib/dates'
 import Can from '../Can'
+import Icon from '../Icon'
 
 const smallButton = 'rounded border border-slate-300 bg-white px-2 py-0.5 text-xs hover:bg-slate-50'
 
@@ -35,16 +36,16 @@ function AlertItem({ alert, onOpen }: { alert: AlertRow; onOpen: () => void }) {
               {alert.dismissed_at ? 'Dismissed' : `Snoozed until ${showDate(alert.snoozed_until?.slice(0, 10))}`}
             </span>
             <button type="button" className={smallButton} onClick={() => restore(alert)}>
-              Bring back
+              Restore
             </button>
           </>
         ) : (
           <>
             <button type="button" className={smallButton} onClick={() => snooze(alert, 1)}>
-              Snooze 1 day
+              Snooze 1 Day
             </button>
             <button type="button" className={smallButton} onClick={() => snooze(alert, 7)}>
-              Snooze 1 week
+              Snooze 1 Week
             </button>
             <button type="button" className={smallButton} onClick={() => dismiss(alert)}>
               Dismiss
@@ -84,11 +85,12 @@ export default function AlertsBell() {
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
-        className="relative rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-lg leading-none hover:bg-slate-50"
+        className="relative flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm leading-none hover:bg-slate-50"
         aria-label={`Alerts: ${visible.length}`}
         aria-expanded={open}
       >
-        <span aria-hidden="true">🔔</span>
+        <Icon name="bell" />
+        <span className="hidden sm:inline">Alerts</span>
         {visible.length > 0 && (
           <span
             className={`absolute -top-2 -right-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-bold text-white ${
@@ -106,7 +108,7 @@ export default function AlertsBell() {
             <span className="font-semibold">Alerts</span>
             <Can permission="admin.alerts" level="edit">
               <Link to="/admin/alerts" onClick={() => setOpen(false)} className="text-xs text-slate-600 underline">
-                Alert settings
+                Alert Settings
               </Link>
             </Can>
           </div>
@@ -114,7 +116,7 @@ export default function AlertsBell() {
           <div className="max-h-[60vh] overflow-y-auto">
             {loading && <p className="px-3 py-4 text-sm text-slate-500">Loading…</p>}
             {!loading && visible.length === 0 && (
-              <p className="px-3 py-6 text-center text-sm text-slate-500">Nothing needs attention. ✅</p>
+              <p className="px-3 py-6 text-center text-sm text-slate-500">There are no alerts at this time.</p>
             )}
             <ul className="divide-y divide-slate-100">
               {visible.map((a) => (
@@ -143,7 +145,7 @@ export default function AlertsBell() {
 
           <Can permission="alerts.popups">
           <div className="border-t border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            {permission === 'granted' && 'Desktop notifications are on for new overdue items.'}
+            {permission === 'granted' && 'Desktop notifications are enabled for new overdue items.'}
             {permission === 'denied' && 'Desktop notifications are blocked. Allow them in your browser’s site settings.'}
             {permission === 'unsupported' && 'This browser can’t show desktop notifications.'}
             {permission === 'default' && (
@@ -152,7 +154,7 @@ export default function AlertsBell() {
                 className="underline"
                 onClick={async () => setPermission(await askNotificationPermission())}
               >
-                Turn on desktop notifications for new overdue items
+                Enable Desktop Notifications for New Overdue Items
               </button>
             )}
           </div>

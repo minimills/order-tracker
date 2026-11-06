@@ -56,9 +56,9 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
     if (may.currency) changes.currency = currency
     if (may.total) {
       const totalNum = parseMoney(total)
-      if (totalNum === null || Number.isNaN(totalNum)) return setError('Enter the order total as a number, e.g. 12500.')
+      if (totalNum === null || Number.isNaN(totalNum)) return setError('Enter the order total as a number, for example 12500.')
       if (order.down_payment_amount !== null && totalNum < order.down_payment_amount)
-        return setError('The total can’t be less than the down payment. Change the down payment first.')
+        return setError('The total cannot be less than the down payment. Change the down payment first.')
       changes.order_total = totalNum
     }
     // Only send what really changed, so nobody trips over a field they can't edit.
@@ -84,7 +84,7 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
 
   return (
     <Modal
-      title={`Edit order ${order.order_code}`}
+      title={`Edit Order ${order.order_code}`}
       onClose={onClose}
       busy={saving}
       footer={
@@ -93,12 +93,12 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
             Cancel
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving || nothingToEdit}>
-            {saving ? 'Saving…' : 'Save changes'}
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </>
       }
     >
-      {nothingToEdit && <p className="text-sm text-slate-600">None of this order’s fields can be changed by you.</p>}
+      {nothingToEdit && <p className="text-sm text-slate-600">You do not have permission to change any of this order’s fields.</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Can permission="order.field.expected_ship_date" level="edit">
           <Field label="Expected ship date" htmlFor="ed-expected">
@@ -109,7 +109,7 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
           <Field
             label="Actual ship date"
             htmlFor="ed-actual"
-            hint={order.stage !== 'Shipped' ? 'Filled in when the order is marked shipped.' : undefined}
+            hint={order.stage !== 'Shipped' ? 'Filled in when the order is marked as shipped.' : undefined}
           >
             <input id="ed-actual" type="date" className={inputClass} value={actual} onChange={(e) => setActual(e.target.value)} />
           </Field>
@@ -143,7 +143,7 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
           </Field>
         </Can>
         <Can permission="order.field.order_total" level="edit">
-          <Field label="Order total" htmlFor="ed-total" hint="The balance updates itself.">
+          <Field label="Order total" htmlFor="ed-total" hint="The balance updates automatically.">
             <input id="ed-total" inputMode="decimal" className={inputClass} value={total} onChange={(e) => setTotal(e.target.value)} />
           </Field>
         </Can>

@@ -2,11 +2,11 @@
 import { useState } from 'react'
 
 export type MonthDelay = {
-  /** e.g. "2026-03" */
+  /** for example "2026-03" */
   month: string
   /** "Mar" */
   label: string
-  /** Full name for the tooltip and table, e.g. "March 2026" */
+  /** Full name for the tooltip and table, for example "March 2026" */
   longLabel: string
   /** Average delay in days (negative = early); null when nothing shipped. */
   average: number | null
@@ -25,7 +25,7 @@ function fmt(n: number) {
 
 /**
  * Average delay per month as columns that grow up (late) or down (early)
- * from a zero line. Hover or tab to a column for details; "Show as table"
+ * from a zero line. Hover or tab to a column for details; "Show as Table"
  * lists the numbers.
  */
 export default function DelayChart({ months }: { months: MonthDelay[] }) {
@@ -39,7 +39,7 @@ export default function DelayChart({ months }: { months: MonthDelay[] }) {
   const lower = HEIGHT - upper
 
   if (values.length === 0) {
-    return <p className="py-8 text-center text-sm text-slate-500">No shipped orders with both dates in the last 12 months.</p>
+    return <p className="py-8 text-center text-sm text-slate-500">No orders shipped in the last 12 months have both an expected and an actual ship date.</p>
   }
 
   return (
@@ -116,7 +116,7 @@ export default function DelayChart({ months }: { months: MonthDelay[] }) {
       </div>
 
       <details className="mt-3 text-sm">
-        <summary className="cursor-pointer text-slate-600">Show as table</summary>
+        <summary className="cursor-pointer text-slate-600">Show as Table</summary>
         <table className="mt-2 w-full text-left">
           <thead className="text-xs text-slate-500">
             <tr>

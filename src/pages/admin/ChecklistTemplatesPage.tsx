@@ -7,6 +7,7 @@ import { groupBySection, SUGGESTED_SECTIONS, type TemplateItem } from '../../lib
 import { fetchAll } from '../../lib/fetchAll'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { askText } from '../../lib/confirm'
 
 const GENERAL = 'general'
 
@@ -111,7 +112,7 @@ export default function ChecklistTemplatesPage() {
 
   async function add() {
     if (!supabase) return
-    if (!newSection.trim()) return toast.error('Type or choose a section, e.g. Electrical.')
+    if (!newSection.trim()) return toast.error('Enter or select a section, for example Electrical.')
     if (!newText.trim()) return toast.error('Type the item.')
     const max = Math.max(0, ...inList.map((i) => i.sort_order))
     const { error } = await supabase
@@ -144,7 +145,7 @@ export default function ChecklistTemplatesPage() {
 
   async function renameSection(section: string) {
     if (!supabase) return
-    const name = window.prompt(`New name for the section “${section}”:`, section)?.trim()
+    const name = await askText(`Enter a new name for the section “${section}”.`, { initial: section, label: 'Section name', confirmLabel: 'Rename Section' })
     if (!name || name === section) return
     let q = supabase.from('checklist_template_items').update({ section: name }).eq('section', section)
     q = typeId ? q.eq('machine_type_id', typeId) : q.is('machine_type_id', null)
@@ -188,13 +189,13 @@ export default function ChecklistTemplatesPage() {
 
       {/* Add */}
       <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="mb-2 font-semibold">Add an item</h2>
+        <h2 className="mb-2 font-semibold">Add an Item</h2>
         <div className="grid gap-2 md:grid-cols-[14rem_1fr_auto]">
           <input
             aria-label="Section"
             list="checklist-sections"
             className={inputClass}
-            placeholder="Section, e.g. Electrical"
+            placeholder="Section, for example Electrical"
             value={newSection}
             onChange={(e) => setNewSection(e.target.value)}
           />
@@ -206,13 +207,13 @@ export default function ChecklistTemplatesPage() {
           <input
             aria-label="Item"
             className={inputClass}
-            placeholder="What to check, e.g. Emergency stop works"
+            placeholder="What to check, for example Emergency stop works"
             value={newText}
             onChange={(e) => setNewText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
           <button type="button" className={buttonClass} onClick={add}>
-            + Add
+            Add
           </button>
         </div>
       </section>
@@ -225,10 +226,10 @@ export default function ChecklistTemplatesPage() {
         </span>
         <span className="flex gap-3">
           <button type="button" className="underline" onClick={() => setCollapsed(new Set())}>
-            Open all
+            Expand All
           </button>
           <button type="button" className="underline" onClick={() => setCollapsed(new Set(sections.map((s) => s.section)))}>
-            Close all
+            Collapse All
           </button>
         </span>
       </div>
@@ -236,7 +237,7 @@ export default function ChecklistTemplatesPage() {
       {loading && <p className="text-center text-slate-500">Loading…</p>}
       {!loading && sections.length === 0 && (
         <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
-          {words.length ? 'Nothing matches the search.' : 'No items yet. Add the first one above.'}
+          {words.length ? 'No items match the search.' : 'There are no items yet. Add the first one above.'}
         </p>
       )}
 
@@ -315,7 +316,7 @@ export default function ChecklistTemplatesPage() {
                         />
                         <span className="flex gap-2">
                           <button type="button" className={buttonClass} onClick={saveEdit}>
-                            Save
+                            Save Changes
                           </button>
                           <button type="button" className={secondaryButtonClass} onClick={() => setEditing(null)}>
                             Cancel
@@ -327,7 +328,7 @@ export default function ChecklistTemplatesPage() {
                         <span className="min-w-0 flex-1">{item.item_text}</span>
                         {item.archived ? (
                           <button type="button" className="text-xs underline" onClick={() => setArchived(item, false)}>
-                            Bring back
+                            Restore
                           </button>
                         ) : (
                           <span className="flex items-center gap-2 text-xs">

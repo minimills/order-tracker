@@ -26,7 +26,7 @@ const AREAS: { value: string; label: string }[] = [
   { value: 'app_settings', label: 'Settings' },
 ]
 
-/** Midnight at the start of a day in Halifax, e.g. "2026-11-03T00:00:00-04:00". */
+/** Midnight at the start of a day in Halifax, for example "2026-11-03T00:00:00-04:00". */
 function halifaxStart(iso: string) {
   // Ask the browser for Halifax's UTC offset at noon that day (handles summer time).
   const part = new Intl.DateTimeFormat('en-US', { timeZone: 'America/Halifax', timeZoneName: 'longOffset' })
@@ -154,7 +154,7 @@ export default function ActivityPage() {
           </select>
         </Field>
         <Field label="Order #" htmlFor="ac-order">
-          <input id="ac-order" className={inputClass} placeholder="e.g. 76" value={orderCode} onChange={(e) => setOrderCode(e.target.value)} />
+          <input id="ac-order" className={inputClass} placeholder="for example 76" value={orderCode} onChange={(e) => setOrderCode(e.target.value)} />
         </Field>
         <Field label="Area" htmlFor="ac-area">
           <select id="ac-area" className={inputClass} value={area} onChange={(e) => setArea(e.target.value)}>
@@ -227,12 +227,12 @@ export default function ActivityPage() {
           )
         })}
       </ol>
-      {!loading && entries.length === 0 && !error && <p className="text-center text-sm text-slate-500">No changes found.</p>}
+      {!loading && entries.length === 0 && !error && <p className="text-center text-sm text-slate-500">No changes match these filters.</p>}
       {loading && <p className="text-center text-sm text-slate-500">Loading…</p>}
       {more && !loading && (
         <div className="text-center">
           <button type="button" className={secondaryButtonClass} onClick={() => search(entries.length)}>
-            Load more
+            Load More
           </button>
         </div>
       )}

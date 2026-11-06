@@ -34,7 +34,7 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
 
   async function add() {
     if (!supabase) return
-    if (['user', 'group', 'department'].includes(target.type) && !target.target) return toast.error('Choose who to tell.')
+    if (['user', 'group', 'department'].includes(target.type) && !target.target) return toast.error('Select who should be notified.')
     setBusy(true)
     const { error } = await supabase.from('board_notify_rules').insert({
       board_id: board.id,
@@ -59,13 +59,13 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
       onClose={onClose}
       footer={
         <button type="button" className={secondaryButtonClass} onClick={onClose}>
-          Done
+          Close
         </button>
       }
     >
       <p className="text-sm text-slate-600">
-        Messages appear in the 🔔 bell of the people chosen (only people who can open this board, and never the person who
-        made the change). Email will be added later.
+        Notifications appear under Notifications for the people selected (only people who can open this board, and never the person who
+        made the change). Email notifications will be added in a future update.
       </p>
       <ul className="mt-3 divide-y divide-slate-100 rounded-md border border-slate-200 text-sm">
         {rules.map((r) => (
@@ -80,11 +80,11 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
             </Can>
           </li>
         ))}
-        {rules.length === 0 && <li className="px-3 py-2 text-slate-500">Nobody is notified about this board.</li>}
+        {rules.length === 0 && <li className="px-3 py-2 text-slate-500">No one is notified about this board.</li>}
       </ul>
       <Can permission="boards.notifications" level="edit">
         <div className="mt-4 space-y-2 rounded-md bg-slate-50 p-3">
-          <div className="text-sm font-medium">Add a notification</div>
+          <div className="text-sm font-medium">Add a Notification</div>
           <div className="flex flex-wrap gap-2">
             <select aria-label="When" className={`${narrowInputClass} w-56`} value={event} onChange={(e) => setEvent(e.target.value as NotifyEvent)}>
               {NOTIFY_EVENTS.map((e) => (
@@ -104,10 +104,10 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
               </select>
             )}
           </div>
-          <div className="text-xs text-slate-600">Tell</div>
+          <div className="text-xs text-slate-600">Notify</div>
           <TargetPicker value={target} onChange={setTarget} withAssignees />
           <button type="button" className={buttonClass} onClick={add} disabled={busy}>
-            Add
+            Add Notification
           </button>
         </div>
       </Can>

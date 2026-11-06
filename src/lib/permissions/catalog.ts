@@ -7,13 +7,13 @@
  *   <Page permission="…">) with a key from this list.
  * - Every key here is used somewhere in the code.
  * - New features add their items here. Non-admin users don't have them until
- *   an admin ticks them in Admin → Users (they show a "New" badge there).
+ *   an admin allows them in Admin → Users (they show a "New" badge there).
  *
  * Levels: "view" = can see it; "edit" = can change it / use the button
  * (edit includes view). Items with only "edit" are buttons and actions.
  *
  * `requires`: shown only when that item (usually the page) is allowed too.
- * `needs`: also needs these data permissions (e.g. money columns need "payments").
+ * `needs`: also needs these data permissions (for example money columns need "payments").
  * `db`: also enforced by the database, not just hidden on screen.
  * `page`: a page switch (buttons and inputs on the page need their own items).
  */
@@ -182,7 +182,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'orders.list.filter.stage', label: 'Stage filter', levels: V, requires: 'orders.list' },
       { key: 'orders.list.filter.voltage', label: 'Voltage filter', levels: V, requires: 'orders.list' },
       { key: 'orders.list.filter.payment', label: 'Payment status filter', levels: V, requires: 'orders.list', needs: ['payments'] },
-      { key: 'orders.list.filter.archived', label: '“Show archived” tick box', levels: V, requires: 'orders.list' },
+      { key: 'orders.list.filter.archived', label: '“Show archived” option', levels: V, requires: 'orders.list' },
       { key: 'orders.list.sort', label: 'Sort by clicking a column heading', levels: V, requires: 'orders.list' },
       { key: 'orders.list.outstanding_total', label: 'Total outstanding (bottom of the list)', levels: V, requires: 'orders.list', needs: ['payments', 'order.field.order_total'] },
       { key: 'orders.list.export_csv', label: 'Export CSV', levels: V, requires: 'orders.list', hint: 'The file only holds the columns this person can see.' },
@@ -209,10 +209,10 @@ export const CATALOG: PermissionItem[] = [
     ],
     Machines: [
       { key: 'order.section.machines', label: 'Machines section', levels: V, requires: 'order.page' },
-      { key: 'order.machines.built', label: 'Built tick boxes (see / tick)', levels: VE, requires: 'order.section.machines', db: true },
+      { key: 'order.machines.built', label: 'Built status per machine (view / mark as built)', levels: VE, requires: 'order.section.machines', db: true },
       { key: 'order.machines.checklist', label: 'Final check status per machine (and the “Final check” button with “Final check: see”)', levels: V, requires: 'order.section.machines', needs: ['checklist'] },
-      { key: 'order.machines.add', label: '“+ Add machines”', levels: E, requires: 'order.section.machines', db: true },
-      { key: 'order.machines.crate_flag', label: '“Crate?” tick per machine (only crated machines get a crating deadline)', levels: VE, requires: 'order.section.machines', db: true },
+      { key: 'order.machines.add', label: '“Add Machines” button', levels: E, requires: 'order.section.machines', db: true },
+      { key: 'order.machines.crate_flag', label: '“Crate” setting per machine (only crated machines get a crating deadline)', levels: VE, requires: 'order.section.machines', db: true },
       { key: 'order.machines.remove', label: '“Remove” a machine', levels: E, requires: 'order.section.machines', db: true },
     ],
     'Shipping section': [
@@ -247,14 +247,14 @@ export const CATALOG: PermissionItem[] = [
       { key: 'checklist', label: 'See final checks (checklist screen, progress on orders and board chips)', levels: V, db: true, page: true },
       { key: 'checklist.filters', label: '“Show only items still to do”, open / close sections', levels: V, requires: 'checklist' },
       { key: 'checklist.col.notes', label: 'Notes column', levels: V, requires: 'checklist' },
-      { key: 'checklist.col.who', label: 'Who ticked each item and when', levels: V, requires: 'checklist' },
+      { key: 'checklist.col.who', label: 'Who completed each item and when', levels: V, requires: 'checklist' },
       { key: 'checklist.general_notes', label: 'General notes for the machine', levels: V, requires: 'checklist' },
       { key: 'checklist.photos', label: 'Photo spots (photos come in a later update)', levels: V, requires: 'checklist' },
       { key: 'checklist.print', label: 'Print / PDF of a signed checklist', levels: V, requires: 'checklist' },
     ],
     Actions: [
       { key: 'checklist.start', label: 'Start a machine’s final check', levels: E, requires: 'checklist', db: true },
-      { key: 'checklist.tick', label: 'Tick items, mark N/A, write item notes and general notes', levels: E, requires: 'checklist', db: true },
+      { key: 'checklist.tick', label: 'Mark items complete or not applicable, write item notes and general notes', levels: E, requires: 'checklist', db: true },
       { key: 'checklist.add_item', label: 'Add a one-off item to one machine’s checklist', levels: E, requires: 'checklist', db: true },
       { key: 'checklist.sign', label: 'Sign off a final check (locks it)', levels: E, requires: 'checklist', db: true },
       { key: 'checklist.unlock', label: 'Unlock a signed final check (with a reason, logged)', levels: E, requires: 'checklist', db: true },
@@ -281,7 +281,7 @@ export const CATALOG: PermissionItem[] = [
   }),
 
   ...group('Crating', {
-    Data: [{ key: 'crating', label: 'Crates on orders and the shop board (Edit: tick “Crated?”, add, change, remove crates)', levels: VE, db: true }],
+    Data: [{ key: 'crating', label: 'Crates on orders and the shop board (Edit: mark machines as crated, add, change and archive crates)', levels: VE, db: true }],
     'Order page': [
       { key: 'crating.summary', label: 'Crating summary', levels: V, needs: ['crating'] },
       { key: 'crating.summary.copy', label: 'Copy button (freight quote text)', levels: V, requires: 'crating.summary' },
@@ -312,7 +312,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'boards.card.due', label: 'Due dates (amber when close, red when late)', levels: V, requires: 'boards' },
       { key: 'boards.card.labels', label: 'Labels (edit: put labels on cards)', levels: VE, requires: 'boards', db: true },
       { key: 'boards.card.assignees', label: 'Who is on a card (edit: assign people)', levels: VE, requires: 'boards', db: true },
-      { key: 'boards.card.checklists', label: 'Checklists and % done (edit: add, tick, remove tasks)', levels: VE, requires: 'boards', db: true },
+      { key: 'boards.card.checklists', label: 'Checklists and % done (edit: add tasks, mark them complete, remove them)', levels: VE, requires: 'boards', db: true },
       { key: 'boards.card.timing', label: 'Start / Finish and how long it took, with the usual time (edit: press Start / Finish)', levels: VE, requires: 'boards.card.open', db: true },
       { key: 'boards.card.comments', label: 'Comments (edit: write comments)', levels: VE, requires: 'boards.card.open', db: true },
       { key: 'boards.card.history', label: 'Card history', levels: V, requires: 'boards.card.open', db: true },
@@ -342,7 +342,7 @@ export const CATALOG: PermissionItem[] = [
   }),
 
   ...group('Agent', {
-    Page: [{ key: 'agent', label: 'Agent page (coming soon)', levels: V, page: true }],
+    Page: [{ key: 'agent', label: 'Agent page (available in a future update)', levels: V, page: true }],
   }),
 
   ...group('Settings', {
@@ -368,9 +368,9 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.machine_types', label: 'Machine types', levels: E, db: true },
       { key: 'admin.dropdowns', label: 'Dropdown lists', levels: E, db: true },
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
-      { key: 'admin.stages', label: 'Stage names (rename what people see, e.g. “Ready / testing”)', levels: E, db: true },
+      { key: 'admin.stages', label: 'Stage names (rename what people see, for example “Ready / testing”)', levels: E, db: true },
       { key: 'admin.order_defaults', label: 'Order defaults (currency, voltage, crate, payment due days)', levels: E, db: true },
-      { key: 'admin.groups', label: 'Groups of people (e.g. Procurement, Techs) for sharing and notifications', levels: E, db: true },
+      { key: 'admin.groups', label: 'Groups of people (for example Procurement, Techs) for sharing and notifications', levels: E, db: true },
       { key: 'admin.board_templates', label: 'Board templates (save a board as a template, edit, archive)', levels: E, db: true },
       { key: 'admin.scheduling', label: 'Scheduling (working days, holidays, buffer, machines one after another)', levels: E, db: true },
       { key: 'admin.records', label: 'Orders, customers & machines: edit any field, archive', levels: E, db: true },

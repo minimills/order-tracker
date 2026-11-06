@@ -4,7 +4,7 @@ import { CATALOG_BY_KEY, type Level } from './catalog'
 export type Perms = Record<string, Level>
 
 /**
- * Is this allowed by these ticks? Edit includes view. The item's `requires`
+ * Is this allowed by these permissions? Edit includes view. The item's `requires`
  * (usually its page) and `needs` (data it shows) must be allowed too.
  * Unknown keys are never allowed.
  */

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import { Toaster } from 'sonner'
 import App from './App.tsx'
+import ConfirmHost from './components/ConfirmHost'
 import AuthProvider from './components/AuthProvider'
 import PermissionsProvider from './components/PermissionsProvider'
 import './index.css'
@@ -14,6 +15,7 @@ createRoot(document.getElementById('root')!).render(
         <HashRouter>
           <App />
           <Toaster position="top-right" richColors />
+          <ConfirmHost />
         </HashRouter>
       </PermissionsProvider>
     </AuthProvider>

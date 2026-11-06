@@ -21,7 +21,7 @@ export default function NotificationPrompt() {
 
   return (
     <div className="flex flex-wrap items-center gap-3 border-b border-blue-200 bg-blue-50 px-4 py-2 text-sm text-blue-900">
-      <span className="flex-1">🔔 Get a desktop notification when a payment becomes overdue or a ship date passes?</span>
+      <span className="flex-1">Receive a desktop notification when a payment becomes overdue or a ship date passes?</span>
       <button
         type="button"
         className="rounded-md bg-blue-700 px-3 py-1 text-white hover:bg-blue-800"
@@ -30,10 +30,10 @@ export default function NotificationPrompt() {
           close()
         }}
       >
-        Turn on
+        Enable
       </button>
       <button type="button" className="underline" onClick={close}>
-        Not now
+        Not Now
       </button>
     </div>
   )

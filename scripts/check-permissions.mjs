@@ -43,6 +43,7 @@ const EXEMPT = {
   'src/components/AuthProvider.tsx': 'sign-in state',
   'src/components/PermissionsProvider.tsx': 'loads permissions',
   'src/components/Layout.tsx': 'menu is built from NAV_ITEMS (each item has a permission); menu button and sign-out are for everyone',
+  'src/components/ConfirmHost.tsx': 'the shared Confirm / Cancel box; every place that opens it is checked',
   'src/components/PlaceholderPage.tsx': 'layout helper; where it is used is checked',
   'src/components/alerts/AlertsProvider.tsx': 'loads alerts and shows nothing itself (needs alerts.bell; pop-ups need alerts.popups)',
   'src/pages/LoginPage.tsx': 'shown before signing in',

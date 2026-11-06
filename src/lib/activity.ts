@@ -35,7 +35,7 @@ const LABELS: Record<string, string> = {
   archived: 'Archived',
   serial_number: 'Serial',
   ready: 'Built',
-  serial_manual: 'Serial typed by hand',
+  serial_manual: 'Serial entered manually',
   role: 'Role',
   name: 'Name',
   company: 'Company',
@@ -67,7 +67,7 @@ const LABELS: Record<string, string> = {
   build_hours: 'Hours to build',
   crated_on: 'Date crated',
   crated_by: 'Crated by',
-  needs_crate: 'Crate?',
+  needs_crate: 'Crate',
   build_days: 'Build times (days per step)',
   production_started_on: 'Production started',
 }
@@ -125,7 +125,7 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     for (const s of (c.serial_changes as { order: string; old: string | null; new: string | null }[]) ?? []) {
       lines.push(`Serial (order ${s.order}): ${s.old ?? 'none'} → ${s.new ?? 'none'}`)
     }
-    return { title: 'Moved on the board', lines }
+    return { title: 'Moved on the Orders Board', lines }
   }
 
   if (e.action === 'admin' && (c as Record<string, unknown>).action === 'permissions') {
@@ -203,7 +203,7 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
       return { title: `${verb} checklist template item`, lines: [`${c.section}: ${c.item_text}`] }
     if (e.table_name === 'machine_steps')
       return {
-        title: `${STEP_LABEL[c.step as StepKey] ?? c.step} ${e.action === 'insert' ? 'marked done' : 'un-ticked'}`,
+        title: `${STEP_LABEL[c.step as StepKey] ?? c.step} ${e.action === 'insert' ? 'marked complete' : 'marked incomplete'}`,
         lines: e.action === 'insert' ? [`Done ${c.done_on}${c.done_by_name ? ` by ${c.done_by_name}` : ''}`] : [],
       }
     if (e.table_name === 'payments')
@@ -216,9 +216,9 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     .map(([k, v]) => {
       const ch = v as Change
       if (k === 'ready') return ch.new ? 'Marked built' : 'Marked not built'
-      if (k === 'archived') return ch.new ? 'Archived' : 'Brought back from archive'
+      if (k === 'archived') return ch.new ? 'Archived' : 'Restored from the archive'
       if (k === 'stage') return `Stage: ${stageLabel(String(ch.old))} → ${stageLabel(String(ch.new))}`
-      if (k === 'checklist_done') return ch.new ? 'Final checklist done' : 'Final checklist un-ticked'
+      if (k === 'checklist_done') return ch.new ? 'Final check complete' : 'Final check reopened'
       if (k === 'default_permissions' || k === 'perms') {
         const o = (ch.old ?? {}) as Perms
         const n = (ch.new ?? {}) as Perms

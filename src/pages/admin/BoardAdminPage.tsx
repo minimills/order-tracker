@@ -70,18 +70,18 @@ export default function BoardAdminPage() {
   return (
     <div className="mx-auto max-w-4xl space-y-6">
       <AdminPageHeader
-        title="Shop queue"
+        title="Shop Queue"
         aside={
-          <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => ask(null, null, 'Renumber all')}>
-            Renumber all
+          <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => ask(null, null, 'Renumber All')}>
+            Renumber All
           </button>
         }
       >
         To move an order, type the place you want it in the queue (1 = built first) and press Set. Everyone in
-        between moves one place, and unbuilt serials follow the new order. <strong>Renumber all</strong> tidies the queue
+        between moves one place, and unbuilt serials follow the new order. <strong>Renumber All</strong> tidies the queue
         and re-checks every unbuilt serial. You always see the changes before they are saved. The normal{' '}
         <Link to="/board" className="underline">
-          Orders board
+          Orders Board
         </Link>{' '}
         does the same by dragging.
       </AdminPageHeader>
@@ -133,13 +133,13 @@ export default function BoardAdminPage() {
                 Cancel
               </button>
               <button type="button" className={buttonClass} onClick={apply} disabled={busy || !!nothing}>
-                {busy ? 'Saving…' : 'Save these changes'}
+                {busy ? 'Saving…' : 'Save These Changes'}
               </button>
             </>
           }
         >
           {nothing ? (
-            <p className="text-sm text-slate-600">The queue is already tidy. Nothing would change.</p>
+            <p className="text-sm text-slate-600">The queue is already in order. No changes would be made.</p>
           ) : (
             <ChangeList positions={pending.diff.positions} serials={pending.diff.serials} />
           )}

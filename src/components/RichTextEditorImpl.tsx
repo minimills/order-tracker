@@ -78,13 +78,13 @@ export default function RichTextEditorImpl({ value, onChange, onBlur, disabled =
           </button>
           <span className="mx-1 w-px bg-slate-200" aria-hidden="true" />
           <button type="button" title="Bullet list" aria-pressed={state?.bullet} className={toolbarButton(!!state?.bullet)} onMouseDown={run(() => editor.chain().focus().toggleBulletList().run())}>
-            • List
+            Bullets
           </button>
           <button type="button" title="Numbered list" aria-pressed={state?.ordered} className={toolbarButton(!!state?.ordered)} onMouseDown={run(() => editor.chain().focus().toggleOrderedList().run())}>
-            1. List
+            Numbers
           </button>
           <button type="button" title="Checkbox list" aria-pressed={state?.task} className={toolbarButton(!!state?.task)} onMouseDown={run(() => editor.chain().focus().toggleTaskList().run())}>
-            ☑ List
+            Checklist
           </button>
         </div>
       )}

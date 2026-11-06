@@ -133,7 +133,7 @@ const COLUMNS: ColumnDef[] = [
   { key: 'downamount', permission: 'orders.list.column.downamount', label: 'Down payment', value: (o) => o.down_payment_amount, csvOnly: true },
   { key: 'orderdate', permission: 'orders.list.column.orderdate', label: 'Order date', value: (o) => o.order_date, csvOnly: true },
   { key: 'notes', permission: 'orders.list.column.notes', label: 'Notes', value: (o) => richTextToPlain(o.notes), csvOnly: true },
-  { key: 'archived', permission: 'orders.list.column.archived', label: 'Archived', value: (o) => (o.archived ? 'Yes' : ''), csvOnly: true },
+  { key: 'archived', permission: 'orders.list.column.archived', label: 'Archived', value: (o) => (o.archived ? 'Archived' : ''), csvOnly: true },
 ]
 
 
@@ -288,11 +288,11 @@ export default function OrdersListPage() {
     <Can permission="orders.list">
       <div className="-m-4 flex h-[calc(100%+2rem)] flex-col p-4 md:-m-8 md:h-[calc(100%+4rem)] md:p-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">Orders list</h1>
+          <h1 className="text-2xl font-semibold">Orders List</h1>
           <div className="flex gap-2">
             <Can permission="orders.list.export_csv">
               <button type="button" className={secondaryButtonClass} onClick={exportCsv} disabled={rows.length === 0}>
-                ⬇ Export CSV
+                Export CSV
               </button>
             </Can>
             <Can permission="orders.new" level="edit">
@@ -300,7 +300,7 @@ export default function OrdersListPage() {
                 to="/orders/new"
                 className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700"
               >
-                + New order
+                New Order
               </Link>
             </Can>
           </div>
@@ -312,7 +312,7 @@ export default function OrdersListPage() {
               type="search"
               aria-label="Search"
               className={inputClass}
-              placeholder="Search customer, company, country, serial, order #"
+              placeholder="Search by customer, company, country, serial or order #"
               value={q}
               onChange={(e) => setFilter('q', e.target.value)}
             />
@@ -390,7 +390,7 @@ export default function OrdersListPage() {
               {!loading && rows.length === 0 && (
                 <tr>
                   <td colSpan={visibleColumns.length} className="px-3 py-6 text-center text-slate-500">
-                    {orders.length === 0 ? 'No orders yet.' : 'No orders match these filters.'}
+                    {orders.length === 0 ? 'No orders have been entered yet.' : 'No orders match these filters. Clear the filters to see all orders.'}
                   </td>
                 </tr>
               )}
@@ -434,7 +434,7 @@ export default function OrdersListPage() {
                   className="ml-3 underline"
                   onClick={() => setFilters((f) => ({ ...defaultFilters, sort: f.sort, dir: f.dir, archived: f.archived }))}
                 >
-                  Clear filters
+                  Clear Filters
                 </button>
               </Can>
             )}

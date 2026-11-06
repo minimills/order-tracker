@@ -66,7 +66,7 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
   async function run(apply: boolean) {
     if (!supabase) return
     if (mode.kind === 'add') {
-      if (rows.length === 0) return setError('Add at least one machine with the search box.')
+      if (rows.length === 0) return setError('Add at least one machine using the search box.')
       if (rows.some((r) => !r.typeId)) return setError('Choose a machine type on every line.')
       if (rows.some((r) => !/^\d+$/.test(r.quantity) || Number(r.quantity) < 1 || Number(r.quantity) > 50))
         return setError('Quantity must be 1 to 50.')
@@ -95,7 +95,7 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
   }, [])
 
   const noSerials = stage === 'Quote' || stage === 'Cancelled'
-  const title = mode.kind === 'add' ? `Add machines to order ${orderCode}` : `Remove ${mode.label} from order ${orderCode}?`
+  const title = mode.kind === 'add' ? `Add Machines to Order ${orderCode}` : `Remove ${mode.label} From Order ${orderCode}?`
 
   const footer = (
     <>
@@ -109,12 +109,12 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
           onClick={() => run(true)}
           disabled={busy}
         >
-          {busy ? 'Saving…' : mode.kind === 'add' ? 'Add machines' : 'Remove machine'}
+          {busy ? 'Saving…' : mode.kind === 'add' ? 'Add Machines' : 'Remove Machine'}
         </button>
       ) : (
         mode.kind === 'add' && (
           <button type="button" className={buttonClass} onClick={() => run(false)} disabled={busy}>
-            {busy ? 'Working it out…' : 'Show what changes'}
+            {busy ? 'Calculating…' : 'Preview Changes'}
           </button>
         )
       )}
@@ -174,13 +174,13 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
         </div>
       )}
 
-      {mode.kind === 'remove' && !preview && !error && <p className="text-sm text-slate-500">Working out what changes…</p>}
+      {mode.kind === 'remove' && !preview && !error && <p className="text-sm text-slate-500">Calculating the changes…</p>}
 
       {preview && (
         <div className="space-y-4 text-sm">
           {preview.added.length > 0 && (
             <div>
-              <h3 className="font-medium">New machines</h3>
+              <h3 className="font-medium">New Machines</h3>
               <ul className="mt-1 space-y-0.5">
                 {preview.added.map((a, i) => (
                   <li key={i}>
@@ -195,34 +195,34 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
           )}
           {preview.removed.length > 0 && (
             <div>
-              <h3 className="font-medium">Taken off the order</h3>
+              <h3 className="font-medium">Removed from the Order</h3>
               <ul className="mt-1 space-y-0.5">
                 {preview.removed.map((r, i) => (
                   <li key={i}>
                     {r.machine_type} <span className="font-mono">{r.serial ?? ''}</span>
                     <span className="text-slate-500">
                       {r.built
-                        ? ' — built, so it keeps its serial'
+                        ? ' — built, so it keeps its serial number'
                         : r.serial
-                          ? ' — its serial is given back for other machines'
+                          ? ' — its serial number is released for other machines'
                           : ''}
                     </span>
                   </li>
                 ))}
               </ul>
               <p className="mt-1 text-xs text-slate-500">
-                It is archived, not deleted: an admin can bring it back from Admin → Archive.
+                It is archived, not deleted: an administrator can restore it from Admin → Archive.
               </p>
             </div>
           )}
           <div>
-            <h3 className="font-medium">Other machines</h3>
+            <h3 className="font-medium">Other Machines</h3>
             {preview.serials.length === 0 ? (
               <p className="mt-1 text-slate-500">No other serial numbers change.</p>
             ) : (
               <>
                 <p className="mt-1 text-slate-600">
-                  These serials move so that orders earlier in the shop queue keep the lower serials. Built machines are
+                  These serial numbers change so that orders earlier in the shop queue keep the lower numbers. Built machines are
                   never changed.
                 </p>
                 <div className="mt-2">

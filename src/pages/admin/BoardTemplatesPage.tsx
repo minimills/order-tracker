@@ -89,16 +89,16 @@ export default function BoardTemplatesPage() {
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
-      <AdminPageHeader title="Board templates">
+      <AdminPageHeader title="Board Templates">
         What a new board can start with: its stages, labels and ready-made checklists. To copy a board you have set up, open
-        it and press “Save as template”. Changing a template does not change boards already made from it.
+        it and press “Save as Template”. Changing a template does not change boards already created from it.
       </AdminPageHeader>
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Show archived
         </label>
         <button type="button" className={buttonClass} onClick={() => setDraft(toDraft(null))}>
-          + New template
+          Create Template
         </button>
       </div>
 
@@ -120,7 +120,7 @@ export default function BoardTemplatesPage() {
             <Field label="Stages (one per line, left to right)" htmlFor="bt-stages">
               <textarea id="bt-stages" rows={6} className={inputClass} value={draft.stages} onChange={(e) => setDraft({ ...draft, stages: e.target.value })} />
             </Field>
-            <Field label="Labels (one per line, colour optional)" htmlFor="bt-labels" hint="e.g. Urgent #dc2626">
+            <Field label="Labels (one per line, colour optional)" htmlFor="bt-labels" hint="for example Urgent #dc2626">
               <textarea id="bt-labels" rows={6} className={inputClass} value={draft.labels} onChange={(e) => setDraft({ ...draft, labels: e.target.value })} />
             </Field>
             <Field label="Ready-made checklists" htmlFor="bt-lists" hint="Title, then “- task” lines; empty line between checklists.">
@@ -129,7 +129,7 @@ export default function BoardTemplatesPage() {
           </div>
           <div className="flex gap-2">
             <button type="button" className={buttonClass} onClick={save} disabled={busy}>
-              Save template
+              Save Template
             </button>
             <button type="button" className={secondaryButtonClass} onClick={() => setDraft(null)}>
               Cancel
@@ -155,7 +155,7 @@ export default function BoardTemplatesPage() {
                     </button>
                   )}
                   <button type="button" className={secondaryButtonClass} onClick={() => archive(t)}>
-                    {t.archived ? 'Bring back' : 'Archive'}
+                    {t.archived ? 'Restore' : 'Archive'}
                   </button>
                 </div>
               </div>
