@@ -1,4 +1,4 @@
-// @permission-scope admin.users, admin.departments, admin.machine_types, admin.dropdowns, admin.stages, admin.checklists, admin.records, admin.serials, admin.board, admin.alerts, admin.company, admin.import, admin.archive, admin.activity
+// @permission-scope admin.users, admin.departments, admin.machine_types, admin.dropdowns, admin.stages, admin.order_defaults, admin.scheduling, admin.checklists, admin.records, admin.serials, admin.board, admin.alerts, admin.company, admin.import, admin.archive, admin.activity
 import { Link } from 'react-router-dom'
 import Can from '../../components/Can'
 
@@ -9,6 +9,8 @@ const sections = [
   { to: '/admin/dropdowns', permission: 'admin.dropdowns', icon: '📝', title: 'Dropdown lists', text: 'Voltage, delivery equipment, freight and payment types.' },
   { to: '/admin/stages', permission: 'admin.stages', icon: '🏷', title: 'Stage names', text: 'Rename what people see for each stage, e.g. “Ready / testing”.' },
   { to: '/admin/checklists', permission: 'admin.checklists', icon: '✅', title: 'Checklists', text: 'Final check templates: general items for every machine, plus extras per machine type.' },
+  { to: '/admin/order-defaults', permission: 'admin.order_defaults', icon: '🧾', title: 'Order defaults', text: 'Currency, voltage, crate and payment due days for new orders.' },
+  { to: '/admin/scheduling', permission: 'admin.scheduling', icon: '📅', title: 'Scheduling', text: 'Working days, holidays, buffer, and how machines are built.' },
   { to: '/admin/records', permission: 'admin.records', icon: '🗂', title: 'Orders, customers & machines', text: 'Edit any field, or archive.' },
   { to: '/admin/serials', permission: 'admin.serials', icon: '🔢', title: 'Serial numbers', text: 'Fix one serial by hand, or re-sequence a machine type.' },
   { to: '/admin/board', permission: 'admin.board', icon: '📋', title: 'Shop queue', text: 'Put an order at a set place in the queue, or tidy the whole queue.' },

@@ -14,9 +14,11 @@ type Props = {
   getsSerials: boolean
   /** Error messages keyed "row-<i>-type", "row-<i>-qty", "row-<i>-unit-<j>", or "machines". */
   errors: Record<string, string>
+  /** “Crate?” for newly added rows (Admin → Order defaults). */
+  crateDefault?: boolean
 }
 
-export default function MachinesSection({ rows, onChange, machineTypes, preview, getsSerials, errors }: Props) {
+export default function MachinesSection({ rows, onChange, machineTypes, preview, getsSerials, errors, crateDefault = true }: Props) {
   const typeById = new Map(machineTypes.map((t) => [t.id, t]))
   const activeTypes = machineTypes.filter((t) => !t.archived)
 
@@ -39,7 +41,7 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
       setQuantity(i, String(total))
       return
     }
-    onChange([...rows, { ...newMachineRow(), machineTypeId: type.id, quantity: String(n), manual: Array.from({ length: n }, () => null) }])
+    onChange([...rows, { ...newMachineRow(crateDefault), machineTypeId: type.id, quantity: String(n), manual: Array.from({ length: n }, () => null) }])
   }
 
   const setManual = (rowIndex: number, unitIndex: number, value: string | null) => {
@@ -73,7 +75,18 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                   onChange={(e) => setQuantity(i, e.target.value)}
                 />
               </Field>
-              <div className="col-span-2 flex items-end md:col-span-1">
+              <div className="col-span-2 flex items-end gap-4 md:col-span-1">
+                <Can permission="order.machines.crate_flag" level="edit">
+                  <label className="flex items-center gap-2 pb-2 text-sm" title="Only crated machines get a crating deadline">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4"
+                      checked={row.needsCrate}
+                      onChange={(e) => updateRow(i, { needsCrate: e.target.checked })}
+                    />
+                    Crate?
+                  </label>
+                </Can>
                 <button
                   type="button"
                   className="text-sm text-red-700 underline disabled:text-slate-400 disabled:no-underline"

@@ -14,6 +14,19 @@ import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { BOARD_STAGES, CURRENCIES, type Currency, type Customer, type MachineType, type Stage } from '../lib/types'
 import { useOptionList } from '../lib/useOptionList'
+import Timeline from '../components/schedule/Timeline'
+import { showDate } from '../lib/dates'
+import {
+  balanceDue as balanceDueFor,
+  currencyFor,
+  deadlinesOf,
+  downPaymentDue,
+  STEP_LABEL,
+  suggestBalanceDue,
+  workingText,
+  type SchedOrder,
+} from '../lib/schedule'
+import { useSchedule } from '../lib/useSchedule'
 
 /** Stages a brand-new order can start in. */
 const NEW_ORDER_STAGES: Stage[] = ['Quote', ...BOARD_STAGES]
@@ -62,17 +75,21 @@ export default function NewOrderPage() {
   const [stage, setStage] = useState<Stage>('Confirmed')
   // Machines are added with the search box (empty to start).
   const [rows, setRows] = useState<MachineRow[]>([])
-  const [voltage, setVoltage] = useState('Unknown')
+  // Defaults (Admin → Order defaults) and calculated dates fill these until
+  // they are changed by hand (null = use the default / calculated value).
+  const schedule = useSchedule()
+  const { defaults } = schedule
+  const [voltageHand, setVoltage] = useState<string | null>(null)
   const [deliveryEquipment, setDeliveryEquipment] = useState('Unknown')
   const [freightType, setFreightType] = useState('')
-  const [expectedShipDate, setExpectedShipDate] = useState('')
+  const [shipHand, setExpectedShipDate] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
-  const [currency, setCurrency] = useState<Currency>('CAD')
+  const [currencyHand, setCurrency] = useState<Currency | null>(null)
   const [total, setTotal] = useState('')
   const [downMode, setDownMode] = useState<'amount' | 'percent'>('percent')
   const [downValue, setDownValue] = useState('')
-  const [downDue, setDownDue] = useState('')
-  const [balanceDue, setBalanceDue] = useState('')
+  const [downDueHand, setDownDue] = useState<string | null>(null)
+  const [balanceDueHand, setBalanceDue] = useState<string | null>(null)
 
   // After the first Save attempt, the form re-checks itself as you type.
   const [triedToSave, setTriedToSave] = useState(false)
@@ -185,6 +202,25 @@ export default function NewOrderPage() {
     [rows, machineTypes, getsSerials, takenSerialSet],
   )
 
+  // Defaults and the schedule
+  const country = customer.customer?.country ?? ''
+  const currency = (currencyHand ?? currencyFor(country, defaults)) as Currency
+  const voltage = voltageHand ?? defaults.voltage
+  const schedOrder: SchedOrder = useMemo(
+    () => ({
+      id: 'new',
+      machines: rows.flatMap((r, i) =>
+        r.manual.map((_, j) => ({ id: `new-${i}-${j}`, machine_type_id: r.machineTypeId, needs_crate: r.needsCrate, done: {} })),
+      ),
+    }),
+    [rows],
+  )
+  const plan = getsSerials && rows.length && !schedule.loading ? schedule.planFor(schedOrder) : null
+  const expectedShipDate = shipHand ?? plan?.ship_date ?? ''
+  const downDue = downDueHand ?? downPaymentDue(schedule.today, defaults)
+  const balanceDue = balanceDueHand ?? (expectedShipDate ? balanceDueFor(expectedShipDate, defaults) : '')
+  const balanceSuggestion = downDue && expectedShipDate && balanceDue && balanceDue < downDue ? suggestBalanceDue(downDue, expectedShipDate) : null
+
   const totalNum = parseMoney(total)
   const downNum = parseMoney(downValue)
   const downAmount =
@@ -267,7 +303,7 @@ export default function NewOrderPage() {
     else if (downMode === 'percent' && downNum !== null && downNum > 100) e.down = 'The percent can’t be more than 100.'
     else if (downAmount !== null && totalNum !== null && downAmount > totalNum)
       e.down = 'The down payment can’t be more than the order total.'
-    if (downDue && balanceDue && balanceDue < downDue) e.balanceDue = 'The balance is usually due after the down payment.'
+    if (downDue && balanceDue && balanceDue < downDue) e.balanceDue = 'The balance would be due before the down payment.'
 
     return e
   }
@@ -312,6 +348,7 @@ export default function NewOrderPage() {
         row.manual.map((m) => ({
           machine_type_id: row.machineTypeId,
           serial_number: m !== null && m.trim() ? cleanSerial(m) : undefined,
+          needs_crate: row.needsCrate,
         })),
       ),
       down_payment_amount: may.payments ? (downAmount ?? undefined) : undefined,
@@ -330,8 +367,32 @@ export default function NewOrderPage() {
       return
     }
     const result = data as { id: string; order_code: string }
+    if (plan) await saveFirstSchedule(result.id)
     toast.success(`Order ${result.order_code} saved.`)
     navigate(`/orders/${result.id}`)
+  }
+
+  /**
+   * Saves the promised dates of the new order: the ship date on the form and
+   * the department deadlines worked out for its machines (now with real ids).
+   */
+  async function saveFirstSchedule(orderId: string) {
+    if (!supabase) return
+    const { data } = await supabase
+      .from('order_machine_status')
+      .select('id, machine_type_id, needs_crate, serial_number, created_at')
+      .eq('order_id', orderId)
+    const machines = ((data ?? []) as { id: string; machine_type_id: string; needs_crate: boolean | null; serial_number: string | null; created_at: string }[])
+      .sort((a, b) => (a.serial_number ?? '').localeCompare(b.serial_number ?? '') || a.created_at.localeCompare(b.created_at))
+      .map((m) => ({ id: m.id, machine_type_id: m.machine_type_id, needs_crate: m.needs_crate !== false, done: {} }))
+    const p = schedule.planFor({ id: orderId, machines })
+    const { error } = await supabase.rpc('accept_schedule', {
+      p_order_id: orderId,
+      p_ship_date: expectedShipDate || p.ship_date,
+      p_deadlines: deadlinesOf(p),
+      p_initial: true,
+    })
+    if (error) toast.error(`The order is saved, but its department deadlines were not: ${friendlyError(error)}`)
   }
 
   const errors: Record<string, string> = triedToSave ? validate() : {}
@@ -444,6 +505,7 @@ export default function NewOrderPage() {
             preview={preview}
             getsSerials={getsSerials}
             errors={errors}
+            crateDefault={defaults.crate}
           />
         </Section>
 
@@ -493,14 +555,33 @@ export default function NewOrderPage() {
                 </Field>
               </Can>
               <Can permission="order.field.expected_ship_date" level="edit">
-                <Field label="Expected ship date" htmlFor="ship-date">
-                  <input
-                    id="ship-date"
-                    type="date"
-                    className={inputClass}
-                    value={expectedShipDate}
-                    onChange={(e) => setExpectedShipDate(e.target.value)}
-                  />
+                <Field
+                  label="Expected ship date"
+                  htmlFor="ship-date"
+                  hint={
+                    shipHand !== null && plan
+                      ? `Typed by hand. Worked out: ${showDate(plan.ship_date)}.`
+                      : plan
+                        ? 'Worked out from the shop queue (see Schedule below).'
+                        : getsSerials
+                          ? 'Worked out once machines are added.'
+                          : undefined
+                  }
+                >
+                  <div className="flex gap-2">
+                    <input
+                      id="ship-date"
+                      type="date"
+                      className={inputClass}
+                      value={expectedShipDate}
+                      onChange={(e) => setExpectedShipDate(e.target.value)}
+                    />
+                    {shipHand !== null && plan && (
+                      <button type="button" className="shrink-0 text-xs text-slate-600 underline" onClick={() => setExpectedShipDate(null)}>
+                        Use worked-out date
+                      </button>
+                    )}
+                  </div>
                 </Field>
               </Can>
               <Can permission="order.field.notes" level="edit">
@@ -511,6 +592,29 @@ export default function NewOrderPage() {
             </div>
           </Section>
         </Can>
+
+        {plan && (
+          <Can permission="orders.new.schedule">
+            <Section title="Schedule">
+              <p className="text-sm">
+                Expected ship date <strong>{showDate(plan.ship_date, 'EEE, MMM d, yyyy')}</strong>
+                <span className="text-slate-600"> · {workingText(plan)} · starts {showDate(plan.start)}</span>
+              </p>
+              {plan.averages.length > 0 && (
+                <p className="mt-1 text-xs text-slate-500">Uses the average of recent builds for: {plan.averages.join(', ')}.</p>
+              )}
+              <div className="mt-3">
+                <Timeline items={plan.steps} />
+              </div>
+              {shipHand !== null && shipHand !== plan.ship_date && (
+                <p className="mt-2 text-xs text-amber-800">
+                  You typed {showDate(shipHand)} as the ship date; the department deadlines above still follow the shop
+                  queue. {STEP_LABEL.shipping} will be promised for {showDate(shipHand)}.
+                </p>
+              )}
+            </Section>
+          </Can>
+        )}
 
         <Can anyOf={['order.field.order_total', 'payments']} level="edit">
           <Section title="Payments">
@@ -582,10 +686,25 @@ export default function NewOrderPage() {
                     </select>
                   </div>
                 </Field>
-                <Field label="Down payment due" htmlFor="down-due">
+                <Field
+                  label="Down payment due"
+                  htmlFor="down-due"
+                  hint={downDueHand === null ? `${defaults.down_payment_days} days from today.` : undefined}
+                >
                   <input id="down-due" type="date" className={inputClass} value={downDue} onChange={(e) => setDownDue(e.target.value)} />
                 </Field>
-                <Field label="Balance due" htmlFor="balance-due" error={err('balanceDue')}>
+                <Field
+                  label="Balance due"
+                  htmlFor="balance-due"
+                  error={err('balanceDue') ?? (balanceSuggestion ? 'The balance would be due before the down payment.' : undefined)}
+                  hint={
+                    balanceDueHand === null && expectedShipDate
+                      ? `${defaults.balance_days_before_ship} days before the expected ship date.`
+                      : !expectedShipDate
+                        ? 'Filled in once there is an expected ship date.'
+                        : undefined
+                  }
+                >
                   <input
                     id="balance-due"
                     type="date"
@@ -593,6 +712,15 @@ export default function NewOrderPage() {
                     value={balanceDue}
                     onChange={(e) => setBalanceDue(e.target.value)}
                   />
+                  {balanceSuggestion && (
+                    <button
+                      type="button"
+                      className="mt-1 text-xs font-medium text-blue-700 underline"
+                      onClick={() => setBalanceDue(balanceSuggestion)}
+                    >
+                      Use {showDate(balanceSuggestion)} instead (halfway to the ship date)
+                    </button>
+                  )}
                 </Field>
               </Can>
             </div>

@@ -105,6 +105,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'dashboard.list.latest_shipped', label: 'Latest shipped', levels: V, requires: 'dashboard' },
       { key: 'dashboard.list.next_ship_dates', label: 'Next ship dates', levels: V, requires: 'dashboard' },
       { key: 'dashboard.list.next_payments', label: 'Next payments due', levels: V, requires: 'dashboard', needs: ['payments'] },
+      { key: 'dashboard.list.schedule_changes', label: 'Schedule changes: orders whose suggested ship date is later than promised (Accept / Keep)', levels: V, requires: 'dashboard', needs: ['schedule'] },
     ],
   }),
 
@@ -130,6 +131,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'orders.board.card.chip_serials', label: 'Serial numbers when hovering over or tapping a chip', levels: V, requires: 'orders.board.card.machines' },
       { key: 'orders.board.card.built', label: 'Machines built (2/3 ready)', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.ship_date', label: 'Ship date', levels: V, requires: 'orders.board' },
+      { key: 'orders.board.card.deadline', label: 'Next department deadline (amber when close, red when missed)', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.badge_voltage', label: 'Badge: voltage unknown', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.badge_payment', label: 'Badge: payment overdue / due soon', levels: V, requires: 'orders.board', needs: ['payments'] },
       { key: 'orders.board.card.badge_ship_date', label: 'Badge: ship date close / passed', levels: V, requires: 'orders.board' },
@@ -161,6 +163,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'orders.new.field.stage', label: 'Choose the stage', levels: E, requires: 'orders.new' },
       { key: 'orders.new.split', label: 'Split shipment (76-1, 76-2), also the button on the order page', levels: E, requires: 'orders.new' },
       { key: 'orders.new.serial_by_hand', label: 'Type a serial number by hand', levels: E, requires: 'orders.new' },
+      { key: 'orders.new.schedule', label: 'Schedule preview: expected ship date worked out, deadlines timeline', levels: V, requires: 'orders.new' },
     ],
   }),
 
@@ -208,6 +211,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.machines.built', label: 'Built tick boxes (see / tick)', levels: VE, requires: 'order.section.machines', db: true },
       { key: 'order.machines.checklist', label: 'Final check status per machine (and the “Final check” button with “Final check: see”)', levels: V, requires: 'order.section.machines', needs: ['checklist'] },
       { key: 'order.machines.add', label: '“+ Add machines”', levels: E, requires: 'order.section.machines', db: true },
+      { key: 'order.machines.crate_flag', label: '“Crate?” tick per machine (only crated machines get a crating deadline)', levels: VE, requires: 'order.section.machines', db: true },
       { key: 'order.machines.remove', label: '“Remove” a machine', levels: E, requires: 'order.section.machines', db: true },
     ],
     'Shipping section': [
@@ -225,6 +229,15 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.field.order_total', label: 'Order total (everywhere in the app)', levels: VE, db: true },
       { key: 'order.field.notes', label: 'Notes', levels: VE, db: true },
       { key: 'order.section.payments', label: 'Payments section on the order page', levels: V, requires: 'order.page', needs: ['payments'] },
+    ],
+  }),
+
+  ...group('Order page', {
+    Schedule: [
+      { key: 'schedule', label: 'Schedule section: how the ship date was worked out, department deadlines timeline', levels: V, requires: 'order.page' },
+      { key: 'schedule.machines', label: 'Deadlines per machine', levels: V, requires: 'schedule' },
+      { key: 'schedule.step_done', label: 'Mark department steps done (Fabrication, Sandblasting…)', levels: E, requires: 'schedule', db: true },
+      { key: 'schedule.accept', label: 'Accept or keep suggested new dates', levels: E, db: true },
     ],
   }),
 
@@ -277,7 +290,13 @@ export const CATALOG: PermissionItem[] = [
   }),
 
   ...group('Reports', {
+    'Department delays': [
+      { key: 'reports.department_delays', label: 'Department delays report (on-time %, days late per department)', levels: V, page: true, db: true },
+      { key: 'reports.department_delays.by_month', label: 'Table: by month', levels: V, requires: 'reports.department_delays' },
+      { key: 'reports.department_delays.period', label: 'Choose the period (last 3 / 6 / 12 months, all time)', levels: V, requires: 'reports.department_delays' },
+    ],
     'Crating report': [
+
       { key: 'reports.crating', label: 'Crating report page', levels: V, needs: ['crating'], page: true },
       { key: 'reports.crating.filters', label: 'Date and machine type filters', levels: V, requires: 'reports.crating' },
       { key: 'reports.crating.by_type', label: 'Table: by machine type', levels: V, requires: 'reports.crating' },
@@ -315,6 +334,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.dropdowns', label: 'Dropdown lists', levels: E, db: true },
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
       { key: 'admin.stages', label: 'Stage names (rename what people see, e.g. “Ready / testing”)', levels: E, db: true },
+      { key: 'admin.order_defaults', label: 'Order defaults (currency, voltage, crate, payment due days)', levels: E, db: true },
+      { key: 'admin.scheduling', label: 'Scheduling (working days, holidays, buffer, machines one after another)', levels: E, db: true },
       { key: 'admin.records', label: 'Orders, customers & machines: edit any field, archive', levels: E, db: true },
       { key: 'admin.serials', label: 'Serial numbers', levels: E, db: true },
       { key: 'admin.board', label: 'Shop queue repair', levels: E, db: true },

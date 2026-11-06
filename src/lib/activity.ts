@@ -1,3 +1,4 @@
+import { STEP_LABEL, type StepKey } from './schedule'
 import { CATALOG_BY_KEY } from './permissions/catalog'
 import { isRichText, richTextToPlain } from './richText'
 import { stageLabel } from './stages'
@@ -66,6 +67,9 @@ const LABELS: Record<string, string> = {
   build_hours: 'Hours to build',
   crated_on: 'Date crated',
   crated_by: 'Crated by',
+  needs_crate: 'Crate?',
+  build_days: 'Build times (days per step)',
+  production_started_on: 'Production started',
 }
 
 const THING: Record<string, string> = {
@@ -84,10 +88,11 @@ const THING: Record<string, string> = {
   machine_checklists: 'final check',
   checklist_template_items: 'checklist template item',
   user_permissions: 'permissions',
+  machine_steps: 'department step',
 }
 
 /** Fields that are filled in automatically and only add noise. */
-const HIDDEN = new Set(['id', 'created_at', 'archived_at', 'archived_by', 'order_id', 'order_code', 'checklist_done_at', 'checklist_done_by', 'last_worked_at', 'last_worked_by_name', 'signed_by', 'signature_path', 'machine_id', 'started_by', 'started_by_name', 'started_at'])
+const HIDDEN = new Set(['id', 'created_at', 'archived_at', 'archived_by', 'order_id', 'order_code', 'checklist_done_at', 'checklist_done_by', 'last_worked_at', 'last_worked_by_name', 'signed_by', 'signature_path', 'machine_id', 'started_by', 'started_by_name', 'started_at', 'schedule_kept', 'done_by_name'])
 
 export const activityTime = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Halifax',
@@ -148,7 +153,7 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     if (typeof ch.item === 'string') lines.push(`${ch.section ? `${ch.section}: ` : ''}${ch.item}`)
     if (typeof ch.reason === 'string') lines.push(`Reason: ${ch.reason}`)
     const action = String(ch.action ?? 'change')
-    return { title: action.startsWith('final check') ? action[0].toUpperCase() + action.slice(1) : `Admin: ${action}`, lines }
+    return { title: action.startsWith('final check') || action.startsWith('schedule') ? action[0].toUpperCase() + action.slice(1) : `Admin: ${action}`, lines }
   }
 
   const thing =
@@ -189,6 +194,11 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
       return { title: e.action === 'insert' ? `Final check started by ${c.started_by_name ?? 'someone'}` : 'Final check deleted', lines: [] }
     if (e.table_name === 'checklist_template_items')
       return { title: `${verb} checklist template item`, lines: [`${c.section}: ${c.item_text}`] }
+    if (e.table_name === 'machine_steps')
+      return {
+        title: `${STEP_LABEL[c.step as StepKey] ?? c.step} ${e.action === 'insert' ? 'marked done' : 'un-ticked'}`,
+        lines: e.action === 'insert' ? [`Done ${c.done_on}${c.done_by_name ? ` by ${c.done_by_name}` : ''}`] : [],
+      }
     if (e.table_name === 'payments')
       return { title: `${verb} payment: ${c.payment_type} ${c.amount ?? ''}`, lines: c.due_date ? [`Due ${c.due_date}`] : [] }
     return { title: `${verb} ${thing}`, lines: [] }

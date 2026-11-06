@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
+import ScheduleChanges from '../components/schedule/ScheduleChanges'
 import DelayChart, { type MonthDelay } from '../components/dashboard/DelayChart'
 import { dueText } from '../components/payments/dueText'
 import { countryFlag } from '../lib/country'
@@ -214,6 +215,10 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-slate-600">{showDate(today, 'EEEE, MMMM d, yyyy')}</p>
         </div>
+
+        <Can permission="dashboard.list.schedule_changes">
+          <ScheduleChanges orders={orders} onChanged={load} />
+        </Can>
 
         {/* ---------- Cards ---------- */}
         <div className="grid grid-cols-2 gap-3 empty:hidden sm:grid-cols-3 xl:grid-cols-6">

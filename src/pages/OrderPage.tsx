@@ -8,6 +8,7 @@ import { buttonClass, secondaryButtonClass, Section } from '../components/form'
 import ActivityList from '../components/order/ActivityList'
 import CratingSummary from '../components/crating/CratingSummary'
 import MachineCrating from '../components/crating/MachineCrating'
+import OrderSchedule from '../components/schedule/OrderSchedule'
 import ChangeMachinesDialog from '../components/order/ChangeMachinesDialog'
 import EditOrderDialog from '../components/order/EditOrderDialog'
 import PaymentDialog from '../components/order/PaymentDialog'
@@ -31,6 +32,7 @@ type Machine = {
   id: string
   serial_number: string | null
   serial_manual: boolean
+  needs_crate?: boolean | null
   needs_serial: boolean
   ready: boolean
   checklist_done: boolean
@@ -127,7 +129,7 @@ export default function OrderPage() {
       supabase.from('customer_list').select('*').eq('id', o.customer_id).maybeSingle(),
       supabase
         .from('order_machines')
-        .select('id, serial_number, serial_manual, needs_serial, ready, checklist_done, machine_types(name, code)')
+        .select('id, serial_number, serial_manual, needs_serial, ready, checklist_done, needs_crate, machine_types(name, code)')
         .eq('order_id', id)
         .eq('archived', false)
         .order('created_at'),
@@ -488,6 +490,14 @@ export default function OrderPage() {
                     </p>
                   </Can>
                 </Section>
+              </Can>
+
+              <Can permission="schedule">
+                <OrderSchedule
+                  order={order}
+                  machines={machines.map((m) => ({ id: m.id, serial_number: m.serial_number, name: m.machine_types?.name ?? 'Machine', needs_crate: m.needs_crate !== false }))}
+                  onChanged={load}
+                />
               </Can>
 
               {showCrating && (
