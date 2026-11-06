@@ -20,10 +20,10 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
   if (!allowed) {
     return (
       <div className="mx-auto mt-16 max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-        <h1 className="text-lg font-semibold">No access yet</h1>
+        <h1 className="text-lg font-semibold">No access</h1>
         <p className="mt-2 text-sm text-slate-600">
-          You are signed in as <strong>{session.user.email}</strong>, but this email is not on the list of allowed
-          users. Ask the office to add it, then sign in again.
+          You are signed in as <strong>{session.user.email}</strong>, but this email doesn’t have access. Contact the
+          office.
         </p>
         <button
           type="button"

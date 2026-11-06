@@ -83,6 +83,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0021_start_page_and_safe_notes.sql` | Start page per person; formatted notes are checked so no scripts can be saved |
 | `0022_scheduling.sql` | Order defaults, scheduling settings, build times, department deadlines, “Crate?” per machine, department delays report; fixes staff creating orders |
 | `0023_kanban_boards.sql` | Boards (personal now; production, parts and service later): stages, cards, labels, people, due dates, checklists, Start / Finish times, comments, history, sharing, groups, notifications bell, board templates |
+| `0024_user_logins.sql` | Admin → Users makes real logins (with the `admin-users` Edge Function, see below); sign-in page checks access first |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
@@ -114,6 +115,19 @@ In Supabase, open **Authentication → URL Configuration**:
 
 Sign-in uses a 6-digit code sent by email. In Supabase → **Authentication → Emails → Magic Link**, the email must show the code: put `{{ .Token }}` in the message.
 Supabase's built-in email sender only allows a few emails per hour; that is fine for a small team.
+
+### The `admin-users` Edge Function (makes logins)
+
+Sign-ups stay **off** in Supabase (Authentication → Sign In / Providers → "Allow new users to sign up" unticked).
+Admin → Users makes each person's login through this function. It needs no extra secret: Supabase gives every Edge
+Function its own service role key automatically.
+
+1. Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor**.
+2. Name it exactly `admin-users`.
+3. Replace the example code with all of `supabase/functions/admin-users/index.ts`, then click **Deploy function**.
+4. Leave **Verify JWT** (JWT verification) switched on.
+
+To update it later, open the function, paste the new code and deploy again.
 
 ## 5. Run it
 
