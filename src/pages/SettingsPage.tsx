@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Can from '../components/Can'
 import UnitsSwitch from '../components/crating/UnitsSwitch'
+import NotificationSettings from '../components/settings/NotificationSettings'
+import PhoneNotifications from '../components/settings/PhoneNotifications'
 import { secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
 import { usePermissions } from '../lib/permissions'
@@ -93,6 +95,14 @@ export default function SettingsPage() {
               </button>
             )}
           </section>
+        </Can>
+
+        <Can permission="settings.notification_channels">
+          <NotificationSettings />
+        </Can>
+
+        <Can permission="settings.push" level="edit">
+          <PhoneNotifications />
         </Can>
 
         <Can anyOf={ADMIN_KEYS}>

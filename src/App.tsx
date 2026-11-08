@@ -14,6 +14,8 @@ import DepartmentsPage from './pages/admin/DepartmentsPage'
 import ImportPage from './pages/admin/ImportPage'
 import OptionListsPage from './pages/admin/OptionListsPage'
 import BoardTemplatesPage from './pages/admin/BoardTemplatesPage'
+import EmailLogPage from './pages/admin/EmailLogPage'
+import EmailPage from './pages/admin/EmailPage'
 import GroupsPage from './pages/admin/GroupsPage'
 import OrderDefaultsPage from './pages/admin/OrderDefaultsPage'
 import SchedulingPage from './pages/admin/SchedulingPage'
@@ -101,6 +103,8 @@ export default function App() {
           <Route path="dropdowns" element={<Page permission="admin.dropdowns" level="edit"><OptionListsPage /></Page>} />
           <Route path="stages" element={<Page permission="admin.stages" level="edit"><StagesPage /></Page>} />
           <Route path="order-defaults" element={<Page permission="admin.order_defaults" level="edit"><OrderDefaultsPage /></Page>} />
+          <Route path="email" element={<Page permission="admin.email" level="edit"><EmailPage /></Page>} />
+          <Route path="email-log" element={<Page permission="admin.email_log"><EmailLogPage /></Page>} />
           <Route path="groups" element={<Page permission="admin.groups" level="edit"><GroupsPage /></Page>} />
           <Route path="board-templates" element={<Page permission="admin.board_templates" level="edit"><BoardTemplatesPage /></Page>} />
           <Route path="scheduling" element={<Page permission="admin.scheduling" level="edit"><SchedulingPage /></Page>} />
