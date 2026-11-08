@@ -352,6 +352,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'settings.start_page', label: 'Choose their own start page (the page that opens after signing in)', levels: E, requires: 'settings', db: true },
       { key: 'settings.units', label: 'Units for crate sizes', levels: V, requires: 'settings', needs: ['crating.units'] },
       { key: 'settings.notifications', label: 'Desktop notifications', levels: V, requires: 'settings' },
+      { key: 'settings.notification_channels', label: 'Notification settings: in the app, by email (each time or daily summary) and phone push, per type (edit: change them)', levels: VE, requires: 'settings', db: true },
+      { key: 'settings.push', label: 'Phone notifications on their own phone or computer (enable, test, disable)', levels: E, requires: 'settings', db: true },
       { key: 'settings.connection', label: 'Database connection status', levels: V, requires: 'settings' },
     ],
     Alerts: [
@@ -370,6 +372,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
       { key: 'admin.stages', label: 'Stage names (rename what people see, for example “Ready / testing”)', levels: E, db: true },
       { key: 'admin.order_defaults', label: 'Order defaults (currency, voltage, crate, payment due days)', levels: E, db: true },
+      { key: 'admin.email', label: 'Email setup (mailbox check, test email, automatic sending, daily summary time)', levels: E, db: true },
+      { key: 'admin.email_log', label: 'Email log (edit: Resend)', levels: VE, db: true },
       { key: 'admin.groups', label: 'Groups of people (for example Procurement, Techs) for sharing and notifications', levels: E, db: true },
       { key: 'admin.board_templates', label: 'Board templates (save a board as a template, edit, archive)', levels: E, db: true },
       { key: 'admin.scheduling', label: 'Scheduling (working days, holidays, buffer, machines one after another)', levels: E, db: true },

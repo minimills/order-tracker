@@ -7,6 +7,9 @@ import ConfirmHost from './components/ConfirmHost'
 import AuthProvider from './components/AuthProvider'
 import PermissionsProvider from './components/PermissionsProvider'
 import './index.css'
+import { registerServiceWorker } from './lib/push'
+
+registerServiceWorker()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

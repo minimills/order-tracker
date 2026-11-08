@@ -85,6 +85,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0023_kanban_boards.sql` | Boards (personal now; production, parts and service later): stages, cards, labels, people, due dates, checklists, Start / Finish times, comments, history, sharing, groups, notifications bell, board templates |
 | `0024_user_logins.sql` | Admin → Users makes real logins (with the `admin-users` Edge Function, see below); sign-in page checks access first |
 | `0025_wording.sql` | Professional wording for two final check messages (no change in behaviour) |
+| `0026_notification_channels.sql` | Notifications by email, phone push or in the app (each person chooses), daily summary, email log, automatic sending every minute |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
@@ -142,6 +143,20 @@ Function its own service role key automatically.
 4. Leave **Verify JWT** (JWT verification) switched on.
 
 To update it later, open the function, paste the new code and deploy again.
+
+### Email and phone notifications (`send-email` Edge Function)
+
+The step-by-step setup (cPanel mailbox details, Supabase secrets, deploying the function, phone keys, turning on
+automatic sending) is in **Admin → Email** in the app and in the notes that came with this feature. In short:
+
+1. cPanel → **Email Accounts** → the mailbox → **Connect Devices**: note the outgoing server (SMTP, port 465, SSL) and
+   the username (the full email address).
+2. Supabase → **Edge Functions** → **Secrets**: add `SMTP_HOST`, `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM_NAME`
+   (and later `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY` from Admin → Email → Create Keys).
+3. Supabase → **Edge Functions** → **Deploy a new function** → **Via Editor**: name `send-email`, paste
+   `supabase/functions/send-email/index.ts`, deploy, then switch **Verify JWT** (JWT verification) **off** for it.
+4. Supabase → **Database → Extensions**: make sure `pg_cron` and `pg_net` are on.
+5. App → **Admin → Email**: Check Now, Send Test Email, Turn On Automatic Sending.
 
 ## 5. Run it
 

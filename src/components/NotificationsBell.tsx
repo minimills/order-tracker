@@ -25,7 +25,7 @@ export default function NotificationsBell() {
       lastDueCheck = Date.now()
       await supabase.rpc('board_due_notifications')
     }
-    const { data } = await supabase.from('notifications').select('id, kind, title, body, link, created_at, read_at').order('created_at', { ascending: false }).limit(50)
+    const { data } = await supabase.from('notifications').select('id, kind, title, body, link, created_at, read_at').eq('in_app', true).order('created_at', { ascending: false }).limit(50)
     setNotes((data as Note[]) ?? [])
   }, [])
 
