@@ -23,7 +23,7 @@ export type MoveRequest = {
 
 type SerialChange = { order: string; machine_type: string; old: string | null; new: string | null }
 type PositionChange = { order: string; old: number | null; new: number | null }
-type Preview = { serials: SerialChange[]; positions: PositionChange[] }
+type Preview = { serials: SerialChange[]; positions: PositionChange[]; numbers?: { old: string; new: string }[] }
 
 type Props = {
   request: MoveRequest
@@ -243,6 +243,23 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
                 </p>
               )}
             </div>
+
+            {(preview.numbers?.length ?? 0) > 0 && (
+              <div>
+                <h3 className="font-medium">Order Numbers</h3>
+                <p className="mt-1 text-slate-600">
+                  A cancelled order gives its number back: it is called “C-” plus its old number, and every later order
+                  moves down by one number. Customers may need to be told about the new numbers.
+                </p>
+                <ul className="mt-2 grid gap-x-6 tabular-nums sm:grid-cols-2">
+                  {preview.numbers!.map((n) => (
+                    <li key={n.old}>
+                      Order {n.old} → <strong>{n.new}</strong>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             <div>
               <h3 className="font-medium">Serial Numbers</h3>

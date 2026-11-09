@@ -128,6 +128,7 @@ export default function NewOrderPage() {
         .from('orders')
         .select('id', { count: 'exact', head: true })
         .eq('order_number', orderNumberInt)
+        .is('cancelled_code', null)
       setTakenNumbers((t) => ({ ...t, [orderNumberInt]: (count ?? 0) > 0 }))
     }, 300)
     return () => clearTimeout(timer)
@@ -144,6 +145,7 @@ export default function NewOrderPage() {
         // Emails and phone are not readable from the customers table (see customer_list).
         .select('order_code, split_number, customers(id, name, company, country, state_province, notes, archived)')
         .eq('order_number', splitOfInt)
+        .is('cancelled_code', null)
         .order('split_number', { nullsFirst: true })
       if (cancelled) return
       if (!data || data.length === 0) {
