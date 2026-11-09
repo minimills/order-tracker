@@ -7,7 +7,7 @@ import DOMPurify from 'dompurify'
  * is shown, so no scripts, links, pictures or styles can get in. The database
  * also refuses anything script-like (migration 0021).
  */
-const ALLOWED_TAGS = ['p', 'br', 'strong', 'em', 'b', 'i', 'ul', 'ol', 'li', 'label', 'input', 'div', 'span']
+const ALLOWED_TAGS = ['h2', 'h3', 'p', 'br', 'strong', 'em', 'b', 'i', 'ul', 'ol', 'li', 'label', 'input', 'div', 'span']
 const ALLOWED_ATTR = ['data-type', 'data-checked', 'type', 'checked']
 
 let hooked = false
@@ -24,7 +24,7 @@ function purifier() {
 
 /** True for notes saved by the editor (HTML), false for old plain-text notes. */
 export function isRichText(text: string | null | undefined) {
-  return !!text && /^\s*<(p|ul|ol|div)[\s>]/i.test(text)
+  return !!text && /^\s*<(p|ul|ol|div|h2|h3)[\s>]/i.test(text)
 }
 
 function escapeHtml(text: string) {

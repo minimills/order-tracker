@@ -8,11 +8,13 @@ export type Company = {
   phone: string
   email: string
   website: string
+  /** Where signed documents (commissioning certificates) are emailed. */
+  office_email: string
   /** A small PNG as a data: URL, or null. */
   logo: string | null
 }
 
-export const EMPTY_COMPANY: Company = { name: 'Belfast Mini Mills', address: '', phone: '', email: '', website: '', logo: null }
+export const EMPTY_COMPANY: Company = { name: 'Belfast Mini Mills', address: '', phone: '', email: '', website: '', office_email: '', logo: null }
 
 export function useCompany() {
   const [company, setCompany] = useState<Company>(EMPTY_COMPANY)

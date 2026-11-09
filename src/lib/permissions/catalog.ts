@@ -30,6 +30,7 @@ export const GROUPS = [
   'Payments',
   'Crating',
   'Boards',
+  'Service',
   'Reports',
   'Agent',
   'Settings',
@@ -88,6 +89,10 @@ const ORDER_COLUMNS: [string, string, string[]?][] = [
   ['orderdate', 'Order date (CSV only)'],
   ['notes', 'Notes (CSV only)'],
   ['archived', 'Archived (CSV only)'],
+  ['training', 'Training needed'],
+  ['technician', 'Technician'],
+  ['service_dates', 'Training dates'],
+  ['service_days', 'Training / travel days'],
 ]
 
 export const CATALOG: PermissionItem[] = [
@@ -132,6 +137,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'orders.board.card.chip_serials', label: 'Serial numbers when hovering over or tapping a chip', levels: V, requires: 'orders.board.card.machines' },
       { key: 'orders.board.card.built', label: 'Machines built (2/3 ready)', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.ship_date', label: 'Ship date', levels: V, requires: 'orders.board' },
+      { key: 'orders.board.card.service', label: 'Training dates and technician', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.deadline', label: 'Next department deadline (amber when close, red when missed)', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.badge_voltage', label: 'Badge: voltage unknown', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.badge_payment', label: 'Badge: payment overdue / due soon', levels: V, requires: 'orders.board', needs: ['payments'] },
@@ -226,6 +232,14 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.field.freight_type', label: 'Freight type', levels: VE, db: true },
       { key: 'order.field.order_date', label: 'Order date', levels: V },
       { key: 'order.field.currency', label: 'Currency', levels: VE, db: true },
+    ],
+    'Service section': [
+      { key: 'order.section.service', label: 'Service section (on-site training and commissioning plan)', levels: V, requires: 'order.page' },
+      { key: 'order.field.training_needed', label: 'Training needed', levels: VE, requires: 'order.section.service', db: true },
+      { key: 'order.field.training_days', label: 'On-site training days', levels: VE, requires: 'order.section.service', db: true },
+      { key: 'order.field.travel_days', label: 'Travel days', levels: VE, requires: 'order.section.service', db: true },
+      { key: 'order.field.technician', label: 'Assigned technician', levels: VE, requires: 'order.section.service', db: true },
+      { key: 'order.field.service_dates', label: 'Planned start and end dates', levels: VE, requires: 'order.section.service', db: true },
     ],
     'Money and notes': [
       { key: 'order.field.order_total', label: 'Order total (everywhere in the app)', levels: VE, db: true },
@@ -329,6 +343,33 @@ export const CATALOG: PermissionItem[] = [
       { key: 'notifications.bell', label: 'Notifications bell in the top bar (board messages)', levels: V },
     ],
   }),
+  ...group('Service', {
+    Page: [
+      { key: 'service', label: 'Service page (on-site training and commissioning)', levels: V, page: true, db: true },
+      { key: 'service.filters', label: 'Search and “Only mine”', levels: V, requires: 'service' },
+      { key: 'service.list.in_progress', label: 'List: in progress', levels: V, requires: 'service' },
+      { key: 'service.list.upcoming', label: 'List: upcoming', levels: V, requires: 'service' },
+      { key: 'service.list.completed', label: 'List: completed', levels: V, requires: 'service' },
+    ],
+    'Service log': [
+      { key: 'service.log', label: 'Day log and timeline (edit: add and change days, machines worked on, notes)', levels: VE, requires: 'service', db: true },
+      { key: 'service.log.by_machine', label: 'Notes per machine across all days', levels: V, requires: 'service.log' },
+      { key: 'service.log.archive', label: 'Archive a day', levels: E, requires: 'service.log', db: true },
+      { key: 'service.photos', label: 'Photos (available in a future update)', levels: V, requires: 'service.log' },
+    ],
+    'Commissioning certificate': [
+      { key: 'service.certificate', label: 'See certificates', levels: V, requires: 'service', db: true },
+      { key: 'service.certificate.create', label: 'Create a certificate for an order', levels: E, requires: 'service.certificate', db: true },
+      { key: 'service.certificate.edit_text', label: 'Change the text of one certificate (not the template)', levels: E, requires: 'service.certificate', db: true },
+      { key: 'service.certificate.machines', label: 'Remove, restore and add machine rows', levels: E, requires: 'service.certificate', db: true },
+      { key: 'service.certificate.details', label: 'Change start and end dates, site address, technician name', levels: VE, requires: 'service.certificate', db: true },
+      { key: 'service.certificate.sign', label: 'Sign (technician and customer, on screen)', levels: E, requires: 'service.certificate', db: true },
+      { key: 'service.certificate.pdf', label: 'Download PDF', levels: V, requires: 'service.certificate' },
+      { key: 'service.certificate.email', label: 'Email the signed certificate (preview, Send, Resend, sent history)', levels: VE, requires: 'service.certificate', db: true },
+      { key: 'service.certificate.correct', label: 'Create a corrected version of a signed certificate', levels: E, requires: 'service.certificate', db: true },
+    ],
+  }),
+
   ...group('Reports', {
     'Department delays': [
       { key: 'reports.department_delays', label: 'Department delays report (on-time %, days late per department)', levels: V, page: true, db: true },
@@ -381,6 +422,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.machine_types', label: 'Machine types', levels: E, db: true },
       { key: 'admin.dropdowns', label: 'Dropdown lists', levels: E, db: true },
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
+      { key: 'admin.templates', label: 'Templates (commissioning certificate text)', levels: E, db: true },
       { key: 'admin.build_checklists', label: 'Build checklists (parts and tasks per machine type and step)', levels: E, db: true },
       { key: 'admin.production', label: 'Production boards (default stages and their departments, office, colour)', levels: E, db: true },
       { key: 'admin.stages', label: 'Stage names (rename what people see, for example “Ready / testing”)', levels: E, db: true },

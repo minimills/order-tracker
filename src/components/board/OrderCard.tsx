@@ -10,6 +10,7 @@ import Can from '../Can'
 import { badgeClass, orderBadges, type Badge } from './badges'
 import MachineChips, { type ChipMachine } from './MachineChips'
 import { DEADLINE_TONE, STEP_LABEL, type PromisedItem } from '../../lib/schedule'
+import { serviceDates, type ServiceInfo } from '../../lib/service'
 
 type Props = {
   order: OrderSummaryRow
@@ -17,6 +18,8 @@ type Props = {
   machines: ChipMachine[]
   /** The next promised department deadline (amber = close, red = missed). */
   deadline?: PromisedItem | null
+  /** On-site training plan (technician and dates). */
+  service?: ServiceInfo | null
   canMoveUp: boolean
   canMoveDown: boolean
   onMoveUp: () => void
@@ -131,6 +134,15 @@ export default function OrderCard(props: Props) {
               {props.deadline.state === 'missed' ? 'Missed: ' : 'Next: '}
               {STEP_LABEL[props.deadline.step]} {showDate(props.deadline.due, 'MMM d')}
             </span>
+          </div>
+        </Can>
+      )}
+
+      {props.service && (props.service.training_needed || props.service.technician_email) && (
+        <Can permission="orders.board.card.service">
+          <div className="mt-1 text-xs text-slate-600">
+            Training: {serviceDates(props.service.service_start, props.service.service_end) || 'dates not set'}
+            {props.service.technician_name ? ` · ${props.service.technician_name}` : ''}
           </div>
         </Can>
       )}

@@ -11,11 +11,11 @@ const toolbarButton = (active: boolean) =>
 
 /** The editor itself (loaded only when a note box is shown). */
 /* @layout-helper */
-export default function RichTextEditorImpl({ value, onChange, onBlur, disabled = false, placeholder, minHeight = '6rem', label }: RichTextEditorProps) {
+export default function RichTextEditorImpl({ value, onChange, onBlur, disabled = false, placeholder, minHeight = '6rem', label, headings = false }: RichTextEditorProps) {
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: false,
+        heading: headings ? { levels: [2, 3] } : false,
         codeBlock: false,
         code: false,
         blockquote: false,
@@ -56,6 +56,8 @@ export default function RichTextEditorImpl({ value, onChange, onBlur, disabled =
       bullet: e?.isActive('bulletList') ?? false,
       ordered: e?.isActive('orderedList') ?? false,
       task: e?.isActive('taskList') ?? false,
+      h2: e?.isActive('heading', { level: 2 }) ?? false,
+      h3: e?.isActive('heading', { level: 3 }) ?? false,
       empty: e?.isEmpty ?? true,
     }),
   })
@@ -76,6 +78,17 @@ export default function RichTextEditorImpl({ value, onChange, onBlur, disabled =
           <button type="button" title="Italic (Ctrl+I)" aria-pressed={state?.italic} className={`${toolbarButton(!!state?.italic)} italic`} onMouseDown={run(() => editor.chain().focus().toggleItalic().run())}>
             I
           </button>
+          {headings && (
+            <>
+              <span className="mx-1 w-px bg-slate-200" aria-hidden="true" />
+              <button type="button" title="Heading" aria-pressed={state?.h2} className={`${toolbarButton(!!state?.h2)} font-semibold`} onMouseDown={run(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}>
+                Heading
+              </button>
+              <button type="button" title="Subheading" aria-pressed={state?.h3} className={toolbarButton(!!state?.h3)} onMouseDown={run(() => editor.chain().focus().toggleHeading({ level: 3 }).run())}>
+                Subheading
+              </button>
+            </>
+          )}
           <span className="mx-1 w-px bg-slate-200" aria-hidden="true" />
           <button type="button" title="Bullet list" aria-pressed={state?.bullet} className={toolbarButton(!!state?.bullet)} onMouseDown={run(() => editor.chain().focus().toggleBulletList().run())}>
             Bullets

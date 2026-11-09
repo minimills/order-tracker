@@ -17,6 +17,10 @@
 //   resend      – send an email from the log again ({ id })                   (admin.email_log)
 //   push_key    – the public key phones need to subscribe                     (anyone signed in)
 //   test_push   – send a test push to my own devices                          (settings.push)
+//   certificate_preview – who a signed commissioning certificate goes to, and the email
+//                 ({ certificate_id })                                     (service.certificate.email)
+//   certificate_send    – email it with the PDF made by the app attached
+//                 ({ certificate_id, pdf_base64, file_name })              (service.certificate.email)
 //
 // Channels: CHANNEL_SENDERS below has one sender per channel ("email", "push").
 // A later SMS channel = a row in notification_channels + one more sender here.
@@ -62,7 +66,7 @@ const LOGO_CID = 'logo@order-tracker'
 // ---------------------------------------------------------------------------
 // The email layout: letterhead, heading, the updates, a button, footer.
 // ---------------------------------------------------------------------------
-type Company = { name?: string; address?: string; phone?: string; email?: string; website?: string; logo?: string }
+type Company = { name?: string; address?: string; phone?: string; email?: string; website?: string; logo?: string; office_email?: string }
 type Note = { id: string; kind: string; title: string; body: string | null; link: string | null; created_at: string }
 
 const esc = (s: unknown) =>
@@ -78,7 +82,8 @@ export function buttonLabel(link: string | null) {
   return 'Open the Order Tracker'
 }
 
-export function layout(o: { company: Company; appUrl: string; heading: string; intro?: string; notes: Note[]; link: string | null; footerNote: string }) {
+export function layout(o: { company: Company; appUrl: string; heading: string; intro?: string; notes: Note[]; link: string | null; footerNote: string; button?: boolean }) {
+  const button = o.button ?? true
   const c = o.company
   const name = c.name || 'Belfast Mini Mills'
   const url = o.link ? `${o.appUrl}/#${o.link}` : o.appUrl
@@ -102,7 +107,7 @@ export function layout(o: { company: Company; appUrl: string; heading: string; i
       <h1 style="font-size:18px;margin:0 0 8px;color:#0f172a">${esc(o.heading)}</h1>
       ${o.intro ? `<p style="margin:0 0 8px;color:#334155">${esc(o.intro)}</p>` : ''}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>
-      <p style="margin:20px 0 4px"><a href="${esc(url)}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600">${esc(buttonLabel(o.link))}</a></p>
+      ${button ? '' : '<!--'}<p style="margin:20px 0 4px"><a href="${esc(url)}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600">${esc(buttonLabel(o.link))}</a></p>${button ? '' : '-->'}
     </td></tr>
     <tr><td style="padding:14px 24px;border-top:1px solid #e2e8f0;color:#64748b;font-size:12px">${esc(o.footerNote)}</td></tr>
   </table></td></tr></table></body></html>`
@@ -115,7 +120,7 @@ export function layout(o: { company: Company; appUrl: string; heading: string; i
     '',
     ...o.notes.flatMap((n) => [`- ${n.title}${n.body ? `: ${n.body}` : ''} (${halifax(n.created_at)})`]),
     '',
-    `${buttonLabel(o.link)}: ${url}`,
+    button ? `${buttonLabel(o.link)}: ${url}` : '',
     '',
     o.footerNote,
   ].join('\n')
@@ -195,13 +200,13 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   }
 
   /** Sends one email, saves the Sent copy, writes the email log. */
-  const deliver = async (o: { to: string; subject: string; html: string; text: string; kind: string; notificationIds?: string[]; resendOf?: string; company: Company }) => {
+  const deliver = async (o: { to: string; subject: string; html: string; text: string; kind: string; notificationIds?: string[]; resendOf?: string; company: Company; attachments?: Json[] }) => {
     let status: 'sent' | 'failed' = 'sent'
     let error: string | null = null
     let saved: boolean | null = null
     try {
       if (!mailReady) throw new Error('The mailbox settings (SMTP_HOST, SMTP_USER, SMTP_PASSWORD) are not set in Supabase.')
-      const { raw } = await deps.sendMail({ from, to: o.to, subject: o.subject, html: o.html, text: o.text, attachments: logoAttachment(o.company) })
+      const { raw } = await deps.sendMail({ from, to: o.to, subject: o.subject, html: o.html, text: o.text, attachments: [...logoAttachment(o.company), ...(o.attachments ?? [])] })
       if (saveCopy) {
         try {
           await deps.saveSent(raw)
@@ -405,6 +410,57 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       const company = await loadCompany()
       const r = await deliver({ to: old.to_email, subject: old.subject, html: old.html ?? '', text: old.body_text ?? '', kind: 'resend', resendOf: old.id, notificationIds: old.notification_ids, company })
       return r.status === 'sent' ? reply(200, { ok: true, message: `Email sent again to ${old.to_email}.` }) : reply(502, { error: `The email could not be sent: ${r.error}` })
+    }
+    case 'certificate_preview':
+    case 'certificate_send': {
+      if (!(await callerCan('has_perm', { p_key: 'service.certificate.email', p_level: 'edit' }))) {
+        return reply(403, { error: 'You do not have permission to email certificates.' })
+      }
+      const id = String(body.certificate_id ?? '')
+      const { data: cert } = await db
+        .from('service_certificates')
+        .select('id, order_id, version, status, title, tech_email, tech_name, customer_name, customer_title, locked_at, info')
+        .eq('id', id)
+        .maybeSingle()
+      if (!cert) return reply(404, { error: 'That certificate was not found.' })
+      if (cert.status !== 'signed') return reply(409, { error: 'The certificate can be emailed once both the technician and the customer have signed.' })
+      const { data: order } = await db.from('orders').select('order_code, customers(name, emails)').eq('id', cert.order_id).maybeSingle()
+      const company = await loadCompany()
+      const office = (company.office_email || company.email || '').trim().toLowerCase()
+      const customerEmails: string[] = ((order?.customers?.emails as string[] | null) ?? []).map((e) => e.trim().toLowerCase())
+      const tech = String(cert.tech_email ?? '').trim().toLowerCase()
+      const to = [...new Set([tech, office, ...customerEmails].filter((e) => EMAIL.test(e)))]
+      const warnings = [
+        !EMAIL.test(tech) ? 'No technician email: assign a technician on the order.' : '',
+        !EMAIL.test(office) ? 'No office email: add it in Admin → Company Details.' : '',
+        !customerEmails.some((e) => EMAIL.test(e)) ? 'The customer on this order has no email address.' : '',
+      ].filter(Boolean)
+      const code = String(order?.order_code ?? cert.info?.order_number ?? '')
+      const customer = String(order?.customers?.name ?? cert.info?.customer_name ?? '')
+      const subject = `${cert.title} – Order ${code}${customer ? ` – ${customer}` : ''}`
+      const fileName = String(body.file_name || `Commissioning certificate - order ${code}.pdf`).replace(/[\\/:*?"<>|]+/g, '-')
+      const { html, text } = layout({
+        company, appUrl, heading: cert.title, button: false,
+        intro: `Please find attached the signed ${String(cert.title).toLowerCase()} for order ${code}${customer ? ` (${customer})` : ''}.`,
+        notes: [{
+          id: cert.id, kind: 'certificate', title: 'Signed',
+          body: `Technician: ${cert.tech_name ?? ''}. Customer: ${cert.customer_name ?? ''}${cert.customer_title ? `, ${cert.customer_title}` : ''}. Attachment: ${fileName}`,
+          link: null, created_at: cert.locked_at ?? now().toISOString(),
+        }],
+        link: null, footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.${company.email ? ` Questions: ${company.email}` : ''}`,
+      })
+      if (action === 'certificate_preview') return reply(200, { ok: true, to, subject, html, text, warnings, file_name: fileName })
+      if (!to.length) return reply(400, { error: 'There is no one to send it to. ' + warnings.join(' ') })
+      const pdf = String(body.pdf_base64 ?? '')
+      if (!pdf.startsWith('JVBER') || pdf.length > 7_000_000) return reply(400, { error: 'The PDF could not be attached. Download it to check it, then try again.' })
+      const r = await deliver({
+        to: to.join(', '), subject, html, text, kind: 'certificate', company,
+        attachments: [{ filename: fileName, content: pdf, encoding: 'base64', contentType: 'application/pdf' }],
+      })
+      await db.from('certificate_sends').insert({ certificate_id: cert.id, to_emails: to, status: r.status, error: r.error, email_log_id: r.logId, sent_by: callerEmail })
+      return r.status === 'sent'
+        ? reply(200, { ok: true, to, message: `Certificate sent to ${to.join(', ')}.` })
+        : reply(502, { error: `The certificate could not be sent: ${r.error}` })
     }
     case 'push_key': {
       if (!(await callerCan('is_allowed_user', {}))) return reply(403, { error: 'Please sign in again.' })
