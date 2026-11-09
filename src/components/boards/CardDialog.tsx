@@ -33,10 +33,11 @@ import RichText from '../RichText'
 import RichTextEditor from '../RichTextEditor'
 import { buttonClass, inputClass, narrowInputClass, secondaryButtonClass } from '../form'
 import LinkPicker from './LinkPicker'
+import ProductionPanel from './ProductionPanel'
 import { confirmAction } from '../../lib/confirm'
 import Icon from '../Icon'
 
-type Props = { cardId: string; data: BoardData; level: BoardLevel; onClose: () => void; onChanged: () => void }
+type Props = { cardId: string; data: BoardData; level: BoardLevel; onClose: () => void; onChanged: () => void; onOpenCard?: (id: string) => void }
 
 const small = 'rounded border border-slate-300 bg-white px-2 py-0.5 text-xs hover:bg-slate-50 disabled:opacity-50'
 
@@ -54,7 +55,7 @@ function Block({ title, children, aside }: { title: string; children: ReactNode;
 }
 
 /** The card window: everything about one card. Every change saves at once. */
-export default function CardDialog({ cardId, data, level, onClose, onChanged }: Props) {
+export default function CardDialog({ cardId, data, level, onClose, onChanged, onOpenCard }: Props) {
   const { can } = usePermissions()
   const { session } = useAuth()
   const me = session?.user.email?.toLowerCase() ?? ''
@@ -73,7 +74,10 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
   const [newItem, setNewItem] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
 
-  const lists = data.checklists.filter((l) => l.card_id === cardId)
+  const thisCard = data.cards.find((c) => c.id === cardId)
+  const lists = data.checklists
+    .filter((l) => l.card_id === cardId)
+    .sort((a, b) => Number(b.stage_id === thisCard?.stage_id) - Number(a.stage_id === thisCard?.stage_id) || a.sort_order - b.sort_order)
   const items = data.items.filter((i) => lists.some((l) => l.id === i.checklist_id))
 
   const loadDetails = useCallback(async () => {
@@ -226,6 +230,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
 
       <div className="mt-4 grid gap-5 md:grid-cols-[1fr_15rem]">
         <div className="min-w-0 space-y-4">
+          {card.card_kind !== 'task' && <ProductionPanel card={card} data={data} onOpenCard={onOpenCard} />}
           {/* ---------- Labels ---------- */}
           <Can permission="boards.card.labels">
             <Block title="Labels">
@@ -607,7 +612,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
           </Can>
 
           <Can permission="boards.card.timing">
-            <Block title="Time">
+            <Block title={card.card_kind === 'machine' ? 'Time in This Stage' : 'Time'}>
               <div className="space-y-1 text-sm">
                 {card.started_at ? (
                   <p className="text-xs text-slate-600">
@@ -635,12 +640,12 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged }: 
                   <div className="mt-2 flex flex-wrap gap-2">
                     {!card.started_at && (
                       <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => updateCard({ started_at: new Date().toISOString() })}>
-                        Start
+                        {card.card_kind === 'machine' ? 'Start Stage' : 'Start'}
                       </button>
                     )}
                     {card.started_at && !card.finished_at && (
                       <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => updateCard({ finished_at: new Date().toISOString() })}>
-                        Finish
+                        {card.card_kind === 'machine' ? 'Finish Stage' : 'Finish'}
                       </button>
                     )}
                     {card.started_at && (

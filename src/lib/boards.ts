@@ -17,12 +17,16 @@ export type Board = {
   owner_email: string | null
   purpose: string
   template_id: string | null
+  /** Production boards: the order this board is for. */
+  order_id: string | null
   checklist_presets: ChecklistPreset[]
   due_soon_days: number
   archived: boolean
   created_at: string
 }
-export type Stage = { id: string; board_id: string; name: string; sort_order: number; archived: boolean }
+/** What a production stage means (deadline, build checklist, step times). */
+export type ProductionStep = 'fabrication' | 'pickup' | 'sandblasting' | 'powder_coating' | 'assembly' | 'final_check' | 'crating' | 'shipping' | 'other'
+export type Stage = { id: string; board_id: string; name: string; sort_order: number; archived: boolean; step: ProductionStep | null; department_id: string | null }
 export type Label = { id: string; board_id: string; name: string; colour: string; sort_order: number; archived: boolean }
 export type Card = {
   id: string
@@ -42,8 +46,11 @@ export type Card = {
   archived: boolean
   created_at: string
   created_by_name: string | null
+  /** task = an ordinary card; machine = one machine on a production board; leftover = its unfinished items. */
+  card_kind: 'task' | 'machine' | 'leftover'
+  leftover_of: string | null
 }
-export type Checklist = { id: string; card_id: string; title: string; sort_order: number }
+export type Checklist = { id: string; card_id: string; title: string; sort_order: number; stage_id: string | null; merge_into: string | null }
 export type ChecklistItem = {
   id: string
   checklist_id: string
@@ -53,6 +60,7 @@ export type ChecklistItem = {
   started_by_name: string | null
   finished_at: string | null
   finished_by_name: string | null
+  template_item_id?: string | null
 }
 export type Person = { email: string; name: string }
 export type ShareType = 'user' | 'group' | 'department' | 'everyone'
@@ -200,6 +208,10 @@ export function eventText(e: CardEvent) {
     case 'task_done': return `Finished “${d.task}”${d.seconds != null ? ` (took ${formatDuration(Number(d.seconds))})` : ''}`
     case 'task_reopened': return `Marked “${d.task}” incomplete`
     case 'comment': return `Added a comment: “${d.excerpt}”`
+    case 'leftover_split': return `${d.count} unfinished item${Number(d.count) === 1 ? '' : 's'} moved to a leftover card in ${d.stage}`
+    case 'leftover_created': return `Leftover card created for ${d.machine} (${d.stage})`
+    case 'leftover_merged': return `${d.count} leftover item${Number(d.count) === 1 ? '' : 's'} merged back as completed (${d.reason})`
+    case 'stage_time': return `Left ${d.stage}${d.auto_started || d.auto_finished ? ' (times filled in automatically)' : ''}`
     default: return e.kind
   }
 }
@@ -238,8 +250,17 @@ export async function loadBoard(id: string, opts: { comments: boolean }) {
         )
       ).flatMap((r) => (r.data as ChecklistItem[]) ?? [])
     : []
+  // Production boards: each machine's serial, type and final check progress.
+  const machineIds = [...new Set(((cards.data as Card[]) ?? []).map((c) => c.machine_id).filter(Boolean))] as string[]
+  const board = b.data as Board | null
+  const machines: ProductionMachine[] =
+    board?.purpose === 'production' && machineIds.length
+      ? (((await supabase.from('order_machine_status').select('id, serial_number, machine_type, needs_crate, checklist_status, checklist_total, checklist_completed').in('id', machineIds)).data ??
+          []) as ProductionMachine[])
+      : []
   return {
-    board: b.data as Board | null,
+    board,
+    machines,
     level: (Number(lvl.data ?? 0) as BoardLevel),
     stages: (st.data as Stage[]) ?? [],
     labels: (lb.data as Label[]) ?? [],
@@ -253,3 +274,32 @@ export async function loadBoard(id: string, opts: { comments: boolean }) {
   }
 }
 export type BoardData = Awaited<ReturnType<typeof loadBoard>>
+
+export type ProductionMachine = {
+  id: string
+  serial_number: string | null
+  machine_type: string
+  needs_crate: boolean | null
+  checklist_status: 'not_started' | 'in_progress' | 'signed' | null
+  checklist_total: number | null
+  checklist_completed: number | null
+}
+export type StageTime = {
+  id: string
+  stage_name: string
+  step: string | null
+  entered_at: string
+  left_at: string | null
+  started_at: string | null
+  started_by_name: string | null
+  finished_at: string | null
+  finished_by_name: string | null
+  auto_started: boolean
+  auto_finished: boolean
+}
+
+/** The checklists of a card that belong to its current stage (production), or all of them. */
+export function currentStageItems(data: BoardData, card: Card) {
+  const lists = data.checklists.filter((l) => l.card_id === card.id && (card.card_kind !== 'machine' || l.stage_id === card.stage_id))
+  return data.items.filter((i) => lists.some((l) => l.id === i.checklist_id))
+}

@@ -210,6 +210,7 @@ export const CATALOG: PermissionItem[] = [
     Machines: [
       { key: 'order.section.machines', label: 'Machines section', levels: V, requires: 'order.page' },
       { key: 'order.machines.built', label: 'Built status per machine (view / mark as built)', levels: VE, requires: 'order.section.machines', db: true },
+      { key: 'order.production_link', label: 'Links to the production board and each machine’s production card', levels: V, requires: 'order.section.machines', needs: ['boards'] },
       { key: 'order.machines.checklist', label: 'Final check status per machine (and the “Final check” button with “Final check: see”)', levels: V, requires: 'order.section.machines', needs: ['checklist'] },
       { key: 'order.machines.add', label: '“Add Machines” button', levels: E, requires: 'order.section.machines', db: true },
       { key: 'order.machines.crate_flag', label: '“Crate” setting per machine (only crated machines get a crating deadline)', levels: VE, requires: 'order.section.machines', db: true },
@@ -320,6 +321,10 @@ export const CATALOG: PermissionItem[] = [
       { key: 'boards.card.archive', label: 'Archive a card', levels: E, requires: 'boards.card.open', db: true },
       { key: 'boards.card.attachments', label: 'Photos and files on cards (coming later)', levels: V, requires: 'boards.card.open' },
     ],
+    Production: [
+      { key: 'production.create_board', label: 'Create a production board for an order by hand (boards are made automatically when an order is confirmed)', levels: E, requires: 'boards', db: true },
+      { key: 'production.stage_times', label: 'Time per stage on machine cards (when each stage started and finished)', levels: V, requires: 'boards.card.open', db: true },
+    ],
     Notifications: [
       { key: 'notifications.bell', label: 'Notifications bell in the top bar (board messages)', levels: V },
     ],
@@ -329,6 +334,12 @@ export const CATALOG: PermissionItem[] = [
       { key: 'reports.department_delays', label: 'Department delays report (on-time %, days late per department)', levels: V, page: true, db: true },
       { key: 'reports.department_delays.by_month', label: 'Table: by month', levels: V, requires: 'reports.department_delays' },
       { key: 'reports.department_delays.period', label: 'Choose the period (last 3 / 6 / 12 months, all time)', levels: V, requires: 'reports.department_delays' },
+    ],
+    'Build times': [
+      { key: 'reports.build_times', label: 'Build times report (average time per machine type and step)', levels: V, page: true, db: true },
+      { key: 'reports.build_times.tasks', label: 'Table: time per build checklist task', levels: V, requires: 'reports.build_times', db: true },
+      { key: 'reports.build_times.filters', label: 'Machine type and period filters', levels: V, requires: 'reports.build_times' },
+      { key: 'reports.build_times.trend', label: 'Table: trend by month', levels: V, requires: 'reports.build_times' },
     ],
     'Crating report': [
 
@@ -370,6 +381,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.machine_types', label: 'Machine types', levels: E, db: true },
       { key: 'admin.dropdowns', label: 'Dropdown lists', levels: E, db: true },
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
+      { key: 'admin.build_checklists', label: 'Build checklists (parts and tasks per machine type and step)', levels: E, db: true },
+      { key: 'admin.production', label: 'Production boards (default stages and their departments, office, colour)', levels: E, db: true },
       { key: 'admin.stages', label: 'Stage names (rename what people see, for example “Ready / testing”)', levels: E, db: true },
       { key: 'admin.order_defaults', label: 'Order defaults (currency, voltage, crate, payment due days)', levels: E, db: true },
       { key: 'admin.email', label: 'Email setup (mailbox check, test email, automatic sending, daily summary time)', levels: E, db: true },

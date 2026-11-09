@@ -86,6 +86,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0024_user_logins.sql` | Admin → Users makes real logins (with the `admin-users` Edge Function, see below); sign-in page checks access first |
 | `0025_wording.sql` | Professional wording for two final check messages (no change in behaviour) |
 | `0026_notification_channels.sql` | Notifications by email, phone push or in the app (each person chooses), daily summary, email log, automatic sending every minute |
+| `0027_production_flow.sql` | Production board per order (stages per department, one card per machine), build checklists, leftover cards, stage times, build-time reports |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
