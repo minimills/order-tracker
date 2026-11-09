@@ -13,10 +13,13 @@ import { richTextToPlain } from '../lib/richText'
 import { stageLabel, useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { PAYMENT_STATUSES, STAGES, type OrderSummaryRow } from '../lib/types'
+import { serviceDates, useServiceInfo, type ServiceInfo } from '../lib/service'
 import { useOptionList } from '../lib/useOptionList'
 import SerialNumber from '../components/SerialNumber'
 
 type Value = string | number | null
+/** An order, with its on-site training plan when a service column is shown. */
+type Row = OrderSummaryRow & { service?: ServiceInfo }
 
 type ColumnDef = {
   key: string
@@ -24,9 +27,9 @@ type ColumnDef = {
   permission: string
   label: string
   /** Used for sorting and the CSV file. */
-  value: (o: OrderSummaryRow) => Value
+  value: (o: Row) => Value
   /** How the cell looks on screen (defaults to the value). */
-  render?: (o: OrderSummaryRow) => ReactNode
+  render?: (o: Row) => ReactNode
   align?: 'right'
   /** Shown in the CSV only. */
   csvOnly?: boolean
@@ -40,7 +43,7 @@ const paymentTone: Record<string, string> = {
   'No total': 'text-slate-400',
 }
 
-const money = (n: number | null, o: OrderSummaryRow) => (n === null ? '' : formatMoney(n, o.currency).replace(/^[A-Z]{3}\s?/, ''))
+const money = (n: number | null, o: Row) => (n === null ? '' : formatMoney(n, o.currency).replace(/^[A-Z]{3}\s?/, ''))
 
 const COLUMNS: ColumnDef[] = [
   {
@@ -130,6 +133,24 @@ const COLUMNS: ColumnDef[] = [
       </span>
     ),
   },
+  {
+    key: 'training', permission: 'orders.list.column.training',
+    label: 'Training',
+    value: (o) => (o.service?.training_needed ? 'Needed' : ''),
+  },
+  { key: 'technician', permission: 'orders.list.column.technician', label: 'Technician', value: (o) => o.service?.technician_name ?? null },
+  {
+    key: 'servicedates', permission: 'orders.list.column.service_dates',
+    label: 'Training dates',
+    value: (o) => o.service?.service_start ?? null,
+    render: /* @rendered-inside-can */ (o) => serviceDates(o.service?.service_start ?? null, o.service?.service_end ?? null),
+  },
+  {
+    key: 'servicedays', permission: 'orders.list.column.service_days',
+    label: 'Training / travel days',
+    value: (o) => (o.service && (o.service.training_days !== null || o.service.travel_days !== null) ? `${o.service.training_days ?? 0} / ${o.service.travel_days ?? 0}` : null),
+    align: 'right',
+  },
   { key: 'downamount', permission: 'orders.list.column.downamount', label: 'Down payment', value: (o) => o.down_payment_amount, csvOnly: true },
   { key: 'orderdate', permission: 'orders.list.column.orderdate', label: 'Order date', value: (o) => o.order_date, csvOnly: true },
   { key: 'notes', permission: 'orders.list.column.notes', label: 'Notes', value: (o) => richTextToPlain(o.notes), csvOnly: true },
@@ -188,7 +209,9 @@ export default function OrdersListPage() {
   const canSort = can('orders.list.sort')
   const opensOrders = can('order.page')
   const [params, setParams] = useSearchParams()
-  const [orders, setOrders] = useState<OrderSummaryRow[]>([])
+  const [loaded, setOrders] = useState<Row[]>([])
+  const serviceInfo = useServiceInfo(['orders.list.column.training', 'orders.list.column.technician', 'orders.list.column.service_dates', 'orders.list.column.service_days'].some((k) => can(k)))
+  const orders = useMemo(() => (serviceInfo.size ? loaded.map((o) => ({ ...o, service: serviceInfo.get(o.id) })) : loaded), [loaded, serviceInfo])
   const [loading, setLoading] = useState(true)
   const voltageList = useOptionList('voltage')
 
@@ -203,7 +226,7 @@ export default function OrdersListPage() {
   const load = useCallback(async () => {
     if (!supabase) return
     setLoading(true)
-    const { data, error } = await fetchAll<OrderSummaryRow>(() => {
+    const { data, error } = await fetchAll<Row>(() => {
       let query = supabase!.from('order_summary').select('*').order('id')
       if (!showArchived) query = query.eq('archived', false)
       return query

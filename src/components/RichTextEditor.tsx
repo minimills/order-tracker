@@ -10,6 +10,8 @@ export type RichTextEditorProps = {
   placeholder?: string
   minHeight?: string
   label?: string
+  /** Also offer Heading and Subheading (documents such as certificates). */
+  headings?: boolean
 }
 
 const Impl = lazy(() => import('./RichTextEditorImpl'))

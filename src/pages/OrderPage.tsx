@@ -29,6 +29,7 @@ import RichTextEditor from '../components/RichTextEditor'
 import SerialNumber from '../components/SerialNumber'
 import { confirmAction } from '../lib/confirm'
 import Icon from '../components/Icon'
+import OrderServiceSection from '../components/service/OrderServiceSection'
 
 type Machine = {
   id: string
@@ -686,6 +687,11 @@ export default function OrderPage() {
                     </Can>
                   </dl>
                 </Section>
+              </Can>
+
+              {/* ---------- Service ---------- */}
+              <Can permission="order.section.service">
+                <OrderServiceSection orderId={order.id} />
               </Can>
 
               {/* ---------- Notes ---------- */}

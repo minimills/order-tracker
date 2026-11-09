@@ -11,6 +11,16 @@ body {
 }
 
 /* Notes with formatting (RichText / RichTextEditor). */
+.rich-text h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin: 0.6em 0 0.3em;
+}
+.rich-text h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0.5em 0 0.25em;
+}
 .rich-text p {
   margin: 0.15rem 0;
 }

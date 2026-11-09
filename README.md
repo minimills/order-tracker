@@ -88,6 +88,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0026_notification_channels.sql` | Notifications by email, phone push or in the app (each person chooses), daily summary, email log, automatic sending every minute |
 | `0027_production_flow.sql` | Production board per order (stages per department, one card per machine), build checklists, leftover cards, stage times, build-time reports |
 | `0028_cancel_renumber.sql` | Cancelling an order makes it C-<number> and moves every later order number down by one; the cancelled order's production board is archived |
+| `0029_service.sql` | Service: training fields on orders, service day log, Admin → Templates, commissioning certificates with on-screen signatures and email |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

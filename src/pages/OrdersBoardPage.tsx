@@ -5,6 +5,7 @@ import MoveDialog, { type MoveRequest } from '../components/board/MoveDialog'
 import { ChipLegend, type ChipMachine } from '../components/board/MachineChips'
 import OrderCard from '../components/board/OrderCard'
 import { nextDeadline, orderPromised } from '../lib/schedule'
+import { useServiceInfo } from '../lib/service'
 import { useSchedule } from '../lib/useSchedule'
 import Can from '../components/Can'
 import { secondaryButtonClass } from '../components/form'
@@ -46,6 +47,7 @@ export default function OrdersBoardPage() {
   const schedule = useSchedule(can('orders.board.card.deadline'))
   const label = useStageLabels()
   const [machines, setMachines] = useState<Map<string, ChipMachine[]>>(new Map())
+  const service = useServiceInfo(can('orders.board.card.service'))
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
   const [loading, setLoading] = useState(true)
   const [dragId, setDragId] = useState<string | null>(null)
@@ -248,6 +250,7 @@ export default function OrdersBoardPage() {
                             key={o.id}
                             order={o}
                             machines={machines.get(o.id) ?? []}
+                            service={service.get(o.id) ?? null}
                             deadline={onBoard ? nextDeadline(orderPromised(schedule.promised(o.id), schedule.stepsOf(o.id), schedule.today, schedule.settings)) : null}
                             canMoveUp={canReorder && onBoard && i > 0}
                             canMoveDown={canReorder && onBoard && i < column.orders.length - 1}
