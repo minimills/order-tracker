@@ -34,6 +34,7 @@ import RichTextEditor from '../RichTextEditor'
 import { buttonClass, inputClass, narrowInputClass, secondaryButtonClass } from '../form'
 import LinkPicker from './LinkPicker'
 import ProductionPanel from './ProductionPanel'
+import ServiceCallPanel from './ServiceCallPanel'
 import { confirmAction } from '../../lib/confirm'
 import Icon from '../Icon'
 
@@ -230,7 +231,11 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
 
       <div className="mt-4 grid gap-5 md:grid-cols-[1fr_15rem]">
         <div className="min-w-0 space-y-4">
-          {card.card_kind !== 'task' && <ProductionPanel card={card} data={data} onOpenCard={onOpenCard} />}
+          {card.card_kind === 'service' ? (
+            <ServiceCallPanel call={data.serviceCalls.find((c) => c.card_id === card.id) ?? null} />
+          ) : (
+            card.card_kind !== 'task' && <ProductionPanel card={card} data={data} onOpenCard={onOpenCard} />
+          )}
           {/* ---------- Labels ---------- */}
           <Can permission="boards.card.labels">
             <Block title="Labels">

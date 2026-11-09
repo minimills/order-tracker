@@ -3,7 +3,7 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib'
 import { showDate } from './dates'
 import { cleanRichText } from './richText'
-import { certificateValues, fillPlaceholders, type Certificate, type CompanyInfo } from './service'
+import { certificateValues, documentReference, fillPlaceholders, type Certificate, type CompanyInfo } from './service'
 
 const PAGE = { w: 612, h: 792 } // Letter
 const M = 54 // margin
@@ -66,7 +66,7 @@ export function htmlToBlocks(html: string): Block[] {
 /** Writes the certificate pages; returns the PDF bytes. */
 export async function buildCertificatePdf(c: Certificate, company: CompanyInfo, signatures: { tech: string | null; customer: string | null }, today: string) {
   const pdf = await PDFDocument.create()
-  pdf.setTitle(plain(`${c.title} - order ${c.info.order_number ?? ''}`))
+  pdf.setTitle(plain(`${c.title} - ${documentReference(c)}`))
   pdf.setAuthor(plain(company.name || 'Belfast Mini Mills'))
   const f: Fonts = {
     regular: await pdf.embedFont(StandardFonts.Helvetica),
@@ -79,7 +79,7 @@ export async function buildCertificatePdf(c: Certificate, company: CompanyInfo, 
 
   let page: PDFPage = pdf.addPage([PAGE.w, PAGE.h])
   let y = PAGE.h - M
-  const footer = plain(`${c.title} · Order ${c.info.order_number ?? ''}${c.version > 1 ? ` · Version ${c.version}` : ''}`)
+  const footer = plain(`${c.title} · ${documentReference(c)}${c.version > 1 ? ` · Version ${c.version}` : ''}`)
   const pages: PDFPage[] = [page]
   const newPage = () => {
     page = pdf.addPage([PAGE.w, PAGE.h])

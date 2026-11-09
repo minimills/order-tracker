@@ -89,6 +89,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0027_production_flow.sql` | Production board per order (stages per department, one card per machine), build checklists, leftover cards, stage times, build-time reports |
 | `0028_cancel_renumber.sql` | Cancelling an order makes it C-<number> and moves every later order number down by one; the cancelled order's production board is archived |
 | `0029_service.sql` | Service: training fields on orders, service day log, Admin → Templates, commissioning certificates with on-screen signatures and email |
+| `0030_service_calls_calendar.sql` | Service Calls board, service reports, technician calendar, private phone-calendar link (needs the `calendar-feed` Edge Function) |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

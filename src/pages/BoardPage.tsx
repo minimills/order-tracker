@@ -301,6 +301,7 @@ export default function BoardPage() {
                       people={data.assignees.filter((a) => a.card_id === card.id).map((a) => peopleByEmail.get(a.user_email) ?? { email: a.user_email, name: a.user_email })}
                       items={currentStageItems(data, card)}
                       machine={data.machines.find((m) => m.id === card.machine_id) ?? null}
+                      serviceCall={data.serviceCalls.find((c) => c.card_id === card.id) ?? null}
                       stageStep={stage.step}
                       comments={data.commentCounts[card.id] ?? 0}
                       linkText={[card.order_id, card.customer_id, card.machine_id].map((x) => (x ? links[x] : null)).filter(Boolean).join(' · ') || null}

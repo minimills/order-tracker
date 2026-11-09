@@ -12,6 +12,7 @@ import BuildChecklistsPage from './pages/admin/BuildChecklistsPage'
 import ProductionPage from './pages/admin/ProductionPage'
 import BuildTimesPage from './pages/BuildTimesPage'
 import ServicePage from './pages/ServicePage'
+import CalendarPage from './pages/CalendarPage'
 import ServiceOrderPage from './pages/ServiceOrderPage'
 import CertificatePage from './pages/CertificatePage'
 import TemplatesPage from './pages/admin/TemplatesPage'
@@ -96,6 +97,8 @@ export default function App() {
         <Route path="boards" element={<Page permission="boards"><BoardsPage /></Page>} />
         <Route path="service" element={<Page permission="service"><ServicePage /></Page>} />
         <Route path="service/certificates/:id" element={<Page permission="service.certificate"><CertificatePage /></Page>} />
+        <Route path="service/calendar" element={<Page permission="service.calendar"><CalendarPage /></Page>} />
+        <Route path="service/calls/:callId" element={<Page permission="service.calls"><ServiceOrderPage kind="call" /></Page>} />
         <Route path="service/:orderId" element={<Page permission="service"><ServiceOrderPage /></Page>} />
         <Route path="boards/:id" element={<Page permission="boards"><BoardPage /></Page>} />
         <Route path="reports/department-delays" element={<Page permission="reports.department_delays"><DepartmentDelaysPage /></Page>} />

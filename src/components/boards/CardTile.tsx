@@ -16,6 +16,7 @@ import {
   type ProductionStep,
 } from '../../lib/boards'
 import SerialNumber from '../SerialNumber'
+import { serviceDates, type ServiceCallInfo } from '../../lib/service'
 import Can from '../Can'
 
 type Props = {
@@ -38,6 +39,8 @@ type Props = {
   /** Production boards: the machine on a machine card, and what the card's stage is. */
   machine?: ProductionMachine | null
   stageStep?: ProductionStep | null
+  /** Service Calls board: the call behind this card. */
+  serviceCall?: ServiceCallInfo | null
 }
 
 /** A card on the board: the whole card opens it; drag it to move it. */
@@ -90,6 +93,34 @@ export default function CardTile(p: Props) {
         </div>
       ) : (
         <div className="font-medium break-words">{card.title}</div>
+      )}
+      {card.card_kind === 'service' && p.serviceCall && (
+        <Can permission="service.calls">
+          <div className="mt-1 space-y-1 text-xs text-slate-600">
+            <div className="flex flex-wrap items-center gap-1">
+              <span className="rounded bg-slate-100 px-1.5 py-0.5 font-medium text-slate-700">{p.serviceCall.call_code}</span>
+              {p.serviceCall.customer_name ? (
+                <span className="rounded bg-violet-100 px-1.5 py-0.5 font-medium text-violet-900">{p.serviceCall.customer_name}</span>
+              ) : (
+                <span className="text-amber-800">No customer yet</span>
+              )}
+            </div>
+            {p.serviceCall.machines.length > 0 && (
+              <div className="flex flex-wrap gap-x-2">
+                {p.serviceCall.machines.map((m) => (
+                  <span key={m.machine_id}>
+                    {m.machine} {m.serial && <SerialNumber serial={m.serial} />}
+                  </span>
+                ))}
+              </div>
+            )}
+            {(p.serviceCall.technician_name || p.serviceCall.planned_start) && (
+              <div>
+                {[p.serviceCall.technician_name, serviceDates(p.serviceCall.planned_start, p.serviceCall.planned_end)].filter(Boolean).join(' · ')}
+              </div>
+            )}
+          </div>
+        </Can>
       )}
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-600 empty:hidden">
         <Can permission="boards.card.due">

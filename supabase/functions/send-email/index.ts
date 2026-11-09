@@ -17,7 +17,7 @@
 //   resend      – send an email from the log again ({ id })                   (admin.email_log)
 //   push_key    – the public key phones need to subscribe                     (anyone signed in)
 //   test_push   – send a test push to my own devices                          (settings.push)
-//   certificate_preview – who a signed commissioning certificate goes to, and the email
+//   certificate_preview – who a signed commissioning certificate or service report goes to, and the email
 //                 ({ certificate_id })                                     (service.certificate.email)
 //   certificate_send    – email it with the PDF made by the app attached
 //                 ({ certificate_id, pdf_base64, file_name })              (service.certificate.email)
@@ -419,29 +419,34 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       const id = String(body.certificate_id ?? '')
       const { data: cert } = await db
         .from('service_certificates')
-        .select('id, order_id, version, status, title, tech_email, tech_name, customer_name, customer_title, locked_at, info')
+        .select('id, order_id, service_call_id, kind, version, status, title, tech_email, tech_name, customer_name, customer_title, locked_at, info')
         .eq('id', id)
         .maybeSingle()
       if (!cert) return reply(404, { error: 'That certificate was not found.' })
-      if (cert.status !== 'signed') return reply(409, { error: 'The certificate can be emailed once both the technician and the customer have signed.' })
-      const { data: order } = await db.from('orders').select('order_code, customers(name, emails)').eq('id', cert.order_id).maybeSingle()
+      const what = cert.kind === 'service_report' ? 'service report' : 'certificate'
+      if (cert.status !== 'signed') return reply(409, { error: `The ${what} can be emailed once both the technician and the customer have signed.` })
+      // An order (commissioning certificate) or a service call (service report): its customer gets it.
+      const { data: order } = cert.order_id
+        ? await db.from('orders').select('order_code, customers(name, emails)').eq('id', cert.order_id).maybeSingle()
+        : await db.from('service_calls').select('call_number, customers(name, emails)').eq('card_id', cert.service_call_id).maybeSingle()
       const company = await loadCompany()
       const office = (company.office_email || company.email || '').trim().toLowerCase()
       const customerEmails: string[] = ((order?.customers?.emails as string[] | null) ?? []).map((e) => e.trim().toLowerCase())
       const tech = String(cert.tech_email ?? '').trim().toLowerCase()
       const to = [...new Set([tech, office, ...customerEmails].filter((e) => EMAIL.test(e)))]
       const warnings = [
-        !EMAIL.test(tech) ? 'No technician email: assign a technician on the order.' : '',
+        !EMAIL.test(tech) ? `No technician email: assign a technician on the ${cert.order_id ? 'order' : 'service call'}.` : '',
         !EMAIL.test(office) ? 'No office email: add it in Admin → Company Details.' : '',
-        !customerEmails.some((e) => EMAIL.test(e)) ? 'The customer on this order has no email address.' : '',
+        !customerEmails.some((e) => EMAIL.test(e)) ? `The customer on this ${cert.order_id ? 'order' : 'service call'} has no email address.` : '',
       ].filter(Boolean)
-      const code = String(order?.order_code ?? cert.info?.order_number ?? '')
+      const code = String(order?.order_code ?? (order?.call_number ? `S-${order.call_number}` : '') ?? cert.info?.order_number ?? '')
+      const ref = cert.order_id ? `Order ${code}` : `Service call ${code}`
       const customer = String(order?.customers?.name ?? cert.info?.customer_name ?? '')
-      const subject = `${cert.title} – Order ${code}${customer ? ` – ${customer}` : ''}`
-      const fileName = String(body.file_name || `Commissioning certificate - order ${code}.pdf`).replace(/[\\/:*?"<>|]+/g, '-')
+      const subject = `${cert.title} – ${ref}${customer ? ` – ${customer}` : ''}`
+      const fileName = String(body.file_name || `${cert.title} - ${ref}.pdf`).replace(/[\\/:*?"<>|]+/g, '-')
       const { html, text } = layout({
         company, appUrl, heading: cert.title, button: false,
-        intro: `Please find attached the signed ${String(cert.title).toLowerCase()} for order ${code}${customer ? ` (${customer})` : ''}.`,
+        intro: `Please find attached the signed ${String(cert.title).toLowerCase()} for ${cert.order_id ? `order ${code}` : `service call ${code}`}${customer ? ` (${customer})` : ''}.`,
         notes: [{
           id: cert.id, kind: 'certificate', title: 'Signed',
           body: `Technician: ${cert.tech_name ?? ''}. Customer: ${cert.customer_name ?? ''}${cert.customer_title ? `, ${cert.customer_title}` : ''}. Attachment: ${fileName}`,
@@ -459,8 +464,8 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       })
       await db.from('certificate_sends').insert({ certificate_id: cert.id, to_emails: to, status: r.status, error: r.error, email_log_id: r.logId, sent_by: callerEmail })
       return r.status === 'sent'
-        ? reply(200, { ok: true, to, message: `Certificate sent to ${to.join(', ')}.` })
-        : reply(502, { error: `The certificate could not be sent: ${r.error}` })
+        ? reply(200, { ok: true, to, message: `${what === 'certificate' ? 'Certificate' : 'Service report'} sent to ${to.join(', ')}.` })
+        : reply(502, { error: `The ${what} could not be sent: ${r.error}` })
     }
     case 'push_key': {
       if (!(await callerCan('is_allowed_user', {}))) return reply(403, { error: 'Please sign in again.' })

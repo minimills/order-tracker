@@ -72,7 +72,9 @@ export const needsService = (s: ServiceInfo) =>
 export type EntryMachine = { machine_id: string; notes: string }
 export type EntryDraft = {
   client_id: string
-  order_id: string
+  /** The order (training) or the service call the day belongs to. */
+  order_id: string | null
+  service_call_id?: string | null
   entry_date: string
   kind: 'travel' | 'onsite'
   hours: string
@@ -82,7 +84,8 @@ export type EntryDraft = {
 export type SavedEntry = {
   id: string
   client_id: string
-  order_id: string
+  order_id: string | null
+  service_call_id: string | null
   entry_date: string
   kind: 'travel' | 'onsite'
   hours: number | null
@@ -104,6 +107,7 @@ export function entryPayload(d: EntryDraft) {
   return {
     client_id: d.client_id,
     order_id: d.order_id,
+    service_call_id: d.service_call_id ?? null,
     entry_date: d.entry_date,
     kind: d.kind,
     hours: d.hours.trim() === '' ? null : Number(d.hours),
@@ -211,7 +215,9 @@ export type CertMachine = { key: string; machine_id: string | null; machine: str
 export type CompanyInfo = { name?: string; address?: string; phone?: string; email?: string; website?: string; logo?: string | null; office_email?: string }
 export type Certificate = {
   id: string
-  order_id: string
+  order_id: string | null
+  service_call_id: string | null
+  kind: 'commissioning' | 'service_report'
   version: number
   status: 'draft' | 'signed' | 'superseded'
   replaces: string | null
@@ -222,7 +228,7 @@ export type Certificate = {
   start_date: string | null
   end_date: string | null
   site_address: string | null
-  info: { order_number?: string; customer_name?: string | null; customer_company?: string | null; customer_country?: string | null; company?: CompanyInfo }
+  info: { order_number?: string; reference?: string; customer_name?: string | null; customer_company?: string | null; customer_country?: string | null; company?: CompanyInfo }
   tech_email: string | null
   tech_name: string | null
   tech_signature_path: string | null
@@ -272,8 +278,76 @@ export function certificateValues(c: Certificate, company: CompanyInfo, today: s
   }
 }
 
+/** "Order 76" or "Service call S-12". */
+export const documentReference = (c: Pick<Certificate, 'order_id' | 'info'>) =>
+  c.order_id ? `Order ${c.info.order_number ?? ''}` : (c.info.reference ?? `Service call ${c.info.order_number ?? ''}`)
+
 export const certificateFileName = (c: Certificate) =>
-  `Commissioning certificate - order ${c.info.order_number ?? ''}${c.version > 1 ? ` (version ${c.version})` : ''}.pdf`
+  `${c.title} - ${documentReference(c)}${c.version > 1 ? ` (version ${c.version})` : ''}.pdf`
+
+// ---------------------------------------------------------------------------
+// Service calls (cards on the Service Calls board)
+// ---------------------------------------------------------------------------
+export type CallMachine = { machine_id: string; machine: string; serial: string | null; order_code: string }
+export type ServiceCallInfo = {
+  card_id: string
+  call_number: number
+  call_code: string
+  board_id: string
+  title: string
+  description: string | null
+  archived: boolean
+  created_at: string
+  stage_id: string
+  stage_name: string
+  stage_order: number
+  done: boolean
+  customer_id: string | null
+  customer_name: string | null
+  customer_company: string | null
+  customer_country: string | null
+  customer_state_province: string | null
+  technician_email: string | null
+  technician_name: string | null
+  planned_start: string | null
+  planned_end: string | null
+  machines: CallMachine[]
+  entries: number
+  hours: number
+  report_status: 'draft' | 'signed' | 'superseded' | null
+}
+
+// ---------------------------------------------------------------------------
+// Technician calendar
+// ---------------------------------------------------------------------------
+export type CalendarKind = 'training' | 'service' | 'travel' | 'onsite'
+export type CalendarRow = {
+  source: 'training' | 'service_call' | 'travel_log' | 'manual'
+  source_id: string
+  tech_email: string
+  tech_name: string | null
+  kind: CalendarKind
+  start_date: string
+  end_date: string
+  title: string
+  customer: string | null
+  country: string | null
+  notes: string | null
+  link: string | null
+}
+/** Colours (light background, dark text, solid dot) per kind, readable for colour-blind people (also labelled). */
+export const CALENDAR_KINDS: Record<CalendarKind, { label: string; chip: string; dot: string }> = {
+  training: { label: 'Training visit', chip: 'bg-blue-100 text-blue-900 ring-blue-300', dot: 'bg-blue-600' },
+  service: { label: 'Service call', chip: 'bg-violet-100 text-violet-900 ring-violet-300', dot: 'bg-violet-600' },
+  travel: { label: 'Travel day', chip: 'bg-amber-100 text-amber-900 ring-amber-300', dot: 'bg-amber-500' },
+  onsite: { label: 'Other on-site day', chip: 'bg-emerald-100 text-emerald-900 ring-emerald-300', dot: 'bg-emerald-600' },
+}
+
+/** The private phone-calendar link (the calendar-feed Edge Function). */
+export function calendarFeedUrl(token: string) {
+  const base = String(import.meta.env.VITE_SUPABASE_URL ?? '').replace(/\/+$/, '')
+  return `${base}/functions/v1/calendar-feed?token=${token}`
+}
 
 /** A signature picture as a data: URL (for the screen and the PDF). */
 export async function signatureDataUrl(path: string | null) {
