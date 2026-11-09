@@ -23,7 +23,7 @@ import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
-import { STAGES, type Customer, type OrderSummaryRow, type PaymentRow, type Stage } from '../lib/types'
+import { BOARD_STAGES, STAGES, type Customer, type OrderSummaryRow, type PaymentRow, type Stage } from '../lib/types'
 import RichText from '../components/RichText'
 import RichTextEditor from '../components/RichTextEditor'
 import SerialNumber from '../components/SerialNumber'
@@ -99,6 +99,9 @@ export default function OrderPage() {
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [crates, setCrates] = useState<NumberedCrate[]>([])
   const [checks, setChecks] = useState<Map<string, ChecklistStatusRow>>(new Map())
+  // Production board of this order and its machine cards (machine id → card id).
+  const [production, setProduction] = useState<{ board: string; cards: Record<string, string> } | null>(null)
+  const seesProduction = can('order.production_link')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [reloadKey, setReloadKey] = useState(0)
@@ -158,10 +161,17 @@ export default function OrderPage() {
     setPayments((p.data as PaymentRow[]) ?? [])
     setCrates(cr.byOrder.get(id) ?? [])
     setChecks(new Map(((ck.data as ChecklistStatusRow[] | null) ?? []).map((r) => [r.machine_id, r])))
+    if (seesProduction) {
+      const { data: pb } = await supabase.from('boards').select('id').eq('order_id', id).eq('purpose', 'production').maybeSingle()
+      if (pb) {
+        const { data: pc } = await supabase.from('board_cards').select('id, machine_id').eq('board_id', pb.id).eq('card_kind', 'machine').eq('archived', false)
+        setProduction({ board: pb.id, cards: Object.fromEntries(((pc ?? []) as { id: string; machine_id: string }[]).map((c) => [c.machine_id, c.id])) })
+      } else setProduction(null)
+    }
     setError(null)
     setLoading(false)
     setReloadKey((k) => k + 1)
-  }, [id, seesPayments, seesCrating, seesChecks])
+  }, [id, seesPayments, seesCrating, seesChecks, seesProduction])
 
   useEffect(() => {
     // load() only sets state after the database answers.
@@ -189,6 +199,14 @@ export default function OrderPage() {
   }
 
   const askMove = (stage: Stage) => setMove({ order, stage, anchor: null, place: 'after', description: `move to ${label(stage)}` })
+
+  async function createProductionBoard() {
+    if (!supabase) return
+    const { error: e } = await supabase.rpc('create_production_board', { p_order: order!.id })
+    if (e) return toast.error(friendlyError(e))
+    toast.success('Production board created.')
+    load()
+  }
 
   async function toggleReady(m: Machine) {
     if (!supabase || !canTickBuilt) return
@@ -385,11 +403,28 @@ export default function OrderPage() {
                     showCrating ? ` · ${machines.length - notCrated.length} of ${machines.length} crated` : ''
                   }`}
                   aside={
-                    <Can permission="order.machines.add" level="edit">
-                      <button type="button" className={secondaryButtonClass} onClick={() => setMachineChange({ kind: 'add' })}>
-                        Add Machines
-                      </button>
-                    </Can>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Can permission="order.production_link">
+                        {production ? (
+                          <Link to={`/boards/${production.board}`} className={secondaryButtonClass}>
+                            Production Board
+                          </Link>
+                        ) : (
+                          BOARD_STAGES.includes(order.stage) && (
+                            <Can permission="production.create_board" level="edit">
+                              <button type="button" className={secondaryButtonClass} onClick={createProductionBoard}>
+                                Create Production Board
+                              </button>
+                            </Can>
+                          )
+                        )}
+                      </Can>
+                      <Can permission="order.machines.add" level="edit">
+                        <button type="button" className={secondaryButtonClass} onClick={() => setMachineChange({ kind: 'add' })}>
+                          Add Machines
+                        </button>
+                      </Can>
+                    </div>
                   }
                 >
                   {machines.length === 0 ? (
@@ -424,6 +459,13 @@ export default function OrderPage() {
                           </span>
                           <span className="flex-1">{m.machine_types?.name}</span>
                           {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">serial typed by hand</span>}
+                          <Can permission="order.production_link">
+                            {production?.cards[m.id] && (
+                              <Link to={`/boards/${production.board}?card=${production.cards[m.id]}`} className="text-xs text-blue-700 underline">
+                                Production Card
+                              </Link>
+                            )}
+                          </Can>
                           <Can permission="order.machines.checklist">
                             {(m.ready || checks.get(m.id)?.checklist_id) && (
                               <div className="order-last basis-full border-l-2 border-blue-200 pl-2 text-sm sm:ml-8">

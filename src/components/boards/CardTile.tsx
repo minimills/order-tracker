@@ -1,7 +1,21 @@
 // @permission-scope boards
 import type { DragEvent, KeyboardEvent } from 'react'
 import { showDate } from '../../lib/dates'
-import { DUE_TONE, dueState, dueWords, initials, progress, textOn, type Card, type ChecklistItem, type Label, type Person } from '../../lib/boards'
+import {
+  DUE_TONE,
+  dueState,
+  dueWords,
+  initials,
+  progress,
+  textOn,
+  type Card,
+  type ChecklistItem,
+  type Label,
+  type Person,
+  type ProductionMachine,
+  type ProductionStep,
+} from '../../lib/boards'
+import SerialNumber from '../SerialNumber'
 import Can from '../Can'
 
 type Props = {
@@ -21,6 +35,9 @@ type Props = {
   onDragStart: (e: DragEvent) => void
   onDragEnd: () => void
   onDragOver: (e: DragEvent) => void
+  /** Production boards: the machine on a machine card, and what the card's stage is. */
+  machine?: ProductionMachine | null
+  stageStep?: ProductionStep | null
 }
 
 /** A card on the board: the whole card opens it; drag it to move it. */
@@ -39,9 +56,9 @@ export default function CardTile(p: Props) {
       onDragStart={p.onDragStart}
       onDragEnd={p.onDragEnd}
       onDragOver={p.onDragOver}
-      className={`relative rounded-md border border-slate-200 bg-white p-2.5 text-sm shadow-sm ${p.canOpen ? 'cursor-pointer hover:border-slate-400' : ''} ${
-        p.dragging ? 'opacity-40' : ''
-      }`}
+      className={`relative rounded-md border p-2.5 text-sm shadow-sm ${
+        card.card_kind === 'leftover' ? 'border-dashed border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
+      } ${p.canOpen ? 'cursor-pointer hover:border-slate-400' : ''} ${p.dragging ? 'opacity-40' : ''}`}
       aria-label={`Card: ${card.title}`}
     >
       {p.dropHint === 'before' && <div className="absolute -top-1.5 right-0 left-0 h-1 rounded bg-blue-500" />}
@@ -57,7 +74,23 @@ export default function CardTile(p: Props) {
           </div>
         )}
       </Can>
-      <div className="font-medium break-words">{card.title}</div>
+      {card.card_kind === 'leftover' && (
+        <div className="mb-1">
+          <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900">Leftover</span>
+        </div>
+      )}
+      {card.card_kind === 'machine' && p.machine ? (
+        <div>
+          <div className="font-medium break-words">{p.machine.machine_type}</div>
+          {p.machine.serial_number ? (
+            <SerialNumber serial={p.machine.serial_number} className="text-xs" />
+          ) : (
+            <span className="text-xs text-slate-500">No serial number yet</span>
+          )}
+        </div>
+      ) : (
+        <div className="font-medium break-words">{card.title}</div>
+      )}
       <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-600 empty:hidden">
         <Can permission="boards.card.due">
           {due && card.due_date && (
@@ -71,17 +104,33 @@ export default function CardTile(p: Props) {
           {card.started_at && !card.finished_at && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-800 ring-1 ring-blue-200">Started</span>}
           {card.finished_at && <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-800 ring-1 ring-green-200">Finished</span>}
         </Can>
-        <Can permission="boards.card.link">
-          {p.linkText && <span className="rounded bg-slate-100 px-1.5 py-0.5">Linked: {p.linkText}</span>}
+        <Can permission="boards.card.link">{p.linkText && <span className="rounded bg-slate-100 px-1.5 py-0.5">Linked: {p.linkText}</span>}</Can>
+        <Can permission="boards.card.comments">
+          {p.comments > 0 && (
+            <span>
+              {p.comments} comment{p.comments === 1 ? '' : 's'}
+            </span>
+          )}
         </Can>
-        <Can permission="boards.card.comments">{p.comments > 0 && <span>{p.comments} comment{p.comments === 1 ? '' : 's'}</span>}</Can>
       </div>
+      {card.card_kind === 'machine' && p.stageStep === 'final_check' && p.machine && (
+        <Can permission="order.machines.checklist">
+          <div className="mt-2 text-[11px] text-slate-600">
+            Final check:{' '}
+            {p.machine.checklist_status === 'signed'
+              ? 'complete'
+              : p.machine.checklist_status === 'in_progress'
+                ? `${p.machine.checklist_completed ?? 0} of ${p.machine.checklist_total ?? 0} items`
+                : 'not started'}
+          </div>
+        </Can>
+      )}
       <Can permission="boards.card.checklists">
         {prog.total > 0 && (
           <div className="mt-2" title={`${prog.done} of ${prog.total} tasks completed`}>
             <div className="flex justify-between text-[11px] text-slate-500">
               <span>
-                {prog.done} of {prog.total} tasks
+                {prog.done} of {prog.total} task{prog.total === 1 ? '' : 's'}
               </span>
               <span>{prog.percent}%</span>
             </div>

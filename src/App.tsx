@@ -8,6 +8,9 @@ import ActivityPage from './pages/admin/ActivityPage'
 import AdminHomePage from './pages/admin/AdminHomePage'
 import ArchivePage from './pages/admin/ArchivePage'
 import ChecklistTemplatesPage from './pages/admin/ChecklistTemplatesPage'
+import BuildChecklistsPage from './pages/admin/BuildChecklistsPage'
+import ProductionPage from './pages/admin/ProductionPage'
+import BuildTimesPage from './pages/BuildTimesPage'
 import BoardAdminPage from './pages/admin/BoardAdminPage'
 import CompanyPage from './pages/admin/CompanyPage'
 import DepartmentsPage from './pages/admin/DepartmentsPage'
@@ -89,6 +92,7 @@ export default function App() {
         <Route path="boards" element={<Page permission="boards"><BoardsPage /></Page>} />
         <Route path="boards/:id" element={<Page permission="boards"><BoardPage /></Page>} />
         <Route path="reports/department-delays" element={<Page permission="reports.department_delays"><DepartmentDelaysPage /></Page>} />
+        <Route path="reports/build-times" element={<Page permission="reports.build_times"><BuildTimesPage /></Page>} />
         <Route path="agent" element={<Page permission="agent"><AgentPage /></Page>} />
         <Route path="settings" element={<Page permission="settings"><SettingsPage /></Page>} />
         {/* Old addresses of pages that moved to Admin */}
@@ -109,6 +113,8 @@ export default function App() {
           <Route path="board-templates" element={<Page permission="admin.board_templates" level="edit"><BoardTemplatesPage /></Page>} />
           <Route path="scheduling" element={<Page permission="admin.scheduling" level="edit"><SchedulingPage /></Page>} />
           <Route path="checklists" element={<Page permission="admin.checklists" level="edit"><ChecklistTemplatesPage /></Page>} />
+          <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />
+          <Route path="production" element={<Page permission="admin.production" level="edit"><ProductionPage /></Page>} />
           <Route path="records" element={<Page permission="admin.records" level="edit"><RecordsPage /></Page>} />
           <Route path="serials" element={<Page permission="admin.serials" level="edit"><SerialsPage /></Page>} />
           <Route path="board" element={<Page permission="admin.board" level="edit"><BoardAdminPage /></Page>} />

@@ -10,7 +10,8 @@ import SaveTemplateDialog from '../components/boards/SaveTemplateDialog'
 import ShareDialog from '../components/boards/ShareDialog'
 import { inputClass, narrowInputClass, secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
-import { loadBoard, type BoardData, type Card } from '../lib/boards'
+import { currentStageItems, loadBoard, type BoardData, type Card } from '../lib/boards'
+import { useDepartments } from '../lib/useDepartments'
 import { todayISO } from '../lib/dates'
 import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
@@ -26,6 +27,7 @@ export default function BoardPage() {
   const { id = '' } = useParams()
   const [params, setParams] = useSearchParams()
   const { can } = usePermissions()
+  const { departments } = useDepartments()
   const { session } = useAuth()
   const me = session?.user.email?.toLowerCase() ?? ''
   const today = todayISO()
@@ -186,6 +188,13 @@ export default function BoardPage() {
               {board.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">Archived</span>}
             </h1>
             {board.description && <p className="text-sm text-slate-600">{board.description}</p>}
+            {board.purpose === 'production' && board.order_id && (
+              <Can permission="order.page">
+                <Link to={`/orders/${board.order_id}`} className="text-sm text-blue-700 underline">
+                  Open the Order
+                </Link>
+              </Can>
+            )}
           </div>
           <div className="flex flex-wrap gap-2">
             {level >= 3 && (
@@ -275,7 +284,12 @@ export default function BoardPage() {
                 }}
               >
                 <h2 className="flex items-center justify-between px-3 pt-2.5 pb-1.5 text-sm font-semibold">
-                  {stage.name}
+                  <span>
+                    {stage.name}
+                    {stage.department_id && (
+                      <span className="block text-[11px] font-normal text-slate-500">{departments.find((d) => d.id === stage.department_id)?.name}</span>
+                    )}
+                  </span>
                   <span className="rounded-full bg-white px-2 text-xs font-normal text-slate-600">{cards.length}</span>
                 </h2>
                 <div className="flex min-h-16 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
@@ -285,7 +299,9 @@ export default function BoardPage() {
                       card={card}
                       labels={data.labels.filter((l) => data.cardLabels.some((x) => x.card_id === card.id && x.label_id === l.id))}
                       people={data.assignees.filter((a) => a.card_id === card.id).map((a) => peopleByEmail.get(a.user_email) ?? { email: a.user_email, name: a.user_email })}
-                      items={data.items.filter((i) => data.checklists.some((l) => l.card_id === card.id && l.id === i.checklist_id))}
+                      items={currentStageItems(data, card)}
+                      machine={data.machines.find((m) => m.id === card.machine_id) ?? null}
+                      stageStep={stage.step}
                       comments={data.commentCounts[card.id] ?? 0}
                       linkText={[card.order_id, card.customer_id, card.machine_id].map((x) => (x ? links[x] : null)).filter(Boolean).join(' · ') || null}
                       today={today}
@@ -360,7 +376,7 @@ export default function BoardPage() {
 
         {openCard && (
           <Can permission="boards.card.open">
-            <CardDialog cardId={openCard} data={data} level={level} onClose={() => setCard(null)} onChanged={load} />
+            <CardDialog key={openCard} cardId={openCard} data={data} level={level} onClose={() => setCard(null)} onChanged={load} onOpenCard={(id) => setCard(id)} />
           </Can>
         )}
         {dialog === 'share' && (

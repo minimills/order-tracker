@@ -87,6 +87,8 @@ const THING: Record<string, string> = {
   permission_templates: 'permission template',
   machine_checklists: 'final check',
   checklist_template_items: 'checklist template item',
+  build_checklist_items: 'build checklist item',
+  production_stage_template: 'production stage',
   user_permissions: 'permissions',
   machine_steps: 'department step',
   user_groups: 'group',
@@ -199,6 +201,8 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
       }
     if (e.table_name === 'machine_checklists')
       return { title: e.action === 'insert' ? `Final check started by ${c.started_by_name ?? 'someone'}` : 'Final check deleted', lines: [] }
+    if (e.table_name === 'build_checklist_items')
+      return { title: `${verb} build checklist item`, lines: [`${c.section}: ${c.item_text}`] }
     if (e.table_name === 'checklist_template_items')
       return { title: `${verb} checklist template item`, lines: [`${c.section}: ${c.item_text}`] }
     if (e.table_name === 'machine_steps')

@@ -34,8 +34,9 @@ export default function BoardsPage() {
   }, [load])
 
   const shown = boards.filter((b) => showArchived || !b.archived)
-  const mine = shown.filter((b) => b.owner_email === me)
-  const others = shown.filter((b) => b.owner_email !== me)
+  const production = shown.filter((b) => b.purpose === 'production')
+  const mine = shown.filter((b) => b.purpose !== 'production' && b.owner_email === me)
+  const others = shown.filter((b) => b.purpose !== 'production' && b.owner_email !== me)
 
   const tile = (b: Row) => (
     <li key={b.id}>
@@ -47,7 +48,7 @@ export default function BoardsPage() {
         <div className="font-semibold">{b.name}</div>
         {b.description && <div className="mt-0.5 line-clamp-2 text-sm text-slate-600">{b.description}</div>}
         <div className="mt-2 text-xs text-slate-500">
-          {b.owner_email === me ? 'Yours' : `Owner: ${b.owner_email ?? 'none'}`}
+          {b.purpose === 'production' ? 'Production' : b.owner_email === me ? 'Yours' : `Owner: ${b.owner_email ?? 'none'}`}
           {b.board_shares.length > 0 && ' · shared'}
           {b.archived && ' · archived'}
         </div>
@@ -82,6 +83,13 @@ export default function BoardsPage() {
           <p className="text-center text-slate-500">Loading…</p>
         ) : (
           <>
+            {production.length > 0 && (
+              <section>
+                <h2 className="mb-2 font-semibold">Production Boards</h2>
+                <p className="mb-2 text-sm text-slate-600">One board per order in the shop queue, made automatically when the order is confirmed.</p>
+                <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{production.map(tile)}</ul>
+              </section>
+            )}
             <section>
               <h2 className="mb-2 font-semibold">My Boards</h2>
               {mine.length === 0 ? (
