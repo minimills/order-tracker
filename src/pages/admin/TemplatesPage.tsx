@@ -9,12 +9,14 @@ import { useCompany } from '../../lib/company'
 import { showDate, todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { fillPlaceholders, PLACEHOLDERS } from '../../lib/service'
+import { confirmAction } from '../../lib/confirm'
 import { supabase } from '../../lib/supabase'
 
 type Template = { id: string; key: string; name: string; title: string; part1: string; part2: string; updated_at: string }
 
-/** Admin → Templates: the commissioning certificate text. */
+/** Admin → Templates: the commissioning certificate and service report texts. */
 export default function TemplatesPage() {
+  const [key, setKey] = useState<'commissioning' | 'service_report'>('commissioning')
   const [saved, setSaved] = useState<Template | null>(null)
   const [t, setT] = useState<Template | null>(null)
   const [version, setVersion] = useState(0)
@@ -26,14 +28,15 @@ export default function TemplatesPage() {
     supabase
       ?.from('document_templates')
       .select('*')
-      .eq('key', 'commissioning')
+      .eq('key', key)
       .maybeSingle()
       .then(({ data, error }) => {
         if (error) toast.error(friendlyError(error))
         setSaved(data as Template | null)
         setT(data as Template | null)
+        setVersion((v) => v + 1)
       })
-  }, [])
+  }, [key])
 
   if (!t || !saved) return <p className="p-6 text-center text-slate-500">Loading…</p>
   const dirty = t.title !== saved.title || t.part1 !== saved.part1 || t.part2 !== saved.part2
@@ -42,7 +45,7 @@ export default function TemplatesPage() {
     company_name: company.name || 'Belfast Mini Mills',
     customer_name: 'Jane Farmer',
     customer_company: 'Woolly Acres',
-    order_number: '76',
+    order_number: key === 'service_report' ? 'S-12' : '76',
     start_date: showDate(today),
     end_date: showDate(today),
     site_address: 'Charlottetown, PE, Canada',
@@ -58,18 +61,43 @@ export default function TemplatesPage() {
     if (error) return toast.error(friendlyError(error))
     setSaved(data as Template)
     setT(data as Template)
-    toast.success('Template saved. New certificates use it; certificates already created keep their own text.')
+    toast.success('Template saved. New documents use it; documents already created keep their own text.')
   }
 
   return (
     <div className="mx-auto max-w-4xl space-y-5">
       <AdminPageHeader title="Templates">
-        The commissioning certificate. Creating a certificate for an order copies this text; the technician can then change
-        that one certificate without changing the template. Placeholders in curly brackets are filled in automatically.
+        The commissioning certificate (training) and the service report (service calls). Creating one copies this text; the
+        technician can then change that one document without changing the template. Placeholders in curly brackets are
+        filled in automatically; on a service report {'{order_number}'} is the service call number (for example S-12).
       </AdminPageHeader>
 
+      <div className="flex gap-2" role="tablist" aria-label="Template">
+        {(
+          [
+            ['commissioning', 'Commissioning Certificate'],
+            ['service_report', 'Service Report'],
+          ] as const
+        ).map(([k, label]) => (
+          <button
+            key={k}
+            type="button"
+            role="tab"
+            aria-selected={key === k}
+            className={key === k ? buttonClass : secondaryButtonClass}
+            onClick={async () => {
+              if (key === k) return
+              if (dirty && !(await confirmAction('Your changes to this template are not saved. Leave them?', { confirmLabel: 'Leave Without Saving' }))) return
+              setKey(k)
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
       <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="font-semibold">Commissioning Certificate</h2>
+        <h2 className="font-semibold">{t.name}</h2>
         <Field label="Title" htmlFor="tpl-title">
           <input id="tpl-title" className={inputClass} value={t.title} onChange={(e) => setT({ ...t, title: e.target.value })} />
         </Field>

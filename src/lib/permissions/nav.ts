@@ -19,6 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/orders', label: 'Orders List', icon: 'list', permission: 'orders.list', end: true },
   { to: '/boards', label: 'Boards', icon: 'boards', permission: 'boards' },
   { to: '/service', label: 'Service', icon: 'cog', permission: 'service' },
+  { to: '/service/calendar', label: 'Tech Calendar', icon: 'calendar', permission: 'service.calendar' },
   { to: '/payments', label: 'Payments', icon: 'money', permission: 'payments.page' },
   { to: '/crating', label: 'Crating Report', icon: 'box', permission: 'reports.crating' },
   { to: '/reports/department-delays', label: 'Department Delays', icon: 'clock', permission: 'reports.department_delays' },

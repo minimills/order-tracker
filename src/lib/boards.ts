@@ -1,3 +1,4 @@
+import type { ServiceCallInfo } from './service'
 /**
  * Kanban boards (migration 0023): row types and small helpers shared by the
  * Boards page, the board page, the card window and the admin pages.
@@ -47,7 +48,7 @@ export type Card = {
   created_at: string
   created_by_name: string | null
   /** task = an ordinary card; machine = one machine on a production board; leftover = its unfinished items. */
-  card_kind: 'task' | 'machine' | 'leftover'
+  card_kind: 'task' | 'machine' | 'leftover' | 'service'
   leftover_of: string | null
 }
 export type Checklist = { id: string; card_id: string; title: string; sort_order: number; stage_id: string | null; merge_into: string | null }
@@ -258,9 +259,13 @@ export async function loadBoard(id: string, opts: { comments: boolean }) {
       ? (((await supabase.from('order_machine_status').select('id, serial_number, machine_type, needs_crate, checklist_status, checklist_total, checklist_completed').in('id', machineIds)).data ??
           []) as ProductionMachine[])
       : []
+  // Service Calls board: customer, technician, dates and machines of each call.
+  const serviceCalls: ServiceCallInfo[] =
+    board?.purpose === 'service' ? (((await supabase.from('service_call_info').select('*').eq('board_id', board.id)).data ?? []) as ServiceCallInfo[]) : []
   return {
     board,
     machines,
+    serviceCalls,
     level: (Number(lvl.data ?? 0) as BoardLevel),
     stages: (st.data as Stage[]) ?? [],
     labels: (lb.data as Label[]) ?? [],

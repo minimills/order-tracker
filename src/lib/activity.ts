@@ -92,6 +92,8 @@ const THING: Record<string, string> = {
   service_entries: 'service day',
   service_certificates: 'commissioning certificate',
   document_templates: 'template',
+  tech_calendar_entries: 'calendar entry',
+  calendar_feeds: 'phone calendar link',
   user_permissions: 'permissions',
   machine_steps: 'department step',
   user_groups: 'group',

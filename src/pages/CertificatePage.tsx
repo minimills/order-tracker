@@ -16,6 +16,7 @@ import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import {
   certificateFileName,
+  documentReference,
   certificateValues,
   fillPlaceholders,
   PLACEHOLDERS,
@@ -40,7 +41,7 @@ const pick = (c: Certificate): Editable => ({
   tech_name: c.tech_name,
 })
 
-/** One commissioning certificate: draft editing, signatures, PDF and email. */
+/** One commissioning certificate or service report: draft editing, signatures, PDF and email. */
 export default function CertificatePage() {
   const { id = '' } = useParams()
   const navigate = useNavigate()
@@ -66,7 +67,7 @@ export default function CertificatePage() {
     setEdit(c ? pick(c) : null)
     if (!c) return
     const [v, s, tech, customer] = await Promise.all([
-      supabase.from('service_certificates').select('id, version, status').eq('order_id', c.order_id).order('version', { ascending: false }),
+      supabase.from('service_certificates').select('id, version, status').eq(c.order_id ? 'order_id' : 'service_call_id', c.order_id ?? c.service_call_id!).order('version', { ascending: false }),
       supabase.from('certificate_sends').select('*').eq('certificate_id', c.id).order('sent_at', { ascending: false }),
       signatureDataUrl(c.tech_signature_path),
       signatureDataUrl(c.customer_signature_path),
@@ -84,6 +85,7 @@ export default function CertificatePage() {
 
   if (!cert || !edit) return <p className="p-6 text-center text-slate-500">Loading…</p>
 
+  const noun = cert.kind === 'service_report' ? 'service report' : 'certificate'
   const company: CompanyInfo = cert.locked_at && cert.info.company ? cert.info.company : liveCompany
   const anySigned = Boolean(cert.tech_signed_at || cert.customer_signed_at)
   const editable = cert.status === 'draft' && !anySigned
@@ -105,7 +107,7 @@ export default function CertificatePage() {
     const { error } = await supabase.from('service_certificates').update(patch).eq('id', cert.id)
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Certificate saved.')
+    toast.success(`${noun[0].toUpperCase()}${noun.slice(1)} saved.`)
     load()
   }
 
@@ -161,7 +163,7 @@ export default function CertificatePage() {
 
   async function correct() {
     if (!supabase) return
-    if (!(await confirmAction('Create a corrected version? This signed certificate stays in the history and the new version starts as a draft that needs both signatures again.', { confirmLabel: 'Create Corrected Version' }))) return
+    if (!(await confirmAction(`Create a corrected version? This signed ${noun} stays in the history and the new version starts as a draft that needs both signatures again.`, { confirmLabel: 'Create Corrected Version' }))) return
     const { data, error } = await supabase.rpc('correct_certificate', { p_certificate: cert!.id })
     if (error) return toast.error(friendlyError(error))
     navigate(`/service/certificates/${data as string}`)
@@ -172,8 +174,11 @@ export default function CertificatePage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <Link to={`/service/${cert.order_id}?tab=certificate`} className="text-sm text-slate-600 underline">
-              ← Order {cert.info.order_number}
+            <Link
+              to={cert.order_id ? `/service/${cert.order_id}?tab=certificate` : `/service/calls/${cert.service_call_id}?tab=certificate`}
+              className="text-sm text-slate-600 underline"
+            >
+              ← {documentReference(cert)}
             </Link>
             <h1 className="mt-1 text-2xl font-semibold">
               {cert.title}
@@ -186,7 +191,7 @@ export default function CertificatePage() {
                   ? 'Replaced by a corrected version. Kept for the history.'
                   : anySigned
                     ? 'Draft with one signature. The text cannot change until the signature is removed.'
-                    : 'Draft. Changes here apply to this certificate only, not to the template.'}
+                    : `Draft. Changes here apply to this ${noun} only, not to the template.`}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -198,7 +203,7 @@ export default function CertificatePage() {
             {cert.status === 'signed' && (
               <Can permission="service.certificate.email" level="edit">
                 <button type="button" className={buttonClass} onClick={openEmail} disabled={busy !== null}>
-                  {sends.length ? 'Resend' : 'Email Certificate'}
+                  {sends.length ? 'Resend' : cert.kind === 'service_report' ? 'Email Service Report' : 'Email Certificate'}
                 </button>
               </Can>
             )}
@@ -278,7 +283,7 @@ export default function CertificatePage() {
               <div className="space-y-2 rounded-md bg-slate-50 p-3 text-sm">
                 {edit.machines.some((m) => m.removed) && (
                   <div>
-                    <p className="font-medium">Removed from the certificate</p>
+                    <p className="font-medium">Removed from the {noun}</p>
                     <ul className="mt-1 flex flex-wrap gap-2">
                       {edit.machines
                         .filter((m) => m.removed)
@@ -405,7 +410,7 @@ export default function CertificatePage() {
 
         {preview && (
           <Modal
-            title="Email the Certificate"
+            title={cert.kind === 'service_report' ? 'Email the Service Report' : 'Email the Certificate'}
             onClose={() => setPreview(null)}
             busy={busy === 'send'}
             footer={
@@ -457,7 +462,7 @@ function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'cu
 
   async function sign() {
     if (!supabase || !pad.current) return
-    if (dirty) return toast.error('Save the changes to the certificate first, then sign.')
+    if (dirty) return toast.error('Save the changes first, then sign.')
     if (!name.trim()) return toast.error('Enter the printed name.')
     if (pad.current.isEmpty()) return toast.error('Sign in the box first.')
     setBusy(true)

@@ -22,22 +22,24 @@ import {
   type ServiceInfo,
 } from '../lib/service'
 import { supabase } from '../lib/supabase'
+import ServiceCallHeader from '../components/service/ServiceCallHeader'
+import type { ServiceCallInfo } from '../lib/service'
 
 type Machine = { id: string; serial_number: string | null; archived: boolean; machine_types: { name: string } | null }
 type Tab = 'log' | 'machines' | 'certificate'
-const TABS: { key: Tab; label: string; permission: string }[] = [
+const TABS: { key: Tab; label: string; callLabel?: string; permission: string }[] = [
   { key: 'log', label: 'Day Log', permission: 'service.log' },
   { key: 'machines', label: 'By Machine', permission: 'service.log.by_machine' },
-  { key: 'certificate', label: 'Certificate', permission: 'service.certificate' },
+  { key: 'certificate', label: 'Certificate', callLabel: 'Service Report', permission: 'service.certificate' },
 ]
 
 /** A day as shown in the timeline: saved, or still waiting on this phone. */
 type Day = { draft: EntryDraft; saved: SavedEntry | null; waiting: boolean; error: string | null }
 
 const machineName = (m: Machine | undefined) => (m ? (m.machine_types?.name ?? 'Machine') : 'Machine')
-const blankDraft = (orderId: string): EntryDraft => ({
+const blankDraft = (subject: { order_id: string | null; service_call_id: string | null }): EntryDraft => ({
   client_id: newClientId(),
-  order_id: orderId,
+  ...subject,
   entry_date: todayISO(),
   kind: 'onsite',
   hours: '',
@@ -47,6 +49,7 @@ const blankDraft = (orderId: string): EntryDraft => ({
 const toDraft = (e: SavedEntry): EntryDraft => ({
   client_id: e.client_id,
   order_id: e.order_id,
+  service_call_id: e.service_call_id,
   entry_date: e.entry_date,
   kind: e.kind,
   hours: e.hours === null ? '' : String(Number(e.hours)),
@@ -54,15 +57,24 @@ const toDraft = (e: SavedEntry): EntryDraft => ({
   machines: e.service_entry_machines.map((m) => ({ machine_id: m.machine_id, notes: m.notes ?? '' })),
 })
 
-/** One order's service: day log (timeline), notes per machine, certificate. */
-export default function ServiceOrderPage() {
-  const { orderId = '' } = useParams()
+/**
+ * The service of one order (training: day log, notes per machine, commissioning
+ * certificate) or of one service call (kind="call": same log, service report).
+ */
+export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 'call' }) {
+  const params0 = useParams()
+  const isCall = kind === 'call'
+  const orderId = isCall ? '' : (params0.orderId ?? '')
+  const callId = isCall ? (params0.callId ?? '') : ''
+  const subjectId = isCall ? callId : orderId
+  const subjectCol = isCall ? 'service_call_id' : 'order_id'
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
   const { can } = usePermissions()
   const tabs = TABS.filter((t) => can(t.permission))
   const tab = tabs.find((t) => t.key === params.get('tab'))?.key ?? tabs[0]?.key
   const [info, setInfo] = useState<ServiceInfo | null>(null)
+  const [call, setCall] = useState<ServiceCallInfo | null>(null)
   const [machines, setMachines] = useState<Machine[]>([])
   const [entries, setEntries] = useState<SavedEntry[]>([])
   const [certs, setCerts] = useState<Pick<Certificate, 'id' | 'version' | 'status' | 'created_at' | 'locked_at'>[]>([])
@@ -72,15 +84,19 @@ export default function ServiceOrderPage() {
   const load = useCallback(async () => {
     if (!supabase) return
     const [i, m, e, c] = await Promise.all([
-      supabase.from('order_service_info').select('*').eq('order_id', orderId).maybeSingle(),
-      supabase.from('order_machines').select('id, serial_number, archived, machine_types(name)').eq('order_id', orderId).order('serial_number'),
+      isCall
+        ? supabase.from('service_call_info').select('*').eq('card_id', callId).maybeSingle()
+        : supabase.from('order_service_info').select('*').eq('order_id', orderId).maybeSingle(),
+      isCall
+        ? Promise.resolve({ data: null, error: null })
+        : supabase.from('order_machines').select('id, serial_number, archived, machine_types(name)').eq('order_id', orderId).order('serial_number'),
       can('service.log')
         ? supabase
             .from('service_entries')
             .select(
-              'id, client_id, order_id, entry_date, kind, hours, notes, created_by_name, updated_by_name, created_at, service_entry_machines(machine_id, notes)',
+              'id, client_id, order_id, service_call_id, entry_date, kind, hours, notes, created_by_name, updated_by_name, created_at, service_entry_machines(machine_id, notes)',
             )
-            .eq('order_id', orderId)
+            .eq(subjectCol, subjectId)
             .eq('archived', false)
             .order('entry_date')
             .order('created_at')
@@ -89,18 +105,24 @@ export default function ServiceOrderPage() {
         ? supabase
             .from('service_certificates')
             .select('id, version, status, created_at, locked_at')
-            .eq('order_id', orderId)
+            .eq(subjectCol, subjectId)
             .order('version', { ascending: false })
         : Promise.resolve({ data: [], error: null }),
     ])
     // No signal: keep what is already on screen (the phone keeps new days until it can send them).
-    if (!i.error) setInfo((i.data as ServiceInfo | null) ?? null)
-    if (!m.error) setMachines((m.data as unknown as Machine[] | null) ?? [])
+    if (!i.error && isCall) {
+      const ci = i.data as ServiceCallInfo | null
+      setCall(ci)
+      // The call's machines, in the same shape as an order's.
+      setMachines((ci?.machines ?? []).map((x) => ({ id: x.machine_id, serial_number: x.serial, archived: false, machine_types: { name: x.machine } })))
+    }
+    if (!i.error && !isCall) setInfo((i.data as ServiceInfo | null) ?? null)
+    if (!m.error && !isCall) setMachines((m.data as unknown as Machine[] | null) ?? [])
     if (!e.error) setEntries((e.data as SavedEntry[] | null) ?? [])
     if (!c.error) setCerts((c.data as typeof certs | null) ?? [])
     const err = i.error ?? m.error ?? e.error ?? c.error
     if (err && navigator.onLine) toast.error(friendlyError(err))
-  }, [orderId, can])
+  }, [orderId, callId, isCall, subjectCol, subjectId, can])
 
   useEffect(() => {
     // load() only sets state after the database answers.
@@ -112,13 +134,13 @@ export default function ServiceOrderPage() {
   const { items: outbox } = useOutbox(load)
 
   const days: Day[] = useMemo(() => {
-    const waiting = outbox.filter((o) => o.draft.order_id === orderId)
+    const waiting = outbox.filter((o) => (isCall ? o.draft.service_call_id === callId : o.draft.order_id === orderId))
     const waitingIds = new Set(waiting.map((w) => w.draft.client_id))
     return [
       ...entries.filter((e) => !waitingIds.has(e.client_id)).map((e) => ({ draft: toDraft(e), saved: e, waiting: false, error: null })),
       ...waiting.map((w) => ({ draft: w.draft, saved: entries.find((e) => e.client_id === w.draft.client_id) ?? null, waiting: true, error: w.error })),
     ].sort((a, b) => a.draft.entry_date.localeCompare(b.draft.entry_date))
-  }, [entries, outbox, orderId])
+  }, [entries, outbox, orderId, callId, isCall])
 
   const machineById = useMemo(() => new Map(machines.map((m) => [m.id, m])), [machines])
   const liveMachines = machines.filter((m) => !m.archived)
@@ -157,7 +179,9 @@ export default function ServiceOrderPage() {
 
   async function createCertificate() {
     if (!supabase) return
-    const { data, error } = await supabase.rpc('create_certificate', { p_order: orderId })
+    const { data, error } = isCall
+      ? await supabase.rpc('create_service_report', { p_card: callId })
+      : await supabase.rpc('create_certificate', { p_order: orderId })
     if (error) return toast.error(friendlyError(error))
     navigate(`/service/certificates/${data as string}`)
   }
@@ -171,7 +195,7 @@ export default function ServiceOrderPage() {
         : [...form.machines, { machine_id: id, notes: '' }],
     })
 
-  if (!info)
+  if (isCall ? !call : !info)
     return (
       <Can permission="service">
         <p className="p-6 text-center text-slate-500">Loading…</p>
@@ -185,23 +209,29 @@ export default function ServiceOrderPage() {
           <Link to="/service" className="text-sm text-slate-600 underline">
             ← Service
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Order {info.order_code}</h1>
-          <p className="text-sm text-slate-700">
-            {info.customer_name}
-            {info.customer_company ? ` · ${info.customer_company}` : ''}
-            {info.customer_country ? ` · ${countryFlag(info.customer_country)} ${info.customer_country}` : ''}
-          </p>
-          <p className="mt-1 text-sm text-slate-600">
-            {serviceDates(info.service_start, info.service_end) || 'Dates not set'}
-            {info.technician_name ? ` · Technician: ${info.technician_name}` : ''}
-            {info.training_days !== null ? ` · ${Number(info.training_days)} on-site day${Number(info.training_days) === 1 ? '' : 's'}` : ''}
-            {info.travel_days !== null ? ` · ${Number(info.travel_days)} travel day${Number(info.travel_days) === 1 ? '' : 's'}` : ''}
-          </p>
-          <Can permission="order.page">
-            <Link to={`/orders/${orderId}`} className="text-sm text-blue-700 underline">
-              Open the Order
-            </Link>
-          </Can>
+          {isCall && call ? (
+            <ServiceCallHeader call={call} onChanged={load} />
+          ) : info ? (
+            <>
+            <h1 className="mt-1 text-2xl font-semibold">Order {info.order_code}</h1>
+            <p className="text-sm text-slate-700">
+              {info.customer_name}
+              {info.customer_company ? ` · ${info.customer_company}` : ''}
+              {info.customer_country ? ` · ${countryFlag(info.customer_country)} ${info.customer_country}` : ''}
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              {serviceDates(info.service_start, info.service_end) || 'Dates not set'}
+              {info.technician_name ? ` · Technician: ${info.technician_name}` : ''}
+              {info.training_days !== null ? ` · ${Number(info.training_days)} on-site day${Number(info.training_days) === 1 ? '' : 's'}` : ''}
+              {info.travel_days !== null ? ` · ${Number(info.travel_days)} travel day${Number(info.travel_days) === 1 ? '' : 's'}` : ''}
+            </p>
+            <Can permission="order.page">
+              <Link to={`/orders/${orderId}`} className="text-sm text-blue-700 underline">
+                Open the Order
+              </Link>
+            </Can>
+            </>
+          ) : null}
         </div>
 
         {tabs.length > 1 && (
@@ -215,7 +245,7 @@ export default function ServiceOrderPage() {
                   className={`-mb-px border-b-2 px-3 py-2 text-sm ${tab === t.key ? 'border-slate-900 font-semibold' : 'border-transparent text-slate-600'}`}
                   onClick={() => setParams({ tab: t.key }, { replace: true })}
                 >
-                  {t.label}
+                  {isCall ? (t.callLabel ?? t.label) : t.label}
                 </button>
               </Can>
             ))}
@@ -276,7 +306,7 @@ export default function ServiceOrderPage() {
                     </Field>
                     <div>
                       <p className="mb-1 text-sm font-medium text-slate-700">Machines worked on</p>
-                      {liveMachines.length === 0 && <p className="text-sm text-slate-500">This order has no machines.</p>}
+                      {liveMachines.length === 0 && <p className="text-sm text-slate-500">{isCall ? 'No machines are on this service call yet. Add them with Edit Details.' : 'This order has no machines.'}</p>}
                       <div className="flex flex-wrap gap-2">
                         {liveMachines.map((m) => {
                           const on = form.machines.some((x) => x.machine_id === m.id)
@@ -323,7 +353,7 @@ export default function ServiceOrderPage() {
                     </div>
                   </section>
                 ) : (
-                  <button type="button" className={`${buttonClass} w-full py-3`} onClick={() => setForm(blankDraft(orderId))}>
+                  <button type="button" className={`${buttonClass} w-full py-3`} onClick={() => setForm(blankDraft({ order_id: isCall ? null : orderId, service_call_id: isCall ? callId : null }))}>
                     Add a Day
                   </button>
                 )}
@@ -417,7 +447,7 @@ export default function ServiceOrderPage() {
         {tab === 'machines' && (
           <Can permission="service.log.by_machine">
             <div className="space-y-3">
-              {liveMachines.length === 0 && <p className="text-sm text-slate-500">This order has no machines.</p>}
+              {liveMachines.length === 0 && <p className="text-sm text-slate-500">{isCall ? 'No machines are on this service call yet. Add them with Edit Details.' : 'This order has no machines.'}</p>}
               {liveMachines.map((m) => {
                 const notes = days.filter((d) => d.draft.machines.some((x) => x.machine_id === m.id))
                 return (
@@ -453,8 +483,8 @@ export default function ServiceOrderPage() {
         {tab === 'certificate' && (
           <Can permission="service.certificate">
             <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-              <h2 className="font-semibold">Commissioning Certificate</h2>
-              {certs.length === 0 && <p className="text-sm text-slate-500">No certificate has been created for this order yet.</p>}
+              <h2 className="font-semibold">{isCall ? 'Service Report' : 'Commissioning Certificate'}</h2>
+              {certs.length === 0 && <p className="text-sm text-slate-500">{isCall ? 'No service report has been created for this call yet.' : 'No certificate has been created for this order yet.'}</p>}
               <ul className="divide-y divide-slate-100 text-sm">
                 {certs.map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
@@ -470,7 +500,7 @@ export default function ServiceOrderPage() {
               {!certs.some((c) => c.status === 'draft') && (
                 <Can permission="service.certificate.create" level="edit">
                   <button type="button" className={buttonClass} onClick={createCertificate}>
-                    Create Certificate
+                    {isCall ? 'Create Service Report' : 'Create Certificate'}
                   </button>
                 </Can>
               )}
