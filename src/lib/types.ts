@@ -31,7 +31,7 @@ export type OptionItem = {
   archived: boolean
 }
 
-export type OptionListName = 'voltage' | 'delivery_equipment' | 'freight_type' | 'payment_type'
+export type OptionListName = 'voltage' | 'delivery_equipment' | 'freight_type' | 'payment_type' | 'notice_category'
 
 /** Stages are fixed (the board and serial rules depend on them). */
 /** Stored values. Names shown on screen can be renamed in Admin → Stage names (see src/lib/stages.ts). */

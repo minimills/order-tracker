@@ -2,8 +2,9 @@
 import { useEffect, useState, type FormEvent } from 'react'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
-import { buttonClass, Field, inputClass, secondaryButtonClass } from '../../components/form'
-import { showDate } from '../../lib/dates'
+import { Link } from 'react-router-dom'
+import Can from '../../components/Can'
+import { buttonClass, Field, inputClass } from '../../components/form'
 import { friendlyError } from '../../lib/format'
 import { DEFAULT_SCHEDULING, type SchedulingSettings } from '../../lib/schedule'
 import { supabase } from '../../lib/supabase'
@@ -11,11 +12,9 @@ import { loadSetting } from '../../lib/useSchedule'
 
 const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
 
-/** Working days, holidays, buffer and how machines in one order are built. */
+/** Working days, buffer and how machines in one order are built (holidays: Admin → Company Holidays). */
 export default function SchedulingPage() {
   const [f, setF] = useState<SchedulingSettings>(DEFAULT_SCHEDULING)
-  const [holidayDate, setHolidayDate] = useState('')
-  const [holidayName, setHolidayName] = useState('')
   const [saving, setSaving] = useState(false)
   useEffect(() => {
     loadSetting('scheduling', DEFAULT_SCHEDULING).then(setF)
@@ -27,26 +26,13 @@ export default function SchedulingPage() {
     if (next.working_days.length === 0) return toast.error('Select at least one working day.')
     if (!Number.isInteger(next.buffer_days) || next.buffer_days < 0 || next.buffer_days > 90) return toast.error('Buffer days: 0 to 90.')
     setSaving(true)
-    const { error } = await supabase.from('app_settings').upsert({ key: 'scheduling', value: next })
+    // Holidays live in Admin → Company Holidays now, not in this setting.
+    const { holidays: _unused, ...value } = next
+    void _unused
+    const { error } = await supabase.from('app_settings').upsert({ key: 'scheduling', value })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
     toast.success('Scheduling saved. Suggested dates on orders update immediately; promised dates only change when accepted.')
-  }
-
-  function addHoliday() {
-    if (!holidayDate) return toast.error('Pick the date.')
-    if (f.holidays.some((h) => h.date === holidayDate)) return toast.error('That date is already a holiday.')
-    const next = { ...f, holidays: [...f.holidays, { date: holidayDate, name: holidayName.trim() || 'Holiday' }].sort((a, b) => a.date.localeCompare(b.date)) }
-    setF(next)
-    setHolidayDate('')
-    setHolidayName('')
-    save(undefined, next)
-  }
-
-  function removeHoliday(date: string) {
-    const next = { ...f, holidays: f.holidays.filter((h) => h.date !== date) }
-    setF(next)
-    save(undefined, next)
   }
 
   return (
@@ -110,31 +96,17 @@ export default function SchedulingPage() {
         </div>
       </form>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="mb-3 font-semibold">Company Holidays</h2>
-        <div className="grid gap-2 sm:grid-cols-[11rem_1fr_auto]">
-          <input type="date" aria-label="Holiday date" className={inputClass} value={holidayDate} onChange={(e) => setHolidayDate(e.target.value)} />
-          <input aria-label="Holiday name" className={inputClass} placeholder="for example Canada Day" value={holidayName} onChange={(e) => setHolidayName(e.target.value)} />
-          <button type="button" className={secondaryButtonClass} onClick={addHoliday}>
-            Add Holiday
-          </button>
-        </div>
-        {f.holidays.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-500">No holidays have been added.</p>
-        ) : (
-          <ul className="mt-3 divide-y divide-slate-100 text-sm">
-            {f.holidays.map((h) => (
-              <li key={h.date} className="flex items-center justify-between py-1.5">
-                <span>
-                  <span className="font-medium">{showDate(h.date, 'EEE, MMM d, yyyy')}</span> · {h.name}
-                </span>
-                <button type="button" className="text-xs text-red-700 underline" onClick={() => removeHoliday(h.date)}>
-                  Remove
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+      <section className="rounded-lg border border-slate-200 bg-white p-5 text-sm">
+        <h2 className="mb-1 font-semibold">Company Holidays</h2>
+        <p className="text-slate-600">
+          Statutory holidays, company holidays and office closures are kept in Admin → Company Holidays. Days marked as a day off are skipped
+          here.
+        </p>
+        <Can permission="admin.holidays" level="edit">
+          <Link to="/admin/holidays" className="mt-2 inline-block underline">
+            Open Company Holidays
+          </Link>
+        </Can>
       </section>
     </div>
   )

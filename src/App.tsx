@@ -13,6 +13,9 @@ import ProductionPage from './pages/admin/ProductionPage'
 import BuildTimesPage from './pages/BuildTimesPage'
 import ServicePage from './pages/ServicePage'
 import ChatPage from './pages/ChatPage'
+import NoticeBoardPage from './pages/NoticeBoardPage'
+import NoticePrintPage from './pages/NoticePrintPage'
+import HolidaysPage from './pages/admin/HolidaysPage'
 import ChatChannelsPage from './pages/admin/ChatChannelsPage'
 import CalendarPage from './pages/CalendarPage'
 import ServiceOrderPage from './pages/ServiceOrderPage'
@@ -80,6 +83,17 @@ export default function App() {
           </RequireAuth>
         }
       />
+      {/* A notice laid out for printing (no sidebar). */}
+      <Route
+        path="notices/:id/print"
+        element={
+          <RequireAuth>
+            <Page permission="notices.print">
+              <NoticePrintPage />
+            </Page>
+          </RequireAuth>
+        }
+      />
       <Route
         element={
           <RequireAuth>
@@ -97,6 +111,7 @@ export default function App() {
         <Route path="checklists/:machineId" element={<Page permission="checklist"><ChecklistPage /></Page>} />
         <Route path="crating" element={<Page permission="reports.crating"><CratingReportPage /></Page>} />
         <Route path="boards" element={<Page permission="boards"><BoardsPage /></Page>} />
+        <Route path="notices" element={<Page permission="notices"><NoticeBoardPage /></Page>} />
         <Route path="chat" element={<Page permission="chat"><ChatPage /></Page>} />
         <Route path="chat/:conversationId" element={<Page permission="chat"><ChatPage /></Page>} />
         <Route path="service" element={<Page permission="service"><ServicePage /></Page>} />
@@ -125,6 +140,7 @@ export default function App() {
           <Route path="email-log" element={<Page permission="admin.email_log"><EmailLogPage /></Page>} />
           <Route path="groups" element={<Page permission="admin.groups" level="edit"><GroupsPage /></Page>} />
           <Route path="board-templates" element={<Page permission="admin.board_templates" level="edit"><BoardTemplatesPage /></Page>} />
+          <Route path="holidays" element={<Page permission="admin.holidays" level="edit"><HolidaysPage /></Page>} />
           <Route path="scheduling" element={<Page permission="admin.scheduling" level="edit"><SchedulingPage /></Page>} />
           <Route path="checklists" element={<Page permission="admin.checklists" level="edit"><ChecklistTemplatesPage /></Page>} />
           <Route path="chat" element={<Page permission="admin.chat" level="edit"><ChatChannelsPage /></Page>} />

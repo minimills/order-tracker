@@ -7,7 +7,7 @@ import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import { narrowInputClass, secondaryButtonClass } from '../form'
 
-type Kind = { kind: string; label: string; description: string | null; sort_order: number; default_modes: Record<string, string> }
+type Kind = { kind: string; label: string; description: string | null; sort_order: number; default_modes: Record<string, string>; required_channels?: string[] | null }
 type Channel = { channel: string; label: string; sort_order: number; enabled: boolean }
 type Setting = { kind: string; channel: string; mode: string }
 
@@ -102,6 +102,11 @@ export default function NotificationSettings() {
                 </td>
                 {channels.map((c) => (
                   <td key={c.channel} className="px-2 py-2">
+                    {k.required_channels?.includes(c.channel) ? (
+                      <span className="text-slate-600" title="Always sent for this type">
+                        Always{c.channel === 'email' ? ', each time' : ''}
+                      </span>
+                    ) : (
                     <Can permission="settings.notification_channels" level="edit" fallback={<span>{(CHOICES[c.channel] ?? CHOICES.default).find((x) => x.value === modeOf(k, c.channel))?.label}</span>}>
                       <select
                         aria-label={`${k.label}: ${c.label}`}
@@ -116,6 +121,7 @@ export default function NotificationSettings() {
                         ))}
                       </select>
                     </Can>
+                    )}
                   </td>
                 ))}
               </tr>
