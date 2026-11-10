@@ -94,6 +94,7 @@ const THING: Record<string, string> = {
   document_templates: 'template',
   tech_calendar_entries: 'calendar entry',
   calendar_feeds: 'phone calendar link',
+  calendar_imports: 'linked phone calendar',
   user_permissions: 'permissions',
   machine_steps: 'department step',
   user_groups: 'group',

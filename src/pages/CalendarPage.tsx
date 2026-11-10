@@ -5,12 +5,14 @@ import { toast } from 'sonner'
 import Can from '../components/Can'
 import { buttonClass, narrowInputClass, secondaryButtonClass } from '../components/form'
 import CalendarEntryDialog, { type ManualEntry } from '../components/service/CalendarEntryDialog'
+import PhoneEventDialog from '../components/service/PhoneEventDialog'
+import Icon from '../components/Icon'
 import PhoneCalendarSync from '../components/service/PhoneCalendarSync'
 import { useAuth } from '../lib/auth'
 import { todayISO } from '../lib/dates'
 import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
-import { CALENDAR_KINDS, type CalendarKind, type CalendarRow } from '../lib/service'
+import { CALENDAR_KINDS, showTime, type CalendarKind, type CalendarRow } from '../lib/service'
 import { supabase } from '../lib/supabase'
 
 const iso = (d: Date) => format(d, 'yyyy-MM-dd')
@@ -27,10 +29,16 @@ const initials = (name: string | null) =>
 /* @rendered-inside-can */
 function Chip({ r, full, showTech, onManual }: { r: CalendarRow; full?: boolean; showTech: boolean; onManual: (r: CalendarRow) => void }) {
   const k = CALENDAR_KINDS[r.kind as CalendarKind] ?? CALENDAR_KINDS.onsite
-  const text = `${showTech ? `${initials(r.tech_name)} · ` : ''}${r.title}`
+  const time = r.start_at ? `${showTime(r.start_at)} ` : ''
+  const text = (
+    <>
+      {r.from_phone && <Icon name="phone" className="mr-0.5 inline h-3 w-3 align-[-2px]" label="From phone" />}
+      {`${showTech ? `${initials(r.tech_name)} · ` : ''}${time}${r.title}`}
+    </>
+  )
   const cls = `block w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] ring-1 ${k.chip} ${full ? 'whitespace-normal' : ''}`
-  const label = `${k.label}: ${r.title}${r.tech_name ? ` (${r.tech_name})` : ''}${r.notes ? ` – ${r.notes}` : ''}`
-  if (r.source === 'manual')
+  const label = `${r.from_phone ? 'From phone · ' : ''}${k.label}: ${time}${r.title}${r.tech_name ? ` (${r.tech_name})` : ''}${r.notes ? ` – ${r.notes}` : ''}`
+  if (r.source === 'manual' || r.source === 'phone')
     return (
       <button type="button" className={cls} title={label} onClick={() => onManual(r)}>
         {text}
@@ -65,6 +73,18 @@ export default function CalendarPage() {
   const [people, setPeople] = useState<{ email: string; name: string }[]>([])
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState<ManualEntry | 'new' | null>(null)
+  const [phoneEntry, setPhoneEntry] = useState<CalendarRow | null>(null)
+  // My own linked phone calendar: warn here when it stopped working.
+  const [linkProblem, setLinkProblem] = useState<string | null>(null)
+  useEffect(() => {
+    if (!supabase || !me || !can('service.calendar.import', 'edit')) return
+    supabase
+      .from('calendar_imports')
+      .select('status, last_error')
+      .eq('user_email', me)
+      .maybeSingle()
+      .then(({ data }) => setLinkProblem(data?.status === 'error' ? ((data.last_error as string | null) ?? 'Your phone calendar link stopped working.') : null))
+  }, [me, can])
 
   const [from, to] = useMemo(() => {
     if (view === 'week') return [startOfWeek(anchor, { weekStartsOn: 1 }), endOfWeek(anchor, { weekStartsOn: 1 })]
@@ -115,6 +135,7 @@ export default function CalendarPage() {
 
   async function openManual(r: CalendarRow) {
     if (!supabase) return
+    if (r.source === 'phone') return setPhoneEntry(r)
     const { data, error } = await supabase.from('tech_calendar_entries').select('*').eq('id', r.source_id).maybeSingle()
     if (error || !data) return toast.error(error ? friendlyError(error) : 'That entry could not be found.')
     setEditing(data as ManualEntry)
@@ -184,6 +205,17 @@ export default function CalendarPage() {
           </Can>
         </div>
 
+        {linkProblem && (
+          <Can permission="service.calendar.import" level="edit">
+            <p className="rounded-md border border-red-300 bg-red-50 p-3 text-sm text-red-900" role="alert">
+              Your phone calendar is not being read: {linkProblem}{' '}
+              <Link to="/settings" className="font-medium underline">
+                Open Settings → Calendar
+              </Link>
+            </p>
+          </Can>
+        )}
+
         <ul className="flex flex-wrap gap-3 text-xs" aria-label="Colours">
           {(Object.keys(CALENDAR_KINDS) as CalendarKind[]).map((k) => (
             <li key={k} className="flex items-center gap-1.5">
@@ -191,6 +223,9 @@ export default function CalendarPage() {
               {CALENDAR_KINDS[k].label}
             </li>
           ))}
+          <li className="flex items-center gap-1.5 text-slate-600">
+            <Icon name="phone" className="h-3.5 w-3.5" /> From the technician’s phone calendar
+          </li>
           {showTech && <li className="text-slate-500">Initials = technician</li>}
         </ul>
 
@@ -252,6 +287,17 @@ export default function CalendarPage() {
         <Can permission="service.calendar.sync" level="edit">
           <PhoneCalendarSync />
         </Can>
+
+        {phoneEntry && (
+          <PhoneEventDialog
+            entry={phoneEntry}
+            onClose={() => setPhoneEntry(null)}
+            onSaved={() => {
+              setPhoneEntry(null)
+              load()
+            }}
+          />
+        )}
 
         {editing && (
           <CalendarEntryDialog

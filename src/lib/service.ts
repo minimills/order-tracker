@@ -320,9 +320,9 @@ export type ServiceCallInfo = {
 // ---------------------------------------------------------------------------
 // Technician calendar
 // ---------------------------------------------------------------------------
-export type CalendarKind = 'training' | 'service' | 'travel' | 'onsite'
+export type CalendarKind = 'training' | 'service' | 'travel' | 'onsite' | 'other'
 export type CalendarRow = {
-  source: 'training' | 'service_call' | 'travel_log' | 'manual'
+  source: 'training' | 'service_call' | 'travel_log' | 'manual' | 'phone'
   source_id: string
   tech_email: string
   tech_name: string | null
@@ -334,6 +334,11 @@ export type CalendarRow = {
   country: string | null
   notes: string | null
   link: string | null
+  /** Read from the technician's own phone calendar (read-only in the app). */
+  from_phone: boolean
+  /** Start time of a timed phone entry (null = all day). */
+  start_at: string | null
+  location: string | null
 }
 /** Colours (light background, dark text, solid dot) per kind, readable for colour-blind people (also labelled). */
 export const CALENDAR_KINDS: Record<CalendarKind, { label: string; chip: string; dot: string }> = {
@@ -341,7 +346,20 @@ export const CALENDAR_KINDS: Record<CalendarKind, { label: string; chip: string;
   service: { label: 'Service call', chip: 'bg-violet-100 text-violet-900 ring-violet-300', dot: 'bg-violet-600' },
   travel: { label: 'Travel day', chip: 'bg-amber-100 text-amber-900 ring-amber-300', dot: 'bg-amber-500' },
   onsite: { label: 'Other on-site day', chip: 'bg-emerald-100 text-emerald-900 ring-emerald-300', dot: 'bg-emerald-600' },
+  other: { label: 'Other', chip: 'bg-slate-100 text-slate-800 ring-slate-300', dot: 'bg-slate-500' },
 }
+
+/** Types the office can give an entry read from a phone calendar. */
+export const PHONE_EVENT_KINDS: { kind: CalendarKind; label: string }[] = [
+  { kind: 'travel', label: 'Travel day' },
+  { kind: 'onsite', label: 'On site' },
+  { kind: 'service', label: 'Service call' },
+  { kind: 'training', label: 'Training visit' },
+  { kind: 'other', label: 'Other' },
+]
+const timeFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit' })
+/** "9:30 a.m." in Halifax time. */
+export const showTime = (iso: string) => timeFmt.format(new Date(iso))
 
 /** The private phone-calendar link (the calendar-feed Edge Function). */
 export function calendarFeedUrl(token: string) {

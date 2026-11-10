@@ -368,6 +368,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'service.calendar.all', label: 'See every technician’s calendar (choose one or all)', levels: V, requires: 'service.calendar', db: true },
       { key: 'service.calendar.add', label: 'Add and change their own calendar entries', levels: E, requires: 'service.calendar', db: true },
       { key: 'service.calendar.manage', label: 'Add and change calendar entries for any technician', levels: E, requires: 'service.calendar', db: true },
+      { key: 'service.calendar.import', label: 'Link their own phone calendar (Settings → Calendar: paste, replace, remove the link, Sync Now)', levels: E, requires: 'service.calendar', db: true },
+      { key: 'service.calendar.classify', label: 'Set the type of entries from phones and link them to a customer or order', levels: E, requires: 'service.calendar', db: true },
       { key: 'service.calendar.sync', label: 'Phone calendar link (show, copy, make a new one)', levels: E, requires: 'service.calendar', db: true },
     ],
     'Commissioning certificate and service report': [
