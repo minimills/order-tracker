@@ -30,6 +30,7 @@ export const GROUPS = [
   'Payments',
   'Crating',
   'Boards',
+  'Notice Board',
   'Service',
   'Chat',
   'Reports',
@@ -344,6 +345,34 @@ export const CATALOG: PermissionItem[] = [
       { key: 'notifications.bell', label: 'Notifications bell in the top bar (board messages)', levels: V },
     ],
   }),
+  ...group('Notice Board', {
+    Page: [
+      { key: 'notices', label: 'Notice Board page (notices posted for them; unread dot and “New notices” count; can be their start page)', levels: V, page: true, db: true },
+      { key: 'notices.filters', label: 'Filters (category, priority, for my department) and search', levels: V, requires: 'notices' },
+      { key: 'notices.archive', label: 'Archive: expired and archived notices, with search', levels: V, requires: 'notices', db: true },
+      { key: 'notices.holidays', label: 'Upcoming holidays and office closures panel', levels: V, requires: 'notices' },
+      { key: 'notices.banner', label: 'Red banner at the top of every page for Urgent notices until they acknowledge them', levels: V, requires: 'notices', needs: ['notices.acknowledge'] },
+    ],
+    'Posting notices': [
+      { key: 'notices.post.everyone', label: 'Post to everyone, or to any mix of people, groups and departments', levels: E, requires: 'notices', db: true },
+      { key: 'notices.post.department', label: 'Post to their own departments only', levels: E, requires: 'notices', db: true },
+      { key: 'notices.priority.important', label: 'Post Important notices (also sent to the app and phones)', levels: E, requires: 'notices', db: true },
+      { key: 'notices.priority.urgent', label: 'Post Urgent notices (also emailed, red banner, pinned at the top)', levels: E, requires: 'notices', db: true },
+      { key: 'notices.pin', label: 'Pin their notices to the top of the board', levels: E, requires: 'notices', db: true },
+      { key: 'notices.manage', label: 'Manage every notice: edit, pin, archive and restore anyone’s notice, see scheduled ones and who acknowledged', levels: E, requires: 'notices', db: true },
+    ],
+    'On each notice': [
+      { key: 'notices.acknowledge', label: 'Acknowledge Important and Urgent notices', levels: E, requires: 'notices', db: true },
+      { key: 'notices.acks', label: 'See who has and hasn’t acknowledged their own notices (edit: Remind the Rest)', levels: VE, requires: 'notices', db: true },
+      { key: 'notices.react', label: 'Add reactions', levels: E, requires: 'notices', db: true },
+      { key: 'notices.comments', label: 'Comments under notices (edit: write comments)', levels: VE, requires: 'notices', db: true },
+      { key: 'notices.print', label: 'Print a notice on one page with the company letterhead', levels: V, requires: 'notices' },
+    ],
+    'My notes': [
+      { key: 'notices.my_notes', label: 'My notes: private sticky notes with checklists and reminders (nobody else can see them, admins included)', levels: E, requires: 'notices', db: true },
+    ],
+  }),
+
   ...group('Service', {
     Page: [
       { key: 'service', label: 'Service page (on-site training and commissioning)', levels: V, page: true, db: true },
@@ -465,7 +494,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.email_log', label: 'Email log (edit: Resend)', levels: VE, db: true },
       { key: 'admin.groups', label: 'Groups of people (for example Procurement, Techs) for sharing and notifications', levels: E, db: true },
       { key: 'admin.board_templates', label: 'Board templates (save a board as a template, edit, archive)', levels: E, db: true },
-      { key: 'admin.scheduling', label: 'Scheduling (working days, holidays, buffer, machines one after another)', levels: E, db: true },
+      { key: 'admin.scheduling', label: 'Scheduling (working days, buffer, machines one after another)', levels: E, db: true },
+      { key: 'admin.holidays', label: 'Company holidays (PEI statutory holidays, company holidays, office closures; used for ship dates)', levels: E, db: true },
       { key: 'admin.records', label: 'Orders, customers & machines: edit any field, archive', levels: E, db: true },
       { key: 'admin.serials', label: 'Serial numbers', levels: E, db: true },
       { key: 'admin.board', label: 'Shop queue repair', levels: E, db: true },

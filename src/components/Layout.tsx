@@ -12,6 +12,8 @@ import { isSupabaseConfigured } from '../lib/supabase'
 import { ACTION } from '../lib/wording'
 import Icon from './Icon'
 import { useChatUnread } from '../lib/chat'
+import { useNoticeUnread } from '../lib/notices'
+import UrgentBanner from './notices/UrgentBanner'
 
 
 export default function Layout() {
@@ -22,6 +24,7 @@ export default function Layout() {
   useStageLabels()
   // The menu is built from permissions: pages someone can't see are not in it.
   const chatUnread = useChatUnread(can('chat'))
+  const noticesUnread = useNoticeUnread(can('notices'))
   const items = NAV_ITEMS.filter(
     (i) => (!i.permission || can(i.permission, i.level)) && (!i.anyOf || canAny(i.anyOf, i.level)),
   )
@@ -65,6 +68,9 @@ export default function Layout() {
                   {chatUnread}
                 </span>
               )}
+              {item.badge === 'notices' && noticesUnread > 0 && (
+                <span className="ml-auto h-2.5 w-2.5 rounded-full bg-red-500" aria-label={`${noticesUnread} new ${noticesUnread === 1 ? 'notice' : 'notices'}`} title={`${noticesUnread} new`} />
+              )}
             </NavLink>
           ))}
         </nav>
@@ -99,6 +105,7 @@ export default function Layout() {
             {isSupabaseConfigured && can('alerts.bell') && <AlertsBell />}
           </div>
         </header>
+        {isSupabaseConfigured && can('notices.banner') && <UrgentBanner />}
         {isSupabaseConfigured && can('alerts.popups') && <NotificationPrompt />}
 
         {!isSupabaseConfigured && (

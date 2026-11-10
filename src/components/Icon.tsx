@@ -53,6 +53,10 @@ const PATHS = {
   stop: 'M6 6h12v12H6z',
   share: 'M18 3a3 3 0 1 0 0 6 3 3 0 0 0 0-6M6 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6M18 15a3 3 0 1 0 0 6 3 3 0 0 0 0-6M8.6 13.5l6.8 4M15.4 6.5l-6.8 4',
   timer: 'M12 8a7 7 0 1 0 0 14 7 7 0 0 0 0-14M12 12v3M9 2h6',
+  pin: 'M9 3h6l-1 6 4 4H6l4-4zM12 13v8',
+  note: 'M4 4h16v11l-5 5H4zM15 20v-5h5',
+  search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14M21 21l-5-5',
+  comment: 'M4 5h16v11H9l-5 4z',
 } as const
 
 export type IconName = keyof typeof PATHS

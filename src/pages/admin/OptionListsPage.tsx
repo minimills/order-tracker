@@ -13,6 +13,7 @@ const LISTS: { name: OptionListName; title: string }[] = [
   { name: 'delivery_equipment', title: 'Delivery equipment' },
   { name: 'freight_type', title: 'Freight type' },
   { name: 'payment_type', title: 'Payment types' },
+  { name: 'notice_category', title: 'Notice categories' },
 ]
 
 const small = 'rounded border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40'

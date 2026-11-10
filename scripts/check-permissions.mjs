@@ -182,7 +182,7 @@ function checkFile(file) {
 for (const f of walkDir(join(root, 'src'))) checkFile(f)
 
 // Keys used by the database (migrations from 0018 on) must be in the catalog.
-const KEY_LIKE = /'((?:dashboard|orders|order|payments|crating|customer|admin|reports|shop_board|settings|alerts|agent)(?:\.[a-z0-9_]+)+)'|(?:has_perm|require_perm)\('([a-z_]+)'/g
+const KEY_LIKE = /'((?:dashboard|orders|order|payments|crating|customer|admin|reports|shop_board|settings|alerts|agent|notices)(?:\.[a-z0-9_]+)+)'|(?:has_perm|require_perm)\('([a-z_]+)'/g
 for (const name of readdirSync(join(root, 'supabase/migrations')).sort()) {
   const n = Number(name.slice(0, 4))
   if (!(n >= 18)) continue

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { todayISO } from './dates'
+import { addDaysISO, todayISO } from './dates'
 import { fetchAll } from './fetchAll'
 import {
   computeSchedule,
@@ -60,8 +60,10 @@ export function useSchedule(enabled = true, alsoOrderId?: string) {
 
   const load = useCallback(async () => {
     if (!supabase || !enabled) return
-    const [s, d, t, st, b] = await Promise.all([
+    const [s, hol, d, t, st, b] = await Promise.all([
       loadSetting('scheduling', DEFAULT_SCHEDULING),
+      // Days off from Admin → Company Holidays (statutory holidays, company holidays, closures).
+      supabase.rpc('holiday_off_dates', { p_from: addDaysISO(today, -400), p_to: addDaysISO(today, 1100) }),
       loadSetting('order_defaults', DEFAULT_ORDER_DEFAULTS),
       supabase.from('machine_types').select('id, name, build_days'),
       supabase.from('machine_type_step_stats').select('*'),
@@ -90,7 +92,8 @@ export function useSchedule(enabled = true, alsoOrderId?: string) {
           chunks<DeadlineRow>((part) => fetchAll<DeadlineRow>(() => supabase!.from('order_deadlines').select('*').in('order_id', part).order('machine_id'))),
         ])
       : [[], [], []]
-    setSettings(s)
+    const offDays = ((hol.data as { day: string; name: string }[] | null) ?? []).map((h) => ({ date: h.day, name: h.name }))
+    setSettings({ ...s, holidays: [...s.holidays, ...offDays] })
     setDefaults(d)
     setTypes((t.data as TypeBuild[] | null) ?? [])
     setStats((st.data as StepStat[] | null) ?? [])
@@ -99,7 +102,7 @@ export function useSchedule(enabled = true, alsoOrderId?: string) {
     setSteps(sp)
     setDeadlines(dl)
     setLoading(false)
-  }, [enabled, alsoOrderId])
+  }, [enabled, alsoOrderId, today])
 
   useEffect(() => {
     // load() only sets state after the database answers.
