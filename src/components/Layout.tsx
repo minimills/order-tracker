@@ -11,6 +11,7 @@ import NotificationPrompt from './alerts/NotificationPrompt'
 import { isSupabaseConfigured } from '../lib/supabase'
 import { ACTION } from '../lib/wording'
 import Icon from './Icon'
+import { useChatUnread } from '../lib/chat'
 
 
 export default function Layout() {
@@ -20,6 +21,7 @@ export default function Layout() {
   // Loads the stage names an admin may have renamed (Admin → Stage names).
   useStageLabels()
   // The menu is built from permissions: pages someone can't see are not in it.
+  const chatUnread = useChatUnread(can('chat'))
   const items = NAV_ITEMS.filter(
     (i) => (!i.permission || can(i.permission, i.level)) && (!i.anyOf || canAny(i.anyOf, i.level)),
   )
@@ -58,6 +60,11 @@ export default function Layout() {
             >
               <Icon name={item.icon} className="h-4 w-4 opacity-80" />
               {item.label}
+              {item.badge === 'chat' && chatUnread > 0 && (
+                <span className="ml-auto rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold text-white" aria-label={`${chatUnread} unread`}>
+                  {chatUnread}
+                </span>
+              )}
             </NavLink>
           ))}
         </nav>

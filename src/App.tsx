@@ -12,6 +12,8 @@ import BuildChecklistsPage from './pages/admin/BuildChecklistsPage'
 import ProductionPage from './pages/admin/ProductionPage'
 import BuildTimesPage from './pages/BuildTimesPage'
 import ServicePage from './pages/ServicePage'
+import ChatPage from './pages/ChatPage'
+import ChatChannelsPage from './pages/admin/ChatChannelsPage'
 import CalendarPage from './pages/CalendarPage'
 import ServiceOrderPage from './pages/ServiceOrderPage'
 import CertificatePage from './pages/CertificatePage'
@@ -95,6 +97,8 @@ export default function App() {
         <Route path="checklists/:machineId" element={<Page permission="checklist"><ChecklistPage /></Page>} />
         <Route path="crating" element={<Page permission="reports.crating"><CratingReportPage /></Page>} />
         <Route path="boards" element={<Page permission="boards"><BoardsPage /></Page>} />
+        <Route path="chat" element={<Page permission="chat"><ChatPage /></Page>} />
+        <Route path="chat/:conversationId" element={<Page permission="chat"><ChatPage /></Page>} />
         <Route path="service" element={<Page permission="service"><ServicePage /></Page>} />
         <Route path="service/certificates/:id" element={<Page permission="service.certificate"><CertificatePage /></Page>} />
         <Route path="service/calendar" element={<Page permission="service.calendar"><CalendarPage /></Page>} />
@@ -123,6 +127,7 @@ export default function App() {
           <Route path="board-templates" element={<Page permission="admin.board_templates" level="edit"><BoardTemplatesPage /></Page>} />
           <Route path="scheduling" element={<Page permission="admin.scheduling" level="edit"><SchedulingPage /></Page>} />
           <Route path="checklists" element={<Page permission="admin.checklists" level="edit"><ChecklistTemplatesPage /></Page>} />
+          <Route path="chat" element={<Page permission="admin.chat" level="edit"><ChatChannelsPage /></Page>} />
           <Route path="templates" element={<Page permission="admin.templates" level="edit"><TemplatesPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />
           <Route path="production" element={<Page permission="admin.production" level="edit"><ProductionPage /></Page>} />

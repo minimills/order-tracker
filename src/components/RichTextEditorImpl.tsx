@@ -2,7 +2,7 @@ import TaskItem from '@tiptap/extension-task-item'
 import TaskList from '@tiptap/extension-task-list'
 import { EditorContent, useEditor, useEditorState } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { cleanRichText, isEmptyRichText } from '../lib/richText'
 import type { RichTextEditorProps } from './RichTextEditor'
 
@@ -11,7 +11,12 @@ const toolbarButton = (active: boolean) =>
 
 /** The editor itself (loaded only when a note box is shown). */
 /* @layout-helper */
-export default function RichTextEditorImpl({ value, onChange, onBlur, disabled = false, placeholder, minHeight = '6rem', label, headings = false }: RichTextEditorProps) {
+export default function RichTextEditorImpl({ value, onChange, onBlur, disabled = false, placeholder, minHeight = '6rem', label, headings = false, onSubmit, onReady }: RichTextEditorProps) {
+  // The latest "send" action (the editor is made once, so it reads it through a ref).
+  const submitRef = useRef(onSubmit)
+  useEffect(() => {
+    submitRef.current = onSubmit
+  }, [onSubmit])
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -36,6 +41,13 @@ export default function RichTextEditorImpl({ value, onChange, onBlur, disabled =
         'aria-label': label ?? 'Notes',
         'aria-multiline': 'true',
       },
+      handleKeyDown: (_view, event) => {
+        if (submitRef.current && event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
+          submitRef.current()
+          return true
+        }
+        return false
+      },
     },
     onUpdate: ({ editor: e }) => {
       const html = e.getHTML()
@@ -43,6 +55,18 @@ export default function RichTextEditorImpl({ value, onChange, onBlur, disabled =
     },
     onBlur: () => onBlur?.(),
   })
+
+  useEffect(() => {
+    if (!editor || !onReady) return
+    onReady({
+      replaceBeforeCursor: (remove, text) => {
+        const to = editor.state.selection.from
+        editor.chain().focus().deleteRange({ from: Math.max(1, to - remove), to }).insertContent(text).run()
+      },
+      setContent: (html) => editor.commands.setContent(cleanRichText(html)),
+      focus: () => editor.commands.focus('end'),
+    })
+  }, [editor, onReady])
 
   useEffect(() => {
     editor?.setEditable(!disabled)

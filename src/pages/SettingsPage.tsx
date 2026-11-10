@@ -5,6 +5,7 @@ import UnitsSwitch from '../components/crating/UnitsSwitch'
 import NotificationSettings from '../components/settings/NotificationSettings'
 import PhoneNotifications from '../components/settings/PhoneNotifications'
 import CalendarImportSettings from '../components/settings/CalendarImportSettings'
+import ChatSettings from '../components/settings/ChatSettings'
 import { secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
 import { usePermissions } from '../lib/permissions'
@@ -100,6 +101,10 @@ export default function SettingsPage() {
 
         <Can permission="settings.notification_channels">
           <NotificationSettings />
+        </Can>
+
+        <Can anyOf={['settings.quiet_hours', 'settings.chat_status']} level="edit">
+          <ChatSettings />
         </Can>
 
         <Can permission="settings.push" level="edit">

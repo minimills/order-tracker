@@ -95,6 +95,7 @@ const THING: Record<string, string> = {
   tech_calendar_entries: 'calendar entry',
   calendar_feeds: 'phone calendar link',
   calendar_imports: 'linked phone calendar',
+  chat_conversations: 'chat channel',
   user_permissions: 'permissions',
   machine_steps: 'department step',
   user_groups: 'group',

@@ -10,6 +10,8 @@ export type NavItem = {
   anyOf?: string[]
   level?: Level
   end?: boolean
+  /** Shows a live count next to the item (unread chat messages). */
+  badge?: 'chat'
 }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -18,6 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/orders/new', label: 'New Order', icon: 'plus', permission: 'orders.new', level: 'edit' },
   { to: '/orders', label: 'Orders List', icon: 'list', permission: 'orders.list', end: true },
   { to: '/boards', label: 'Boards', icon: 'boards', permission: 'boards' },
+  { to: '/chat', label: 'Chat', icon: 'chat', permission: 'chat', badge: 'chat' },
   { to: '/service', label: 'Service', icon: 'cog', permission: 'service' },
   { to: '/service/calendar', label: 'Tech Calendar', icon: 'calendar', permission: 'service.calendar' },
   { to: '/payments', label: 'Payments', icon: 'money', permission: 'payments.page' },
