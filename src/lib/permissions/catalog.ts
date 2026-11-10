@@ -31,6 +31,7 @@ export const GROUPS = [
   'Crating',
   'Boards',
   'Service',
+  'Chat',
   'Reports',
   'Agent',
   'Settings',
@@ -385,6 +386,21 @@ export const CATALOG: PermissionItem[] = [
     ],
   }),
 
+  ...group('Chat', {
+    Page: [
+      { key: 'chat', label: 'Chat page (read the conversations they belong to; unread count in the menu)', levels: V, page: true, db: true },
+      { key: 'chat.send', label: 'Write in direct messages and group chats (also reply, react, edit and delete own messages)', levels: E, requires: 'chat', db: true },
+      { key: 'chat.direct', label: 'Start direct messages', levels: E, requires: 'chat', db: true },
+      { key: 'chat.groups', label: 'Start group chats (name, people; add, remove, rename, leave)', levels: E, requires: 'chat', db: true },
+      { key: 'chat.channels.post', label: 'Write in department, group and other channels', levels: E, requires: 'chat', db: true },
+      { key: 'chat.pin', label: 'Pin and unpin messages', levels: E, requires: 'chat', db: true },
+      { key: 'chat.search', label: 'Search across their conversations', levels: V, requires: 'chat', db: true },
+      { key: 'chat.presence', label: 'See who is online or away', levels: V, requires: 'chat' },
+      { key: 'chat.members', label: 'Conversation details (members, notifications for the conversation)', levels: V, requires: 'chat' },
+      { key: 'chat.attachments', label: 'Photos and files in chat (available in a future update)', levels: V, requires: 'chat' },
+    ],
+  }),
+
   ...group('Reports', {
     'Department delays': [
       { key: 'reports.department_delays', label: 'Department delays report (on-time %, days late per department)', levels: V, page: true, db: true },
@@ -421,6 +437,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'settings.notifications', label: 'Desktop notifications', levels: V, requires: 'settings' },
       { key: 'settings.notification_channels', label: 'Notification settings: in the app, by email (each time or daily summary) and phone push, per type (edit: change them)', levels: VE, requires: 'settings', db: true },
       { key: 'settings.push', label: 'Phone notifications on their own phone or computer (enable, test, disable)', levels: E, requires: 'settings', db: true },
+      { key: 'settings.quiet_hours', label: 'Quiet hours: no phone notifications at night (edit their own)', levels: E, requires: 'settings', db: true },
+      { key: 'settings.chat_status', label: 'Hide their online / away status in chat', levels: E, requires: 'settings', db: true },
       { key: 'settings.connection', label: 'Database connection status', levels: V, requires: 'settings' },
     ],
     Alerts: [
@@ -437,6 +455,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.machine_types', label: 'Machine types', levels: E, db: true },
       { key: 'admin.dropdowns', label: 'Dropdown lists', levels: E, db: true },
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
+      { key: 'admin.chat', label: 'Chat channels (department, group and other channels; never private chats)', levels: E, db: true },
       { key: 'admin.templates', label: 'Templates (commissioning certificate and service report text)', levels: E, db: true },
       { key: 'admin.build_checklists', label: 'Build checklists (parts and tasks per machine type and step)', levels: E, db: true },
       { key: 'admin.production', label: 'Production boards (default stages and their departments, office, colour)', levels: E, db: true },

@@ -29,6 +29,7 @@ const PATHS = {
   receipt: 'M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM9 8h6M9 12h6M9 16h4',
   calendar: 'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4',
   phone: 'M7 2h10v20H7zM11 18h2',
+  paperclip: 'M21 11.5 12.5 20a5 5 0 0 1-7-7l9-9a3.3 3.3 0 0 1 4.7 4.7l-9 9a1.7 1.7 0 0 1-2.4-2.4l8.3-8.3',
   records: 'M4 4h16v4H4zM4 10h16v4H4zM4 16h16v4H4z',
   hash: 'M5 9h14M5 15h14M10 3 8 21M16 3l-2 18',
   bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4',

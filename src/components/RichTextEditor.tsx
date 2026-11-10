@@ -12,6 +12,17 @@ export type RichTextEditorProps = {
   label?: string
   /** Also offer Heading and Subheading (documents such as certificates). */
   headings?: boolean
+  /** Ctrl+Enter / Cmd+Enter (for example "send" in chat). */
+  onSubmit?: () => void
+  /** Gives the caller a small handle on the editor (chat mentions, clearing after sending). */
+  onReady?: (api: EditorApi) => void
+}
+
+export type EditorApi = {
+  /** Removes the last `remove` characters before the cursor and types `text` there. */
+  replaceBeforeCursor: (remove: number, text: string) => void
+  setContent: (html: string) => void
+  focus: () => void
 }
 
 const Impl = lazy(() => import('./RichTextEditorImpl'))

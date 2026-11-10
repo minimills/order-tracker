@@ -79,6 +79,7 @@ export function buttonLabel(link: string | null) {
   if (link.includes('card=')) return 'Open the Card'
   if (link.startsWith('/boards/')) return 'Open the Board'
   if (link.startsWith('/orders/')) return 'Open the Order'
+  if (link.startsWith('/chat/')) return 'Open the Conversation'
   return 'Open the Order Tracker'
 }
 

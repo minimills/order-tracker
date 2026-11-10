@@ -91,6 +91,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0029_service.sql` | Service: training fields on orders, service day log, Admin → Templates, commissioning certificates with on-screen signatures and email |
 | `0030_service_calls_calendar.sql` | Service Calls board, service reports, technician calendar, private phone-calendar link (needs the `calendar-feed` Edge Function) |
 | `0031_phone_calendar_import.sql` | Technicians' own phone calendars (Apple / Google iCal link) read into the technician calendar every 15 minutes (needs the `calendar-import` Edge Function) |
+| `0032_chat.sql` | Chat: direct messages, group chats, department and group channels, live updates, notifications (email after 30 minutes unread), quiet hours, Admin → Chat |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 

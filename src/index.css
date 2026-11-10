@@ -55,3 +55,23 @@ body {
 .rich-text-readonly input {
   pointer-events: none;
 }
+
+/* Chat: @mentions and links inside messages */
+.chat-body .chat-mention {
+  border-radius: 0.25rem;
+  background: rgb(219 234 254);
+  padding: 0 0.15rem;
+  font-weight: 600;
+  color: rgb(30 64 175);
+}
+.chat-body .chat-mention-me {
+  background: rgb(254 243 199);
+  color: rgb(146 64 14);
+}
+.chat-body .chat-link {
+  color: rgb(29 78 216);
+  text-decoration: underline;
+}
+.chat-body p {
+  margin: 0;
+}
