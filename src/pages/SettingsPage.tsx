@@ -4,6 +4,7 @@ import Can from '../components/Can'
 import UnitsSwitch from '../components/crating/UnitsSwitch'
 import NotificationSettings from '../components/settings/NotificationSettings'
 import PhoneNotifications from '../components/settings/PhoneNotifications'
+import CalendarImportSettings from '../components/settings/CalendarImportSettings'
 import { secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
 import { usePermissions } from '../lib/permissions'
@@ -103,6 +104,10 @@ export default function SettingsPage() {
 
         <Can permission="settings.push" level="edit">
           <PhoneNotifications />
+        </Can>
+
+        <Can permission="service.calendar.import" level="edit">
+          <CalendarImportSettings />
         </Can>
 
         <Can anyOf={ADMIN_KEYS}>

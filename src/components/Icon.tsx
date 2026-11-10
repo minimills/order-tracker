@@ -28,6 +28,7 @@ const PATHS = {
   template: 'M3 3h18v6H3zM3 13h8v8H3zM15 13h6M15 17h6M15 21h6',
   receipt: 'M5 3h14v18l-3-2-2 2-2-2-2 2-2-2-3 2zM9 8h6M9 12h6M9 16h4',
   calendar: 'M3 5h18v16H3zM3 10h18M8 3v4M16 3v4',
+  phone: 'M7 2h10v20H7zM11 18h2',
   records: 'M4 4h16v4H4zM4 10h16v4H4zM4 16h16v4H4z',
   hash: 'M5 9h14M5 15h14M10 3 8 21M16 3l-2 18',
   bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4',

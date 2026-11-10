@@ -90,6 +90,7 @@ Run each file in `supabase/migrations/` **in number order**, one at a time:
 | `0028_cancel_renumber.sql` | Cancelling an order makes it C-<number> and moves every later order number down by one; the cancelled order's production board is archived |
 | `0029_service.sql` | Service: training fields on orders, service day log, Admin → Templates, commissioning certificates with on-screen signatures and email |
 | `0030_service_calls_calendar.sql` | Service Calls board, service reports, technician calendar, private phone-calendar link (needs the `calendar-feed` Edge Function) |
+| `0031_phone_calendar_import.sql` | Technicians' own phone calendars (Apple / Google iCal link) read into the technician calendar every 15 minutes (needs the `calendar-import` Edge Function) |
 
 Then let yourself in (change the email to yours), in a new SQL Editor query:
 
