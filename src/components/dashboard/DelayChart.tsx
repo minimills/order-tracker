@@ -117,24 +117,26 @@ export default function DelayChart({ months }: { months: MonthDelay[] }) {
 
       <details className="mt-3 text-sm">
         <summary className="cursor-pointer text-slate-600">Show as Table</summary>
-        <table className="mt-2 w-full text-left">
-          <thead className="text-xs text-slate-500">
-            <tr>
-              <th className="py-1 font-normal">Month</th>
-              <th className="py-1 text-right font-normal">Orders shipped</th>
-              <th className="py-1 text-right font-normal">Average delay (days)</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100 tabular-nums">
-            {months.map((m) => (
-              <tr key={m.month}>
-                <td className="py-1">{m.longLabel}</td>
-                <td className="py-1 text-right">{m.orders}</td>
-                <td className="py-1 text-right">{m.average === null ? '—' : fmt(m.average)}</td>
+        <div className="overflow-x-auto">
+          <table className="mt-2 w-full text-left">
+            <thead className="text-xs text-slate-500">
+              <tr>
+                <th className="py-1 font-normal">Month</th>
+                <th className="py-1 text-right font-normal">Orders shipped</th>
+                <th className="py-1 text-right font-normal">Average delay (days)</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="divide-y divide-slate-100 tabular-nums">
+              {months.map((m) => (
+                <tr key={m.month}>
+                  <td className="py-1">{m.longLabel}</td>
+                  <td className="py-1 text-right">{m.orders}</td>
+                  <td className="py-1 text-right">{m.average === null ? '—' : fmt(m.average)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </details>
     </div>
   )

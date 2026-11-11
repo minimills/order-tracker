@@ -54,6 +54,8 @@ import OrdersBoardPage from './pages/OrdersBoardPage'
 import OrdersListPage from './pages/OrdersListPage'
 import PaymentsPage from './pages/PaymentsPage'
 import SettingsPage from './pages/SettingsPage'
+import NotificationSettingsPage from './pages/NotificationSettingsPage'
+import StatusPage from './pages/admin/StatusPage'
 import ShopBoardPage from './pages/ShopBoardPage'
 
 /** Every page sits in <Page permission="…">; see src/lib/permissions/catalog.ts. */
@@ -124,6 +126,7 @@ export default function App() {
         <Route path="reports/build-times" element={<Page permission="reports.build_times"><BuildTimesPage /></Page>} />
         <Route path="agent" element={<Page permission="agent"><AgentPage /></Page>} />
         <Route path="settings" element={<Page permission="settings"><SettingsPage /></Page>} />
+        <Route path="settings/notifications" element={<Page permission="settings.notification_channels"><NotificationSettingsPage /></Page>} />
         {/* Old addresses of pages that moved to Admin */}
         <Route path="settings/machine-types" element={<Navigate to="/admin/machine-types" replace />} />
         <Route path="settings/alerts" element={<Navigate to="/admin/alerts" replace />} />
@@ -153,6 +156,7 @@ export default function App() {
           <Route path="alerts" element={<Page permission="admin.alerts" level="edit"><AlertSettingsPage /></Page>} />
           <Route path="company" element={<Page permission="admin.company" level="edit"><CompanyPage /></Page>} />
           <Route path="archive" element={<Page permission="admin.archive" level="edit"><ArchivePage /></Page>} />
+          <Route path="status" element={<Page permission="admin.status" level="edit"><StatusPage /></Page>} />
           <Route path="activity" element={<Page permission="admin.activity"><ActivityPage /></Page>} />
           <Route path="import" element={<Page permission="admin.import" level="edit"><ImportPage /></Page>} />
         </Route>

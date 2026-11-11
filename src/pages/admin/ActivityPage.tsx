@@ -132,7 +132,7 @@ export default function ActivityPage() {
   }, [])
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Activity">Every change anyone made, newest first. Times are Halifax time.</AdminPageHeader>
 
       <form

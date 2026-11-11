@@ -155,7 +155,7 @@ export default function ChecklistTemplatesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Checklists">
         The final check for each machine is copied from these lists when it is started: the <strong>general</strong> list
         (every machine) followed by the extra items for that <strong>machine type</strong>. Changes here only affect final

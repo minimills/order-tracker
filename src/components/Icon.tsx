@@ -57,6 +57,14 @@ const PATHS = {
   note: 'M4 4h16v11l-5 5H4zM15 20v-5h5',
   search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14M21 21l-5-5',
   comment: 'M4 5h16v11H9l-5 4z',
+  pulse: 'M3 12h4l3-8 4 16 3-8h4',
+  panel: 'M3 4h18v16H3zM9 4v16',
+  chevronRight: 'M9 6l6 6-6 6',
+  chevronLeft: 'M15 6l-6 6 6 6',
+  signOut: 'M14 4h5v16h-5M10 8l-4 4 4 4M6 12h11',
+  sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4',
+  moon: 'M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5',
+  monitor: 'M3 4h18v12H3zM8 20h8M12 16v4',
 } as const
 
 export type IconName = keyof typeof PATHS

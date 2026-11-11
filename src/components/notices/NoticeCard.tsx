@@ -104,7 +104,7 @@ export default function NoticeCard(props: Props) {
     <article
       id={`notice-${n.id}`}
       style={style}
-      className={`relative flex flex-col rounded-sm border px-4 pb-3 pt-5 text-slate-800 ${boardLook} ${
+      className={`keep-light relative flex flex-col rounded-sm border px-4 pb-3 pt-5 text-slate-800 ${boardLook} ${
         n.priority === 'urgent' ? 'ring-2 ring-red-500/70' : ''
       } ${highlight ? 'outline outline-3 outline-offset-4 outline-blue-500' : ''} ${scheduled ? 'opacity-80' : ''}`}
     >

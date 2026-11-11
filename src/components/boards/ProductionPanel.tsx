@@ -95,27 +95,29 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
           {times.length > 0 && (
             <div className="mt-3">
               <div className="text-xs font-medium text-slate-500">Time per stage</div>
-              <table className="mt-1 w-full text-xs">
-                <tbody className="divide-y divide-teal-100">
-                  {times.map((t) => {
-                    const start = t.started_at ?? null
-                    const end = t.finished_at ?? null
-                    return (
-                      <tr key={t.id}>
-                        <td className="py-1 pr-2 font-medium">{t.stage_name}</td>
-                        <td className="py-1 pr-2 text-slate-600">
-                          {start ? activityTime.format(new Date(start)) : `arrived ${activityTime.format(new Date(t.entered_at))}`}
-                          {start && t.auto_started && ' (arrival)'}
-                        </td>
-                        <td className="py-1 pr-2 text-slate-600">
-                          {end ? <>to {activityTime.format(new Date(end))}{t.auto_finished && ' (when it moved on)'}</> : t.left_at ? '' : 'in progress'}
-                        </td>
-                        <td className="py-1 text-right font-medium">{start && end ? formatDuration(secondsBetween(start, end)) : ''}</td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
+              <div className="overflow-x-auto">
+                <table className="mt-1 w-full text-xs">
+                  <tbody className="divide-y divide-teal-100">
+                    {times.map((t) => {
+                      const start = t.started_at ?? null
+                      const end = t.finished_at ?? null
+                      return (
+                        <tr key={t.id}>
+                          <td className="py-1 pr-2 font-medium">{t.stage_name}</td>
+                          <td className="py-1 pr-2 text-slate-600">
+                            {start ? activityTime.format(new Date(start)) : `arrived ${activityTime.format(new Date(t.entered_at))}`}
+                            {start && t.auto_started && ' (arrival)'}
+                          </td>
+                          <td className="py-1 pr-2 text-slate-600">
+                            {end ? <>to {activityTime.format(new Date(end))}{t.auto_finished && ' (when it moved on)'}</> : t.left_at ? '' : 'in progress'}
+                          </td>
+                          <td className="py-1 text-right font-medium">{start && end ? formatDuration(secondsBetween(start, end)) : ''}</td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
               <p className="mt-1 text-[11px] text-slate-500">
                 Start and Finish are filled in automatically from when the card arrived and left if nobody pressed the buttons.
               </p>

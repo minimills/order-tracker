@@ -12,6 +12,13 @@
     <meta name="apple-mobile-web-app-title" content="BMM Orders" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <title>Belfast Mini Mills – Orders</title>
+    <script>
+      // The theme chosen in Settings (kept in this browser), set before the page draws.
+      try {
+        var t = localStorage.getItem('bmm.theme') || 'system'
+        if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark')
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>

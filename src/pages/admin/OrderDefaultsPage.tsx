@@ -35,12 +35,12 @@ export default function OrderDefaultsPage() {
     setF({ ...f, [key]: Number(e.target.value) })
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Order Defaults">
         What a new order starts with. Everything can still be changed on the New order form. Calculated dates follow the
         weekend rule: Saturday moves back to Friday, Sunday forward to Monday.
       </AdminPageHeader>
-      <form onSubmit={save} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5" noValidate>
+      <form onSubmit={save} className="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-5" noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Currency when the customer is in Canada" htmlFor="od-cad">
             <select id="od-cad" className={inputClass} value={f.currency_canada} onChange={(e) => setF({ ...f, currency_canada: e.target.value })}>

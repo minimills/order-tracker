@@ -99,7 +99,7 @@ const SignaturePad = forwardRef<SignaturePadHandle, { disabled?: boolean }>(func
       onPointerCancel={up}
       onPointerLeave={up}
       aria-label="Sign here"
-      className={`block h-40 w-full touch-none rounded-md border-2 border-dashed bg-white sm:h-48 ${
+      className={`keep-light block h-40 w-full touch-none rounded-md border-2 border-dashed bg-white sm:h-48 ${
         disabled ? 'border-slate-200 opacity-60' : 'border-slate-400'
       }`}
     />

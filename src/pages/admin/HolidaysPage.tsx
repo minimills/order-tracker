@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
-import { buttonClass, Field, inputClass, Modal, narrowInputClass, secondaryButtonClass } from '../../components/form'
+import { buttonClass, Field, inputClass, Modal, narrowInputClass, secondaryButtonClass, cardGridClass } from '../../components/form'
 import { todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { HOLIDAY_KIND, holidayApiUrl, rangeText, showDateTime, type Holiday } from '../../lib/notices'
@@ -110,7 +110,7 @@ export default function HolidaysPage() {
   const years = [...new Set(shown.map((h) => h.start_date.slice(0, 4)))]
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader
         title="Company Holidays"
         aside={
@@ -123,6 +123,7 @@ export default function HolidaysPage() {
         ones are shown on the Notice Board.
       </AdminPageHeader>
 
+      <div className={cardGridClass}>
       <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
         <h2 className="font-semibold">Statutory Holidays</h2>
         <div className="flex flex-wrap items-end gap-3">
@@ -171,7 +172,7 @@ export default function HolidaysPage() {
         )}
       </section>
 
-      <section className="rounded-lg border border-slate-200 bg-white p-5">
+      <section className="[grid-column:1/-1] rounded-lg border border-slate-200 bg-white p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <h2 className="font-semibold">All Holidays and Closures</h2>
           <div className="flex gap-4 text-sm">
@@ -281,6 +282,7 @@ export default function HolidaysPage() {
           </div>
         </Modal>
       )}
+      </div>
     </div>
   )
 }

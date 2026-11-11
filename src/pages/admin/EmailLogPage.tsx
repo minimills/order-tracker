@@ -61,7 +61,7 @@ export default function EmailLogPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-4">
+    <div className="space-y-4">
       <AdminPageHeader title="Email Log">Every email the Order Tracker has sent, newest first.</AdminPageHeader>
       <div className="flex flex-wrap gap-2">
         <input aria-label="Search" className={`${narrowInputClass} w-72`} placeholder="Search by recipient or subject" value={q} onChange={(e) => setQ(e.target.value)} />

@@ -113,7 +113,7 @@ export default function RecordsPage() {
   const counts = { orders: shownOrders.length, customers: shownCustomers.length, machines: shownMachines.length }
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Orders, Customers and Machines">
         Edit any field. Archive hides a record from normal screens; it can be brought back from the Archive page.
       </AdminPageHeader>

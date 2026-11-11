@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
@@ -61,6 +62,7 @@ export default function ChatPage() {
 
   const presence = usePresence(can('chat'), me, hidden)
   const current = rows.find((r) => r.id === conversationId) ?? null
+  useBreadcrumbs(current && [{ label: 'Chat', to: '/chat' }, { label: current.name ?? 'Conversation' }])
 
   // Swipe right from the left edge on a phone = back to the list.
   const touch = useRef<{ x: number; y: number } | null>(null)

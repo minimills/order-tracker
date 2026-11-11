@@ -178,14 +178,14 @@ export default function BuildChecklistsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Build Checklists">
         For each machine type and step, list the parts and tasks needed to build it. When a machine’s production card
         arrives in a stage, that step’s list is copied onto the card, where people press Start and Finish on each task.
         Changes here only affect cards that arrive in the stage afterwards.
       </AdminPageHeader>
 
-      <div className="grid gap-2 md:grid-cols-[16rem_12rem_1fr_auto]">
+      <div className="grid gap-2 lg:grid-cols-[16rem_12rem_1fr_auto]">
         <select aria-label="Machine type" className={inputClass} value={list} onChange={(e) => setList(e.target.value)}>
           {types.map((t) => (
             <option key={t.id} value={t.id}>

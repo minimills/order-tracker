@@ -57,7 +57,7 @@ export default function GroupsPage() {
 
   const nameOf = (email: string) => people.find((p) => p.email === email)?.name ?? email
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Groups">
         Groups of people, for example Procurement or Techs. Use them to share boards and choose who gets board notifications. A
         person can be in any number of groups. (Departments are set in Admin → Departments.)

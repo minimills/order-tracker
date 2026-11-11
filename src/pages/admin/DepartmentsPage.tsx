@@ -83,7 +83,7 @@ export default function DepartmentsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Departments">
         The departments people belong to. A person can be in more than one (set that in Users). Archiving hides a
         department from lists but keeps it on past activity.

@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
 import Can from '../../components/Can'
-import { buttonClass, Field, inputClass, narrowInputClass, secondaryButtonClass } from '../../components/form'
+import { buttonClass, Field, inputClass, narrowInputClass, secondaryButtonClass, cardGridClass } from '../../components/form'
 import { useAuth } from '../../lib/auth'
 import { confirmAction } from '../../lib/confirm'
 import { activityTime } from '../../lib/activity'
@@ -144,12 +144,13 @@ export default function EmailPage() {
 
   const mailOk = status ? status.smtp_host && status.smtp_user && status.smtp_password : null
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Email">
         Notification emails are sent through the company mailbox, and phone notifications through the installed app. Each
         person chooses what they receive in Settings → Notifications.
       </AdminPageHeader>
 
+      <div className={cardGridClass}>
       <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
         <h2 className="font-semibold">Set-Up Checklist</h2>
         {statusError && <p className="mt-2 text-amber-800">{statusError}</p>}
@@ -279,6 +280,7 @@ export default function EmailPage() {
           </div>
         )}
       </section>
+      </div>
     </div>
   )
 }

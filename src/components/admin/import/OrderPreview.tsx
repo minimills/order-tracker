@@ -155,80 +155,82 @@ export default function OrderPreview({ checked: c, types, options, onOrder, onMa
       <Messages msgs={c.msgs} />
 
       {c.machines.length > 0 && (
-        <table className="mt-2 w-full text-xs">
-          <tbody>
-            {c.machines.map((m) => {
-              const dm = m.draft
-              const selectValue = dm.typeChoice || m.type?.id || ''
-              const mTone = !dm.include ? 'text-slate-400' : m.level === 'error' ? 'bg-red-50' : m.level === 'warning' ? 'bg-amber-50/60' : ''
-              return (
-                <tr key={dm.key} className={`border-t border-slate-100 align-top ${mTone}`}>
-                  <td className="w-6 py-1">
-                    <input
-                      type="checkbox"
-                      checked={dm.include}
-                      onChange={(e) => onMachine(dm.key, { include: e.target.checked })}
-                      aria-label={`Import ${dm.name}`}
-                    />
-                  </td>
-                  <td className="w-12 py-1 text-slate-500">Row {dm.row}</td>
-                  <td className="py-1">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="min-w-28">{dm.name}</span>
-                      <select
-                        aria-label={`Machine type for row ${dm.row}`}
-                        className={`${small} max-w-52`}
-                        value={selectValue}
-                        onChange={(e) => {
-                          if (e.target.value === CREATE) onCreateType(dm)
-                          else onMachine(dm.key, { typeChoice: e.target.value })
-                        }}
-                      >
-                        {!selectValue && <option value="">Choose a machine type…</option>}
-                        {activeTypes.map((t) => (
-                          <option key={t.id} value={t.id}>
-                            {t.name}
-                            {t.code ? ` (${t.code})` : ''}
-                          </option>
-                        ))}
-                        <option value={NOT_A_MACHINE}>Not a machine (add to order notes)</option>
-                        <option value={CREATE}>+ Create a new machine type…</option>
-                      </select>
-                      {m.suggestion && (
-                        <button type="button" className="text-xs text-blue-700 underline" onClick={() => onUseForAll(dm.name, m.suggestion!.id)}>
-                          Use {m.suggestion.name} for every “{dm.name}”
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                  <td className="w-32 py-1">
-                    {dm.typeChoice !== NOT_A_MACHINE && (
+        <div className="overflow-x-auto">
+          <table className="mt-2 w-full text-xs">
+            <tbody>
+              {c.machines.map((m) => {
+                const dm = m.draft
+                const selectValue = dm.typeChoice || m.type?.id || ''
+                const mTone = !dm.include ? 'text-slate-400' : m.level === 'error' ? 'bg-red-50' : m.level === 'warning' ? 'bg-amber-50/60' : ''
+                return (
+                  <tr key={dm.key} className={`border-t border-slate-100 align-top ${mTone}`}>
+                    <td className="w-6 py-1">
                       <input
-                        aria-label={`Serial for row ${dm.row}`}
-                        className={`${small} w-28 font-mono uppercase`}
-                        value={dm.serial}
-                        placeholder="needs serial"
-                        onChange={(e) => onMachine(dm.key, { serial: e.target.value })}
+                        type="checkbox"
+                        checked={dm.include}
+                        onChange={(e) => onMachine(dm.key, { include: e.target.checked })}
+                        aria-label={`Import ${dm.name}`}
                       />
-                    )}
-                  </td>
-                  <td className="w-16 py-1">
-                    {dm.typeChoice !== NOT_A_MACHINE && (
-                      <label className="flex items-center gap-1">
-                        <input type="checkbox" checked={dm.built} onChange={(e) => onMachine(dm.key, { built: e.target.checked })} />
-                        Built
-                      </label>
-                    )}
-                  </td>
-                  <td className="py-1 text-slate-500">
-                    {dm.notes}
-                    <Messages msgs={m.msgs} />
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                    </td>
+                    <td className="w-12 py-1 text-slate-500">Row {dm.row}</td>
+                    <td className="py-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="min-w-28">{dm.name}</span>
+                        <select
+                          aria-label={`Machine type for row ${dm.row}`}
+                          className={`${small} max-w-52`}
+                          value={selectValue}
+                          onChange={(e) => {
+                            if (e.target.value === CREATE) onCreateType(dm)
+                            else onMachine(dm.key, { typeChoice: e.target.value })
+                          }}
+                        >
+                          {!selectValue && <option value="">Choose a machine type…</option>}
+                          {activeTypes.map((t) => (
+                            <option key={t.id} value={t.id}>
+                              {t.name}
+                              {t.code ? ` (${t.code})` : ''}
+                            </option>
+                          ))}
+                          <option value={NOT_A_MACHINE}>Not a machine (add to order notes)</option>
+                          <option value={CREATE}>+ Create a new machine type…</option>
+                        </select>
+                        {m.suggestion && (
+                          <button type="button" className="text-xs text-blue-700 underline" onClick={() => onUseForAll(dm.name, m.suggestion!.id)}>
+                            Use {m.suggestion.name} for every “{dm.name}”
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                    <td className="w-32 py-1">
+                      {dm.typeChoice !== NOT_A_MACHINE && (
+                        <input
+                          aria-label={`Serial for row ${dm.row}`}
+                          className={`${small} w-28 font-mono uppercase`}
+                          value={dm.serial}
+                          placeholder="needs serial"
+                          onChange={(e) => onMachine(dm.key, { serial: e.target.value })}
+                        />
+                      )}
+                    </td>
+                    <td className="w-16 py-1">
+                      {dm.typeChoice !== NOT_A_MACHINE && (
+                        <label className="flex items-center gap-1">
+                          <input type="checkbox" checked={dm.built} onChange={(e) => onMachine(dm.key, { built: e.target.checked })} />
+                          Built
+                        </label>
+                      )}
+                    </td>
+                    <td className="py-1 text-slate-500">
+                      {dm.notes}
+                      <Messages msgs={m.msgs} />
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
     </article>
   )

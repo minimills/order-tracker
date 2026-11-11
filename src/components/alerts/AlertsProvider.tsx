@@ -7,6 +7,7 @@ import { notificationPermission, readStorage, writeStorage } from '../../lib/bro
 import { fetchAll } from '../../lib/fetchAll'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { usePreferences } from '../../lib/preferences'
 
 const RECHECK_MS = 10 * 60 * 1000 // every 10 minutes
 const MIN_GAP_MS = 20 * 1000 // don't re-check more often than this on page changes
@@ -39,6 +40,12 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const lastLoad = useRef(0)
   const firstLoadDone = useRef(false)
+  // Settings → Notifications → Desktop notifications (on / off for this person).
+  const { desktopNotifications } = usePreferences()
+  const desktopRef = useRef(desktopNotifications)
+  useEffect(() => {
+    desktopRef.current = desktopNotifications
+  }, [desktopNotifications])
 
   const handleNew = useCallback(
     (list: AlertRow[]) => {
@@ -80,7 +87,7 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
       const fresh = red.filter((a) => !seenSet.has(a.alert_key))
       // On the first check after opening, the pop-ups above cover everything,
       // so only later checks send desktop notifications.
-      if (firstLoadDone.current && notificationPermission() === 'granted') {
+      if (firstLoadDone.current && desktopRef.current && notificationPermission() === 'granted') {
         for (const a of fresh) {
           const t = alertText(a)
           try {

@@ -85,7 +85,7 @@ function Big({ children }: { children: ReactNode }) {
 /* @layout-helper */
 function Box({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-5">
+    <section className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 md:p-5">
       <div className="mb-3 flex items-baseline justify-between gap-2">
         <h2 className="font-semibold">{title}</h2>
         {aside}
@@ -221,7 +221,7 @@ export default function DashboardPage() {
         </Can>
 
         {/* ---------- Cards ---------- */}
-        <div className="grid grid-cols-2 gap-3 empty:hidden sm:grid-cols-3 xl:grid-cols-6">
+        <div className="grid gap-3 empty:hidden [grid-template-columns:repeat(auto-fit,minmax(min(100%,10.5rem),1fr))]">
           <Can permission="dashboard.card.in_production">
             <Card title={label('In production')} to={boardLink}>
               <Big>{stats.inProduction}</Big>
@@ -255,7 +255,7 @@ export default function DashboardPage() {
                 <Big>—</Big>
               ) : (
                 stats.outstanding.map(([cur, n]) => (
-                  <div key={cur} className="text-xl font-semibold tabular-nums">
+                  <div key={cur} className="text-lg font-semibold tabular-nums [overflow-wrap:anywhere] 2xl:text-xl">
                     {formatMoney(n, cur)}
                   </div>
                 ))
@@ -263,7 +263,7 @@ export default function DashboardPage() {
             </Card>
           </Can>
           <Can permission="dashboard.card.average_delay">
-            <Card title={`Average Delay (${stats.year})`} to={shippedLink} className="col-span-2 sm:col-span-1">
+            <Card title={`Average Delay (${stats.year})`} to={shippedLink}>
               {stats.avgDelay === null ? (
                 <Big>—</Big>
               ) : (
@@ -283,7 +283,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ---------- Delay chart + latest shipped ---------- */}
-        <div className="grid gap-5 empty:hidden lg:grid-cols-2">
+        <div className="grid gap-5 empty:hidden [grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))]">
           <Can permission="dashboard.chart.delay_by_month">
             <Box title="Average Delay by Month" aside={<span className="text-xs text-slate-500">last 12 months</span>}>
               <DelayChart months={stats.months} />
@@ -324,7 +324,7 @@ export default function DashboardPage() {
         </div>
 
         {/* ---------- Upcoming ---------- */}
-        <div className="grid gap-5 empty:hidden lg:grid-cols-2">
+        <div className="grid gap-5 empty:hidden [grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))]">
           <Can permission="dashboard.list.next_ship_dates">
             <Box
               title="Next Ship Dates"

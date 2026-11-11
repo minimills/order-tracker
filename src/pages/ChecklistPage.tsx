@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
@@ -150,6 +151,14 @@ export default function ChecklistPage() {
   const label = useStageLabels()
   const [status, setStatus] = useState<ChecklistStatusRow | null>(null)
   const [order, setOrder] = useState<OrderInfo | null>(null)
+  // Orders > Order 86 > Carder - Large LCR-2073 (this machine's final check)
+  useBreadcrumbs(
+    status && [
+      { label: 'Orders', to: '/orders' },
+      ...(order ? [{ label: `Order ${order.order_code}`, to: `/orders/${order.id}` }] : []),
+      { label: [status.machine_type, status.serial_number].filter(Boolean).join(' ') },
+    ],
+  )
   const [checklist, setChecklist] = useState<Checklist | null>(null)
   const [items, setItems] = useState<ChecklistItem[]>([])
   const [sigUrl, setSigUrl] = useState<string | null>(null)

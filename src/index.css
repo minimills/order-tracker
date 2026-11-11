@@ -1,5 +1,8 @@
 @import 'tailwindcss';
 
+/* dark: classes apply when Settings → Theme is Dark (or System on a dark device). See also src/dark.css. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html,
 body,
 #root {
@@ -74,4 +77,42 @@ body {
 }
 .chat-body p {
   margin: 0;
+}
+
+html.dark .chat-body .chat-mention {
+  background: rgb(30 58 138 / 0.5);
+  color: rgb(191 219 254);
+}
+html.dark .chat-body .chat-mention-me {
+  background: rgb(120 53 15 / 0.5);
+  color: rgb(253 230 138);
+}
+html.dark .chat-body .chat-link {
+  color: rgb(147 197 253);
+}
+html.dark .rich-text ul[data-type='taskList'] > li[data-checked='true'] > div {
+  color: rgb(139 151 168);
+}
+
+/* Breadcrumbs and "jump to a setting" highlight. */
+@keyframes setting-flash {
+  0%,
+  60% {
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 0.9);
+  }
+  100% {
+    box-shadow: 0 0 0 3px rgb(59 130 246 / 0);
+  }
+}
+.setting-flash {
+  animation: setting-flash 2.4s ease-out;
+  border-radius: 0.5rem;
+}
+
+/* Notice Board whiteboard sheen (none in the dark theme). */
+:root {
+  --board-sheen: linear-gradient(160deg, rgba(255, 255, 255, 0.9), rgba(241, 245, 249, 0.6));
+}
+html.dark {
+  --board-sheen: none;
 }

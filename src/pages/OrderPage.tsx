@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
+import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { badgeClass, orderBadges } from '../components/board/badges'
@@ -95,6 +96,7 @@ export default function OrderPage() {
   const seesChecks = can('checklist')
 
   const [order, setOrder] = useState<OrderSummaryRow | null>(null)
+  useBreadcrumbs(order && [{ label: 'Orders', to: '/orders' }, { label: `Order ${order.order_code}` }])
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [machines, setMachines] = useState<Machine[]>([])
   const [payments, setPayments] = useState<PaymentRow[]>([])
@@ -320,7 +322,7 @@ export default function OrderPage() {
               </Can>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 lg:max-w-md lg:justify-end">
+            <div className="flex flex-wrap items-center gap-2 lg:justify-end">
               <Can permission="order.action.edit" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={() => setEditing(true)}>
                   <Icon name="pencil" /> Edit
@@ -395,8 +397,8 @@ export default function OrderPage() {
         </Can>
 
         {tab === 'details' && (
-          <div className="grid gap-5 lg:grid-cols-3">
-            <div className="space-y-5 lg:col-span-2">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
+            <div className="min-w-0 space-y-5 empty:hidden lg:flex-[2_1_0%]">
               {/* ---------- Machines ---------- */}
               <Can permission="order.section.machines">
                 <Section
@@ -594,7 +596,7 @@ export default function OrderPage() {
                   ) : (
                     <ul className="divide-y divide-slate-100">
                       {payments.map((p) => (
-                        <li key={p.id} className="grid gap-2 py-3 text-sm sm:grid-cols-[1fr_auto] sm:items-center">
+                        <li key={p.id} className="grid gap-2 py-3 text-sm xl:grid-cols-[1fr_auto] xl:items-center">
                           <div className="grid gap-x-4 gap-y-1 sm:grid-cols-[9rem_8rem_1fr]">
                             <div>
                               <div className="font-medium">{p.payment_type}</div>
@@ -613,7 +615,7 @@ export default function OrderPage() {
                               )}
                             </div>
                           </div>
-                          <div className="flex flex-wrap gap-2 sm:justify-end">
+                          <div className="flex flex-wrap gap-2 xl:justify-end">
                             <Can permission="payments.action.mark_received" level="edit">
                               {p.remaining > 0 && (
                                 <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
@@ -642,7 +644,7 @@ export default function OrderPage() {
               </Can>
             </div>
 
-            <div className="space-y-5">
+            <div className="min-w-0 space-y-5 empty:hidden lg:flex-[1_1_0%]">
               {/* ---------- Shipping ---------- */}
               <Can permission="order.section.shipping">
                 <Section title="Shipping">
