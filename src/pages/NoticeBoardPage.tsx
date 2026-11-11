@@ -5,6 +5,7 @@ import Can from '../components/Can'
 import Icon from '../components/Icon'
 import { buttonClass, narrowInputClass } from '../components/form'
 import AckDialog from '../components/notices/AckDialog'
+import EventsPanel, { PastEvents } from '../components/notices/EventsPanel'
 import HolidaysPanel from '../components/notices/HolidaysPanel'
 import MyNotes from '../components/notices/MyNotes'
 import NoticeCard from '../components/notices/NoticeCard'
@@ -275,6 +276,9 @@ export default function NoticeBoardPage() {
                     ) : (
                       shown.map((n) => card(n, 'list'))
                     )}
+                    <Can permission="notices.events">
+                      <PastEvents search={params.get('q') ?? ''} highlightId={params.get('event')} />
+                    </Can>
                   </section>
                 ) : (
                   /* The whiteboard */
@@ -310,11 +314,16 @@ export default function NoticeBoardPage() {
                   </div>
                 )}
               </div>
-              <Can permission="notices.holidays">
-                <aside>
+              <aside className="space-y-4">
+                <Can permission="notices.holidays">
                   <HolidaysPanel />
-                </aside>
-              </Can>
+                </Can>
+                {tab === 'board' && (
+                  <Can permission="notices.events">
+                    <EventsPanel highlightId={params.get('event')} onMissing={() => can('notices.archive') && set({ tab: 'archive' })} />
+                  </Can>
+                )}
+              </aside>
             </div>
           </>
         )}

@@ -33,7 +33,7 @@ function Chip({ r, full, showTech, onManual }: { r: CalendarRow; full?: boolean;
   const text = (
     <>
       {r.from_phone && <Icon name="phone" className="mr-0.5 inline h-3 w-3 align-[-2px]" label="From phone" />}
-      {`${showTech ? `${initials(r.tech_name)} · ` : ''}${time}${r.title}`}
+      {`${showTech && r.tech_name ? `${initials(r.tech_name)} · ` : ''}${time}${r.title}`}
     </>
   )
   const cls = `block w-full truncate rounded px-1.5 py-0.5 text-left text-[11px] ring-1 ${k.chip} ${full ? 'whitespace-normal' : ''}`

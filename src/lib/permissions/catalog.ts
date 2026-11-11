@@ -368,6 +368,12 @@ export const CATALOG: PermissionItem[] = [
       { key: 'notices.comments', label: 'Comments under notices (edit: write comments)', levels: VE, requires: 'notices', db: true },
       { key: 'notices.print', label: 'Print a notice on one page with the company letterhead', levels: V, requires: 'notices' },
     ],
+    Events: [
+      { key: 'notices.events', label: 'Upcoming events panel: events meant for them, with the countdown (also in the Tech Calendar for people who can open it)', levels: V, requires: 'notices', db: true },
+      { key: 'notices.events.post', label: 'Post events (add, edit and archive their own events; choose who they are for; see who answered)', levels: E, requires: 'notices.events', db: true },
+      { key: 'notices.events.rsvp', label: 'Answer events: Going, Not going or Maybe', levels: E, requires: 'notices.events', db: true },
+      { key: 'notices.events.calendar', label: 'Add to My Calendar (Apple, Google or Outlook)', levels: V, requires: 'notices.events' },
+    ],
     'My notes': [
       { key: 'notices.my_notes', label: 'My notes: private sticky notes with checklists and reminders (nobody else can see them, admins included)', levels: E, requires: 'notices', db: true },
     ],
