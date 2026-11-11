@@ -320,11 +320,11 @@ export type ServiceCallInfo = {
 // ---------------------------------------------------------------------------
 // Technician calendar
 // ---------------------------------------------------------------------------
-export type CalendarKind = 'training' | 'service' | 'travel' | 'onsite' | 'other'
+export type CalendarKind = 'training' | 'service' | 'travel' | 'onsite' | 'other' | 'event'
 export type CalendarRow = {
-  source: 'training' | 'service_call' | 'travel_log' | 'manual' | 'phone'
+  source: 'training' | 'service_call' | 'travel_log' | 'manual' | 'phone' | 'event'
   source_id: string
-  tech_email: string
+  tech_email: string | null
   tech_name: string | null
   kind: CalendarKind
   start_date: string
@@ -347,6 +347,7 @@ export const CALENDAR_KINDS: Record<CalendarKind, { label: string; chip: string;
   travel: { label: 'Travel day', chip: 'bg-amber-100 text-amber-900 ring-amber-300', dot: 'bg-amber-500' },
   onsite: { label: 'Other on-site day', chip: 'bg-emerald-100 text-emerald-900 ring-emerald-300', dot: 'bg-emerald-600' },
   other: { label: 'Other', chip: 'bg-slate-100 text-slate-800 ring-slate-300', dot: 'bg-slate-500' },
+  event: { label: 'Company event', chip: 'bg-rose-50 text-rose-900 ring-rose-300', dot: 'bg-rose-500' },
 }
 
 /** Types the office can give an entry read from a phone calendar. */
