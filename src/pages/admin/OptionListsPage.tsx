@@ -172,7 +172,7 @@ export default function OptionListsPage() {
   }, [load])
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Dropdown Lists">
         The choices offered in the order forms. Renaming a choice updates every order that uses it. Archiving hides it
         from new orders but keeps it on orders that already have it. Built-in choices (marked with a lock) can be moved but not renamed.

@@ -75,7 +75,7 @@ export default function ChatChannelsPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Chat Channels">
         Every department and group has a channel; its members follow the department or group automatically. You can also make other channels. Direct messages
         and group chats are private to the people in them and are not listed here.

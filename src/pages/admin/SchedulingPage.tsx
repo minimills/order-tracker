@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
 import { Link } from 'react-router-dom'
 import Can from '../../components/Can'
-import { buttonClass, Field, inputClass } from '../../components/form'
+import { buttonClass, Field, inputClass, cardGridClass } from '../../components/form'
 import { friendlyError } from '../../lib/format'
 import { DEFAULT_SCHEDULING, type SchedulingSettings } from '../../lib/schedule'
 import { supabase } from '../../lib/supabase'
@@ -36,14 +36,15 @@ export default function SchedulingPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Scheduling">
         How expected ship dates and department deadlines are worked out. Orders are built one after another in the order
         of the shop queue.
       </AdminPageHeader>
 
+      <div className={cardGridClass}>
       <form onSubmit={save} className="space-y-5 rounded-lg border border-slate-200 bg-white p-5" noValidate>
-        <fieldset>
+        <fieldset data-setting="working-days">
           <legend className="mb-2 text-sm font-medium text-slate-700">Working days</legend>
           <div className="flex flex-wrap gap-x-5 gap-y-2">
             {WEEKDAYS.map((name, i) => (
@@ -108,6 +109,7 @@ export default function SchedulingPage() {
           </Link>
         </Can>
       </section>
+      </div>
     </div>
   )
 }

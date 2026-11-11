@@ -88,3 +88,36 @@ export function Modal({
     </div>
   )
 }
+
+/** An on / off switch (a button with role="switch"). */
+export function Switch({
+  checked,
+  onChange,
+  label,
+  disabled = false,
+}: {
+  checked: boolean
+  onChange: (on: boolean) => void
+  /** Read out by screen readers ("Chat messages: phone push"). */
+  label: string
+  disabled?: boolean
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={() => onChange(!checked)}
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 disabled:cursor-not-allowed disabled:opacity-60 ${
+        checked ? 'bg-blue-600' : 'bg-slate-300'
+      }`}
+    >
+      <span className={`keep-light inline-block h-5 w-5 rounded-full bg-white shadow transition-transform ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
+    </button>
+  )
+}
+
+/** Settings cards side by side, as many as fit (Settings and Admin pages). */
+export const cardGridClass = 'grid items-start gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,26rem),1fr))]'

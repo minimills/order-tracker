@@ -27,12 +27,12 @@ export default function StagesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Stage Names">
         Rename what people see for each stage. The order of the stages and what they do (shop queue, serial numbers,
         alerts) stay the same. Leave a box empty to use the standard name.
       </AdminPageHeader>
-      <form onSubmit={save} className="space-y-4 rounded-lg border border-slate-200 bg-white p-4">
+      <form onSubmit={save} className="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-4">
         {STAGES.map((s) => (
           <Field key={s} label={`Standard name: ${s}`} htmlFor={`stage-${s}`} hint={STAGE_HINTS[s]}>
             <input

@@ -1,5 +1,6 @@
 // @permission-scope service.certificate
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
@@ -48,6 +49,13 @@ export default function CertificatePage() {
   const liveCompany = useCompany()
   const { can } = usePermissions()
   const [cert, setCert] = useState<Certificate | null>(null)
+  useBreadcrumbs(
+    cert && [
+      { label: 'Service', to: '/service' },
+      { label: documentReference(cert), to: cert.order_id ? `/service/${cert.order_id}?tab=certificate` : `/service/calls/${cert.service_call_id}?tab=certificate` },
+      { label: cert.title },
+    ],
+  )
   const [edit, setEdit] = useState<Editable | null>(null)
   const [versions, setVersions] = useState<Pick<Certificate, 'id' | 'version' | 'status'>[]>([])
   const [sends, setSends] = useState<Send[]>([])
@@ -243,41 +251,43 @@ export default function CertificatePage() {
             <RichText value={fillPlaceholders(edit.part1, values)} className="text-sm" />
           )}
 
-          <table className="w-full border border-slate-300 text-left text-sm">
-            <thead className="bg-slate-50">
-              <tr>
-                <th className="border border-slate-300 px-2 py-1.5">Machine</th>
-                <th className="border border-slate-300 px-2 py-1.5">Serial number</th>
-                {canMachines && <th className="w-10 border border-slate-300" aria-label="Remove" />}
-              </tr>
-            </thead>
-            <tbody>
-              {edit.machines
-                .filter((m) => !m.removed)
-                .map((m) => (
-                  <tr key={m.key}>
-                    <td className="border border-slate-300 px-2 py-1.5">{m.machine}</td>
-                    <td className="border border-slate-300 px-2 py-1.5">{m.serial ? <SerialNumber serial={m.serial} /> : ''}</td>
-                    {canMachines && (
-                      <td className="border border-slate-300 text-center">
-                        <Can permission="service.certificate.machines" level="edit">
-                          <button type="button" className="px-2 text-lg text-red-700" aria-label={`Remove ${m.machine} ${m.serial ?? ''}`} onClick={() => toggleRow(m.key, true)}>
-                            ×
-                          </button>
-                        </Can>
-                      </td>
-                    )}
-                  </tr>
-                ))}
-              {edit.machines.every((m) => m.removed) && (
+          <div className="overflow-x-auto">
+            <table className="w-full border border-slate-300 text-left text-sm">
+              <thead className="bg-slate-50">
                 <tr>
-                  <td colSpan={3} className="px-2 py-2 text-slate-500">
-                    No machines listed.
-                  </td>
+                  <th className="border border-slate-300 px-2 py-1.5">Machine</th>
+                  <th className="border border-slate-300 px-2 py-1.5">Serial number</th>
+                  {canMachines && <th className="w-10 border border-slate-300" aria-label="Remove" />}
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {edit.machines
+                  .filter((m) => !m.removed)
+                  .map((m) => (
+                    <tr key={m.key}>
+                      <td className="border border-slate-300 px-2 py-1.5">{m.machine}</td>
+                      <td className="border border-slate-300 px-2 py-1.5">{m.serial ? <SerialNumber serial={m.serial} /> : ''}</td>
+                      {canMachines && (
+                        <td className="border border-slate-300 text-center">
+                          <Can permission="service.certificate.machines" level="edit">
+                            <button type="button" className="px-2 text-lg text-red-700" aria-label={`Remove ${m.machine} ${m.serial ?? ''}`} onClick={() => toggleRow(m.key, true)}>
+                              ×
+                            </button>
+                          </Can>
+                        </td>
+                      )}
+                    </tr>
+                  ))}
+                {edit.machines.every((m) => m.removed) && (
+                  <tr>
+                    <td colSpan={3} className="px-2 py-2 text-slate-500">
+                      No machines listed.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           {canMachines && (
             <Can permission="service.certificate.machines" level="edit">
               <div className="space-y-2 rounded-md bg-slate-50 p-3 text-sm">

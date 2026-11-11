@@ -223,7 +223,7 @@ export default function UsersPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Users">
         Only people on this list can use the app. Adding someone creates their login and emails them a 6-digit code (they
         sign in with a code each time, no password; nobody can sign themselves up).{' '}

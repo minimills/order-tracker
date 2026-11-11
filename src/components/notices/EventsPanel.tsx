@@ -162,11 +162,10 @@ function EventItem({
       style={{ borderLeftColor: stripeOf(e.colour) }}
     >
       <button type="button" className="w-full px-2.5 py-2 text-left" onClick={onToggle} aria-expanded={open}>
-        <span className="flex items-baseline justify-between gap-2">
-          <span className="font-medium text-slate-900">{e.title}</span>
-          <span className={`shrink-0 text-xs font-semibold ${today ? 'text-red-700' : 'text-slate-700'}`}>{past ? (e.archived ? 'Archived' : 'Past') : when.text}</span>
-        </span>
+        <span className="block font-medium text-slate-900">{e.title}</span>
         <span className="block text-xs text-slate-500">
+          <span className={`font-semibold ${today ? 'text-red-700' : 'text-slate-700'}`}>{past ? (e.archived ? 'Archived' : 'Past') : when.text}</span>
+          {' · '}
           {whenText(e)}
           {e.location && ` · ${e.location}`}
         </span>

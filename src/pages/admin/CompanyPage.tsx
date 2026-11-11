@@ -52,10 +52,10 @@ export default function CompanyPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Company Details">Shown at the top of printouts such as the shop board.</AdminPageHeader>
 
-      <form onSubmit={save} className="space-y-4 rounded-lg border border-slate-200 bg-white p-5" noValidate>
+      <form onSubmit={save} className="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-5" noValidate>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Company name" htmlFor="co-name" className="sm:col-span-2">
             <input id="co-name" className={inputClass} value={f.name} onChange={set('name')} />
@@ -84,7 +84,7 @@ export default function CompanyPage() {
             ) : (
               <span className="text-sm text-slate-500">No logo has been added.</span>
             )}
-            <input id="co-logo" type="file" accept="image/*" className="text-sm" onChange={(e) => pickLogo(e.target.files?.[0])} />
+            <input id="co-logo" type="file" accept="image/*" className="w-full min-w-0 max-w-full text-sm" onChange={(e) => pickLogo(e.target.files?.[0])} />
             {f.logo && (
               <button type="button" className="text-sm text-red-700 underline" onClick={() => setF({ ...f, logo: null })}>
                 Remove logo

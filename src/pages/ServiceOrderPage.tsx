@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
@@ -75,6 +76,11 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
   const tab = tabs.find((t) => t.key === params.get('tab'))?.key ?? tabs[0]?.key
   const [info, setInfo] = useState<ServiceInfo | null>(null)
   const [call, setCall] = useState<ServiceCallInfo | null>(null)
+  useBreadcrumbs(
+    isCall
+      ? call && [{ label: 'Service', to: '/service' }, { label: `Service Call S-${call.call_number}` }]
+      : info && [{ label: 'Service', to: '/service' }, { label: `Order ${info.order_code}` }],
+  )
   const [machines, setMachines] = useState<Machine[]>([])
   const [entries, setEntries] = useState<SavedEntry[]>([])
   const [certs, setCerts] = useState<Pick<Certificate, 'id' | 'version' | 'status' | 'created_at' | 'locked_at'>[]>([])

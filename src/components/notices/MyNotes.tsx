@@ -121,7 +121,7 @@ export default function MyNotes({ highlightId }: { highlightId: string | null })
       ) : wide ? (
         <div
           ref={boardRef}
-          className="relative rounded-xl border-[10px] border-slate-300 bg-[#fbfcfd] shadow-inner"
+          className="relative rounded-xl border-[10px] border-slate-300 bg-[#fbfcfd] shadow-inner dark:bg-[#172235]"
           style={{ height, backgroundImage: 'radial-gradient(#e2e8f0 1px, transparent 1px)', backgroundSize: '22px 22px' }}
           onPointerMove={onPointerMove}
           onPointerUp={onPointerUp}
@@ -195,7 +195,7 @@ function NoteCard({
     <article
       id={`note-${n.id}`}
       style={{ ...style, backgroundColor: c.paper, borderColor: c.edge }}
-      className={`rounded-sm border text-sm text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.08),0_6px_14px_-6px_rgba(15,23,42,0.25)] md:[rotate:var(--tilt)] ${
+      className={`keep-light rounded-sm border text-sm text-slate-800 shadow-[0_1px_2px_rgba(15,23,42,0.08),0_6px_14px_-6px_rgba(15,23,42,0.25)] md:[rotate:var(--tilt)] ${
         highlight ? 'outline outline-3 outline-offset-4 outline-blue-500' : ''
       }`}
     >

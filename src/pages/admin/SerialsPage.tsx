@@ -140,7 +140,7 @@ export default function SerialsPage() {
   const changes = (preview ?? []).filter((r) => r.old_serial !== r.new_serial)
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Serial Numbers">
         Fix a single serial by hand (it then stays fixed), or re-sequence a machine type so its unbuilt machines get
         consecutive serials in board order. Built machines and hand-typed serials are never changed by re-sequencing.

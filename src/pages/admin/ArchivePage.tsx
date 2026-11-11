@@ -101,14 +101,14 @@ export default function ArchivePage() {
   const shown = items.filter((i) => filter === 'all' || i.table === filter)
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Archive">
         Archived records are hidden from normal screens. <strong>Restore</strong> restores one.{' '}
         <strong>Permanently Delete</strong> removes it permanently (an order takes its machines and payments with it); this
         cannot be undone.
       </AdminPageHeader>
 
-      <div className="flex gap-1 rounded-md bg-slate-100 p-1 text-sm" role="tablist">
+      <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1 text-sm" role="tablist">
         {(['all', 'orders', 'customers', 'order_machines'] as const).map((t) => (
           <button
             key={t}

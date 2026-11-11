@@ -60,7 +60,7 @@ export default function ChecklistPrintPage() {
 
   return (
     <Can permission="checklist.print">
-      <div className="mx-auto min-h-full max-w-4xl bg-white p-6 text-slate-900 print:max-w-none print:p-0">
+      <div className="keep-light mx-auto min-h-full max-w-4xl bg-white p-4 text-slate-900 sm:p-6 print:max-w-none print:p-0">
         <div className="mb-4 flex justify-end gap-2 print:hidden">
           <Link to={`/checklists/${machineId}`} className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
             ← Back to the Final Check

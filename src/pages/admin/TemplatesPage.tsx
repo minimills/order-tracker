@@ -65,7 +65,7 @@ export default function TemplatesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Templates">
         The commissioning certificate (training) and the service report (service calls). Creating one copies this text; the
         technician can then change that one document without changing the template. Placeholders in curly brackets are
@@ -144,20 +144,22 @@ export default function TemplatesPage() {
         <h2 className="font-semibold">Preview With Sample Details</h2>
         <h3 className="text-center text-lg font-bold">{t.title}</h3>
         <RichText value={fillPlaceholders(t.part1, sample)} className="text-sm" />
-        <table className="w-full border border-slate-300 text-left text-sm">
-          <thead className="bg-slate-50">
-            <tr>
-              <th className="border border-slate-300 px-2 py-1">Machine</th>
-              <th className="border border-slate-300 px-2 py-1">Serial number</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr>
-              <td className="border border-slate-300 px-2 py-1">Carder - Large</td>
-              <td className="border border-slate-300 px-2 py-1 font-mono">LCR-2072</td>
-            </tr>
-          </tbody>
-        </table>
+        <div className="overflow-x-auto">
+          <table className="w-full border border-slate-300 text-left text-sm">
+            <thead className="bg-slate-50">
+              <tr>
+                <th className="border border-slate-300 px-2 py-1">Machine</th>
+                <th className="border border-slate-300 px-2 py-1">Serial number</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td className="border border-slate-300 px-2 py-1">Carder - Large</td>
+                <td className="border border-slate-300 px-2 py-1 font-mono">LCR-2072</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
         <RichText value={fillPlaceholders(t.part2, sample)} className="text-sm" />
       </section>
     </div>

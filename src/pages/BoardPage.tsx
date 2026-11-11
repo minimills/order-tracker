@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type DragEvent, type FormEvent } from 'react'
+import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
@@ -32,6 +33,7 @@ export default function BoardPage() {
   const me = session?.user.email?.toLowerCase() ?? ''
   const today = todayISO()
   const [data, setData] = useState<BoardData | null>(null)
+  useBreadcrumbs(data?.board && [{ label: 'Boards', to: '/boards' }, { label: data.board.name }])
   const [error, setError] = useState<string | null>(null)
   const [links, setLinks] = useState<Record<string, string>>({})
   const [dialog, setDialog] = useState<Dialog>(null)

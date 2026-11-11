@@ -1,51 +1,31 @@
-// @permission-scope admin.users, admin.departments, admin.machine_types, admin.dropdowns, admin.stages, admin.order_defaults, admin.scheduling, admin.holidays, admin.groups, admin.board_templates, admin.email, admin.email_log, admin.checklists, admin.build_checklists, admin.production, admin.templates, admin.chat, admin.records, admin.serials, admin.board, admin.alerts, admin.company, admin.import, admin.archive, admin.activity
+// @permission-scope admin.users, admin.departments, admin.machine_types, admin.dropdowns, admin.stages, admin.order_defaults, admin.scheduling, admin.holidays, admin.groups, admin.board_templates, admin.email, admin.email_log, admin.checklists, admin.build_checklists, admin.production, admin.templates, admin.chat, admin.records, admin.serials, admin.board, admin.alerts, admin.company, admin.import, admin.archive, admin.activity, admin.status
 import { Link } from 'react-router-dom'
 import Can from '../../components/Can'
 import Icon from '../../components/Icon'
+import SettingsSearch from '../../components/SettingsSearch'
+import { ADMIN_PAGES, ADMIN_VIEW_ONLY } from '../../lib/adminPages'
 
-const sections = [
-  { to: '/admin/users', permission: 'admin.users', icon: 'user' as const, title: 'Users', text: 'Who can sign in, their departments, and what each person can see and do.' },
-  { to: '/admin/departments', permission: 'admin.departments', icon: 'factory' as const, title: 'Departments', text: 'Create, rename, reorder and archive departments.' },
-  { to: '/admin/machine-types', permission: 'admin.machine_types', icon: 'cog' as const, title: 'Machine Types', text: 'Names, codes and next serial numbers.' },
-  { to: '/admin/dropdowns', permission: 'admin.dropdowns', icon: 'dropdown' as const, title: 'Dropdown Lists', text: 'Voltage, delivery equipment, freight and payment types, notice categories.' },
-  { to: '/admin/stages', permission: 'admin.stages', icon: 'tag' as const, title: 'Stage Names', text: 'Rename what people see for each stage, for example “Ready / testing”.' },
-  { to: '/admin/checklists', permission: 'admin.checklists', icon: 'checklist' as const, title: 'Checklists', text: 'Final check templates: general items for every machine, plus extras per machine type.' },
-  { to: '/admin/build-checklists', permission: 'admin.build_checklists', icon: 'checklist' as const, title: 'Build Checklists', text: 'Parts and tasks per machine type for Fabrication, Sandblasting, Powder coating and Assembly.' },
-  { to: '/admin/production', permission: 'admin.production', icon: 'boards' as const, title: 'Production', text: 'Stages every new production board starts with, their departments, and board settings.' },
-  { to: '/admin/templates', permission: 'admin.templates', icon: 'template' as const, title: 'Templates', text: 'The commissioning certificate text, with placeholders such as {customer_name}.' },
-  { to: '/admin/chat', permission: 'admin.chat', icon: 'chat' as const, title: 'Chat Channels', text: 'Department, group and other channels: rename, archive, members. Private chats are not shown.' },
-  { to: '/admin/holidays', permission: 'admin.holidays', icon: 'calendar' as const, title: 'Company Holidays', text: 'PEI statutory holidays (imported every year), company holidays and office closures. Used for ship dates.' },
-  { to: '/admin/email', permission: 'admin.email', icon: 'inbox' as const, title: 'Email', text: 'Mailbox set-up, test email, automatic sending and phone notification keys.' },
-  { to: '/admin/email-log', permission: 'admin.email_log', icon: 'list' as const, title: 'Email Log', text: 'Every email sent, with Resend.' },
-  { to: '/admin/groups', permission: 'admin.groups', icon: 'users' as const, title: 'Groups', text: 'Groups of people (for example Procurement, Techs) for sharing boards and notifications.' },
-  { to: '/admin/board-templates', permission: 'admin.board_templates', icon: 'template' as const, title: 'Board Templates', text: 'Stages, labels and checklists new boards can start with.' },
-  { to: '/admin/order-defaults', permission: 'admin.order_defaults', icon: 'receipt' as const, title: 'Order Defaults', text: 'Currency, voltage, crate and payment due days for new orders.' },
-  { to: '/admin/scheduling', permission: 'admin.scheduling', icon: 'calendar' as const, title: 'Scheduling', text: 'Working days, buffer, and how machines are built. Holidays are in Company Holidays.' },
-  { to: '/admin/records', permission: 'admin.records', icon: 'records' as const, title: 'Orders, Customers and Machines', text: 'Edit any field, or archive a record.' },
-  { to: '/admin/serials', permission: 'admin.serials', icon: 'hash' as const, title: 'Serial Numbers', text: 'Correct a single serial number, or renumber a machine type.' },
-  { to: '/admin/board', permission: 'admin.board', icon: 'queue' as const, title: 'Shop Queue', text: 'Move an order to a set place in the queue, or renumber the whole queue.' },
-  { to: '/admin/alerts', permission: 'admin.alerts', icon: 'bell' as const, title: 'Alert Settings', text: 'How many days in advance alerts appear.' },
-  { to: '/admin/company', permission: 'admin.company', icon: 'building' as const, title: 'Company Details', text: 'Name, address and logo for printouts.' },
-  { to: '/admin/import', permission: 'admin.import', icon: 'download' as const, title: 'Import and Backup', text: 'Import orders from a spreadsheet, or download a full backup.' },
-  { to: '/admin/archive', permission: 'admin.archive', icon: 'archive' as const, title: 'Archive', text: 'Restore archived records, or delete them permanently.' },
-  { to: '/admin/activity', permission: 'admin.activity', icon: 'history' as const, title: 'Activity', text: 'Every change: who made it, what changed and when.' },
-]
-
+/** The Admin home: every admin page this person may open, in a grid that fills the width. */
 export default function AdminHomePage() {
   return (
-    <div className="mx-auto max-w-5xl">
-      <h1 className="text-2xl font-semibold">Admin</h1>
-      <p className="mt-1 text-sm text-slate-600">Every change here is recorded in Activity.</p>
-      <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {sections.map((s) => (
-          <Can key={s.to} permission={s.permission} level={s.permission === 'admin.activity' || s.permission === 'admin.email_log' ? 'view' : 'edit'}>
-          <Link to={s.to} className="rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-400 hover:shadow-sm">
-            <div className="font-medium">
-              <Icon name={s.icon} className="mr-2 h-4 w-4 align-[-2px] text-slate-500" />
-              {s.title}
-            </div>
-            <div className="mt-1 text-sm text-slate-600">{s.text}</div>
-          </Link>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-semibold">Admin</h1>
+          <p className="mt-1 text-sm text-slate-600">Company-wide settings. Every change here is recorded in Activity.</p>
+        </div>
+        <SettingsSearch />
+      </div>
+      <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))]">
+        {ADMIN_PAGES.map((s) => (
+          <Can key={s.to} permission={s.permission} level={ADMIN_VIEW_ONLY.has(s.permission) ? 'view' : 'edit'}>
+            <Link to={s.to} className="block rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-400 hover:shadow-sm">
+              <div className="font-medium">
+                <Icon name={s.icon} className="mr-2 h-4 w-4 align-[-2px] text-slate-500" />
+                {s.title}
+              </div>
+              <div className="mt-1 text-sm text-slate-600">{s.text}</div>
+            </Link>
           </Can>
         ))}
       </div>

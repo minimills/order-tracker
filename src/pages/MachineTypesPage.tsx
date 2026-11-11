@@ -134,7 +134,7 @@ export default function MachineTypesPage() {
   const visible = types.filter((t) => showArchived || !t.archived)
 
   return (
-    <div className="mx-auto max-w-5xl space-y-6">
+    <div className="space-y-6">
       <div>
         <Link to="/admin" className="text-sm text-slate-600 underline">
           ← Admin
@@ -150,7 +150,7 @@ export default function MachineTypesPage() {
       {isAdmin && (
         <form onSubmit={add} className="rounded-lg border border-slate-200 bg-white p-4" noValidate>
           <h2 className="mb-3 text-base font-semibold">Add a Machine Type</h2>
-          <div className="grid gap-3 md:grid-cols-[1fr_8rem_9rem_auto]">
+          <div className="grid gap-3 lg:grid-cols-[1fr_8rem_9rem_auto]">
             <Field label="Name" htmlFor="new-name" error={newErrors.name}>
               <input
                 id="new-name"
@@ -176,7 +176,7 @@ export default function MachineTypesPage() {
                 onChange={(e) => setNewType({ ...newType, next: e.target.value })}
               />
             </Field>
-            <div className="flex items-start md:pt-6">
+            <div className="flex items-start lg:pt-6">
               <button type="submit" className={buttonClass} disabled={savingId === 'new'}>
                 {savingId === 'new' ? 'Adding…' : 'Add'}
               </button>
@@ -196,7 +196,7 @@ export default function MachineTypesPage() {
         <p className="text-center text-slate-500">Loading…</p>
       ) : (
         <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
-          <div className="hidden grid-cols-[1fr_7rem_8rem_12rem_9rem] gap-3 px-4 py-2 text-xs text-slate-500 md:grid">
+          <div className="hidden grid-cols-[1fr_7rem_8rem_12rem_9rem] gap-3 px-4 py-2 text-xs text-slate-500 lg:grid">
             <span>Name</span>
             <span>Code</span>
             <span>Next serial no.</span>
@@ -215,11 +215,11 @@ export default function MachineTypesPage() {
             return (
               <div
                 key={t.id}
-                className={`grid grid-cols-2 gap-3 px-4 py-3 md:grid-cols-[1fr_7rem_8rem_12rem_9rem] md:items-start ${
+                className={`grid grid-cols-2 gap-3 px-4 py-3 lg:grid-cols-[1fr_7rem_8rem_12rem_9rem] lg:items-start ${
                   t.archived ? 'bg-slate-50 text-slate-500' : ''
                 }`}
               >
-                <Field label="Name" error={e.name} className="col-span-2 md:col-span-1 [&>label]:md:hidden">
+                <Field label="Name" error={e.name} className="col-span-2 lg:col-span-1 [&>label]:lg:hidden">
                   <input
                     aria-label="Name"
                     className={inputClass}
@@ -237,7 +237,7 @@ export default function MachineTypesPage() {
                     onChange={(ev) => set('short', ev.target.value)}
                   />
                 </Field>
-                <Field label="Code" error={e.code} className="[&>label]:md:hidden">
+                <Field label="Code" error={e.code} className="[&>label]:lg:hidden">
                   <input
                     aria-label="Code"
                     className={`${inputClass} uppercase`}
@@ -250,7 +250,7 @@ export default function MachineTypesPage() {
                 <Field
                   label="Next serial no."
                   error={e.next}
-                  className="[&>label]:md:hidden"
+                  className="[&>label]:lg:hidden"
                   hint={code && !e.next && nextNum >= 1 ? `Next: ${formatSerial(code, nextNum)}` : undefined}
                 >
                   <input
@@ -262,7 +262,7 @@ export default function MachineTypesPage() {
                     onChange={(ev) => set('next', ev.target.value)}
                   />
                 </Field>
-                <div className="col-span-2 text-sm md:col-span-1 md:pt-2">
+                <div className="col-span-2 text-sm lg:col-span-1 lg:pt-2">
                   {u?.machines_count ? (
                     <>
                       {u.machines_count} machine{u.machines_count === 1 ? '' : 's'}
@@ -279,7 +279,7 @@ export default function MachineTypesPage() {
                   )}
                 </div>
                 {isAdmin && (
-                  <div className="col-span-2 flex flex-wrap items-center gap-2 md:col-span-1">
+                  <div className="col-span-2 flex flex-wrap items-center gap-2 lg:col-span-1">
                     {isChanged(t) && (
                       <>
                         <button

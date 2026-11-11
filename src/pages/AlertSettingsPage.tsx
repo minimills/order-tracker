@@ -85,7 +85,7 @@ export default function AlertSettingsPage() {
   )
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <div>
         <Link to="/admin" className="text-sm text-slate-600 underline">
           ← Admin
@@ -98,7 +98,7 @@ export default function AlertSettingsPage() {
         </p>
       </div>
 
-      <form onSubmit={save} className="space-y-5 rounded-lg border border-slate-200 bg-white p-5" noValidate>
+      <form onSubmit={save} className="max-w-3xl space-y-5 rounded-lg border border-slate-200 bg-white p-5" noValidate>
         <Field
           label="Warn about a payment when it is due within"
           htmlFor="payment_warn_days"

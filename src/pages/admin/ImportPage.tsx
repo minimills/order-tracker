@@ -217,7 +217,7 @@ export default function ImportPage() {
   const n = (key: string) => (typeof result?.[key] === 'number' ? (result[key] as number) : 0)
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Import and Backup">
         Bring orders in from a spreadsheet laid out like the old Google Sheet, or download everything as a backup in the
         same layout. Nothing is saved until you select Import and confirm.

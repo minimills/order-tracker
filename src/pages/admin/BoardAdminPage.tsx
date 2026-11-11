@@ -68,7 +68,7 @@ export default function BoardAdminPage() {
   const nothing = pending && pending.diff.positions.length === 0 && pending.diff.serials.length === 0
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader
         title="Shop Queue"
         aside={

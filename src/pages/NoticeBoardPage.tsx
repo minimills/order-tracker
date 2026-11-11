@@ -263,8 +263,8 @@ export default function NoticeBoardPage() {
               </Can>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_17rem]">
-              <div className="min-w-0">
+            <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+              <div className="min-w-0 flex-1">
                 {loading ? (
                   <p className="text-sm text-slate-500">Loading…</p>
                 ) : tab === 'archive' ? (
@@ -283,8 +283,8 @@ export default function NoticeBoardPage() {
                 ) : (
                   /* The whiteboard */
                   <div
-                    className="rounded-2xl border-[6px] border-slate-300 bg-[#fbfcfd] px-4 pb-10 pt-6 shadow-[inset_0_2px_12px_rgba(15,23,42,0.07),0_1px_2px_rgba(15,23,42,0.06)] md:border-[12px] md:px-8 md:pt-9"
-                    style={{ backgroundImage: 'linear-gradient(160deg, rgba(255,255,255,0.9), rgba(241,245,249,0.6))' }}
+                    className="rounded-2xl border-[6px] border-slate-300 bg-[#fbfcfd] dark:bg-[#172235] px-4 pb-10 pt-6 shadow-[inset_0_2px_12px_rgba(15,23,42,0.07),0_1px_2px_rgba(15,23,42,0.06)] md:border-[12px] md:px-8 md:pt-9"
+                    style={{ backgroundImage: 'var(--board-sheen)' }}
                   >
                     {live.length === 0 && scheduled.length === 0 ? (
                       <p className="py-16 text-center text-sm text-slate-500">{filtering ? 'No notices match these filters.' : 'There are no notices on the board.'}</p>
@@ -314,7 +314,7 @@ export default function NoticeBoardPage() {
                   </div>
                 )}
               </div>
-              <aside className="space-y-4">
+              <aside className="w-full shrink-0 space-y-4 empty:hidden lg:w-[17rem]">
                 <Can permission="notices.holidays">
                   <HolidaysPanel />
                 </Can>

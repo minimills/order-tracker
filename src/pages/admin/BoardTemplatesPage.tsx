@@ -88,7 +88,7 @@ export default function BoardTemplatesPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
+    <div className="space-y-5">
       <AdminPageHeader title="Board Templates">
         What a new board can start with: its stages, labels and ready-made checklists. To copy a board you have set up, open
         it and press “Save as Template”. Changing a template does not change boards already created from it.

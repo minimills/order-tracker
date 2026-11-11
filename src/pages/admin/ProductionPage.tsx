@@ -105,7 +105,7 @@ export default function ProductionPage() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6">
+    <div className="space-y-6">
       <AdminPageHeader title="Production">
         Each order gets its own production board when it is confirmed. These are the stages every new production board
         starts with. Each stage belongs to a department: that department can open the board and is notified when a
@@ -126,7 +126,7 @@ export default function ProductionPage() {
           {shown.map((s) => {
             const idx = active.findIndex((x) => x.id === s.id)
             return (
-              <li key={s.id} className={`grid gap-2 px-4 py-3 text-sm md:grid-cols-[1fr_14rem_16rem_auto] md:items-center ${s.archived ? 'bg-slate-50 text-slate-400' : ''}`}>
+              <li key={s.id} className={`grid gap-2 px-4 py-3 text-sm xl:grid-cols-[1fr_14rem_16rem_auto] xl:items-center ${s.archived ? 'bg-slate-50 text-slate-400' : ''}`}>
                 <span className="font-medium">{s.name}</span>
                 <select
                   aria-label={`Department for ${s.name}`}

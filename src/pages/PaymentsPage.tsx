@@ -130,7 +130,7 @@ export default function PaymentsPage() {
                 {grouped[g.key].map((p) => (
                   <li
                     key={p.id}
-                    className="grid gap-x-4 gap-y-2 px-4 py-3 text-sm md:grid-cols-[8.5rem_minmax(0,1fr)_auto_auto_auto] md:items-center"
+                    className="grid gap-x-4 gap-y-2 px-4 py-3 text-sm lg:grid-cols-[8.5rem_minmax(0,1fr)_auto_auto_auto] lg:items-center"
                   >
                     <div>
                       <div className="font-medium">{showDate(p.due_date)}</div>
@@ -155,7 +155,7 @@ export default function PaymentsPage() {
                       </div>
                       {p.stage === 'Quote' && <div className="text-xs text-slate-500">Order is still a quote</div>}
                     </div>
-                    <div className="tabular-nums md:text-right">
+                    <div className="tabular-nums lg:text-right">
                       <div className="font-semibold">{formatMoney(p.remaining, p.currency)}</div>
                       {p.received_amount > 0 && (
                         <div className="text-xs text-slate-500">
@@ -166,7 +166,7 @@ export default function PaymentsPage() {
                     <div>
                       <PaymentStatus payment={p} />
                     </div>
-                    <div className="md:text-right">
+                    <div className="lg:text-right">
                       <Can permission="payments.action.mark_received" level="edit">
                         <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
                           Mark as Received

@@ -48,6 +48,7 @@ const EXEMPT = {
   'src/components/alerts/AlertsProvider.tsx': 'loads alerts and shows nothing itself (needs alerts.bell; pop-ups need alerts.popups)',
   'src/pages/LoginPage.tsx': 'shown before signing in',
   'src/pages/NotFoundPage.tsx': '“page not found” message',
+  'src/components/Breadcrumbs.tsx': 'layout chrome: the page trail, built from the address and the page itself (only links to pages the person opened from)',
 }
 
 /** Routing elements in App.tsx (each page inside them is wrapped in <Page>). */

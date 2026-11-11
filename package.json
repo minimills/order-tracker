@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:perms && tsc -b && vite build",
+    "build": "npm run check:perms && npm run gen:dark && tsc -b && vite build",
+    "gen:dark": "node scripts/gen-dark-css.mjs",
     "lint": "oxlint",
     "check:perms": "node --experimental-strip-types --no-warnings scripts/check-permissions.mjs",
     "prepare": "git config core.hooksPath .githooks || true",

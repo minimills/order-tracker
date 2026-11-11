@@ -30,28 +30,30 @@ export default function ChangeList({ positions = [], serials = [] }: { positions
       {serials.length > 0 && (
         <div>
           <h3 className="font-medium">Serial numbers ({serials.length})</h3>
-          <table className="mt-1 w-full text-left">
-            <thead className="text-xs text-slate-500">
-              <tr>
-                <th className="py-1 font-normal">Order</th>
-                {serials.some((s) => s.machine_type) && <th className="py-1 font-normal">Machine</th>}
-                <th className="py-1 font-normal">Old</th>
-                <th />
-                <th className="py-1 font-normal">New</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 font-mono text-xs">
-              {serials.map((s, i) => (
-                <tr key={i}>
-                  <td className="py-1 font-sans">{s.order}</td>
-                  {serials.some((x) => x.machine_type) && <td className="py-1 font-sans">{s.machine_type}</td>}
-                  <td className="py-1">{s.old ?? '(none)'}</td>
-                  <td className="py-1 text-slate-400">→</td>
-                  <td className="py-1 font-semibold">{s.new ?? '(none)'}</td>
+          <div className="overflow-x-auto">
+            <table className="mt-1 w-full text-left">
+              <thead className="text-xs text-slate-500">
+                <tr>
+                  <th className="py-1 font-normal">Order</th>
+                  {serials.some((s) => s.machine_type) && <th className="py-1 font-normal">Machine</th>}
+                  <th className="py-1 font-normal">Old</th>
+                  <th />
+                  <th className="py-1 font-normal">New</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-100 font-mono text-xs">
+                {serials.map((s, i) => (
+                  <tr key={i}>
+                    <td className="py-1 font-sans">{s.order}</td>
+                    {serials.some((x) => x.machine_type) && <td className="py-1 font-sans">{s.machine_type}</td>}
+                    <td className="py-1">{s.old ?? '(none)'}</td>
+                    <td className="py-1 text-slate-400">→</td>
+                    <td className="py-1 font-semibold">{s.new ?? '(none)'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

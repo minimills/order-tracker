@@ -7,6 +7,7 @@ import ConfirmHost from './components/ConfirmHost'
 import AuthProvider from './components/AuthProvider'
 import PermissionsProvider from './components/PermissionsProvider'
 import './index.css'
+import './dark.css'
 import { registerServiceWorker } from './lib/push'
 
 registerServiceWorker()
