@@ -1,8 +1,11 @@
 // The CE / EU Declaration of Conformity as a PDF, made on demand from the
 // saved data (nothing is stored). One page per machine (A4, or Letter).
 // Content follows the Machinery Directive 2006/42/EC, Annex II 1.A.
+//
+// THE ONLY RENDERER: Preview, Print, Download PDF and the emailed PDFs all go
+// through buildCePdf() with the same CeData (see renderDeclarations() in
+// ce.ts). It needs no browser, so scripts/test-ce-pdf.mjs checks it in Node.
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFImage, type PDFPage } from 'pdf-lib'
-import { htmlToBlocks } from './certificatePdf'
 import type { CeData } from './ce'
 import { showDate } from './dates'
 
@@ -22,8 +25,27 @@ function txt(text: string) {
     .replace(/[^\x20-\x7E\xA0-\xFF\n€‚ƒ„…†‡ˆ‰Š‹ŒŽ‘’“”•–—˜™š›œžŸ]/g, '?')
 }
 
+/** Rich text (small HTML from the template) → plain paragraphs, without a browser. */
+export function richTextParagraphs(html: string | null | undefined): string[] {
+  const decode = (t: string) =>
+    t
+      .replace(/&nbsp;/g, ' ')
+      .replace(/&lt;/g, '<')
+      .replace(/&gt;/g, '>')
+      .replace(/&quot;/g, '"')
+      .replace(/&#39;|&apos;/g, "'")
+      .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+      .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+      .replace(/&amp;/g, '&')
+  return String(html ?? '')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .split(/<\/(?:p|li|h[1-6]|div)>/i)
+    .map((part) => decode(part.replace(/<[^>]+>/g, '')).replace(/[ \t]+/g, ' ').trim())
+    .filter(Boolean)
+}
+
 type Fonts = { regular: PDFFont; bold: PDFFont; italic: PDFFont }
-type Item = { data: CeData; number: string | null; signature: string | null; paper: 'a4' | 'letter' }
+export type CeRenderItem = { data: CeData; number: string | null; signature: string | null; paper: 'a4' | 'letter' }
 
 /** Splits text into lines that fit the width. */
 function wrap(text: string, font: PDFFont, size: number, width: number) {
@@ -54,7 +76,7 @@ async function embed(pdf: PDFDocument, dataUrl: string | null | undefined): Prom
 }
 
 /** One or more declarations in one PDF (each starts on a new page). number = null → marked as a preview. */
-export async function buildCePdf(items: Item[], logo: string | null) {
+export async function buildCePdf(items: CeRenderItem[], logo: string | null) {
   const pdf = await PDFDocument.create()
   const f: Fonts = {
     regular: await pdf.embedFont(StandardFonts.Helvetica),
@@ -68,7 +90,7 @@ export async function buildCePdf(items: Item[], logo: string | null) {
   return await pdf.save()
 }
 
-async function drawDeclaration(pdf: PDFDocument, f: Fonts, it: Item, logo: PDFImage | null) {
+async function drawDeclaration(pdf: PDFDocument, f: Fonts, it: CeRenderItem, logo: PDFImage | null) {
   const d = it.data
   const [W, H] = SIZES[it.paper] ?? SIZES.a4
   const pages: PDFPage[] = []
@@ -177,7 +199,7 @@ async function drawDeclaration(pdf: PDFDocument, f: Fonts, it: Item, logo: PDFIm
   need(60)
   heading('Declaration')
   y -= 17
-  for (const b of htmlToBlocks(d.declaration_html)) lines([b.runs.map((r) => r.text).join('')], M, W - 2 * M)
+  lines(richTextParagraphs(d.declaration_html), M, W - 2 * M)
   y -= 2
   for (const dir of d.directives) {
     need(14)
@@ -209,7 +231,7 @@ async function drawDeclaration(pdf: PDFDocument, f: Fonts, it: Item, logo: PDFIm
   }
 
   // Closing words of the template (for example "issued under the sole responsibility of the manufacturer").
-  const closing = htmlToBlocks(d.closing_html).map((b) => b.runs.map((r) => r.text).join('')).filter((s) => s.trim())
+  const closing = richTextParagraphs(d.closing_html)
   if (closing.length) {
     lines(closing, M, W - 2 * M, 9, f.italic)
     y -= 6

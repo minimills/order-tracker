@@ -6,7 +6,7 @@ import CeRegister from '../../components/ce/CeRegister'
 import Can from '../../components/Can'
 import RichTextEditor from '../../components/RichTextEditor'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../../components/form'
-import { CE_KIND_LABEL, EU_REGULATION_DATE, loadCeSettings, openPdf, type CeData, type CeKind, type CeSettings } from '../../lib/ce'
+import { CE_KIND_LABEL, EU_REGULATION_DATE, loadCeSettings, openPdf, previewDeclarations, type CeData, type CeKind, type CeSettings } from '../../lib/ce'
 import { useCompany } from '../../lib/company'
 import { showDate, todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
@@ -25,6 +25,23 @@ export default function CeAdminPage() {
   const [savedTpl, setSavedTpl] = useState<Template[]>([])
   const [version, setVersion] = useState(0)
   const [busy, setBusy] = useState(false)
+  const [machines, setMachines] = useState<{ id: string; machine_type: string; serial_number: string }[]>([])
+  const [previewMachine, setPreviewMachine] = useState('')
+
+  // Machines to preview with (newest first).
+  useEffect(() => {
+    supabase
+      ?.from('order_machine_status')
+      .select('id, machine_type, serial_number')
+      .not('serial_number', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(300)
+      .then(({ data }) => {
+        const list = (data as { id: string; machine_type: string; serial_number: string }[]) ?? []
+        setMachines(list)
+        if (list[0]) setPreviewMachine(list[0].id)
+      })
+  }, [])
 
   useEffect(() => {
     loadCeSettings().then((v) => {
@@ -69,40 +86,34 @@ export default function CeAdminPage() {
     toast.success('Template saved. New declarations use it.')
   }
 
-  /** A sample declaration with the settings and template as they are on screen (nothing saved). */
+  /**
+   * Preview for a REAL machine: the same data function (ce_declaration_data)
+   * and the same renderer as issued declarations. Only the template text and
+   * the settings being edited on this page are swapped in, so the preview
+   * shows exactly what a declaration for that machine would say once saved.
+   */
   async function preview(kind: CeKind) {
     const t = templates.find((x) => x.key === (kind === 'eu_2023' ? 'ce_eu' : 'ce_ec'))
-    if (!t || !s) return
-    const data: CeData = {
-      kind,
+    if (!t || !s || !supabase) return
+    if (!previewMachine) return toast.error('Choose a machine to preview with.')
+    const { data, error } = await supabase.rpc('ce_declaration_data', { p_machine: previewMachine, p: { kind } })
+    if (error) return toast.error(friendlyError(error))
+    const real = data as CeData
+    const draft: CeData = {
+      ...real,
       title: t.title,
       declaration_html: t.part1,
       closing_html: t.part2,
-      manufacturer: {
-        name: company.name || 'Belfast Mini Mills Ltd.',
-        address: company.address,
-        phone: company.phone,
-        contact_person: company.contact_person || 'Ankit Luthra',
-        email: company.office_email || company.email,
-        website: company.website,
-      },
       authorised_person: s.authorised_person,
-      machine: { product: 'Textile Machine – Cone Winder', brand: s.brand, model: 'CWR', serial_number: 'CWR-4175', serial: '4175', voltage: '240V', year: Number(todayISO().slice(0, 4)), type_name: 'Cone Winder' },
-      directives: kind === 'eu_2023' ? ['Machinery Regulation (EU) 2023/1230', 'Low Voltage Directive 2014/35/EU', 'EMC Directive 2014/30/EU'] : ['Machinery Directive 2006/42/EC', 'Low Voltage Directive 2014/35/EU', 'EMC Directive 2014/30/EU'],
-      standards: ['EN ISO 12100'],
+      machine: { ...real.machine, brand: s.brand || real.machine.brand },
       notified_body: s.notified_body.trim() || null,
       place: s.place,
-      date: todayISO(),
       signer: s.signer,
-      order_id: '',
-      order_code: '76',
-      customer_name: 'Jane Farmer',
-      customer_company: 'Woolly Acres',
     }
     try {
-      const { buildCePdf } = await import('../../lib/cePdf')
-      const bytes = await buildCePdf([{ data, number: null, signature: null, paper: s.paper }], company.logo)
+      const bytes = await previewDeclarations([draft], null, s.paper, company.logo)
       if (!openPdf(bytes)) toast.error('The preview was blocked. Allow pop-ups for this site and try again.')
+      if (real.problems?.length) toast.warning(real.problems.join(' '))
     } catch (e) {
       toast.error(friendlyError(e as Error))
     }
@@ -200,8 +211,21 @@ export default function CeAdminPage() {
               <RichTextEditor key={`${t.key}-2-${version}`} label="Closing words" value={t.part2} onChange={(part2) => update({ part2 })} />
             </div>
             <div className="flex flex-wrap justify-end gap-2">
-              <button type="button" className={secondaryButtonClass} onClick={() => preview(kind)}>
-                Preview With a Sample Machine
+              <select
+                aria-label="Machine to preview with"
+                className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm"
+                value={previewMachine}
+                onChange={(e) => setPreviewMachine(e.target.value)}
+              >
+                {machines.length === 0 && <option value="">No machines with serial numbers yet</option>}
+                {machines.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.machine_type} {m.serial_number}
+                  </option>
+                ))}
+              </select>
+              <button type="button" className={secondaryButtonClass} disabled={!previewMachine} onClick={() => preview(kind)}>
+                Preview for This Machine
               </button>
               <Can permission="admin.ce" level="edit">
                 <button
@@ -228,7 +252,7 @@ export default function CeAdminPage() {
         <h2 className="font-semibold">Register of Declarations</h2>
         <p className="text-sm text-slate-600">Every declaration issued, newest first: who issued it, when, and who it was sent to.</p>
         <Can anyOf={['ce', 'admin.ce']}>
-          <CeRegister limit={300} />
+          <CeRegister />
         </Can>
       </section>
     </div>

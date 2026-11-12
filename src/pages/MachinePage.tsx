@@ -248,10 +248,7 @@ export default function MachinePage() {
               orderId={m.order_id}
               machineIds={[id]}
               onClose={() => setCeOpen(false)}
-              onIssued={() => {
-                setCeOpen(false)
-                setCeRefresh((n) => n + 1)
-              }}
+              onIssued={() => setCeRefresh((n) => n + 1)}
             />
           </Can>
         )}
