@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npm run check:perms && npm run gen:dark && tsc -b && vite build",
+    "build": "npm run check:perms && npm test && npm run gen:dark && tsc -b && vite build",
     "gen:dark": "node scripts/gen-dark-css.mjs",
     "lint": "oxlint",
     "check:perms": "node --experimental-strip-types --no-warnings scripts/check-permissions.mjs",
     "prepare": "git config core.hooksPath .githooks || true",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node scripts/test-ce-pdf.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.118.0",
@@ -35,6 +36,7 @@
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^6.1.2",
+    "esbuild": "^0.28.2",
     "oxlint": "^1.89.0",
     "tailwindcss": "^4.3.3",
     "typescript": "~7.0.2",

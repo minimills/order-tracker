@@ -734,7 +734,7 @@ export default function OrderPage() {
 
               {/* ---------- CE declarations of conformity ---------- */}
               <Can permission="ce">
-                <Section title="CE Declarations of Conformity">
+                <Section title="CE Certificates">
                   <CeRegister orderId={order.id} refreshKey={ceRefresh} />
                 </Section>
               </Can>
@@ -803,10 +803,7 @@ export default function OrderPage() {
               orderId={order.id}
               machineIds={ceFor.length ? ceFor : undefined}
               onClose={() => setCeFor(null)}
-              onIssued={() => {
-                setCeFor(null)
-                setCeRefresh((n) => n + 1)
-              }}
+              onIssued={() => setCeRefresh((n) => n + 1)}
             />
           </Can>
         )}

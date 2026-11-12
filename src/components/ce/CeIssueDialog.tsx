@@ -1,7 +1,7 @@
 // @permission-scope ce.issue
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { toast } from 'sonner'
-import { loadCeSettings, openPdf, type CeData, type CeDeclaration, type CeSettings } from '../../lib/ce'
+import { loadCeSettings, openPdf, previewDeclarations, type CeData, type CeDeclaration, type CeSettings } from '../../lib/ce'
 import { useCompany } from '../../lib/company'
 import { todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
@@ -11,6 +11,7 @@ import Can from '../Can'
 import SerialNumber from '../SerialNumber'
 import SignatureInput, { type SignatureInputHandle } from '../SignatureInput'
 import { Field, Modal, buttonClass, inputClass, secondaryButtonClass } from '../form'
+import CeDeclarationsTable from './CeDeclarationsTable'
 
 type Machine = { id: string; machine_type: string; serial_number: string | null }
 
@@ -32,6 +33,10 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
   const [date, setDate] = useState(todayISO())
   const [signer, setSigner] = useState('')
   const [problems, setProblems] = useState<Record<string, string[]>>({})
+  // What each machine's declaration will list (from the same data function as the issued one).
+  const [directives, setDirectives] = useState<Record<string, string[]>>({})
+  // After Generate: the declarations just issued, with their actions.
+  const [issued, setIssued] = useState<CeDeclaration[] | null>(null)
   const [busy, setBusy] = useState<'preview' | 'issue' | null>(null)
 
   useEffect(() => {
@@ -52,6 +57,20 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
   }, [orderId, initial])
 
   const options = useMemo(() => ({ place, date, signer }), [place, date, signer])
+
+  // Directives and missing details of every machine, shown before generating.
+  useEffect(() => {
+    if (!supabase || !machines.length) return
+    let stop = false
+    Promise.all(machines.filter((m) => m.serial_number).map(async (m) => [m.id, (await supabase!.rpc('ce_declaration_data', { p_machine: m.id, p: {} })).data as CeData | null] as const)).then((list) => {
+      if (stop) return
+      setDirectives(Object.fromEntries(list.filter(([, d]) => d).map(([id, d]) => [id, d!.directives])))
+      setProblems(Object.fromEntries(list.filter(([, d]) => d).map(([id, d]) => [id, d!.problems ?? []])))
+    })
+    return () => {
+      stop = true
+    }
+  }, [machines])
   const selected = machines.filter((m) => chosen.has(m.id))
 
   /** What each chosen machine's declaration would say (and what is missing). */
@@ -81,11 +100,7 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
       if (!list) return
       const s = sig.current && !sig.current.isEmpty() ? await sig.current.get() : null
       const signature = s ? await blobToDataUrl(s.blob) : null
-      const { buildCePdf } = await import('../../lib/cePdf')
-      const bytes = await buildCePdf(
-        list.map((x) => ({ data: x.data, number: null, signature, paper: settings?.paper ?? 'a4' })),
-        company.logo,
-      )
+      const bytes = await previewDeclarations(list.map((x) => x.data), signature, settings?.paper ?? 'a4', company.logo)
       if (!openPdf(bytes)) toast.error('The preview was blocked. Allow pop-ups for this site and try again.')
     } catch (e) {
       toast.error(friendlyError(e as Error))
@@ -112,7 +127,8 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
       })
       if (error) return toast.error(friendlyError(error))
       const issued = (data as CeDeclaration[]) ?? []
-      toast.success(`${issued.length} declaration${issued.length === 1 ? '' : 's'} issued: ${issued.map((d) => d.number).join(', ')}.`)
+      toast.success(`${issued.length} declaration${issued.length === 1 ? '' : 's'} issued.`)
+      setIssued(issued)
       onIssued(issued)
     } finally {
       setBusy(null)
@@ -126,6 +142,27 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
       else n.add(id)
       return n
     })
+
+  if (issued)
+    return (
+      <Modal
+        title="CE Certificates Issued"
+        onClose={onClose}
+        footer={
+          <button type="button" className={buttonClass} onClick={onClose}>
+            Done
+          </button>
+        }
+      >
+        <div className="space-y-3 text-sm">
+          <p className="text-slate-600">
+            {issued.length} declaration{issued.length === 1 ? ' was' : 's were'} issued and locked. Download, print or email them here; they are also listed in the CE
+            Certificates section of the order.
+          </p>
+          <CeDeclarationsTable rows={issued} initiallySelected={issued.map((d) => d.id)} onSent={() => onIssued(issued)} />
+        </div>
+      </Modal>
+    )
 
   return (
     <Modal
@@ -172,6 +209,12 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
                   {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span className="text-xs text-amber-800">No serial number yet</span>}
                   {existing.has(m.id) && <span className="text-xs text-slate-500">Issued: {existing.get(m.id)} (a new version will be made)</span>}
                 </label>
+                {directives[m.id] && (
+                  <p className="mt-1 text-xs text-slate-600">
+                    Directives: {directives[m.id].length ? directives[m.id].join(', ') : 'none chosen'}
+                    <span className="text-slate-400"> (set per machine type in Admin → Machine Types)</span>
+                  </p>
+                )}
                 {(problems[m.id] ?? []).map((p) => (
                   <p key={p} className="mt-1 text-xs text-amber-800">
                     {p}

@@ -3,8 +3,10 @@
  * numbered DoC-<model>-<serial>-<year>-v<version>, locked once issued. The PDF
  * is made in the browser from the saved data (cePdf.ts), never stored.
  */
+import type { CeRenderItem } from './cePdf'
 import { blobToDataUrl } from './signatures'
 import { supabase } from './supabase'
+import { makeZip } from './zip'
 
 export type CeKind = 'ec_2006' | 'eu_2023'
 export const CE_KIND_LABEL: Record<CeKind, string> = {
@@ -119,15 +121,64 @@ export function declarationSignature(path: string) {
   return sigCache.get(path)!
 }
 
-/** The PDFs of issued declarations: one per machine, or one combined file. */
-export async function declarationPdfs(decls: CeDeclaration[], logo: string | null, combined: boolean) {
+/**
+ * THE single way any declaration becomes a PDF (preview, print, download and
+ * email): the same renderer (cePdf.ts buildCePdf) and the same CeData. Issued
+ * declarations use their saved snapshot; a preview uses ce_declaration_data(),
+ * the function that also makes that snapshot when a declaration is issued.
+ */
+export async function renderDeclarations(items: CeRenderItem[], logo: string | null) {
   const { buildCePdf } = await import('./cePdf')
-  const items = await Promise.all(decls.map(async (d) => ({ data: d.data, number: d.number, signature: await declarationSignature(d.signature_path), paper: d.paper })))
-  if (combined || items.length === 1) {
-    const name = items.length === 1 ? `${decls[0].number}.pdf` : `Declarations of Conformity - Order ${decls[0].data.order_code}.pdf`
-    return [{ file_name: name, bytes: await buildCePdf(items, logo) }]
+  return buildCePdf(items, logo)
+}
+
+/** Render items for issued declarations (with their own signature copy). */
+async function issuedItems(decls: CeDeclaration[]): Promise<CeRenderItem[]> {
+  return Promise.all(decls.map(async (d) => ({ data: d.data, number: d.number, signature: await declarationSignature(d.signature_path), paper: d.paper })))
+}
+
+export const combinedName = (decls: CeDeclaration[]) =>
+  decls.length === 1
+    ? `${decls[0].number}.pdf`
+    : new Set(decls.map((d) => d.order_id)).size === 1
+      ? `Declarations of Conformity - Order ${decls[0].data.order_code}.pdf`
+      : 'Declarations of Conformity.pdf'
+
+/** The PDFs of issued declarations: one per machine, or one combined file (one page per machine). */
+export async function declarationPdfs(decls: CeDeclaration[], logo: string | null, combined: boolean) {
+  const items = await issuedItems(decls)
+  if (combined || items.length === 1) return [{ file_name: combinedName(decls), bytes: await renderDeclarations(items, logo) }]
+  return Promise.all(items.map(async (it, i) => ({ file_name: `${decls[i].number}.pdf`, bytes: await renderDeclarations([it], logo) })))
+}
+
+/** Download: one combined PDF, or a ZIP of separate PDFs. */
+export async function downloadDeclarations(decls: CeDeclaration[], logo: string | null, mode: 'combined' | 'zip') {
+  const { downloadPdf } = await import('./certificatePdf')
+  if (mode === 'combined' || decls.length === 1) {
+    const [f] = await declarationPdfs(decls, logo, true)
+    return downloadPdf(f.bytes, f.file_name)
   }
-  return Promise.all(items.map(async (it, i) => ({ file_name: `${decls[i].number}.pdf`, bytes: await buildCePdf([it], logo) })))
+  const files = await declarationPdfs(decls, logo, false)
+  const zip = makeZip(files.map((f) => ({ name: f.file_name, bytes: f.bytes })))
+  const url = URL.createObjectURL(new Blob([zip as BlobPart], { type: 'application/zip' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = combinedName(decls).replace(/\.pdf$/, '.zip')
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}
+
+/** Print: every selected declaration in one print job. */
+export async function printDeclarations(decls: CeDeclaration[], logo: string | null) {
+  const [f] = await declarationPdfs(decls, logo, true)
+  printPdf(f.bytes)
+}
+
+/** Preview (not issued yet): CeData from ce_declaration_data(), same renderer. */
+export async function previewDeclarations(datas: CeData[], signature: string | null, paper: 'a4' | 'letter', logo: string | null) {
+  return renderDeclarations(datas.map((data) => ({ data, number: null, signature, paper })), logo)
 }
 
 /** Opens the browser's print box for a PDF. */
