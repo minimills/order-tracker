@@ -77,7 +77,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4">
+    <section className="rounded-lg border border-slate-200 bg-white p-4" data-setting={list.name === 'voltage' ? 'voltage-colours' : undefined}>
       <div className="mb-3 flex items-center justify-between gap-2">
         <h2 className="font-semibold">{list.title}</h2>
         <label className="flex items-center gap-1.5 text-xs text-slate-600">
@@ -99,6 +99,18 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
                 onChange={(e) => setDrafts({ ...drafts, [item.id]: e.target.value })}
                 onKeyDown={(e) => e.key === 'Enter' && rename(item)}
               />
+              {list.name === 'voltage' && !item.archived && (
+                <input
+                  type="color"
+                  aria-label={`Colour for ${item.value}`}
+                  title="Chip colour on the Orders board"
+                  className="h-9 w-11 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
+                  value={item.colour ?? '#64748b'}
+                  onChange={(e) =>
+                    supabase && run(supabase.from('option_lists').update({ colour: e.target.value }).eq('id', item.id), `Colour for "${item.value}" saved.`)
+                  }
+                />
+              )}
               {draft.trim() !== item.value && (
                 <button type="button" className={buttonClass} onClick={() => rename(item)}>
                   Save Changes
@@ -159,7 +171,7 @@ export default function OptionListsPage() {
     if (!supabase) return
     const { data, error } = await supabase
       .from('option_lists')
-      .select('id, list_name, value, sort_order, locked, archived')
+      .select('*')
       .order('sort_order')
       .order('value')
     if (error) toast.error(friendlyError(error))

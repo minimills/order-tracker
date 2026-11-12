@@ -4,8 +4,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { countryFlag } from '../../lib/country'
 import { showDate } from '../../lib/dates'
 import { usePermissions } from '../../lib/permissions'
-import { stageLabel } from '../../lib/stages'
-import { STAGES, type OrderSummaryRow, type Stage } from '../../lib/types'
+import type { OrderSummaryRow } from '../../lib/types'
 import Can from '../Can'
 import { badgeClass, orderBadges, type Badge } from './badges'
 import MachineChips, { type ChipMachine } from './MachineChips'
@@ -20,13 +19,8 @@ type Props = {
   deadline?: PromisedItem | null
   /** On-site training plan (technician and dates). */
   service?: ServiceInfo | null
-  canMoveUp: boolean
-  canMoveDown: boolean
-  onMoveUp: () => void
-  onMoveDown: () => void
-  onChangeStage: (stage: Stage) => void
-  /** Stages this person may move the order to (empty = no "Move to…"). */
-  stageChoices: Stage[]
+  /** Chip colour for the order's voltage (Admin → Dropdown Lists). */
+  voltageColour?: string | null
   /** Dragging is on when the person may move cards. */
   draggable: boolean
   onDragStart: (e: DragEvent) => void
@@ -57,7 +51,6 @@ export default function OrderCard(props: Props) {
   const flag = countryFlag(o.customer_country)
   const badges = orderBadges(o)
   const allReady = o.machines_count > 0 && o.machines_ready_count === o.machines_count
-  const STAGE_SET = new Set(props.stageChoices)
   const { can } = usePermissions()
   const navigate = useNavigate()
   // The whole card opens the order; buttons, menus, links and chips keep their own job.
@@ -88,6 +81,17 @@ export default function OrderCard(props: Props) {
       {dropHint === 'before' && <div className="absolute -top-1.5 right-0 left-0 h-1 rounded bg-blue-500" />}
       {dropHint === 'after' && <div className="absolute right-0 -bottom-1.5 left-0 h-1 rounded bg-blue-500" />}
 
+      <Can permission="orders.board.card.voltage">
+        {o.voltage && (
+          <span
+            className="mb-1.5 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold text-white"
+            style={{ backgroundColor: props.voltageColour ?? '#64748b' }}
+            title={`Voltage: ${o.voltage}`}
+          >
+            {o.voltage}
+          </span>
+        )}
+      </Can>
       <div className="flex items-start justify-between gap-2">
         <Can permission="order.page" fallback={<span className="font-semibold">Order {o.order_code}</span>}>
           <Link to={`/orders/${o.id}`} className="font-semibold hover:underline" draggable={false}>
@@ -101,11 +105,15 @@ export default function OrderCard(props: Props) {
         </Can>
       </div>
 
-      <div className="mt-1 truncate" title={o.customer_company ?? undefined}>
-        <Can permission="orders.board.card.customer">{o.customer_name}</Can>
-        <Can permission="orders.board.card.company">
-          {o.customer_company && <span className="text-slate-500"> · {o.customer_company}</span>}
-        </Can>
+      {/* The company; the person's name only when there is no company. */}
+      <div className="mt-1 truncate" title={o.customer_company ? `${o.customer_company} (${o.customer_name})` : o.customer_name}>
+        {o.customer_company ? (
+          <Can permission="orders.board.card.company" fallback={<Can permission="orders.board.card.customer">{o.customer_name}</Can>}>
+            {o.customer_company}
+          </Can>
+        ) : (
+          <Can permission="orders.board.card.customer">{o.customer_name}</Can>
+        )}
       </div>
       <Can permission="orders.board.card.country">
         <div className="text-xs text-slate-500">
@@ -161,51 +169,6 @@ export default function OrderCard(props: Props) {
         </div>
       )}
 
-      {(props.canMoveUp || props.canMoveDown || STAGE_SET.size > 0) && (
-        <div className="mt-2 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-2">
-          <Can permission="orders.board.reorder" level="edit">
-            {(props.canMoveUp || props.canMoveDown) && (
-              <>
-                <button
-                  type="button"
-                  onClick={props.onMoveUp}
-                  disabled={!props.canMoveUp}
-                  className="rounded border border-slate-300 px-2 py-0.5 text-xs hover:bg-slate-50 disabled:opacity-40"
-                  title="Move up the queue"
-                >
-                  ↑ Up
-                </button>
-                <button
-                  type="button"
-                  onClick={props.onMoveDown}
-                  disabled={!props.canMoveDown}
-                  className="rounded border border-slate-300 px-2 py-0.5 text-xs hover:bg-slate-50 disabled:opacity-40"
-                  title="Move down the queue"
-                >
-                  ↓ Down
-                </button>
-              </>
-            )}
-          </Can>
-          {STAGE_SET.size > 0 && (
-            <Can permission="orders.board.change_stage" level="edit">
-              <select
-                aria-label={`Move order ${o.order_code} to`}
-                className="ml-auto rounded border border-slate-300 bg-white px-1 py-0.5 text-xs"
-                value=""
-                onChange={(e) => e.target.value && props.onChangeStage(e.target.value as Stage)}
-              >
-                <option value="">Move to…</option>
-                {STAGES.filter((s) => s !== o.stage && STAGE_SET.has(s)).map((s) => (
-                  <option key={s} value={s}>
-                    {stageLabel(s)}
-                  </option>
-                ))}
-              </select>
-            </Can>
-          )}
-        </div>
-      )}
     </div>
   )
 }

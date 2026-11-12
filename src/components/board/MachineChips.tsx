@@ -12,6 +12,8 @@ export type ChipMachine = {
   machine_type_id: string
   machine_type: string
   short_name: string
+  /** Machine type code (LCR); shown on the chip, the full name on hover. */
+  code?: string | null
   serial_number: string | null
   ready: boolean
   checklist_done: boolean
@@ -50,7 +52,7 @@ function groupMachines(machines: ChipMachine[], countCrates: boolean): Group[] {
       const sorted = [...list].sort((a, b) => (a.serial_number ?? '').localeCompare(b.serial_number ?? ''))
       return {
         typeId,
-        name: list[0].short_name,
+        name: list[0].code || list[0].short_name,
         fullName: list[0].machine_type,
         machines: sorted,
         status: Math.min(...statuses) as Status,
@@ -124,7 +126,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
               draggable={false}
               aria-expanded={showSerials ? isOpen : undefined}
               aria-label={summary}
-              title={showSerials ? undefined : summary}
+              title={showSerials ? g.fullName : summary}
               onClick={(e) => {
                 e.stopPropagation()
                 if (showSerials) setPinned(pinned === g.typeId ? null : g.typeId)

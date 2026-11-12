@@ -21,6 +21,8 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
   const { can } = usePermissions()
   const may = {
     expected: can('order.field.expected_ship_date', 'edit'),
+    quote: can('order.field.quote_number', 'edit'),
+    invoice: can('order.field.invoice_number', 'edit'),
     actual: can('order.field.actual_ship_date', 'edit'),
     voltage: can('order.field.voltage', 'edit'),
     delivery: can('order.field.delivery_equipment', 'edit'),
@@ -29,6 +31,9 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
     total: can('order.field.order_total', 'edit'),
   }
   const [expected, setExpected] = useState(order.expected_ship_date ?? '')
+  const [reason, setReason] = useState('')
+  const [quote, setQuote] = useState(order.quote_number ?? '')
+  const [invoice, setInvoice] = useState(order.invoice_number ?? '')
   const [actual, setActual] = useState(order.actual_ship_date ?? '')
   const [voltage, setVoltage] = useState(order.voltage)
   const [delivery, setDelivery] = useState(order.delivery_equipment)
@@ -50,6 +55,8 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
     const changes: Record<string, unknown> = {}
     if (may.expected) changes.expected_ship_date = expected || null
     if (may.actual) changes.actual_ship_date = actual || null
+    if (can('order.field.quote_number', 'edit')) changes.quote_number = quote.trim() || null
+    if (can('order.field.invoice_number', 'edit')) changes.invoice_number = invoice.trim() || null
     if (may.voltage) changes.voltage = voltage
     if (may.delivery) changes.delivery_equipment = delivery
     if (may.freight) changes.freight_type = freight || null
@@ -64,6 +71,8 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
     // Only send what really changed, so nobody trips over a field they can't edit.
     const current: Record<string, unknown> = {
       expected_ship_date: order.expected_ship_date,
+      quote_number: order.quote_number ?? null,
+      invoice_number: order.invoice_number ?? null,
       actual_ship_date: order.actual_ship_date,
       voltage: order.voltage,
       delivery_equipment: order.delivery_equipment,
@@ -76,6 +85,8 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
 
     setSaving(true)
     const { error: e } = await supabase.from('orders').update(changes).eq('id', order.id)
+    if (!e && 'expected_ship_date' in changes && order.expected_ship_date && reason.trim())
+      await supabase.rpc('set_ship_change_reason', { p_order: order.id, p_reason: reason.trim() })
     setSaving(false)
     if (e) return setError(friendlyError(e))
     refreshAlerts()
@@ -103,6 +114,21 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
         <Can permission="order.field.expected_ship_date" level="edit">
           <Field label="Expected ship date" htmlFor="ed-expected">
             <input id="ed-expected" type="date" className={inputClass} value={expected} onChange={(e) => setExpected(e.target.value)} />
+          </Field>
+          {order.expected_ship_date && expected !== order.expected_ship_date && (
+            <Field label="Reason for the new ship date (optional)" htmlFor="ed-reason" hint="Kept in the ship date history. The delay still counts from the original promised date.">
+              <input id="ed-reason" className={inputClass} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
+            </Field>
+          )}
+        </Can>
+        <Can permission="order.field.quote_number" level="edit">
+          <Field label="Quote #" htmlFor="ed-quote">
+            <input id="ed-quote" className={inputClass} maxLength={60} value={quote} onChange={(e) => setQuote(e.target.value)} />
+          </Field>
+        </Can>
+        <Can permission="order.field.invoice_number" level="edit">
+          <Field label="Invoice #" htmlFor="ed-invoice">
+            <input id="ed-invoice" className={inputClass} maxLength={60} value={invoice} onChange={(e) => setInvoice(e.target.value)} />
           </Field>
         </Can>
         <Can permission="order.field.actual_ship_date" level="edit">

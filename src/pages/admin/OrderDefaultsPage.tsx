@@ -23,7 +23,7 @@ export default function OrderDefaultsPage() {
     e.preventDefault()
     if (!supabase) return
     const days = (n: number) => Number.isInteger(n) && n >= 0 && n <= 365
-    if (!days(f.down_payment_days) || !days(f.balance_days_before_ship)) return toast.error('Days must be whole numbers from 0 to 365.')
+    if (!days(f.down_payment_days) || !days(f.balance_days_before_ship) || !days(f.full_payment_within_days) || !days(f.full_payment_due_days)) return toast.error('Days must be whole numbers from 0 to 365.')
     setSaving(true)
     const { error } = await supabase.from('app_settings').upsert({ key: 'order_defaults', value: f })
     setSaving(false)
@@ -31,7 +31,7 @@ export default function OrderDefaultsPage() {
     toast.success('Order defaults saved.')
   }
 
-  const num = (key: 'down_payment_days' | 'balance_days_before_ship') => (e: { target: { value: string } }) =>
+  const num = (key: 'down_payment_days' | 'balance_days_before_ship' | 'full_payment_within_days' | 'full_payment_due_days') => (e: { target: { value: string } }) =>
     setF({ ...f, [key]: Number(e.target.value) })
 
   return (
@@ -74,6 +74,12 @@ export default function OrderDefaultsPage() {
           </Field>
           <Field label="Balance due (days before the expected ship date)" htmlFor="od-bal">
             <input id="od-bal" type="number" min={0} max={365} className={inputClass} value={f.balance_days_before_ship} onChange={num('balance_days_before_ship')} />
+          </Field>
+          <Field label="Full payment when the ship date is less than (days away)" htmlFor="od-full-within" hint="Then there is no separate down payment.">
+            <input id="od-full-within" type="number" min={0} max={365} className={inputClass} value={f.full_payment_within_days} onChange={num('full_payment_within_days')} />
+          </Field>
+          <Field label="Full payment due (days after the order date)" htmlFor="od-full-due">
+            <input id="od-full-due" type="number" min={0} max={365} className={inputClass} value={f.full_payment_due_days} onChange={num('full_payment_due_days')} />
           </Field>
         </div>
         <div className="flex justify-end">

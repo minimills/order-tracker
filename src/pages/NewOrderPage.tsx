@@ -15,7 +15,7 @@ import { supabase } from '../lib/supabase'
 import { BOARD_STAGES, CURRENCIES, type Currency, type Customer, type MachineType, type Stage } from '../lib/types'
 import { useOptionList } from '../lib/useOptionList'
 import Timeline from '../components/schedule/Timeline'
-import { showDate } from '../lib/dates'
+import { addDaysISO, showDate } from '../lib/dates'
 import {
   balanceDue as balanceDueFor,
   currencyFor,
@@ -84,6 +84,10 @@ export default function NewOrderPage() {
   const [freightType, setFreightType] = useState('')
   const [shipHand, setExpectedShipDate] = useState<string | null>(null)
   const [notes, setNotes] = useState('')
+  const [quoteNumber, setQuoteNumber] = useState('')
+  const [invoiceNumber, setInvoiceNumber] = useState('')
+  // Full payment (no down payment) or down payment + balance; null = the automatic choice.
+  const [planHand, setPlan] = useState<'full' | 'split' | null>(null)
   const [currencyHand, setCurrency] = useState<Currency | null>(null)
   const [total, setTotal] = useState('')
   const [downMode, setDownMode] = useState<'amount' | 'percent'>('percent')
@@ -220,8 +224,14 @@ export default function NewOrderPage() {
   const plan = getsSerials && rows.length && !schedule.loading ? schedule.planFor(schedOrder) : null
   const expectedShipDate = shipHand ?? plan?.ship_date ?? ''
   const downDue = downDueHand ?? downPaymentDue(schedule.today, defaults)
-  const balanceDue = balanceDueHand ?? (expectedShipDate ? balanceDueFor(expectedShipDate, defaults) : '')
-  const balanceSuggestion = downDue && expectedShipDate && balanceDue && balanceDue < downDue ? suggestBalanceDue(downDue, expectedShipDate) : null
+  // Ship date less than N days away (Admin → Order Defaults): full payment due M days after the order date.
+  const daysToShip = expectedShipDate ? Math.round((Date.parse(`${expectedShipDate}T12:00:00Z`) - Date.parse(`${schedule.today}T12:00:00Z`)) / 86_400_000) : null
+  const autoFull = daysToShip !== null && daysToShip < defaults.full_payment_within_days
+  const fullPayment = (planHand ?? (autoFull ? 'full' : 'split')) === 'full'
+  const fullDue = addDaysISO(schedule.today, defaults.full_payment_due_days)
+  const balanceDue = balanceDueHand ?? (fullPayment ? fullDue : expectedShipDate ? balanceDueFor(expectedShipDate, defaults) : '')
+  const balanceSuggestion =
+    !fullPayment && downDue && expectedShipDate && balanceDue && balanceDue < downDue ? suggestBalanceDue(downDue, expectedShipDate) : null
 
   const totalNum = parseMoney(total)
   const downNum = parseMoney(downValue)
@@ -240,7 +250,7 @@ export default function NewOrderPage() {
         ? Math.round((downAmount / totalNum) * 1000) / 10
         : null
   const balance =
-    totalNum !== null && !Number.isNaN(totalNum) ? round2(totalNum - (downAmount ?? 0)) : null
+    totalNum !== null && !Number.isNaN(totalNum) ? round2(totalNum - (fullPayment ? 0 : (downAmount ?? 0))) : null
 
   const splitPreview =
     activeSplitInfo && activeSplitInfo !== 'not-found'
@@ -301,11 +311,13 @@ export default function NewOrderPage() {
       // no order total for this person
     } else if (totalNum === null) e.total = 'Enter the order total (enter 0 if it is not known yet).'
     else if (Number.isNaN(totalNum)) e.total = 'Enter a number, for example 12500 or 12,500.00'
-    if (downNum !== null && Number.isNaN(downNum)) e.down = 'Enter a number.'
+    if (fullPayment) {
+      // no down payment to check
+    } else if (downNum !== null && Number.isNaN(downNum)) e.down = 'Enter a number.'
     else if (downMode === 'percent' && downNum !== null && downNum > 100) e.down = 'The percentage cannot be more than 100.'
     else if (downAmount !== null && totalNum !== null && downAmount > totalNum)
       e.down = 'The down payment cannot be more than the order total.'
-    if (downDue && balanceDue && balanceDue < downDue) e.balanceDue = 'The balance would be due before the down payment.'
+    if (!fullPayment && downDue && balanceDue && balanceDue < downDue) e.balanceDue = 'The balance would be due before the down payment.'
 
     return e
   }
@@ -353,8 +365,8 @@ export default function NewOrderPage() {
           needs_crate: row.needsCrate,
         })),
       ),
-      down_payment_amount: may.payments ? (downAmount ?? undefined) : undefined,
-      down_payment_due_date: may.payments ? downDue || undefined : undefined,
+      down_payment_amount: may.payments && !fullPayment ? (downAmount ?? undefined) : undefined,
+      down_payment_due_date: may.payments && !fullPayment ? downDue || undefined : undefined,
       balance_due_date: may.payments ? balanceDue || undefined : undefined,
     }
 
@@ -369,6 +381,13 @@ export default function NewOrderPage() {
       return
     }
     const result = data as { id: string; order_code: string }
+    const refs: Record<string, string> = {}
+    if (quoteNumber.trim() && can('order.field.quote_number', 'edit')) refs.quote_number = quoteNumber.trim()
+    if (invoiceNumber.trim() && can('order.field.invoice_number', 'edit')) refs.invoice_number = invoiceNumber.trim()
+    if (Object.keys(refs).length) {
+      const { error: refError } = await supabase.from('orders').update(refs).eq('id', result.id)
+      if (refError) toast.error(`The order was saved, but the quote / invoice number was not: ${friendlyError(refError)}`)
+    }
     if (plan) await saveFirstSchedule(result.id)
     toast.success(`Order ${result.order_code} saved.`)
     navigate(`/orders/${result.id}`)
@@ -488,6 +507,16 @@ export default function NewOrderPage() {
                     </option>
                   ))}
                 </select>
+              </Field>
+            </Can>
+            <Can permission="order.field.quote_number" level="edit">
+              <Field label="Quote # (optional)" htmlFor="quote-number">
+                <input id="quote-number" className={inputClass} maxLength={60} value={quoteNumber} onChange={(e) => setQuoteNumber(e.target.value)} />
+              </Field>
+            </Can>
+            <Can permission="order.field.invoice_number" level="edit">
+              <Field label="Invoice # (optional)" htmlFor="invoice-number">
+                <input id="invoice-number" className={inputClass} maxLength={60} value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} />
               </Field>
             </Can>
             <Can permission="orders.new.split" level="edit">
@@ -620,6 +649,25 @@ export default function NewOrderPage() {
 
         <Can anyOf={['order.field.order_total', 'payments']} level="edit">
           <Section title="Payments">
+            {(autoFull || planHand) && (
+              <Can permission="payments" level="edit">
+                <div className={`mb-4 rounded-md px-3 py-2 text-sm ${fullPayment ? 'bg-blue-50 text-blue-900' : 'bg-slate-50 text-slate-700'}`}>
+                  {fullPayment ? (
+                    <>
+                      <strong>Full payment.</strong>{' '}
+                      {autoFull
+                        ? `The expected ship date is ${daysToShip} days away (less than ${defaults.full_payment_within_days}), so the whole order total is due ${defaults.full_payment_due_days} days from the order date, with no separate down payment.`
+                        : 'The whole order total is due at once, with no separate down payment.'}
+                    </>
+                  ) : (
+                    'A down payment and a balance are used for this order.'
+                  )}{' '}
+                  <button type="button" className="font-medium underline" onClick={() => setPlan(fullPayment ? 'split' : 'full')}>
+                    {fullPayment ? 'Use a Down Payment Instead' : 'Use Full Payment'}
+                  </button>
+                </div>
+              </Can>
+            )}
             <div className="grid gap-4 md:grid-cols-2">
               <Can permission="order.field.order_total" level="edit">
                 <Field label="Order total" htmlFor="total" error={err('total')}>
@@ -648,6 +696,8 @@ export default function NewOrderPage() {
                 </Field>
               </Can>
               <Can permission="payments" level="edit">
+                {!fullPayment && (
+                  <>
                 <Field
                   label="Down payment"
                   htmlFor="down"
@@ -695,12 +745,16 @@ export default function NewOrderPage() {
                 >
                   <input id="down-due" type="date" className={inputClass} value={downDue} onChange={(e) => setDownDue(e.target.value)} />
                 </Field>
+                  </>
+                )}
                 <Field
-                  label="Balance due"
+                  label={fullPayment ? 'Full payment due' : 'Balance due'}
                   htmlFor="balance-due"
                   error={err('balanceDue') ?? (balanceSuggestion ? 'The balance would be due before the down payment.' : undefined)}
                   hint={
-                    balanceDueHand === null && expectedShipDate
+                    balanceDueHand === null && fullPayment
+                      ? `${defaults.full_payment_due_days} days from the order date.`
+                      : balanceDueHand === null && expectedShipDate
                       ? `${defaults.balance_days_before_ship} days before the expected ship date.`
                       : !expectedShipDate
                         ? 'Filled in once the order has an expected ship date.'
@@ -729,8 +783,8 @@ export default function NewOrderPage() {
             <Can permission="payments" level="edit">
               <Can permission="order.field.order_total" level="edit">
                 <div className="mt-4 rounded-md bg-slate-50 px-3 py-2 text-sm">
-                  Balance: <strong>{formatMoney(balance, currency)}</strong>
-                  <span className="text-slate-500"> (order total − down payment, calculated automatically)</span>
+                  {fullPayment ? 'Full payment' : 'Balance'}: <strong>{formatMoney(balance, currency)}</strong>
+                  <span className="text-slate-500">{fullPayment ? ' (the whole order total)' : ' (order total − down payment, calculated automatically)'}</span>
                 </div>
               </Can>
             </Can>

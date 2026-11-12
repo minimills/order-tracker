@@ -19,6 +19,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/board', label: 'Orders Board', icon: 'queue', permission: 'orders.board' },
   { to: '/orders/new', label: 'New Order', icon: 'plus', permission: 'orders.new', level: 'edit' },
   { to: '/orders', label: 'Orders List', icon: 'list', permission: 'orders.list', end: true },
+  { to: '/machines', label: 'Machines', icon: 'hash', permission: 'machines' },
   { to: '/boards', label: 'Boards', icon: 'boards', permission: 'boards' },
   { to: '/notices', label: 'Notice Board', icon: 'pin', permission: 'notices', badge: 'notices' },
   { to: '/chat', label: 'Chat', icon: 'chat', permission: 'chat', badge: 'chat' },
