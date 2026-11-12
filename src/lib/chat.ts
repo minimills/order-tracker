@@ -22,6 +22,12 @@ export type ConversationRow = {
   notify: NotifyMode
   members: number
   can_post: boolean
+  /** 0040: my own view of the conversation (nobody else is affected). */
+  my_archived?: boolean
+  hidden?: boolean
+  marked_unread?: boolean
+  created_by?: string | null
+  created_at?: string
 }
 export type Mention = { type: 'user' | 'department' | 'group'; key: string; label: string }
 export type ChatLink = { type: 'order' | 'machine' | 'board' | 'card'; id: string; text: string; board_id?: string; order_id?: string }
@@ -56,6 +62,37 @@ export const KIND_LABEL: Record<ConversationKind, string> = {
   channel: 'Channels',
 }
 export const NOTIFY_LABEL: Record<NotifyMode, string> = { all: 'All messages', mentions: 'Mentions only', mute: 'Muted' }
+
+/** What a swipe on a conversation does (Settings → Chat; left = Archive, right = Delete for me by default). */
+export type SwipeAction = 'archive' | 'delete' | 'clear' | 'read_toggle' | 'hide'
+export const SWIPE_ACTIONS: { value: SwipeAction; label: string }[] = [
+  { value: 'archive', label: 'Archive' },
+  { value: 'delete', label: 'Delete for me' },
+  { value: 'clear', label: 'Clear chat' },
+  { value: 'read_toggle', label: 'Mark read / unread' },
+  { value: 'hide', label: 'Hide' },
+]
+/** The database action for a list action on this conversation (toggles flip with its state). */
+export function stateAction(a: SwipeAction, r: ConversationRow) {
+  if (a === 'archive') return r.my_archived ? 'unarchive' : 'archive'
+  if (a === 'hide') return r.hidden ? 'unhide' : 'hide'
+  if (a === 'read_toggle') return r.unread > 0 || r.marked_unread ? 'read' : 'unread'
+  return a
+}
+export const STATE_DONE: Record<string, string> = {
+  archive: 'Conversation archived.',
+  unarchive: 'Conversation moved back to your list.',
+  hide: 'Conversation hidden. Find it under Hidden at the bottom of the list.',
+  unhide: 'Conversation shown again.',
+  read: 'Marked as read.',
+  unread: 'Marked as unread.',
+  clear: 'Chat cleared for you. Others still see their messages.',
+  delete: 'Conversation deleted for you. It comes back if someone writes again.',
+}
+
+/** Time off of people in a conversation (from the time-off step, when it is in place). */
+export type TimeOff = { email: string; name: string; kind: string; return_date: string | null }
+export const TIME_OFF_WORDS: Record<string, string> = { vacation: 'vacation', sick: 'sick leave', banked: 'banked time' }
 
 const timeFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit' })
 const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', month: 'short', day: 'numeric' })

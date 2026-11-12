@@ -1,13 +1,14 @@
-// @permission-scope settings.quiet_hours, settings.chat_status
+// @permission-scope settings.quiet_hours, settings.chat_status, settings.chat_swipe
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import Can from '../Can'
 import { buttonClass, Field, narrowInputClass } from '../form'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { SWIPE_ACTIONS, type SwipeAction } from '../../lib/chat'
 
-type S = { hide_status: boolean; quiet_enabled: boolean; quiet_start: string; quiet_end: string }
-const DEFAULTS: S = { hide_status: false, quiet_enabled: false, quiet_start: '21:00', quiet_end: '07:00' }
+type S = { hide_status: boolean; quiet_enabled: boolean; quiet_start: string; quiet_end: string; swipe_left: SwipeAction; swipe_right: SwipeAction }
+const DEFAULTS: S = { hide_status: false, quiet_enabled: false, quiet_start: '21:00', quiet_end: '07:00', swipe_left: 'archive', swipe_right: 'delete' }
 
 /**
  * My settings: quiet hours (no phone notifications) and hiding my online
@@ -18,7 +19,7 @@ export default function ChatSettings({
   part,
   className = 'space-y-4 rounded-lg border border-slate-200 bg-white p-4 text-sm',
 }: {
-  part?: 'quiet' | 'status'
+  part?: 'quiet' | 'status' | 'swipe'
   className?: string
 }) {
   const [s, setS] = useState<S>(DEFAULTS)
@@ -27,7 +28,7 @@ export default function ChatSettings({
   useEffect(() => {
     supabase
       ?.from('chat_settings')
-      .select('hide_status, quiet_enabled, quiet_start, quiet_end')
+      .select('hide_status, quiet_enabled, quiet_start, quiet_end, swipe_left, swipe_right')
       .maybeSingle()
       .then(({ data }) => data && setS({ ...(data as S), quiet_start: String(data.quiet_start).slice(0, 5), quiet_end: String(data.quiet_end).slice(0, 5) }))
   }, [])
@@ -42,8 +43,41 @@ export default function ChatSettings({
   }
 
   return (
-    <section className={className} data-setting={part === 'quiet' ? 'quiet-hours' : part === 'status' ? 'chat-status' : undefined}>
-      {part !== 'status' && (
+    <section className={className} data-setting={part === 'quiet' ? 'quiet-hours' : part === 'status' ? 'chat-status' : part === 'swipe' ? 'chat-swipe' : undefined}>
+      {part === 'swipe' && (
+        <Can permission="settings.chat_swipe" level="edit">
+          <div className="space-y-2">
+            <h2 className="text-base font-semibold">Chat Swipe Actions</h2>
+            <p className="text-slate-600">On a phone, swipe a conversation in the list to do this. On a computer the same actions appear when you point at a conversation.</p>
+            {(
+              [
+                ['swipe_left', 'Swipe left', 'sw-left'],
+                ['swipe_right', 'Swipe right', 'sw-right'],
+              ] as const
+            ).map(([key, label, idAttr]) => (
+              <Field key={key} label={label} htmlFor={idAttr}>
+                <select
+                  id={idAttr}
+                  className={`${narrowInputClass} w-56`}
+                  value={s[key]}
+                  onChange={(e) => {
+                    const v = e.target.value as SwipeAction
+                    setS({ ...s, [key]: v })
+                    void save({ [key]: v })
+                  }}
+                >
+                  {SWIPE_ACTIONS.map((a) => (
+                    <option key={a.value} value={a.value}>
+                      {a.label}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+            ))}
+          </div>
+        </Can>
+      )}
+      {part !== 'status' && part !== 'swipe' && (
         <Can permission="settings.quiet_hours" level="edit">
           <div className="space-y-2">
             <h2 className="text-base font-semibold">Quiet Hours</h2>
@@ -85,7 +119,7 @@ export default function ChatSettings({
           </div>
         </Can>
       )}
-      {part !== 'quiet' && (
+      {part !== 'quiet' && part !== 'swipe' && (
         <Can permission="settings.chat_status" level="edit">
           <div className={`space-y-1 ${part ? '' : 'border-t border-slate-100 pt-3'}`}>
             <h2 className="text-base font-semibold">Chat Status</h2>

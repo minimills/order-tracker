@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
@@ -7,6 +7,7 @@ import { buttonClass, narrowInputClass } from '../components/form'
 import AckDialog from '../components/notices/AckDialog'
 import EventsPanel, { PastEvents } from '../components/notices/EventsPanel'
 import HolidaysPanel from '../components/notices/HolidaysPanel'
+import ClosureAlertsPanel from '../components/notices/ClosureAlertsPanel'
 import MyNotes from '../components/notices/MyNotes'
 import NoticeCard from '../components/notices/NoticeCard'
 import NoticeDialog from '../components/notices/NoticeDialog'
@@ -57,6 +58,7 @@ export default function NoticeBoardPage() {
   const [newIds, setNewIds] = useState<Set<string> | null>(null)
   const [editing, setEditing] = useState<Notice | 'new' | null>(null)
   const [acks, setAcks] = useState<Notice | null>(null)
+  const [newClosure, setNewClosure] = useState(false)
   const choices = useAudienceChoices(can('notices.post.everyone', 'edit'))
   const categories = useOptionList('notice_category')
   const today = todayISO()
@@ -79,18 +81,26 @@ export default function NoticeBoardPage() {
     void (supabase?.rpc('notice_board_tick') ?? Promise.resolve()).then(() => load())
   }, [view, load])
 
-  // "New" = showing for me, not mine, and not seen before this visit.
+  // "New" = showing for me, not mine, and unread when the board opened. Each one is
+  // marked read once it has been on the screen (NoticeCard onSeen), a few at a time.
   useEffect(() => {
     if (tab !== 'board' || loading || newIds) return
     const fresh = data.notices.filter((n) => isLive(n, today) && n.author_email !== me && !data.reads.some((r) => r.notice_id === n.id)).map((n) => n.id)
     // oxlint-disable-next-line react/set-state-in-effect
     setNewIds(new Set(fresh))
-    if (!fresh.length) return
-    const t = window.setTimeout(() => {
-      void supabase?.rpc('mark_notices_read', { p_ids: fresh }).then(() => refreshNoticeUnread())
-    }, 2500)
-    return () => window.clearTimeout(t)
   }, [tab, loading, data, me, today, newIds])
+  const seenQueue = useRef<Set<string>>(new Set())
+  const seenTimer = useRef<number | undefined>(undefined)
+  const markSeen = useCallback((id: string) => {
+    seenQueue.current.add(id)
+    window.clearTimeout(seenTimer.current)
+    seenTimer.current = window.setTimeout(() => {
+      const ids = [...seenQueue.current]
+      seenQueue.current.clear()
+      void supabase?.rpc('mark_notices_read', { p_ids: ids }).then(() => refreshNoticeUnread())
+    }, 1200)
+  }, [])
+  const onlyNew = params.get('unread') === '1'
 
   // A link to one notice: show it (in the Archive if it is no longer on the board).
   useEffect(() => {
@@ -112,20 +122,21 @@ export default function NoticeBoardPage() {
   const shown = useMemo(
     () =>
       data.notices.filter((n) => {
+        if (onlyNew && !newIds?.has(n.id)) return false
         if (cat && n.category !== cat) return false
         if (pri && n.priority !== pri) return false
         if (mine && !audienceOf(n.id).some((a) => a.target_type === 'department' && choices.myDepartments.includes(a.target))) return false
         if (q && !`${n.title} ${n.body_text} ${n.author_name ?? ''} ${n.category ?? ''}`.toLowerCase().includes(q)) return false
         return true
       }),
-    [data.notices, cat, pri, mine, q, audienceOf, choices.myDepartments],
+    [data.notices, cat, pri, mine, q, audienceOf, choices.myDepartments, onlyNew, newIds],
   )
   const live = shown.filter((n) => n.show_from <= today).sort(boardOrder)
   const top = live.filter((n) => n.priority === 'urgent' || n.pinned)
   const rest = live.filter((n) => !(n.priority === 'urgent' || n.pinned))
   const scheduled = shown.filter((n) => n.show_from > today).sort((a, b) => a.show_from.localeCompare(b.show_from))
   const newCount = newIds?.size ?? 0
-  const filtering = !!(q || cat || pri || mine)
+  const filtering = !!(q || cat || pri || mine || onlyNew)
 
   const audienceText = (n: Notice) => (n.audience_everyone ? 'Everyone' : audienceOf(n.id).map(choices.nameOf).join(', ') || 'Chosen people')
   // Drawn inside the page's <Can permission="notices"> below.
@@ -140,6 +151,7 @@ export default function NoticeBoardPage() {
       reactions={data.reactions.filter((r) => r.notice_id === n.id)}
       comments={data.comments.filter((c) => c.notice_id === n.id)}
       isNew={!!newIds?.has(n.id)}
+      onSeen={newIds?.has(n.id) ? () => markSeen(n.id) : undefined}
       canManage={n.author_email === me || can('notices.manage', 'edit')}
       highlight={n.id === highlight}
       onEdit={() => setEditing(n)}
@@ -160,10 +172,25 @@ export default function NoticeBoardPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            {view === 'team' && newCount > 0 && (
-              <span className="rounded-full bg-blue-600 px-3 py-1 text-sm font-medium text-white">
-                {newCount} new {newCount === 1 ? 'notice' : 'notices'}
-              </span>
+            {view === 'team' && tab === 'board' && (newCount > 0 || onlyNew) && (
+              <Can permission="notices.filters">
+                <button
+                  type="button"
+                  aria-pressed={onlyNew}
+                  className={`rounded-full px-3 py-1 text-sm font-medium ${onlyNew ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-800 ring-1 ring-blue-200 hover:bg-blue-100'}`}
+                  onClick={() => set({ unread: onlyNew ? null : '1' })}
+                  title={onlyNew ? 'Show every notice again' : 'Show only the notices you had not read'}
+                >
+                  {onlyNew ? 'Show All Notices' : `${newCount} new ${newCount === 1 ? 'notice' : 'notices'}`}
+                </button>
+              </Can>
+            )}
+            {view === 'team' && (
+              <Can permission="notices.closures.post" level="edit">
+                <button type="button" className="rounded-md border border-amber-500 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100" onClick={() => setNewClosure(true)}>
+                  Post Closure Alert
+                </button>
+              </Can>
             )}
             <Can permission="notices.my_notes" level="edit">
               <div className="flex rounded-md border border-slate-300 bg-white p-0.5 text-sm" role="tablist" aria-label="Board">
@@ -203,6 +230,9 @@ export default function NoticeBoardPage() {
           </Can>
         ) : (
           <>
+            <Can anyOf={['notices.closures', 'notices.closures.post']}>
+              <ClosureAlertsPanel highlightId={params.get('closure')} newAlert={newClosure} onNewDone={() => setNewClosure(false)} />
+            </Can>
             <div className="flex flex-wrap items-center gap-2">
               <Can permission="notices.archive">
                 <div className="flex gap-1 text-sm" role="tablist" aria-label="Notices">

@@ -124,6 +124,10 @@ export default function SettingsPage() {
             <ChatSettings part="status" className={card} />
           </Can>
 
+          <Can permission="settings.chat_swipe" level="edit">
+            <ChatSettings part="swipe" className={card} />
+          </Can>
+
           <Can permission="settings.signature">
             <section className={`${card} [grid-column:1/-1] lg:[grid-column:auto]`} data-setting="my-signature">
               <h2 className="mb-2 font-semibold">My Signature</h2>

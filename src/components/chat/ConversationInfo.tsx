@@ -1,12 +1,13 @@
 // @permission-scope chat.members
-import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../Can'
 import { inputClass, secondaryButtonClass } from '../form'
 import { StatusDot } from './ChatList'
 import { askText, confirmAction } from '../../lib/confirm'
-import { KIND_LABEL, NOTIFY_LABEL, type ConversationRow, type Member, type NotifyMode, type Person, type Status } from '../../lib/chat'
+import { chatTime, KIND_LABEL, linkHref, NOTIFY_LABEL, type ChatLink, type ConversationRow, type Member, type NotifyMode, type Person, type Status } from '../../lib/chat'
+import { activityTime } from '../../lib/activity'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 
@@ -32,6 +33,34 @@ export default function ConversationInfo({
 }) {
   const navigate = useNavigate()
   const [adding, setAdding] = useState('')
+  type Shared = { id: string; author_name: string | null; body_text: string; links: ChatLink[]; pinned_at: string | null; pinned_by: string | null; created_at: string }
+  const [links, setLinks] = useState<Shared[]>([])
+  const [pins, setPins] = useState<Shared[]>([])
+
+  // Shared links and pinned messages of the whole conversation (that I can still see).
+  useEffect(() => {
+    if (!supabase) return
+    const cols = 'id, author_name, body_text, links, pinned_at, pinned_by, created_at'
+    supabase
+      .from('chat_messages')
+      .select(cols)
+      .eq('conversation_id', row.id)
+      .is('deleted_at', null)
+      .neq('links', '[]')
+      .order('created_at', { ascending: false })
+      .limit(100)
+      .then(({ data }) => setLinks((data as Shared[]) ?? []))
+    supabase
+      .from('chat_messages')
+      .select(cols)
+      .eq('conversation_id', row.id)
+      .not('pinned_at', 'is', null)
+      .order('pinned_at', { ascending: false })
+      .limit(100)
+      .then(({ data }) => setPins((data as Shared[]) ?? []))
+  }, [row.id])
+  const shared = links.flatMap((m) => m.links.map((l) => ({ ...l, at: m.created_at, by: m.author_name, msg: m.id })))
+  const uniqueShared = shared.filter((l, i) => shared.findIndex((x) => x.type === l.type && x.id === l.id) === i)
   const isGroup = row.kind === 'group'
   const mineOwner = members.some((m) => m.user_email === me && m.role === 'owner')
   const active = members
@@ -67,7 +96,14 @@ export default function ConversationInfo({
           ×
         </button>
       </div>
-      <p className="text-slate-600">{KIND_LABEL[row.kind].replace(/s$/, '')}</p>
+      <div className="text-slate-600">
+        <p>{KIND_LABEL[row.kind].replace(/s$/, '')}</p>
+        {row.created_at && (
+          <p className="text-xs">
+            {row.created_by ? `Started by ${names.get(row.created_by) ?? row.created_by}` : 'Made automatically'} · {activityTime.format(new Date(row.created_at))}
+          </p>
+        )}
+      </div>
 
       <div>
         <label htmlFor="ci-notify" className="mb-1 block font-medium">
@@ -121,6 +157,47 @@ export default function ConversationInfo({
         </ul>
         {!isGroup && row.kind !== 'direct' && (
           <p className="mt-1 text-xs text-slate-500">Members follow the department or group. An admin manages channels in Admin → Chat.</p>
+        )}
+      </div>
+
+      <div>
+        <h4 className="mb-1 font-medium">Pinned Messages ({pins.length})</h4>
+        {pins.length === 0 ? (
+          <p className="text-xs text-slate-500">No pinned messages.</p>
+        ) : (
+          <ul className="space-y-1.5">
+            {pins.map((m) => (
+              <li key={m.id}>
+                <Link to={`/chat/${row.id}?m=${m.id}`} className="block rounded border border-slate-200 p-2 hover:bg-slate-50">
+                  <span className="block text-xs text-slate-500">
+                    {m.author_name} · {chatTime(m.created_at)}
+                    {m.pinned_by && ` · pinned by ${m.pinned_by}`}
+                  </span>
+                  <span className="line-clamp-2">{m.body_text}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div>
+        <h4 className="mb-1 font-medium">Shared Links ({uniqueShared.length})</h4>
+        {uniqueShared.length === 0 ? (
+          <p className="text-xs text-slate-500">No orders, machines, boards or cards have been mentioned yet.</p>
+        ) : (
+          <ul className="space-y-1">
+            {uniqueShared.map((l) => (
+              <li key={`${l.type}-${l.id}`} className="flex items-baseline justify-between gap-2">
+                <a href={linkHref(l)} className="min-w-0 truncate text-blue-700 underline">
+                  {l.text}
+                </a>
+                <Link to={`/chat/${row.id}?m=${l.msg}`} className="shrink-0 text-xs text-slate-500 underline">
+                  {chatTime(l.at)}
+                </Link>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
 

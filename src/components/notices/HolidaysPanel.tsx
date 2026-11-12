@@ -4,7 +4,7 @@ import { HOLIDAY_KIND, rangeText, useUpcomingHolidays, whenText } from '../../li
 import Can from '../Can'
 import Icon from '../Icon'
 
-/** The next company and statutory holidays and office closures, with the days remaining. */
+/** This year's remaining company and statutory holidays and office closures, with the days remaining. */
 export default function HolidaysPanel() {
   const { list, loading } = useUpcomingHolidays(true)
   return (
@@ -15,7 +15,7 @@ export default function HolidaysPanel() {
       {loading ? (
         <p className="mt-3 text-sm text-slate-500">Loading…</p>
       ) : list.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">No holidays or closures in the next 12 months.</p>
+        <p className="mt-3 text-sm text-slate-500">No more holidays or closures this year.</p>
       ) : (
         <ul className="mt-2 divide-y divide-slate-100">
           {list.map((h) => {

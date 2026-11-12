@@ -1,5 +1,5 @@
 // @permission-scope notices
-import { useState, type CSSProperties } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { REACTIONS } from '../../lib/chat'
@@ -41,6 +41,8 @@ type Props = {
   onEdit: () => void
   onAcks: () => void
   onChanged: () => void
+  /** Called once when an unread notice has been on the screen (it is then marked read). */
+  onSeen?: () => void
 }
 
 /** One notice: a sticky note (or a white pinned card) on the board. */
@@ -58,6 +60,31 @@ export default function NoticeCard(props: Props) {
   const needsAck = (n.priority === 'important' || n.priority === 'urgent') && n.author_email !== me && !n.archived && !scheduled && !expired
   const pinnedLook = n.pinned || n.priority === 'urgent' || n.colour === 'white'
   const long = n.body_text.length > 360
+  const box = useRef<HTMLElement>(null)
+  const onSeen = props.onSeen
+
+  // Read = half of it on the screen for a moment.
+  useEffect(() => {
+    if (!isNew || !onSeen || !box.current || typeof IntersectionObserver === 'undefined') return
+    let timer: number | undefined
+    const obs = new IntersectionObserver(
+      ([entry]) => {
+        window.clearTimeout(timer)
+        if (entry.isIntersecting && !document.hidden) {
+          timer = window.setTimeout(() => {
+            onSeen()
+            obs.disconnect()
+          }, 800)
+        }
+      },
+      { threshold: 0.5 },
+    )
+    obs.observe(box.current)
+    return () => {
+      window.clearTimeout(timer)
+      obs.disconnect()
+    }
+  }, [isNew, onSeen])
 
   async function run(fn: () => PromiseLike<{ error: { message?: string; code?: string } | null }>, done?: string) {
     setBusy(true)
@@ -102,6 +129,7 @@ export default function NoticeCard(props: Props) {
 
   return (
     <article
+      ref={box}
       id={`notice-${n.id}`}
       style={style}
       className={`keep-light relative flex flex-col rounded-sm border px-4 pb-3 pt-5 text-slate-800 ${boardLook} ${
@@ -126,7 +154,7 @@ export default function NoticeCard(props: Props) {
             <Icon name="pin" className="h-3 w-3" /> Pinned
           </span>
         )}
-        {isNew && <span className="rounded bg-blue-600 px-1.5 py-0.5 text-white">New</span>}
+        {isNew && <span className="rounded-full bg-blue-100 px-1.5 py-0.5 normal-case tracking-normal text-blue-800 ring-1 ring-blue-200">New</span>}
         {scheduled && <span className="rounded bg-slate-700 px-1.5 py-0.5 text-white">Scheduled · shows from {showDate(n.show_from, 'MMM d')}</span>}
         {n.archived && <span className="rounded bg-slate-500 px-1.5 py-0.5 text-white">Archived</span>}
         {!n.archived && expired && <span className="rounded bg-slate-500 px-1.5 py-0.5 text-white">Expired</span>}
