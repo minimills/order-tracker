@@ -66,6 +66,8 @@ function group(g: Group, sections: Record<string, Def[]>): PermissionItem[] {
 
 const ORDER_COLUMNS: [string, string, string[]?][] = [
   ['order', 'Order #'],
+  ['quote', 'Quote #'],
+  ['invoice', 'Invoice #'],
   ['stage', 'Stage'],
   ['customer', 'Customer'],
   ['company', 'Company'],
@@ -74,7 +76,9 @@ const ORDER_COLUMNS: [string, string, string[]?][] = [
   ['machines', 'Machines'],
   ['serials', 'Serials'],
   ['ready', 'Ready (built count)'],
-  ['expected', 'Expected ship'],
+  ['expected', 'Expected ship (revised)'],
+  ['original', 'Original ship date'],
+  ['revisions', 'Ship date changes'],
   ['actual', 'Actual ship'],
   ['delay', 'Delay (days)'],
   ['voltage', 'Voltage'],
@@ -131,7 +135,9 @@ export const CATALOG: PermissionItem[] = [
       { key: 'orders.board.column.shipped', label: 'Shipped column (last 30 days)', levels: V, requires: 'orders.board' },
     ],
     'Details on each card': [
-      { key: 'orders.board.card.customer', label: 'Customer name', levels: V, requires: 'orders.board' },
+      { key: 'orders.board.card.customer', label: 'Customer name (only when there is no company name)', levels: V, requires: 'orders.board' },
+      { key: 'orders.board.card.voltage', label: 'Voltage chip at the top of the card (colours in Admin → Dropdown Lists)', levels: V, requires: 'orders.board' },
+      { key: 'orders.board.new_order_banner', label: 'Banner “New order 87 added” when a new order lands in Confirmed', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.company', label: 'Company', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.country', label: 'Country and flag', levels: V, requires: 'orders.board' },
       { key: 'orders.board.card.machines', label: 'Machine chips (each machine type and how many)', levels: V, requires: 'orders.board' },
@@ -151,7 +157,9 @@ export const CATALOG: PermissionItem[] = [
     ],
     'Shop board (large print)': [
       { key: 'shop_board', label: 'Shop board page', levels: V, page: true },
-      { key: 'shop_board.print', label: 'Print button', levels: V, requires: 'shop_board' },
+      { key: 'shop_board.print', label: 'Print button (prints what the filters show)', levels: V, requires: 'shop_board' },
+      { key: 'shop_board.filters', label: 'Filters: orders, ship date before / after, machine type, ship date passed (by more than X days)', levels: V, requires: 'shop_board' },
+      { key: 'shop_board.views', label: 'View: across, list or cards (remembered per person)', levels: V, requires: 'shop_board' },
       { key: 'shop_board.detail.customer', label: 'Customer and company', levels: V, requires: 'shop_board' },
       { key: 'shop_board.detail.country', label: 'Country', levels: V, requires: 'shop_board' },
       { key: 'shop_board.detail.stage', label: 'Stage', levels: V, requires: 'shop_board' },
@@ -191,6 +199,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'orders.list.filter.voltage', label: 'Voltage filter', levels: V, requires: 'orders.list' },
       { key: 'orders.list.filter.payment', label: 'Payment status filter', levels: V, requires: 'orders.list', needs: ['payments'] },
       { key: 'orders.list.filter.archived', label: '“Show archived” option', levels: V, requires: 'orders.list' },
+      { key: 'orders.list.columns', label: 'Choose columns (remembered in this browser)', levels: V, requires: 'orders.list' },
+      { key: 'orders.list.filter.checkboxes', label: 'Filter by several stages, voltages and machine types at once (checkboxes)', levels: V, requires: 'orders.list' },
       { key: 'orders.list.sort', label: 'Sort by clicking a column heading', levels: V, requires: 'orders.list' },
       { key: 'orders.list.outstanding_total', label: 'Total outstanding (bottom of the list)', levels: V, requires: 'orders.list', needs: ['payments', 'order.field.order_total'] },
       { key: 'orders.list.export_csv', label: 'Export CSV', levels: V, requires: 'orders.list', hint: 'The file only holds the columns this person can see.' },
@@ -224,6 +234,11 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.machines.crate_flag', label: '“Crate” setting per machine (only crated machines get a crating deadline)', levels: VE, requires: 'order.section.machines', db: true },
       { key: 'order.machines.remove', label: '“Remove” a machine', levels: E, requires: 'order.section.machines', db: true },
     ],
+    'Machine page': [
+      { key: 'machines', label: 'Machine page: search by serial number, owners and the whole history (built, owners, service, training, final check, crating, shipping)', levels: V, page: true, db: true },
+      { key: 'machines.search', label: 'Find a machine by serial number', levels: V, requires: 'machines' },
+      { key: 'machines.transfer', label: '“Transfer / Resold”: give a machine a new owner (date, notes, optional order)', levels: E, requires: 'machines', db: true },
+    ],
     'Shipping section': [
       { key: 'order.section.shipping', label: 'Shipping section', levels: V, requires: 'order.page' },
       { key: 'order.field.expected_ship_date', label: 'Expected ship date', levels: VE, db: true },
@@ -233,6 +248,9 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.field.delivery_equipment', label: 'Delivery equipment', levels: VE, db: true },
       { key: 'order.field.freight_type', label: 'Freight type', levels: VE, db: true },
       { key: 'order.field.order_date', label: 'Order date', levels: V },
+      { key: 'order.field.quote_number', label: 'Quote #', levels: VE, db: true },
+      { key: 'order.field.invoice_number', label: 'Invoice #', levels: VE, db: true },
+      { key: 'order.ship_history', label: 'Revised ship date: original date, number of changes and the history (old, new, who, when, reason)', levels: V, requires: 'order.section.shipping' },
       { key: 'order.field.currency', label: 'Currency', levels: VE, db: true },
     ],
     'Service section': [

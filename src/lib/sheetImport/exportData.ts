@@ -61,6 +61,8 @@ type OrderRow = {
   voltage: string
   delivery_equipment: string
   freight_type: string | null
+  quote_number?: string | null
+  invoice_number?: string | null
   notes: string | null
   archived: boolean
   order_number: number
@@ -88,7 +90,7 @@ export async function backupSheets(): Promise<OutSheet[]> {
   const paymentsBy = new Map<string, PaymentRow[]>()
   for (const x of p.data) paymentsBy.set(x.order_id, [...(paymentsBy.get(x.order_id) ?? []), x])
 
-  const extraHeads = [HEADER_EXTRAS.currency, HEADER_EXTRAS.delivery, HEADER_EXTRAS.freight, HEADER_EXTRAS.stage, 'Extra payments (not re-imported)']
+  const extraHeads = [HEADER_EXTRAS.currency, HEADER_EXTRAS.delivery, HEADER_EXTRAS.freight, HEADER_EXTRAS.stage, HEADER_EXTRAS.quote, HEADER_EXTRAS.invoice, 'Extra payments (not re-imported)']
   const rows: OutCell[][] = [[...HEADERS, ...extraHeads]]
   for (const ord of o.data) {
     const pays = paymentsBy.get(ord.id) ?? []
@@ -119,6 +121,8 @@ export async function backupSheets(): Promise<OutSheet[]> {
       ord.delivery_equipment,
       ord.freight_type ?? '',
       ord.stage,
+      ord.quote_number ?? '',
+      ord.invoice_number ?? '',
       extras.map((x) => `${x.payment_type} ${x.amount}${x.due_date ? ` due ${x.due_date}` : ''}${x.received_date ? ` received ${x.received_date}` : ''}`).join('; '),
     ])
     for (const mc of machinesBy.get(ord.id) ?? []) {

@@ -53,6 +53,9 @@ export type DraftOrder = {
   currency: string
   /** '' = worked out (ship date / check marks); from the optional Stage column of a backup */
   stage: string
+  /** Optional backup columns Quote # / Invoice # ('' = leave as is). */
+  quote: string
+  invoice: string
   /** Messages about how cells were read; they don't change when you edit. */
   readMessages: Msg[]
   machines: DraftMachine[]

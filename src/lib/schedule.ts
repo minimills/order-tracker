@@ -46,14 +46,20 @@ export type OrderDefaults = {
   crate: boolean
   down_payment_days: number
   balance_days_before_ship: number
+  /** Ship date closer than this (days from the order date): full payment instead of a down payment. */
+  full_payment_within_days: number
+  /** Full payment due this many days after the order date. */
+  full_payment_due_days: number
 }
 export const DEFAULT_ORDER_DEFAULTS: OrderDefaults = {
   currency_canada: 'CAD',
   currency_other: 'USD',
   voltage: '240V',
-  crate: true,
+  crate: false,
   down_payment_days: 30,
   balance_days_before_ship: 90,
+  full_payment_within_days: 90,
+  full_payment_due_days: 30,
 }
 
 // ---------------------------------------------------------------------------

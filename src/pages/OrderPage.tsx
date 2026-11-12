@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import { useBreadcrumbs } from '../lib/breadcrumbs'
+import ShipDateHistory from '../components/order/ShipDateHistory'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { badgeClass, orderBadges } from '../components/board/badges'
@@ -460,6 +461,11 @@ export default function OrderPage() {
                                 <span className="font-sans font-normal text-slate-400">No serial yet</span>
                               ))}
                           </span>
+                          <Can permission="machines">
+                            <Link to={`/machines/${m.id}`} className="text-xs text-slate-600 underline">
+                              History
+                            </Link>
+                          </Can>
                           <span className="flex-1">{m.machine_types?.name}</span>
                           {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">serial typed by hand</span>}
                           <Can permission="order.production_link">
@@ -650,7 +656,18 @@ export default function OrderPage() {
                 <Section title="Shipping">
                   <dl className="grid grid-cols-2 gap-4">
                     <Can permission="order.field.expected_ship_date">
-                      <Item label="Expected ship date">{showDate(order.expected_ship_date)}</Item>
+                      <Item label={order.ship_date_revisions ? 'Revised ship date' : 'Expected ship date'}>
+                        {showDate(order.expected_ship_date)}
+                        <Can permission="order.ship_history">
+                          <ShipDateHistory orderId={order.id} revisions={order.ship_date_revisions ?? 0} original={order.original_ship_date ?? null} />
+                        </Can>
+                      </Item>
+                    </Can>
+                    <Can permission="order.field.quote_number">
+                      <Item label="Quote #">{order.quote_number || '—'}</Item>
+                    </Can>
+                    <Can permission="order.field.invoice_number">
+                      <Item label="Invoice #">{order.invoice_number || '—'}</Item>
                     </Can>
                     <Can permission="order.field.actual_ship_date">
                       <Item label="Actual ship date">{showDate(order.actual_ship_date)}</Item>

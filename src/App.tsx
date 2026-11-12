@@ -54,6 +54,7 @@ import OrdersBoardPage from './pages/OrdersBoardPage'
 import OrdersListPage from './pages/OrdersListPage'
 import PaymentsPage from './pages/PaymentsPage'
 import SettingsPage from './pages/SettingsPage'
+import MachinePage from './pages/MachinePage'
 import NotificationSettingsPage from './pages/NotificationSettingsPage'
 import StatusPage from './pages/admin/StatusPage'
 import ShopBoardPage from './pages/ShopBoardPage'
@@ -109,6 +110,8 @@ export default function App() {
         <Route path="orders" element={<Page permission="orders.list"><OrdersListPage /></Page>} />
         <Route path="orders/new" element={<Page permission="orders.new" level="edit"><NewOrderPage /></Page>} />
         <Route path="orders/:id" element={<Page permission="order.page"><OrderPage /></Page>} />
+        <Route path="machines" element={<Page permission="machines"><MachinePage /></Page>} />
+        <Route path="machines/:id" element={<Page permission="machines"><MachinePage /></Page>} />
         <Route path="payments" element={<Page permission="payments.page"><PaymentsPage /></Page>} />
         <Route path="checklists/:machineId" element={<Page permission="checklist"><ChecklistPage /></Page>} />
         <Route path="crating" element={<Page permission="reports.crating"><CratingReportPage /></Page>} />

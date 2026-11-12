@@ -18,7 +18,7 @@ type Props = {
   crateDefault?: boolean
 }
 
-export default function MachinesSection({ rows, onChange, machineTypes, preview, getsSerials, errors, crateDefault = true }: Props) {
+export default function MachinesSection({ rows, onChange, machineTypes, preview, getsSerials, errors, crateDefault = false }: Props) {
   const typeById = new Map(machineTypes.map((t) => [t.id, t]))
   const activeTypes = machineTypes.filter((t) => !t.archived)
 
@@ -50,8 +50,23 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
     updateRow(rowIndex, { manual })
   }
 
+  const allCrated = rows.length > 0 && rows.every((r) => r.needsCrate)
+  const noneCrated = rows.every((r) => !r.needsCrate)
   return (
     <div className="space-y-4">
+      {rows.length > 1 && (
+        <Can permission="order.machines.crate_flag" level="edit">
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <span className="text-slate-600">Crate:</span>
+            <button type="button" className="underline disabled:text-slate-400 disabled:no-underline" disabled={allCrated} onClick={() => onChange(rows.map((r) => ({ ...r, needsCrate: true })))}>
+              Select All
+            </button>
+            <button type="button" className="underline disabled:text-slate-400 disabled:no-underline" disabled={noneCrated} onClick={() => onChange(rows.map((r) => ({ ...r, needsCrate: false })))}>
+              Deselect All
+            </button>
+          </div>
+        </Can>
+      )}
       {rows.map((row, i) => {
         const type = typeById.get(row.machineTypeId)
         return (

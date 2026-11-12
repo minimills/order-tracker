@@ -219,6 +219,8 @@ export function parseGrid(grid: Grid): ParseResult {
         freight: extra('freight'),
         currency: extra('currency').toUpperCase(),
         stage: extra('stage'),
+        quote: extra('quote'),
+        invoice: extra('invoice'),
         readMessages: msgs,
         machines: [],
       }

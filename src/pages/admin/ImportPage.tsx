@@ -195,6 +195,15 @@ export default function ImportPage() {
     setBusy(null)
     setConfirming(false)
     if (error) return toast.error(`No data was imported: ${friendlyError(error)}`)
+    // Quote # / Invoice # from the optional backup columns (empty cells never overwrite).
+    for (const o of plan.payload as { order_number: number | null; split_number: number | null; quote_number: string | null; invoice_number: string | null }[]) {
+      if (!o.order_number || (!o.quote_number && !o.invoice_number)) continue
+      const refs: Record<string, string> = {}
+      if (o.quote_number) refs.quote_number = o.quote_number
+      if (o.invoice_number) refs.invoice_number = o.invoice_number
+      const { error: refError } = await supabase.from('orders').update(refs).eq('order_code', o.split_number ? `${o.order_number}-${o.split_number}` : String(o.order_number))
+      if (refError) toast.error(`Order ${o.order_number}: the quote / invoice number was not saved (${friendlyError(refError)}).`)
+    }
     setResult(data as Summary)
     setDrafts([])
     setGrids([])

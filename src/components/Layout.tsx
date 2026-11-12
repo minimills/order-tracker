@@ -16,6 +16,7 @@ import AlertsBell from './alerts/AlertsBell'
 import AlertsProvider from './alerts/AlertsProvider'
 import NotificationPrompt from './alerts/NotificationPrompt'
 import UrgentBanner from './notices/UrgentBanner'
+import NewOrderBanner from './NewOrderBanner'
 
 /**
  * Jumps to a setting found with the settings search: ?find=<id> scrolls to the
@@ -175,6 +176,7 @@ export default function Layout() {
           </div>
         </header>
         {isSupabaseConfigured && can('notices.banner') && <UrgentBanner />}
+        {isSupabaseConfigured && can('orders.board.new_order_banner') && <NewOrderBanner />}
         {isSupabaseConfigured && can('alerts.popups') && <NotificationPrompt />}
 
         {!isSupabaseConfigured && (

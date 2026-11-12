@@ -15,7 +15,7 @@ import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
-import { BOARD_STAGES, STAGES, type OrderSummaryRow, type Stage } from '../lib/types'
+import { BOARD_STAGES, type OrderSummaryRow, type Stage } from '../lib/types'
 
 type Column = { stage: Stage; title: string; hint?: string; permission: string }
 
@@ -47,6 +47,15 @@ export default function OrdersBoardPage() {
   const schedule = useSchedule(can('orders.board.card.deadline'))
   const label = useStageLabels()
   const [machines, setMachines] = useState<Map<string, ChipMachine[]>>(new Map())
+  // Voltage chip colours (Admin → Dropdown Lists).
+  const [voltageColours, setVoltageColours] = useState<Map<string, string>>(new Map())
+  useEffect(() => {
+    supabase
+      ?.from('option_lists')
+      .select('*')
+      .eq('list_name', 'voltage')
+      .then(({ data }) => setVoltageColours(new Map(((data as { value: string; colour?: string | null }[]) ?? []).filter((x) => x.colour).map((x) => [x.value, x.colour!]))))
+  }, [])
   const service = useServiceInfo(can('orders.board.card.service'))
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -81,13 +90,16 @@ export default function OrdersBoardPage() {
     const byOrder = new Map<string, ChipMachine[]>()
     let machineError = null
     if (seesChips) {
+      // Machine codes for the chips (LCR ×2); the full name shows on hover.
+      const { data: types } = await supabase!.from('machine_types').select('id, code')
+      const codeOf = new Map(((types as { id: string; code: string | null }[]) ?? []).map((t) => [t.id, t.code]))
       const ids = all.map((o) => o.id)
       for (let i = 0; i < ids.length; i += 150) {
         const m = await fetchAll<ChipMachine>(() =>
           supabase!.from('order_machine_status').select('*').in('order_id', ids.slice(i, i + 150)).order('id'),
         )
         machineError ??= m.error
-        for (const row of m.data) byOrder.set(row.order_id, [...(byOrder.get(row.order_id) ?? []), row])
+        for (const row of m.data) byOrder.set(row.order_id, [...(byOrder.get(row.order_id) ?? []), { ...row, code: codeOf.get(row.machine_type_id) ?? null }])
       }
     }
     const error = open.error ?? shipped.error ?? machineError
@@ -115,13 +127,6 @@ export default function OrdersBoardPage() {
       ? `move to ${label(stage)}${where ? `, ${where}` : ''}`
       : `move ${where}`
     setRequest({ order, stage: stageChange ? stage : null, anchor, place, description })
-  }
-
-  function moveWithin(order: OrderSummaryRow, direction: 'up' | 'down') {
-    const list = columns.find((c) => c.stage === order.stage)!.orders
-    const i = list.findIndex((o) => o.id === order.id)
-    const neighbour = list[direction === 'up' ? i - 1 : i + 1]
-    if (neighbour) ask(order, null, neighbour, direction === 'up' ? 'before' : 'after')
   }
 
   // --- Drag and drop -------------------------------------------------------
@@ -185,9 +190,7 @@ export default function OrdersBoardPage() {
             <h1 className="text-2xl font-semibold">Orders Board</h1>
             {canDrag && (
               <p className="text-sm text-slate-600">
-                Drag a card to {canChangeStage ? 'change its stage or ' : ''}its place in the queue
-                {canReorder ? ', or use the ↑ ↓ buttons' : ''}
-                {canChangeStage ? ' and “Move to…”' : ''}.
+                Drag a card to {canChangeStage ? 'change its stage or ' : ''}its place in the queue.
               </p>
             )}
             <Can permission="orders.board.card.chip_status">
@@ -243,7 +246,7 @@ export default function OrdersBoardPage() {
                       {column.orders.length === 0 && (
                         <p className="px-1 py-4 text-center text-xs text-slate-400">No orders in this stage.</p>
                       )}
-                      {column.orders.map((o, i) => {
+                      {column.orders.map((o) => {
                         const onBoard = BOARD_STAGES.includes(column.stage)
                         return (
                           <OrderCard
@@ -252,12 +255,7 @@ export default function OrdersBoardPage() {
                             machines={machines.get(o.id) ?? []}
                             service={service.get(o.id) ?? null}
                             deadline={onBoard ? nextDeadline(orderPromised(schedule.promised(o.id), schedule.stepsOf(o.id), schedule.today, schedule.settings)) : null}
-                            canMoveUp={canReorder && onBoard && i > 0}
-                            canMoveDown={canReorder && onBoard && i < column.orders.length - 1}
-                            onMoveUp={() => moveWithin(o, 'up')}
-                            onMoveDown={() => moveWithin(o, 'down')}
-                            onChangeStage={(stage) => ask(o, stage, null, 'after')}
-                            stageChoices={canChangeStage ? [...STAGES] : []}
+                            voltageColour={voltageColours.get(o.voltage ?? '') ?? null}
                             draggable={canDrag}
                             onDragStart={(e) => {
                               e.dataTransfer.effectAllowed = 'move'

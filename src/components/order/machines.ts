@@ -13,7 +13,7 @@ export type MachineRow = {
 }
 
 let counter = 0
-export function newMachineRow(needsCrate = true): MachineRow {
+export function newMachineRow(needsCrate = false): MachineRow {
   counter += 1
   return { key: `row-${counter}-${Date.now()}`, machineTypeId: '', quantity: '1', manual: [null], needsCrate }
 }

@@ -1,4 +1,5 @@
 import { toast } from 'sonner'
+import { askText } from './confirm'
 import { friendlyError } from './format'
 import { acceptDeadlines, planSignature, type OrderPlan, type Promised } from './schedule'
 import { supabase } from './supabase'
@@ -16,7 +17,10 @@ export async function acceptPlan(orderId: string, plan: OrderPlan, promised: Pro
     toast.error(friendlyError(error))
     return false
   }
-  toast.success('New dates accepted.')
+  toast.success('New dates accepted. The original promised date is kept for the delay.')
+  // Why the ship date changed (kept in the order's ship date history).
+  const reason = await askText('Reason for the new ship date (optional, kept in the ship date history)', { label: 'Reason', confirmLabel: 'Save Changes' })
+  if (reason) await supabase.rpc('set_ship_change_reason', { p_order: orderId, p_reason: reason })
   return true
 }
 

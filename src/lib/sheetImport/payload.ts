@@ -58,6 +58,9 @@ export function buildPayload(result: CheckResult) {
       down_payment: dp,
       balance,
       source_row: d.row,
+      // Not read by import_sheet; saved right after it (empty cells never overwrite).
+      quote_number: d.quote.trim() || null,
+      invoice_number: d.invoice.trim() || null,
     }
   })
 

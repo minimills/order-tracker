@@ -29,6 +29,8 @@ export type OptionItem = {
   sort_order: number
   locked: boolean
   archived: boolean
+  /** Chip colour (#rrggbb), used for voltage chips on the Orders board. */
+  colour?: string | null
 }
 
 export type OptionListName = 'voltage' | 'delivery_equipment' | 'freight_type' | 'payment_type' | 'notice_category'
@@ -83,6 +85,13 @@ export type OrderSummaryRow = {
   next_due_date: string | null
   payment_status: PaymentStatus | null
   archived: boolean
+  /** 0037 (missing on databases without that migration). */
+  quote_number?: string | null
+  invoice_number?: string | null
+  /** The first promised ship date (= expected_ship_date when it never changed). */
+  original_ship_date?: string | null
+  /** How many times the expected ship date was changed. */
+  ship_date_revisions?: number | null
 }
 
 export type PaymentStatusLabel = 'Paid' | 'Overdue' | 'Due soon' | 'Upcoming' | 'Nothing due'

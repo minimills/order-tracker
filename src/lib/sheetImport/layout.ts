@@ -30,7 +30,9 @@ export const HEADER_EXTRAS = {
   delivery: 'Delivery equipment',
   freight: 'Freight type',
   stage: 'Stage',
+  quote: 'Quote #',
+  invoice: 'Invoice #',
 } as const
 
 /** Column widths (characters) for the downloaded files. */
-export const COLUMN_WIDTHS = [9, 38, 14, 16, 9, 34, 14, 8, 14, 12, 12, 14, 14, 14, 10, 18, 14, 14, 40]
+export const COLUMN_WIDTHS = [9, 38, 14, 16, 9, 34, 14, 8, 14, 12, 12, 14, 14, 14, 10, 18, 14, 14, 14, 14, 40]

@@ -6,6 +6,8 @@ import { supabase } from './supabase'
 import { applyTheme, readLocal, writeLocal, type Theme } from './theme'
 import type { Units } from './units'
 
+export type ShopBoardView = 'rows' | 'list' | 'cards'
+
 /**
  * Each person's own preferences (saved in the user_preferences table, and kept
  * in this browser too so the right units show straight away).
@@ -22,6 +24,8 @@ type Prefs = {
   sidebarCollapsed: boolean
   /** Show computer notifications at all (each type can still be turned off). */
   desktopNotifications: boolean
+  /** Shop board: across (rows), list or cards. */
+  shopBoardView: ShopBoardView
   /** True once the database has answered. */
   loaded: boolean
 }
@@ -65,6 +69,7 @@ async function load(email: string) {
     theme: (p.data?.theme as Theme | undefined) ?? current.theme,
     sidebarCollapsed: (p.data?.sidebar_collapsed as boolean | undefined) ?? current.sidebarCollapsed,
     desktopNotifications: (p.data?.desktop_notifications as boolean | undefined) ?? current.desktopNotifications,
+    shopBoardView: (p.data?.shop_board_view as ShopBoardView | undefined) ?? current.shopBoardView,
     loaded: true,
   }
   byEmail.set(email, next)
@@ -87,6 +92,7 @@ function localPrefs(): Prefs {
     theme: (readLocal('bmm.theme') as Theme | null) ?? 'system',
     sidebarCollapsed: readLocal('bmm.sidebar') === 'collapsed',
     desktopNotifications: readLocal('bmm.desktop') !== 'off',
+    shopBoardView: (readLocal('bmm.shopview') as ShopBoardView | null) ?? 'rows',
     loaded: false,
   }
 }
@@ -94,6 +100,7 @@ function rememberLook(p: Prefs) {
   writeLocal('bmm.theme', p.theme)
   writeLocal('bmm.sidebar', p.sidebarCollapsed ? 'collapsed' : 'open')
   writeLocal('bmm.desktop', p.desktopNotifications ? 'on' : 'off')
+  writeLocal('bmm.shopview', p.shopBoardView)
   applyTheme(p.theme)
 }
 
@@ -128,7 +135,7 @@ export function usePreferences() {
   }
 
   /** Saves theme / sidebar / desktop choices for me (shown straight away, then saved). */
-  async function setLook(patch: Partial<Pick<Prefs, 'theme' | 'sidebarCollapsed' | 'desktopNotifications'>>) {
+  async function setLook(patch: Partial<Pick<Prefs, 'theme' | 'sidebarCollapsed' | 'desktopNotifications' | 'shopBoardView'>>) {
     const next = { ...prefs, ...patch }
     if (email) byEmail.set(email, next)
     else Object.assign(fallback, patch)
@@ -139,6 +146,7 @@ export function usePreferences() {
     if (patch.theme) p.theme = patch.theme
     if (patch.sidebarCollapsed !== undefined) p.sidebar_collapsed = patch.sidebarCollapsed
     if (patch.desktopNotifications !== undefined) p.desktop_notifications = patch.desktopNotifications
+    if (patch.shopBoardView) p.shop_board_view = patch.shopBoardView
     const { error } = await supabase.rpc('set_my_preferences', { p })
     if (error) toast.error(`Could not remember your choice: ${friendlyError(error)}`)
   }
@@ -148,6 +156,7 @@ export function usePreferences() {
     theme: prefs.theme,
     sidebarCollapsed: prefs.sidebarCollapsed,
     desktopNotifications: prefs.desktopNotifications,
+    shopBoardView: prefs.shopBoardView,
     setLook,
     myName: prefs.name ?? email,
     startPage: prefs.startPage,
