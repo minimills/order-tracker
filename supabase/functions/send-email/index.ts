@@ -21,6 +21,11 @@
 //                 ({ certificate_id })                                     (service.certificate.email)
 //   certificate_send    – email it with the PDF made by the app attached
 //                 ({ certificate_id, pdf_base64, file_name })              (service.certificate.email)
+//   ce_preview  – suggested recipients, subject and message for CE / EU declarations of conformity
+//                 ({ declaration_ids })                                    (ce.email)
+//   ce_send     – email them with the PDFs made by the app attached
+//                 ({ declaration_ids, to, cc, bcc, subject, message, combined,
+//                    attachments: [{ file_name, pdf_base64 }] })            (ce.email)
 //
 // Channels: CHANNEL_SENDERS below has one sender per channel ("email", "push").
 // A later SMS channel = a row in notification_channels + one more sender here.
@@ -37,7 +42,7 @@ type Json = Record<string, unknown>
 // deno-lint-ignore no-explicit-any
 type Any = any
 type Env = (key: string) => string | undefined
-export type Mail = { from: string; to: string; subject: string; html: string; text: string; attachments?: Json[] }
+export type Mail = { from: string; to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; attachments?: Json[] }
 export type Deps = {
   env: Env
   makeClient: (url: string, key: string, options?: Json) => Any
@@ -106,7 +111,7 @@ export function layout(o: { company: Company; appUrl: string; heading: string; i
       ${contact ? `<div style="color:#64748b;font-size:12px;margin-top:2px">${contact}</div>` : ''}</td></tr>
     <tr><td style="padding:20px 24px">
       <h1 style="font-size:18px;margin:0 0 8px;color:#0f172a">${esc(o.heading)}</h1>
-      ${o.intro ? `<p style="margin:0 0 8px;color:#334155">${esc(o.intro)}</p>` : ''}
+      ${o.intro ? `<p style="margin:0 0 8px;color:#334155">${esc(o.intro).replace(/\n/g, '<br>')}</p>` : ''}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>
       ${button ? '' : '<!--'}<p style="margin:20px 0 4px"><a href="${esc(url)}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600">${esc(buttonLabel(o.link))}</a></p>${button ? '' : '-->'}
     </td></tr>
@@ -201,13 +206,13 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   }
 
   /** Sends one email, saves the Sent copy, writes the email log. */
-  const deliver = async (o: { to: string; subject: string; html: string; text: string; kind: string; notificationIds?: string[]; resendOf?: string; company: Company; attachments?: Json[] }) => {
+  const deliver = async (o: { to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; kind: string; notificationIds?: string[]; resendOf?: string; company: Company; attachments?: Json[] }) => {
     let status: 'sent' | 'failed' = 'sent'
     let error: string | null = null
     let saved: boolean | null = null
     try {
       if (!mailReady) throw new Error('The mailbox settings (SMTP_HOST, SMTP_USER, SMTP_PASSWORD) are not set in Supabase.')
-      const { raw } = await deps.sendMail({ from, to: o.to, subject: o.subject, html: o.html, text: o.text, attachments: [...logoAttachment(o.company), ...(o.attachments ?? [])] })
+      const { raw } = await deps.sendMail({ from, to: o.to, cc: o.cc || undefined, bcc: o.bcc || undefined, subject: o.subject, html: o.html, text: o.text, attachments: [...logoAttachment(o.company), ...(o.attachments ?? [])] })
       if (saveCopy) {
         try {
           await deps.saveSent(raw)
@@ -468,6 +473,89 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
         ? reply(200, { ok: true, to, message: `${what === 'certificate' ? 'Certificate' : 'Service report'} sent to ${to.join(', ')}.` })
         : reply(502, { error: `The ${what} could not be sent: ${r.error}` })
     }
+    case 'ce_preview':
+    case 'ce_send': {
+      if (!(await callerCan('has_perm', { p_key: 'ce.email', p_level: 'edit' }))) {
+        return reply(403, { error: 'You do not have permission to email declarations of conformity.' })
+      }
+      const ids = (Array.isArray(body.declaration_ids) ? body.declaration_ids : []).map(String).slice(0, 50)
+      if (!ids.length) return reply(400, { error: 'Choose at least one declaration.' })
+      const { data: decls } = await db.from('ce_declarations').select('id, order_id, number, status, data').in('id', ids)
+      if (!decls?.length || decls.length !== ids.length) return reply(404, { error: 'A declaration was not found.' })
+      const orderIds = [...new Set(decls.map((d: Any) => d.order_id))]
+      if (orderIds.length > 1) return reply(400, { error: 'Email the declarations of one order at a time.' })
+      const { data: order } = await db.from('orders').select('order_code, customers(name, company, emails)').eq('id', orderIds[0]).maybeSingle()
+      const company = await loadCompany()
+      const { data: setRow } = await db.from('app_settings').select('value').eq('key', 'ce').maybeSingle()
+      const settings = (setRow?.value as Json) ?? {}
+      const { data: me } = await db.from('allowed_users').select('name').eq('email', callerEmail).maybeSingle()
+      const first = decls[0].data as Any
+      const machines = decls.map((d: Any) => `${d.data.machine.model} ${d.data.machine.serial}`).join(', ')
+      const machinesLong = decls.map((d: Any) => `${d.data.machine.product} ${d.data.machine.model} ${d.data.machine.serial}`).join(', ')
+      const values: Record<string, string> = {
+        title: String(first.title ?? 'EC Declaration of Conformity'),
+        customer_company: String(order?.customers?.company || order?.customers?.name || ''),
+        customer_name: String(order?.customers?.name ?? ''),
+        machines, machines_long: machinesLong,
+        model: String(first.machine?.model ?? ''), serial: String(first.machine?.serial ?? ''),
+        order_number: String(order?.order_code ?? ''),
+        sender_name: String(me?.name ?? callerEmail ?? ''),
+        company_name: String(company.name || 'Belfast Mini Mills'),
+      }
+      const fill = (t: string) => t.replace(/\{(\w+)\}/g, (m, k) => (k in values ? values[k] : m))
+      const office = (company.office_email || company.email || '').trim().toLowerCase()
+      const customerEmails: string[] = ((order?.customers?.emails as string[] | null) ?? []).map((e) => e.trim().toLowerCase()).filter((e) => EMAIL.test(e))
+      if (action === 'ce_preview') {
+        return reply(200, {
+          ok: true,
+          to: customerEmails,
+          cc: EMAIL.test(office) ? [office] : [],
+          subject: fill(String(settings.email_subject || '{title} – Belfast Mini Mills – {customer_company} – {machines}')),
+          message: fill(String(settings.email_message || 'Please find attached the {title} for {machines_long}.')),
+          warnings: [
+            !customerEmails.length ? 'The customer on this order has no email address. Add the recipients below.' : '',
+            !EMAIL.test(office) ? 'No office email: add it in Admin → Company Details.' : '',
+            decls.some((d: Any) => d.status !== 'issued') ? 'One of these declarations has been replaced by a newer version.' : '',
+          ].filter(Boolean),
+        })
+      }
+      const list = (v: unknown) => [...new Set((Array.isArray(v) ? v : String(v ?? '').split(/[,;\s]+/)).map((e) => String(e).trim().toLowerCase()).filter(Boolean))]
+      const to = list(body.to)
+      const cc = list(body.cc)
+      const bcc = list(body.bcc)
+      const bad = [...to, ...cc, ...bcc].filter((e) => !EMAIL.test(e))
+      if (bad.length) return reply(400, { error: `Check these email addresses: ${bad.join(', ')}` })
+      if (!to.length) return reply(400, { error: 'Enter at least one email address in To.' })
+      const subject = String(body.subject ?? '').trim().slice(0, 300)
+      if (!subject) return reply(400, { error: 'Enter a subject.' })
+      const message = String(body.message ?? '').slice(0, 8000)
+      const files = (Array.isArray(body.attachments) ? body.attachments : []) as { file_name?: string; pdf_base64?: string }[]
+      if (!files.length || files.some((f) => !String(f.pdf_base64 ?? '').startsWith('JVBER'))) {
+        return reply(400, { error: 'The PDFs could not be attached. Download them to check them, then try again.' })
+      }
+      if (files.reduce((n, f) => n + String(f.pdf_base64).length, 0) > 14_000_000) return reply(400, { error: 'The attachments are too large for one email. Send fewer machines at a time.' })
+      const { html, text } = layout({
+        company, appUrl, heading: values.title, button: false, intro: message,
+        notes: decls.map((d: Any) => ({ id: d.id, kind: 'ce', title: d.number, body: `${d.data.machine.product}, model ${d.data.machine.model}, serial number ${d.data.machine.serial}`, link: null, created_at: now().toISOString() })),
+        link: null, footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.${company.email ? ` Questions: ${company.email}` : ''}`,
+      })
+      const r = await deliver({
+        to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'ce_declaration', company,
+        attachments: files.map((f) => ({ filename: String(f.file_name || 'Declaration of Conformity.pdf').replace(/[\\/:*?"<>|]+/g, '-'), content: String(f.pdf_base64), encoding: 'base64', contentType: 'application/pdf' })),
+      })
+      await db.from('ce_declaration_sends').insert({
+        order_id: orderIds[0], declaration_ids: ids, to_emails: to, cc_emails: cc, bcc_emails: bcc, subject, combined: body.combined === true,
+        status: r.status, error: r.error, email_log_id: r.logId, sent_by: callerEmail,
+      })
+      // One line in the order's activity.
+      await db.from('activity_log').insert({
+        user_email: callerEmail, table_name: 'ce_declaration_sends', record_id: ids.join(','), order_id: orderIds[0], action: 'insert',
+        changes: { numbers: decls.map((d: Any) => d.number), to, cc, bcc_count: bcc.length, status: r.status, error: r.error },
+      })
+      return r.status === 'sent'
+        ? reply(200, { ok: true, message: `Sent to ${[...to, ...cc].join(', ')}${bcc.length ? ` (and ${bcc.length} in BCC)` : ''}.` })
+        : reply(502, { error: `The email could not be sent: ${r.error}` })
+    }
     case 'push_key': {
       if (!(await callerCan('is_allowed_user', {}))) return reply(403, { error: 'Please sign in again.' })
       if (!pushReady) return reply(503, { error: 'Phone notifications are not set up yet. Ask an administrator (Admin → Email).' })
@@ -510,7 +598,9 @@ export function realSenders(env: Env): Omit<Deps, 'env' | 'makeClient' | 'now'> 
   return {
     sendMail: async (mail) => {
       const raw = await new MailComposer(mail).compile().build()
-      await smtp().sendMail({ envelope: { from: env('SMTP_USER'), to: mail.to }, raw })
+      // Every recipient is in the envelope; the Bcc addresses are not written into the message itself.
+      const all = [mail.to, mail.cc, mail.bcc].filter(Boolean).join(', ')
+      await smtp().sendMail({ envelope: { from: env('SMTP_USER'), to: all }, raw })
       return { raw }
     },
     verifyMail: async () => {

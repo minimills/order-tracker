@@ -174,6 +174,19 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
   if (e.action === 'insert' || e.action === 'delete') {
     const verb = e.action === 'insert' ? 'Added' : 'Deleted'
     if (e.table_name === 'orders') return { title: e.action === 'insert' ? 'Order created' : 'Order deleted', lines: [] }
+    // Declarations of conformity (0039): issued, and emailed.
+    if (e.table_name === 'ce_declarations')
+      return {
+        title: `${c.title ?? 'Declaration of Conformity'} ${c.number} issued`,
+        lines: [`Machine ${c.serial ?? ''}`, ...(c.replaces ? [`Replaces ${c.replaces}`] : [])],
+      }
+    if (e.table_name === 'ce_declaration_sends') {
+      const to = [...((c.to as string[]) ?? []), ...((c.cc as string[]) ?? [])].join(', ')
+      return {
+        title: c.status === 'failed' ? 'Declarations of conformity could not be emailed' : 'Declarations of conformity emailed',
+        lines: [`${((c.numbers as string[]) ?? []).join(', ')}`, `To ${to}${Number(c.bcc_count) ? ` (+${c.bcc_count} BCC)` : ''}`, ...(c.error ? [`Error: ${c.error}`] : [])],
+      }
+    }
     if (e.table_name === 'allowed_users') return { title: `${verb} user ${c.email} (${c.role ?? 'staff'})`, lines: [] }
     if (e.table_name === 'customers') return { title: `${verb} customer ${c.name}`, lines: [] }
     if (e.table_name === 'machine_types') return { title: `${verb} machine type ${c.name}`, lines: [] }

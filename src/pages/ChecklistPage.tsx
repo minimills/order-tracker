@@ -3,7 +3,7 @@ import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
-import SignaturePad, { type SignaturePadHandle } from '../components/checklist/SignaturePad'
+import SignatureInput, { type SignatureInputHandle } from '../components/SignatureInput'
 import { buttonClass, inputClass, secondaryButtonClass } from '../components/form'
 import {
   checklistStatusText,
@@ -173,7 +173,7 @@ export default function ChecklistPage() {
   const [newText, setNewText] = useState('')
   // Sign-off
   const [fullName, setFullName] = useState('')
-  const pad = useRef<SignaturePadHandle>(null)
+  const pad = useRef<SignatureInputHandle>(null)
 
   const canTick = can('checklist.tick', 'edit')
 
@@ -303,7 +303,8 @@ export default function ChecklistPage() {
     if (fullName.trim().length < 3) return toast.error('Enter your full name.')
     if (!pad.current || pad.current.isEmpty()) return toast.error('Sign in the box using your finger or the mouse.')
     setBusy(true)
-    const png = await pad.current.toPng()
+    const sig = await pad.current.get()
+    const png = sig?.blob
     if (!png) {
       setBusy(false)
       return toast.error('The signature image is too large. Clear it and sign a little smaller.')
@@ -314,7 +315,7 @@ export default function ChecklistPage() {
       setBusy(false)
       return toast.error(`The signature could not be saved: ${up.error.message}`)
     }
-    const { error: e } = await supabase.rpc('sign_checklist', { p_checklist_id: checklist.id, p_full_name: fullName.trim(), p_signature_path: path })
+    const { error: e } = await supabase.rpc('sign_checklist', { p_checklist_id: checklist.id, p_full_name: fullName.trim(), p_signature_path: path, p_saved_signature: sig?.savedId ?? null })
     setBusy(false)
     if (e) return toast.error(friendlyError(e))
     toast.success('Final check signed and locked.')
@@ -685,13 +686,8 @@ export default function ChecklistPage() {
                       />
                     </label>
                     <div>
-                      <div className="mb-1 flex items-center justify-between text-sm">
-                        <span className="font-medium text-slate-700">Sign here using your finger or the mouse</span>
-                        <button type="button" className="text-sm underline" onClick={() => pad.current?.clear()}>
-                          Clear
-                        </button>
-                      </div>
-                      <SignaturePad ref={pad} disabled={openCount > 0} />
+                      <div className="mb-1 text-sm font-medium text-slate-700">Your signature</div>
+                      <SignatureInput ref={pad} disabled={openCount > 0} />
                     </div>
                     <p className="text-xs text-slate-500">The date and time are saved automatically. Signing locks the checklist.</p>
                     <button type="button" className={buttonClass} onClick={sign} disabled={busy || openCount > 0}>

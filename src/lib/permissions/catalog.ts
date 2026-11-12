@@ -27,6 +27,7 @@ export const GROUPS = [
   'Orders list',
   'Order page',
   'Final check',
+  'CE Declarations',
   'Payments',
   'Crating',
   'Boards',
@@ -278,6 +279,14 @@ export const CATALOG: PermissionItem[] = [
     ],
   }),
 
+  ...group('CE Declarations', {
+    Declarations: [
+      { key: 'ce', label: 'CE declarations of conformity: register on the order and machine pages, Download PDF and Print', levels: V, db: true },
+      { key: 'ce.issue', label: 'Issue CE declarations (choose machines, preview, sign, generate) and reissue a new version', levels: E, requires: 'ce', db: true },
+      { key: 'ce.email', label: 'Email CE declarations (To, CC, BCC, message, one PDF per machine or one combined PDF)', levels: E, requires: 'ce', db: true },
+    ],
+  }),
+
   ...group('Final check', {
     'Checklist screen': [
       { key: 'checklist', label: 'See final checks (checklist screen, progress on orders and board chips)', levels: V, db: true, page: true },
@@ -500,6 +509,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'settings.push', label: 'Phone notifications on their own phone or computer (enable, test, disable)', levels: E, requires: 'settings', db: true },
       { key: 'settings.quiet_hours', label: 'Quiet hours: no phone notifications at night (edit their own)', levels: E, requires: 'settings', db: true },
       { key: 'settings.chat_status', label: 'Hide their online / away status in chat', levels: E, requires: 'settings', db: true },
+      { key: 'settings.signature', label: 'My signature: upload a scanned signature and sign with it (“Use my saved signature”); only they can see or use it (edit: upload, replace, remove)', levels: VE, requires: 'settings', db: true },
     ],
     Alerts: [
       { key: 'alerts.bell', label: 'Alerts bell in the top bar', levels: V, hint: 'Payment alerts also need “payments”.' },
@@ -517,6 +527,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
       { key: 'admin.chat', label: 'Chat channels (department, group and other channels; never private chats)', levels: E, db: true },
       { key: 'admin.templates', label: 'Templates (commissioning certificate and service report text)', levels: E, db: true },
+      { key: 'admin.ce', label: 'Declaration of Conformity: CE template and settings (EC or EU type, authorised person, signer, email text) and the register of all declarations', levels: E, db: true },
       { key: 'admin.build_checklists', label: 'Build checklists (parts and tasks per machine type and step)', levels: E, db: true },
       { key: 'admin.production', label: 'Production boards (default stages and their departments, office, colour)', levels: E, db: true },
       { key: 'admin.stages', label: 'Stage names (rename what people see, for example “Ready / testing”)', levels: E, db: true },

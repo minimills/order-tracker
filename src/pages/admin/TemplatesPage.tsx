@@ -1,7 +1,9 @@
 // @permission-scope admin.templates
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
+import { Link } from 'react-router-dom'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
+import Can from '../../components/Can'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../../components/form'
 import RichText from '../../components/RichText'
 import RichTextEditor from '../../components/RichTextEditor'
@@ -71,6 +73,15 @@ export default function TemplatesPage() {
         technician can then change that one document without changing the template. Placeholders in curly brackets are
         filled in automatically; on a service report {'{order_number}'} is the service call number (for example S-12).
       </AdminPageHeader>
+      <Can permission="admin.ce" level="edit">
+        <p className="text-sm">
+          The CE / EU Declaration of Conformity templates are in{' '}
+          <Link to="/admin/ce" className="text-blue-700 underline">
+            Admin → Declaration of Conformity
+          </Link>
+          .
+        </p>
+      </Can>
 
       <div className="flex gap-2" role="tablist" aria-label="Template">
         {(

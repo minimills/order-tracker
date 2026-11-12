@@ -21,6 +21,7 @@ import CalendarPage from './pages/CalendarPage'
 import ServiceOrderPage from './pages/ServiceOrderPage'
 import CertificatePage from './pages/CertificatePage'
 import TemplatesPage from './pages/admin/TemplatesPage'
+import CeAdminPage from './pages/admin/CeAdminPage'
 import BoardAdminPage from './pages/admin/BoardAdminPage'
 import CompanyPage from './pages/admin/CompanyPage'
 import DepartmentsPage from './pages/admin/DepartmentsPage'
@@ -151,6 +152,7 @@ export default function App() {
           <Route path="checklists" element={<Page permission="admin.checklists" level="edit"><ChecklistTemplatesPage /></Page>} />
           <Route path="chat" element={<Page permission="admin.chat" level="edit"><ChatChannelsPage /></Page>} />
           <Route path="templates" element={<Page permission="admin.templates" level="edit"><TemplatesPage /></Page>} />
+          <Route path="ce" element={<Page permission="admin.ce" level="edit"><CeAdminPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />
           <Route path="production" element={<Page permission="admin.production" level="edit"><ProductionPage /></Page>} />
           <Route path="records" element={<Page permission="admin.records" level="edit"><RecordsPage /></Page>} />

@@ -16,6 +16,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   { to: '/admin/build-checklists', permission: 'admin.build_checklists', icon: 'checklist' as const, title: 'Build Checklists', text: 'Parts and tasks per machine type for Fabrication, Sandblasting, Powder coating and Assembly.' },
   { to: '/admin/production', permission: 'admin.production', icon: 'boards' as const, title: 'Production', text: 'Stages every new production board starts with, their departments, and board settings.' },
   { to: '/admin/templates', permission: 'admin.templates', icon: 'template' as const, title: 'Templates', text: 'The commissioning certificate text, with placeholders such as {customer_name}.' },
+  { to: '/admin/ce', permission: 'admin.ce', icon: 'template' as const, title: 'Declaration of Conformity', text: 'CE / EU declaration template, settings and the register of issued declarations.' },
   { to: '/admin/chat', permission: 'admin.chat', icon: 'chat' as const, title: 'Chat Channels', text: 'Department, group and other channels: rename, archive, members. Private chats are not shown.' },
   { to: '/admin/holidays', permission: 'admin.holidays', icon: 'calendar' as const, title: 'Company Holidays', text: 'PEI statutory holidays (imported every year), company holidays and office closures. Used for ship dates.' },
   { to: '/admin/email', permission: 'admin.email', icon: 'inbox' as const, title: 'Email', text: 'Mailbox set-up, test email, automatic sending and phone notification keys.' },

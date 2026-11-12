@@ -33,7 +33,7 @@ export type OptionItem = {
   colour?: string | null
 }
 
-export type OptionListName = 'voltage' | 'delivery_equipment' | 'freight_type' | 'payment_type' | 'notice_category'
+export type OptionListName = 'voltage' | 'delivery_equipment' | 'freight_type' | 'payment_type' | 'notice_category' | 'ce_directive'
 
 /** Stages are fixed (the board and serial rules depend on them). */
 /** Stored values. Names shown on screen can be renamed in Admin → Stage names (see src/lib/stages.ts). */

@@ -33,6 +33,8 @@ import SerialNumber from '../components/SerialNumber'
 import { confirmAction } from '../lib/confirm'
 import Icon from '../components/Icon'
 import OrderServiceSection from '../components/service/OrderServiceSection'
+import CeIssueDialog from '../components/ce/CeIssueDialog'
+import CeRegister from '../components/ce/CeRegister'
 
 type Machine = {
   id: string
@@ -101,6 +103,9 @@ export default function OrderPage() {
   useBreadcrumbs(order && [{ label: 'Orders', to: '/orders' }, { label: `Order ${order.order_code}` }])
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [machines, setMachines] = useState<Machine[]>([])
+  // CE declarations: the dialog (all machines or one) and a counter to reload the register.
+  const [ceFor, setCeFor] = useState<string[] | null>(null)
+  const [ceRefresh, setCeRefresh] = useState(0)
   const [progress, setProgress] = useState<Map<string, MachineProgress>>(new Map())
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [crates, setCrates] = useState<NumberedCrate[]>([])
@@ -430,6 +435,11 @@ export default function OrderPage() {
                           )
                         )}
                       </Can>
+                      <Can permission="ce.issue" level="edit">
+                        <button type="button" className={secondaryButtonClass} onClick={() => setCeFor([])}>
+                          CE Certificates
+                        </button>
+                      </Can>
                       <Can permission="order.machines.add" level="edit">
                         <button type="button" className={secondaryButtonClass} onClick={() => setMachineChange({ kind: 'add' })}>
                           Add Machines
@@ -472,6 +482,13 @@ export default function OrderPage() {
                             <Link to={`/machines/${m.id}`} className="text-xs text-slate-600 underline">
                               History
                             </Link>
+                          </Can>
+                          <Can permission="ce.issue" level="edit">
+                            {m.serial_number && (
+                              <button type="button" className="text-xs text-slate-600 underline" onClick={() => setCeFor([m.id])}>
+                                CE Certificate
+                              </button>
+                            )}
                           </Can>
                           <span className="flex-1">{m.machine_types?.name}</span>
                           {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">serial typed by hand</span>}
@@ -715,6 +732,13 @@ export default function OrderPage() {
                 </Section>
               </Can>
 
+              {/* ---------- CE declarations of conformity ---------- */}
+              <Can permission="ce">
+                <Section title="CE Declarations of Conformity">
+                  <CeRegister orderId={order.id} refreshKey={ceRefresh} />
+                </Section>
+              </Can>
+
               {/* ---------- Service ---------- */}
               <Can permission="order.section.service">
                 <OrderServiceSection orderId={order.id} />
@@ -772,6 +796,19 @@ export default function OrderPage() {
               load()
             }}
           />
+        )}
+        {ceFor && (
+          <Can permission="ce.issue" level="edit">
+            <CeIssueDialog
+              orderId={order.id}
+              machineIds={ceFor.length ? ceFor : undefined}
+              onClose={() => setCeFor(null)}
+              onIssued={() => {
+                setCeFor(null)
+                setCeRefresh((n) => n + 1)
+              }}
+            />
+          </Can>
         )}
         {machineChange && (
           <ChangeMachinesDialog

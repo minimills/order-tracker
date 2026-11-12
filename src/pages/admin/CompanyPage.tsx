@@ -43,6 +43,7 @@ export default function CompanyPage() {
       email: f.email.trim(),
       website: f.website.trim(),
       office_email: f.office_email.trim(),
+      contact_person: (f.contact_person ?? '').trim(),
       logo: f.logo,
     }
     const { error } = await supabase.from('app_settings').upsert({ key: 'company', value })
@@ -69,8 +70,11 @@ export default function CompanyPage() {
           <Field label="Email" htmlFor="co-email">
             <input id="co-email" className={inputClass} value={f.email} onChange={set('email')} />
           </Field>
-          <Field label="Website" htmlFor="co-web" className="sm:col-span-2">
+          <Field label="Website" htmlFor="co-web">
             <input id="co-web" className={inputClass} value={f.website} onChange={set('website')} />
+          </Field>
+          <Field label="Contact person" htmlFor="co-contact" hint="Named as the manufacturer’s contact on declarations of conformity.">
+            <input id="co-contact" className={inputClass} value={f.contact_person ?? ''} placeholder="Ankit Luthra" onChange={set('contact_person')} />
           </Field>
           <Field label="Office email for signed documents" htmlFor="co-office" className="sm:col-span-2" hint="Signed commissioning certificates are emailed to this address (as well as the technician and the customer). Empty = the email above.">
             <input id="co-office" type="email" className={inputClass} value={f.office_email} onChange={set('office_email')} />

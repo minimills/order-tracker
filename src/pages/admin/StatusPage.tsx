@@ -6,6 +6,10 @@ import Icon, { type IconName } from '../../components/Icon'
 import { buttonClass, Field, narrowInputClass, secondaryButtonClass } from '../../components/form'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { Link } from 'react-router-dom'
+import Can from '../../components/Can'
+import { EU_REGULATION_DATE, loadCeSettings } from '../../lib/ce'
+import { showDate, todayISO } from '../../lib/dates'
 
 type Health = 'operational' | 'degraded' | 'down' | 'not_set_up'
 type Job = { name: string; schedule: string; active: boolean; last_run: string | null; last_status: string | null; last_message: string | null; failed_24h: number }
@@ -158,6 +162,13 @@ export default function StatusPage() {
     return () => window.clearInterval(t)
   }, [check])
 
+  // From December 2026: remind to switch declarations to the EU Machinery Regulation.
+  const [ceType, setCeType] = useState<string | null>(null)
+  useEffect(() => {
+    loadCeSettings().then((c) => setCeType(c.declaration_type))
+  }, [])
+  const euReminder = todayISO() >= '2026-12-01' && ceType !== null && ceType !== 'eu_2023'
+
   async function saveLimits() {
     if (!supabase) return
     const { error } = await supabase.rpc('set_system_limits', { p_db_mb: Number(limits.db), p_storage_mb: Number(limits.storage) })
@@ -184,6 +195,19 @@ export default function StatusPage() {
       >
         Checked {timeFmt.format(at)}; checks again every minute while this page is open.
       </AdminPageHeader>
+
+      {euReminder && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <strong>Declarations of conformity:</strong> the EU Machinery Regulation (EU) 2023/1230 applies from {showDate(EU_REGULATION_DATE)}. New declarations still use the EC
+          Machinery Directive 2006/42/EC.{' '}
+          <Can permission="admin.ce" level="edit" fallback={<>Ask an admin to switch the declaration type.</>}>
+            <Link to="/admin/ce?find=ce-settings" className="underline">
+              Check the EU template and switch the declaration type
+            </Link>
+            .
+          </Can>
+        </div>
+      )}
 
       <div className={`flex items-center gap-2 rounded-lg px-4 py-3 text-sm font-medium ring-1 ${BADGE[worst].cls}`}>
         <Icon name={worst === 'operational' ? 'check' : 'alert'} className="h-4 w-4" />
