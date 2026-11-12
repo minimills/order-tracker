@@ -6,6 +6,7 @@ import SettingsSearch from '../components/SettingsSearch'
 import UnitsSwitch from '../components/crating/UnitsSwitch'
 import CalendarImportSettings from '../components/settings/CalendarImportSettings'
 import ChatSettings from '../components/settings/ChatSettings'
+import MySignature from '../components/settings/MySignature'
 import { useAuth } from '../lib/auth'
 import { usePermissions } from '../lib/permissions'
 import { ADMIN_KEYS } from '../lib/permissions/catalog'
@@ -121,6 +122,13 @@ export default function SettingsPage() {
 
           <Can permission="settings.chat_status" level="edit">
             <ChatSettings part="status" className={card} />
+          </Can>
+
+          <Can permission="settings.signature">
+            <section className={`${card} [grid-column:1/-1] lg:[grid-column:auto]`} data-setting="my-signature">
+              <h2 className="mb-2 font-semibold">My Signature</h2>
+              <MySignature />
+            </section>
           </Can>
 
           <Can permission="service.calendar.import" level="edit">

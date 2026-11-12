@@ -12,6 +12,8 @@ export type Company = {
   office_email: string
   /** A small PNG as a data: URL, or null. */
   logo: string | null
+  /** Contact person on declarations of conformity (default Ankit Luthra). */
+  contact_person?: string
 }
 
 export const EMPTY_COMPANY: Company = { name: 'Belfast Mini Mills', address: '', phone: '', email: '', website: '', office_email: '', logo: null }

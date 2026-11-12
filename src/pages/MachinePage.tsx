@@ -11,6 +11,8 @@ import { showDate, todayISO } from '../lib/dates'
 import { friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import { ACTION } from '../lib/wording'
+import CeIssueDialog from '../components/ce/CeIssueDialog'
+import CeRegister from '../components/ce/CeRegister'
 
 type Owner = {
   customer_id: string
@@ -62,6 +64,8 @@ export default function MachinePage() {
   const [m, setM] = useState<Details | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [transfer, setTransfer] = useState(false)
+  const [ceOpen, setCeOpen] = useState(false)
+  const [ceRefresh, setCeRefresh] = useState(0)
 
   const load = useCallback(async () => {
     if (!supabase || !id) return
@@ -219,6 +223,37 @@ export default function MachinePage() {
               )}
             </section>
           </div>
+        )}
+
+        {m && id && (
+          <Can permission="ce">
+            <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm" aria-label="CE declarations">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h2 className="font-semibold">CE Declarations of Conformity</h2>
+                <Can permission="ce.issue" level="edit">
+                  {m.serial && (
+                    <button type="button" className={secondaryButtonClass} onClick={() => setCeOpen(true)}>
+                      CE Certificate
+                    </button>
+                  )}
+                </Can>
+              </div>
+              <CeRegister machineId={id} refreshKey={ceRefresh} />
+            </section>
+          </Can>
+        )}
+        {ceOpen && m && id && (
+          <Can permission="ce.issue" level="edit">
+            <CeIssueDialog
+              orderId={m.order_id}
+              machineIds={[id]}
+              onClose={() => setCeOpen(false)}
+              onIssued={() => {
+                setCeOpen(false)
+                setCeRefresh((n) => n + 1)
+              }}
+            />
+          </Can>
         )}
 
         {transfer && m && (

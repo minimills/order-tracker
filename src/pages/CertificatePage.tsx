@@ -4,7 +4,7 @@ import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
-import SignaturePad, { type SignaturePadHandle } from '../components/checklist/SignaturePad'
+import SignatureInput, { type SignatureInputHandle } from '../components/SignatureInput'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../components/form'
 import RichText from '../components/RichText'
 import RichTextEditor from '../components/RichTextEditor'
@@ -462,7 +462,7 @@ export default function CertificatePage() {
 
 /** One signature: shown when signed, or a pad to sign on this phone or tablet. */
 function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'customer'; cert: Certificate; image: string | null; dirty: boolean; onDone: () => void }) {
-  const pad = useRef<SignaturePadHandle>(null)
+  const pad = useRef<SignatureInputHandle>(null)
   const signed = who === 'tech' ? cert.tech_signed_at : cert.customer_signed_at
   const [name, setName] = useState((who === 'tech' ? cert.tech_name : cert.customer_name) ?? '')
   const [title, setTitle] = useState(cert.customer_title ?? '')
@@ -476,7 +476,8 @@ function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'cu
     if (!name.trim()) return toast.error('Enter the printed name.')
     if (pad.current.isEmpty()) return toast.error('Sign in the box first.')
     setBusy(true)
-    const png = await pad.current.toPng()
+    const sig = await pad.current.get()
+    const png = sig?.blob
     if (!png) {
       setBusy(false)
       return toast.error('The signature could not be saved. Sign again.')
@@ -487,7 +488,7 @@ function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'cu
       setBusy(false)
       return toast.error(friendlyError(up.error))
     }
-    const { error } = await supabase.rpc('sign_certificate', { p_certificate: cert.id, p_who: who, p_name: name, p_title: who === 'customer' ? title : null, p_date: date, p_signature_path: path })
+    const { error } = await supabase.rpc('sign_certificate', { p_certificate: cert.id, p_who: who, p_name: name, p_title: who === 'customer' ? title : null, p_date: date, p_signature_path: path, p_saved_signature: sig?.savedId ?? null })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
     toast.success(`${heading} signature saved.`)
@@ -527,10 +528,8 @@ function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'cu
     <div className="space-y-2 text-sm">
       <h3 className="font-semibold">{heading}</h3>
       <Can permission="service.certificate.sign" level="edit" fallback={<p className="text-slate-500">Not signed yet.</p>}>
-        <SignaturePad ref={pad} disabled={busy} />
-        <button type="button" className="text-xs underline" onClick={() => pad.current?.clear()}>
-          Clear
-        </button>
+        {/* The technician may use their saved signature; customers always draw theirs. */}
+        <SignatureInput ref={pad} disabled={busy} allowSaved={who === 'tech'} />
         <Field label="Printed name" htmlFor={`sig-${who}-name`}>
           <input id={`sig-${who}-name`} className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
