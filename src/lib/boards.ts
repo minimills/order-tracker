@@ -50,6 +50,9 @@ export type Card = {
   /** task = an ordinary card; machine = one machine on a production board; leftover = its unfinished items. */
   card_kind: 'task' | 'machine' | 'leftover' | 'service'
   leftover_of: string | null
+  /** 0038: free-text link ("Linked to") and the customer label. */
+  link_text?: string | null
+  customer_label?: string | null
 }
 export type Checklist = { id: string; card_id: string; title: string; sort_order: number; stage_id: string | null; merge_into: string | null }
 export type ChecklistItem = {
@@ -62,6 +65,19 @@ export type ChecklistItem = {
   finished_at: string | null
   finished_by_name: string | null
   template_item_id?: string | null
+  /** 0038: a sub-task of this item (one level only). */
+  parent_id?: string | null
+}
+/** One pause of a card's timer (item_id empty) or a task's (0038). */
+export type Pause = {
+  id: string
+  card_id: string
+  item_id: string | null
+  paused_at: string
+  paused_by_name: string | null
+  note: string | null
+  resumed_at: string | null
+  resumed_by_name: string | null
 }
 export type Person = { email: string; name: string }
 export type ShareType = 'user' | 'group' | 'department' | 'everyone'
@@ -153,6 +169,37 @@ export function formatDuration(seconds: number | null | undefined) {
   return `${d} d${h % 24 ? ` ${h % 24} h` : ''}`
 }
 export const secondsBetween = (a: string, b: string) => Math.round((new Date(b).getTime() - new Date(a).getTime()) / 1000)
+
+/** Pauses of one timer: the card's own (itemId null) or one task's, oldest first. */
+export const pausesOf = (pauses: Pause[], cardId: string, itemId: string | null) =>
+  pauses.filter((p) => p.card_id === cardId && p.item_id === itemId).sort((a, b) => a.paused_at.localeCompare(b.paused_at))
+
+/** The pause still running, if any (only while the timer runs). */
+export function openPause(pauses: Pause[], cardId: string, itemId: string | null, started: string | null, finished: string | null) {
+  if (!started || finished) return null
+  return pausesOf(pauses, cardId, itemId).find((p) => !p.resumed_at && p.paused_at >= started) ?? null
+}
+
+/** Active seconds between Start and Finish (or now): paused time is not counted. */
+export function activeSeconds(started: string, finished: string | null, pauses: Pause[]) {
+  const from = new Date(started).getTime()
+  const to = finished ? new Date(finished).getTime() : Date.now()
+  const paused = pauses.reduce((sum, p) => {
+    const a = Math.max(new Date(p.paused_at).getTime(), from)
+    const b = Math.min(p.resumed_at ? new Date(p.resumed_at).getTime() : Date.now(), to)
+    return sum + Math.max(0, b - a)
+  }, 0)
+  return Math.max(0, Math.round((to - from - paused) / 1000))
+}
+
+/** Customer label text: "Company (or name) – City/State, Country". */
+export function customerLabelText(c: { name: string; company: string | null; state_province: string | null; country: string | null }) {
+  const who = c.company?.trim() || c.name.trim()
+  const place = [c.state_province?.trim(), c.country?.trim()].filter(Boolean).join(', ')
+  return place ? `${who} – ${place}` : who
+}
+/** A time to send for Start / Finish (the database stamps its own time). */
+export const stampNow = () => new Date().toISOString()
 export const taskKey = (text: string) => text.trim().toLowerCase()
 
 /** Average time of the same task on other cards (from the board_task_times view). */
@@ -208,6 +255,8 @@ export function eventText(e: CardEvent) {
     case 'task_started': return `Started “${d.task}”`
     case 'task_done': return `Finished “${d.task}”${d.seconds != null ? ` (took ${formatDuration(Number(d.seconds))})` : ''}`
     case 'task_reopened': return `Marked “${d.task}” incomplete`
+    case 'paused': return `Paused${d.task ? ` “${d.task}”` : ' the timer'}${d.note ? `: ${d.note}` : ''}`
+    case 'resumed': return `Resumed${d.task ? ` “${d.task}”` : ' the timer'}${d.seconds != null ? ` after ${formatDuration(Number(d.seconds))}` : ''}`
     case 'comment': return `Added a comment: “${d.excerpt}”`
     case 'leftover_split': return `${d.count} unfinished item${Number(d.count) === 1 ? '' : 's'} moved to a leftover card in ${d.stage}`
     case 'leftover_created': return `Leftover card created for ${d.machine} (${d.stage})`
@@ -218,7 +267,7 @@ export function eventText(e: CardEvent) {
 }
 
 /** Everything the board page shows (one load). */
-export async function loadBoard(id: string, opts: { comments: boolean }) {
+export async function loadBoard(id: string, opts: { comments: boolean; timing?: boolean }) {
   if (!supabase) throw new Error('Not connected')
   const [b, lvl, st, lb, cards, people] = await Promise.all([
     supabase.from('boards').select('*').eq('id', id).maybeSingle(),
@@ -235,11 +284,13 @@ export async function loadBoard(id: string, opts: { comments: boolean }) {
     Promise.all(Array.from({ length: Math.ceil(cardIds.length / 150) }, (_, i) => fn(cardIds.slice(i * 150, i * 150 + 150)))).then((r) =>
       r.flatMap((x) => x.data ?? []),
     )
-  const [cardLabels, assignees, checklists, comments] = await Promise.all([
+  const [cardLabels, assignees, checklists, comments, pauses] = await Promise.all([
     chunk<{ card_id: string; label_id: string }>((ids) => supabase!.from('board_card_labels').select('card_id, label_id').in('card_id', ids)),
     chunk<{ card_id: string; user_email: string }>((ids) => supabase!.from('board_card_assignees').select('card_id, user_email').in('card_id', ids)),
     chunk<Checklist>((ids) => supabase!.from('board_checklists').select('*').in('card_id', ids).order('sort_order')),
     opts.comments ? chunk<{ card_id: string }>((ids) => supabase!.from('board_comments').select('card_id').in('card_id', ids)) : Promise.resolve([]),
+    // Pauses (0038; empty without the timing permission or before the migration).
+    opts.timing ? chunk<Pause>((ids) => supabase!.from('board_time_pauses').select('*').in('card_id', ids).order('paused_at')) : Promise.resolve([] as Pause[]),
   ])
   const listIds = checklists.map((l) => l.id)
   const items = listIds.length
@@ -275,6 +326,7 @@ export async function loadBoard(id: string, opts: { comments: boolean }) {
     assignees,
     checklists,
     items,
+    pauses,
     commentCounts: comments.reduce<Record<string, number>>((acc, c) => ({ ...acc, [c.card_id]: (acc[c.card_id] ?? 0) + 1 }), {}),
   }
 }
@@ -289,6 +341,23 @@ export type ProductionMachine = {
   checklist_total: number | null
   checklist_completed: number | null
 }
+/** A machine's production stage and % (machine_production_progress view, 0038). */
+export type MachineProgress = {
+  machine_id: string
+  order_id: string
+  card_id: string
+  board_id: string
+  stage_name: string
+  step: string | null
+  stage_number: number
+  stage_count: number
+  items_done: number
+  items_total: number
+  percent: number
+}
+/** "Assembly – 60%" */
+export const progressText = (p: MachineProgress) => `${p.stage_name} – ${p.percent}%`
+
 export type StageTime = {
   id: string
   stage_name: string

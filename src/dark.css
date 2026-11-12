@@ -75,6 +75,7 @@
   html.dark :is(.hover\:text-slate-900:hover, .text-slate-900):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: #f1f5f9; }
   html.dark :is(.text-red-900\/80):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: color-mix(in srgb, oklch(88.5% 0.062 18.334) 80%, transparent); }
   html.dark :is(.text-red-600):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(70.4% 0.191 22.216); }
+  html.dark :is(.hover\:text-green-600:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(79.2% 0.209 151.711); }
   html.dark :is(.hover\:text-red-700:hover, .text-red-700):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(80.8% 0.114 19.571); }
   html.dark :is(.text-blue-700):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(80.9% 0.105 251.813); }
   html.dark :is(.text-green-700):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(87.1% 0.15 154.449); }

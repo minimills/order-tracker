@@ -387,9 +387,13 @@ export default function ChecklistPage() {
           )}
           {!checklist && (
             <div className="mt-3">
-              {!status.ready ? (
-                <p className="text-sm text-amber-800">Mark this machine as built on the Order page first.</p>
-              ) : (
+              {!status.ready && (
+                <p className="mb-2 text-sm text-amber-800">
+                  This machine is not marked as built yet. The final check can start once its production card reaches the Final check stage (or
+                  after it is marked as built on the Order page). Signing the final check marks it as built.
+                </p>
+              )}
+              {
                 <Can
                   permission="checklist.start"
                   level="edit"
@@ -402,7 +406,7 @@ export default function ChecklistPage() {
                     The items are copied from the current checklist templates (general items plus those for this machine type).
                   </p>
                 </Can>
-              )}
+              }
             </div>
           )}
         </section>

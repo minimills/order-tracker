@@ -50,6 +50,7 @@ const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/order-defaults', 'Full payment when shipping soon (days)', 'od-full-within', 'full payment 90 days no down payment'),
   inner('/admin/order-defaults', 'Full payment due (days after the order)', 'od-full-due', 'full payment 30 days'),
   inner('/admin/dropdowns', 'Voltage colours on the Orders board', 'voltage-colours', 'chip colour 120v 240v'),
+  inner('/admin/machine-types', 'Build times (working days per step)', 'build-times', 'fabrication assembly days schedule'),
   inner('/admin/scheduling', 'Buffer days before shipping', 'sc-buffer', 'ship date'),
   inner('/admin/scheduling', 'Machines in one order: one after another or at once', 'sc-parallel', 'parallel'),
   inner('/admin/scheduling', 'Working days', 'working-days', 'weekend saturday'),

@@ -22,6 +22,9 @@ export type ChipMachine = {
   checklist_status?: 'not_started' | 'in_progress' | 'signed' | null
   checklist_total?: number | null
   checklist_completed?: number | null
+  /** Production stage and %, "Assembly – 60%" (0038; empty without permission). */
+  progress?: string | null
+  progressPercent?: number | null
 }
 
 /** 0 not built · 1 built · 2 final checklist done · 3 crated */
@@ -41,7 +44,10 @@ function statusOf(m: ChipMachine, countCrates: boolean): Status {
   return 0
 }
 
-type Group = { typeId: string; name: string; fullName: string; machines: ChipMachine[]; status: Status; mixed: boolean }
+type Group = { typeId: string; name: string; fullName: string; machines: ChipMachine[]; status: Status; mixed: boolean; percent: number | null }
+
+/** The word for a machine's status: unbuilt machines show their production stage and % when known. */
+const statusWord = (m: ChipMachine, st: Status) => (st === 0 && m.progress ? m.progress : STATUS_STYLE[st].word)
 
 function groupMachines(machines: ChipMachine[], countCrates: boolean): Group[] {
   const map = new Map<string, ChipMachine[]>()
@@ -57,6 +63,11 @@ function groupMachines(machines: ChipMachine[], countCrates: boolean): Group[] {
         machines: sorted,
         status: Math.min(...statuses) as Status,
         mixed: new Set(statuses).size > 1,
+        // Average production % of the machines not built yet (shown on the chip).
+        percent: (() => {
+          const ps = list.filter((m, i) => statuses[i] === 0 && m.progressPercent != null).map((m) => m.progressPercent!)
+          return ps.length ? Math.round(ps.reduce((a, b) => a + b, 0) / ps.length) : null
+        })(),
       }
     })
     .sort((a, b) => a.name.localeCompare(b.name))
@@ -111,7 +122,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
         const isOpen = pinned === g.typeId || (pinned === null && hover === g.typeId)
         const summary = showStatus
           ? `${g.fullName}: ${g.machines.length} machine${g.machines.length === 1 ? '' : 's'}${
-              g.mixed ? ' (mixed: see serials)' : `, ${style.word.toLowerCase()}`
+              g.mixed ? ' (mixed: see serials)' : `, ${g.status === 0 && g.machines[0].progress ? g.machines[0].progress : style.word.toLowerCase()}`
             }`
           : `${g.fullName}: ${g.machines.length} machine${g.machines.length === 1 ? '' : 's'}`
         return (
@@ -141,6 +152,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                 </span>
               )}
               <span className="truncate">{g.name}</span>
+              {showStatus && g.status === 0 && g.percent !== null && <span className="shrink-0 text-[11px] font-normal tabular-nums opacity-80">{g.percent}%</span>}
               {g.machines.length > 1 && (
                 <span className="shrink-0 rounded-full bg-white/80 px-1.5 text-[11px] font-semibold tabular-nums ring-1 ring-current/20">
                   ×{g.machines.length}
@@ -164,13 +176,14 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
               <div className="mb-1 font-semibold text-slate-800">{g.fullName}</div>
               <ul className="space-y-0.5">
                 {g.machines.map((m) => {
-                  const st = STATUS_STYLE[statusOf(m, showCrated)]
+                  const code = statusOf(m, showCrated)
+                  const st = STATUS_STYLE[code]
                   return (
                     <li key={m.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 py-0.5">
                       {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span>No serial yet</span>}
                       <Can permission="orders.board.card.chip_status">
                         <span className="text-slate-500">
-                          {st.icon} {st.word}
+                          {st.icon} {statusWord(m, code)}
                           {m.checklist_status === 'in_progress' && (
                             <> · final check {m.checklist_completed ?? 0}/{m.checklist_total ?? 0}</>
                           )}
