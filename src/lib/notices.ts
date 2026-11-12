@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { addDaysISO, showDate, todayISO } from './dates'
+import { showDate, todayISO } from './dates'
 import { supabase } from './supabase'
 import { useDepartments } from './useDepartments'
 
@@ -47,6 +47,9 @@ export type PersonalNote = {
   remind_at: string | null
   reminded_at: string | null
   updated_at: string
+  /** 0040: archived notes are kept (Archived Notes view) and send no reminders. */
+  archived?: boolean
+  archived_at?: string | null
 }
 export type Holiday = {
   id: string
@@ -301,9 +304,9 @@ export async function acknowledgeNotice(id: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Upcoming holidays (the next ones within a year, hidden ones left out)
+// Upcoming holidays: the rest of THIS year (hidden ones left out)
 // ---------------------------------------------------------------------------
-export function useUpcomingHolidays(enabled: boolean, limit = 8) {
+export function useUpcomingHolidays(enabled: boolean, limit = 30) {
   const [list, setList] = useState<Holiday[]>([])
   const [loading, setLoading] = useState(true)
   const load = useCallback(async () => {
@@ -314,7 +317,7 @@ export function useUpcomingHolidays(enabled: boolean, limit = 8) {
       .select('id, name, start_date, end_date, kind, day_off, hidden, notes, source, edited')
       .eq('hidden', false)
       .gte('end_date', today)
-      .lte('start_date', addDaysISO(today, 366))
+      .lte('start_date', `${today.slice(0, 4)}-12-31`)
       .order('start_date')
       .limit(limit)
     setList((data as Holiday[]) ?? [])
@@ -330,3 +333,54 @@ export function useUpcomingHolidays(enabled: boolean, limit = 8) {
 
 /** The canada-holidays.ca address for one year of statutory holidays. */
 export const holidayApiUrl = (province: string, year: number) => `https://canada-holidays.ca/api/v1/provinces/${province}?year=${year}`
+
+// ---------------------------------------------------------------------------
+// Closure and delay alerts (migration 0040): the warning banner on every page
+// ---------------------------------------------------------------------------
+export type ClosureKind = 'closed_weather' | 'delayed_opening' | 'closed_on_date' | 'other'
+export const CLOSURE_KINDS: { value: ClosureKind; label: string; title: string }[] = [
+  { value: 'closed_weather', label: 'Office closed due to weather', title: 'Office closed due to weather' },
+  { value: 'delayed_opening', label: 'Delayed opening', title: 'Delayed opening' },
+  { value: 'closed_on_date', label: 'Office closed on a date', title: 'Office closed' },
+  { value: 'other', label: 'Other closure or delay', title: '' },
+]
+export type ClosureAlert = {
+  id: string
+  kind: ClosureKind
+  title: string
+  reason: string | null
+  start_date: string
+  end_date: string
+  next_update_at: string | null
+  updated_at: string
+  last_message: string | null
+  created_by_name: string | null
+}
+export type ClosureUpdate = { id: string; alert_id: string; kind: 'posted' | 'update' | 'ended'; message: string | null; next_update_at: string | null; created_by_name: string | null; created_at: string }
+
+let closureListeners: ((a: ClosureAlert[]) => void)[] = []
+let closureValue: ClosureAlert[] = []
+export async function refreshClosureAlerts() {
+  if (!supabase) return
+  const { data } = await supabase.rpc('active_closure_alerts')
+  closureValue = (data as ClosureAlert[]) ?? []
+  closureListeners.forEach((l) => l(closureValue))
+}
+/** Active closure alerts (checked every minute and when the window gets focus). */
+export function useClosureAlerts(enabled: boolean) {
+  const [list, setList] = useState(closureValue)
+  useEffect(() => {
+    if (!enabled || !supabase) return
+    closureListeners.push(setList)
+    void refreshClosureAlerts()
+    const timer = window.setInterval(() => void refreshClosureAlerts(), 60_000)
+    const onFocus = () => void refreshClosureAlerts()
+    window.addEventListener('focus', onFocus)
+    return () => {
+      closureListeners = closureListeners.filter((l) => l !== setList)
+      window.clearInterval(timer)
+      window.removeEventListener('focus', onFocus)
+    }
+  }, [enabled])
+  return list
+}

@@ -27,6 +27,7 @@ const MY: SettingEntry[] = [
   { label: 'Units for crate sizes and weights', where: 'Settings', keywords: 'imperial metric inches pounds kg cm', to: '/settings', find: 'units', permission: 'settings.units' },
   { label: 'Phone calendar link (calendar to app)', where: 'Settings', keywords: 'ical icloud google calendar sync', to: '/settings', find: 'calendar-import', permission: 'service.calendar.import', level: 'edit' },
   { label: 'My signature (upload, replace or remove)', where: 'Settings', keywords: 'sign scan saved signature picture', to: '/settings', find: 'my-signature', permission: 'settings.signature' },
+  { label: 'Chat swipe actions (swipe left / right)', where: 'Settings', keywords: 'archive delete clear hide unread phone conversation list', to: '/settings', find: 'chat-swipe', permission: 'settings.chat_swipe', level: 'edit' },
   { label: 'Hide my chat status', where: 'Settings', keywords: 'online away presence', to: '/settings', find: 'chat-status', permission: 'settings.chat_status', level: 'edit' },
   { label: 'Notification settings (in-app, phone push, email, desktop)', where: 'Settings → Notifications', keywords: 'alerts emails push bell switches', to: '/settings/notifications', permission: 'settings.notification_channels' },
   { label: 'Quiet hours', where: 'Settings → Notifications', keywords: 'night do not disturb phone silent', to: '/settings/notifications', find: 'quiet-hours', permission: 'settings.quiet_hours', level: 'edit' },

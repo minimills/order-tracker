@@ -16,6 +16,7 @@ import AlertsBell from './alerts/AlertsBell'
 import AlertsProvider from './alerts/AlertsProvider'
 import NotificationPrompt from './alerts/NotificationPrompt'
 import UrgentBanner from './notices/UrgentBanner'
+import ClosureBanner from './notices/ClosureBanner'
 import NewOrderBanner from './NewOrderBanner'
 
 /**
@@ -175,6 +176,7 @@ export default function Layout() {
             {isSupabaseConfigured && can('alerts.bell') && <AlertsBell />}
           </div>
         </header>
+        {isSupabaseConfigured && canAny(['notices.closures', 'notices.closures.post']) && <ClosureBanner />}
         {isSupabaseConfigured && can('notices.banner') && <UrgentBanner />}
         {isSupabaseConfigured && can('orders.board.new_order_banner') && <NewOrderBanner />}
         {isSupabaseConfigured && can('alerts.popups') && <NotificationPrompt />}

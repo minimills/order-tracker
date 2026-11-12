@@ -54,6 +54,7 @@ export default function MessageItem({
   onPin,
   onReact,
   onJump,
+  onUnsend,
 }: {
   m: ChatMessage
   me: string
@@ -70,10 +71,19 @@ export default function MessageItem({
   onPin: () => void
   onReact: (emoji: string) => void
   onJump: (id: string) => void
+  /** Take the message back completely (own messages, first 30 seconds). */
+  onUnsend?: () => void
 }) {
   const [open, setOpen] = useState(false)
   const [picker, setPicker] = useState(false)
   const mine = m.author_email === me
+  // Seconds left to unsend my own new message (counts down, then the button goes).
+  const [left, setLeft] = useState(() => Math.max(0, 30 - Math.floor((Date.now() - Date.parse(m.created_at)) / 1000)))
+  useEffect(() => {
+    if (!mine || left <= 0) return
+    const t = window.setInterval(() => setLeft(Math.max(0, 30 - Math.floor((Date.now() - Date.parse(m.created_at)) / 1000))), 1000)
+    return () => window.clearInterval(t)
+  }, [mine, left, m.created_at])
   const html = useMemo(() => (m.deleted_at ? '' : messageHtml(m, me, myGroups)), [m, me, myGroups])
   const grouped = useMemo(() => {
     const g = new Map<string, string[]>()
@@ -116,6 +126,20 @@ export default function MessageItem({
         <p className="text-sm text-slate-400 italic">Message deleted</p>
       ) : (
         <div className="rich-text rich-text-readonly chat-body text-sm break-words" dangerouslySetInnerHTML={{ __html: html }} />
+      )}
+      {mine && left > 0 && onUnsend && !m.deleted_at && (
+        <Can permission="chat.unsend" level="edit">
+          <button
+            type="button"
+            className="mt-0.5 rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+            onClick={(e) => {
+              e.stopPropagation()
+              onUnsend()
+            }}
+          >
+            Unsend ({left} s)
+          </button>
+        </Can>
       )}
       <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-slate-400">
         {!showHeader && <span className="opacity-0 group-hover:opacity-100">{clockTime(m.created_at)}</span>}

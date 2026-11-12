@@ -11,7 +11,7 @@ import Icon from '../Icon'
 import { buttonClass, Field, inputClass, Modal, narrowInputClass, secondaryButtonClass } from '../form'
 
 const NOTE_WIDTH = 240 // px
-const COLUMNS = 'id, title, body, colour, checklist, pos_x, pos_y, z, remind_at, reminded_at, updated_at'
+const COLUMNS = 'id, title, body, colour, checklist, pos_x, pos_y, z, remind_at, reminded_at, updated_at, archived, archived_at'
 const newId = () => Math.random().toString(36).slice(2, 10)
 
 /** Wide screens get the board you can arrange; phones get a simple list. */
@@ -31,7 +31,16 @@ function useWide() {
  * Drag a note by its top strip to arrange it; the place is saved.
  */
 export default function MyNotes({ highlightId }: { highlightId: string | null }) {
-  const [notes, setNotes] = useState<PersonalNote[] | null>(null)
+  const [all, setAll] = useState<PersonalNote[] | null>(null)
+  const [showArchived, setShowArchived] = useState(false)
+  // The board shows notes that are not archived; "Archived Notes" shows the rest.
+  const notes = all?.filter((n) => !n.archived) ?? null
+  const archived = (all ?? []).filter((n) => n.archived).sort((a, b) => (b.archived_at ?? '').localeCompare(a.archived_at ?? ''))
+  const setNotes = (fn: (list: PersonalNote[] | null) => PersonalNote[] | null) => setAll((list) => {
+    const active = list?.filter((n) => !n.archived) ?? null
+    const next = fn(active)
+    return next ? [...next, ...(list ?? []).filter((n) => n.archived)] : list
+  })
   const [editing, setEditing] = useState<PersonalNote | 'new' | null>(null)
   const boardRef = useRef<HTMLDivElement>(null)
   const drag = useRef<{ id: string; dx: number; dy: number; moved: boolean } | null>(null)
@@ -41,7 +50,7 @@ export default function MyNotes({ highlightId }: { highlightId: string | null })
     if (!supabase) return
     const { data, error } = await supabase.from('personal_notes').select(COLUMNS).order('pos_y').order('pos_x')
     if (error) return toast.error(friendlyError(error))
-    setNotes((data as PersonalNote[]) ?? [])
+    setAll((data as PersonalNote[]) ?? [])
   }, [])
   useEffect(() => {
     // load() only sets state after the database answers.
@@ -62,11 +71,18 @@ export default function MyNotes({ highlightId }: { highlightId: string | null })
     }
   }
 
+  async function archive(n: PersonalNote, value: boolean) {
+    const { error } = await supabase!.from('personal_notes').update({ archived: value }).eq('id', n.id)
+    if (error) return toast.error(friendlyError(error))
+    toast.success(value ? 'Note archived. Find it under Archived Notes.' : 'Note restored to your board.')
+    void load()
+  }
+
   async function remove(n: PersonalNote) {
     if (!(await confirmAction(confirmText.permanentlyDelete('this note'), { confirmLabel: ACTION.permanentlyDelete, danger: true }))) return
     const { error } = await supabase!.from('personal_notes').delete().eq('id', n.id)
     if (error) return toast.error(friendlyError(error))
-    setNotes((all) => all?.filter((x) => x.id !== n.id) ?? null)
+    setAll((list) => list?.filter((x) => x.id !== n.id) ?? null)
   }
 
   // Dragging (pointer events work for mouse, pen and touch).
@@ -108,13 +124,39 @@ export default function MyNotes({ highlightId }: { highlightId: string | null })
           <Icon name="lock" /> Only you can see these notes.{wide ? ' Drag a note by its top strip to arrange the board.' : ''}
         </p>
         <Can permission="notices.my_notes" level="edit">
-          <button type="button" className={buttonClass} onClick={() => setEditing('new')}>
-            New Note
-          </button>
+          <div className="flex gap-2">
+            <button type="button" className={secondaryButtonClass} aria-pressed={showArchived} onClick={() => setShowArchived((v) => !v)}>
+              {showArchived ? 'Back to My Board' : `Archived Notes${archived.length ? ` (${archived.length})` : ''}`}
+            </button>
+            {!showArchived && (
+              <button type="button" className={buttonClass} onClick={() => setEditing('new')}>
+                New Note
+              </button>
+            )}
+          </div>
         </Can>
       </div>
 
-      {notes === null ? (
+      {showArchived ? (
+        archived.length === 0 ? (
+          <div className="rounded-xl border-4 border-slate-200 bg-white p-10 text-center text-sm text-slate-500">You have no archived notes.</div>
+        ) : (
+          <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,15rem),1fr))]">
+            {archived.map((n) => (
+              <NoteCard
+                key={n.id}
+                note={n}
+                highlight={n.id === highlightId}
+                onRestore={() => archive(n, false)}
+                onDelete={() => remove(n)}
+                onToggle={() => undefined}
+              />
+            ))}
+          </div>
+        )
+      ) : null}
+
+      {showArchived ? null : notes === null ? (
         <p className="text-sm text-slate-500">Loading…</p>
       ) : notes.length === 0 ? (
         <div className="rounded-xl border-4 border-slate-200 bg-white p-10 text-center text-sm text-slate-500">You have no notes yet. Select New Note to add one.</div>
@@ -134,7 +176,7 @@ export default function MyNotes({ highlightId }: { highlightId: string | null })
               style={{ position: 'absolute', left: `${n.pos_x}%`, top: n.pos_y, width: NOTE_WIDTH, zIndex: n.z, '--tilt': tiltOf(n.id) } as CSSProperties}
               onGrab={(e) => onPointerDown(e, n)}
               onEdit={() => setEditing(n)}
-              onDelete={() => remove(n)}
+              onArchive={() => archive(n, true)}
               onToggle={(item) => update(n.id, { checklist: n.checklist.map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)) })}
             />
           ))}
@@ -147,7 +189,7 @@ export default function MyNotes({ highlightId }: { highlightId: string | null })
               note={n}
               highlight={n.id === highlightId}
               onEdit={() => setEditing(n)}
-              onDelete={() => remove(n)}
+              onArchive={() => archive(n, true)}
               onToggle={(item) => update(n.id, { checklist: n.checklist.map((i) => (i.id === item.id ? { ...i, done: !i.done } : i)) })}
             />
           ))}
@@ -178,6 +220,8 @@ function NoteCard({
   highlight,
   onGrab,
   onEdit,
+  onArchive,
+  onRestore,
   onDelete,
   onToggle,
 }: {
@@ -185,8 +229,11 @@ function NoteCard({
   style?: CSSProperties
   highlight: boolean
   onGrab?: (e: ReactPointerEvent) => void
-  onEdit: () => void
-  onDelete: () => void
+  onEdit?: () => void
+  /** Board: Archive. Archived Notes view: Restore and Permanently Delete. */
+  onArchive?: () => void
+  onRestore?: () => void
+  onDelete?: () => void
   onToggle: (item: ChecklistItem) => void
 }) {
   const c = colourOf(n.colour)
@@ -207,12 +254,26 @@ function NoteCard({
         <span className="truncate font-semibold text-slate-900">{n.title || 'Note'}</span>
         <span className="flex shrink-0 gap-2 text-xs" onPointerDown={(e) => e.stopPropagation()}>
           <Can permission="notices.my_notes" level="edit">
-            <button type="button" className="underline" onClick={onEdit}>
-              {ACTION.edit}
-            </button>
-            <button type="button" className="text-red-700 underline" onClick={onDelete}>
-              Delete
-            </button>
+            {onEdit && (
+              <button type="button" className="underline" onClick={onEdit}>
+                {ACTION.edit}
+              </button>
+            )}
+            {onArchive && (
+              <button type="button" className="underline" onClick={onArchive}>
+                {ACTION.archive}
+              </button>
+            )}
+            {onRestore && (
+              <button type="button" className="underline" onClick={onRestore}>
+                {ACTION.restore}
+              </button>
+            )}
+            {onDelete && (
+              <button type="button" className="text-red-700 underline" onClick={onDelete}>
+                {ACTION.permanentlyDelete}
+              </button>
+            )}
           </Can>
         </span>
       </div>

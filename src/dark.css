@@ -38,7 +38,7 @@
   html.dark :is(.bg-violet-50):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(60.6% 0.25 292.717) 14%, #131c2e); }
   html.dark :is(.bg-violet-100):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(60.6% 0.25 292.717) 22%, #131c2e); }
   html.dark :is(.bg-blue-50, .hover\:bg-blue-50:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(62.3% 0.214 259.815) 14%, #131c2e); }
-  html.dark :is(.bg-blue-100):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(62.3% 0.214 259.815) 22%, #131c2e); }
+  html.dark :is(.bg-blue-100, .hover\:bg-blue-100:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(62.3% 0.214 259.815) 22%, #131c2e); }
   html.dark :is(.bg-purple-100):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(62.7% 0.265 303.9) 22%, #131c2e); }
   html.dark :is(.bg-red-50, .hover\:bg-red-50:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(63.7% 0.237 25.331) 14%, #131c2e); }
   html.dark :is(.bg-red-100, .hover\:bg-red-100:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(63.7% 0.237 25.331) 22%, #131c2e); }
@@ -50,8 +50,9 @@
   html.dark :is(.bg-green-50):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(72.3% 0.219 149.579) 14%, #131c2e); }
   html.dark :is(.bg-green-100):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(72.3% 0.219 149.579) 22%, #131c2e); }
   html.dark :is(.bg-amber-50):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 14%, #131c2e); }
-  html.dark :is(.bg-amber-100):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 22%, #131c2e); }
+  html.dark :is(.bg-amber-100, .hover\:bg-amber-100:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 22%, #131c2e); }
   html.dark :is(.bg-amber-200):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 32%, #131c2e); }
+  html.dark :is(.hover\:bg-amber-300:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 42%, #131c2e); }
   html.dark :is(.border-slate-100, .divide-slate-100 > :not(:last-child)):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #1a2436; }
   html.dark :is(.border-slate-200):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #263247; }
   html.dark :is(.border-slate-300, .divide-slate-300 > :not(:last-child), .hover\:border-slate-300:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #334155; }
@@ -60,6 +61,7 @@
   html.dark :is(.border-slate-800):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #cbd5e1; }
   html.dark :is(.border-slate-900):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #e2e8f0; }
   html.dark :is(.border-white\/60):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, #263247 60%, transparent); }
+  html.dark :is(.border-slate-900\/40):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, #e2e8f0 40%, transparent); }
   html.dark :is(.border-violet-200):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(60.6% 0.25 292.717) 45%, #131c2e); }
   html.dark :is(.border-blue-200):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(62.3% 0.214 259.815) 45%, #131c2e); }
   html.dark :is(.border-red-200, .border-red-300, .divide-red-100 > :not(:last-child)):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(63.7% 0.237 25.331) 45%, #131c2e); }

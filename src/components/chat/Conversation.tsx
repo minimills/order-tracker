@@ -23,7 +23,11 @@ import {
   type Person,
   type Reaction,
   type Status,
+  type TimeOff,
+  TIME_OFF_WORDS,
 } from '../../lib/chat'
+import { showDate } from '../../lib/dates'
+import { usePermissions } from '../../lib/permissions'
 import { friendlyError } from '../../lib/format'
 import { isEmptyRichText, richTextToPlain } from '../../lib/richText'
 import { supabase } from '../../lib/supabase'
@@ -71,6 +75,7 @@ export default function Conversation({
   const scroller = useRef<HTMLDivElement>(null)
 
   const names = useMemo(() => new Map(people.map((p) => [p.email, p.name])), [people])
+  const canSeeTimeOff = usePermissions().can('chat.time_off')
 
   const load = useCallback(
     async (older?: string) => {
@@ -234,6 +239,13 @@ export default function Conversation({
   const byId = useMemo(() => new Map([...extra, ...messages.map((x) => [x.id, x] as const)]), [messages, extra])
   const canPost = row?.can_post ?? false
 
+  // People here who are on approved time off (from the time-off step, when it is in place).
+  const [away, setAway] = useState<TimeOff[]>([])
+  useEffect(() => {
+    if (!supabase || !canSeeTimeOff) return
+    supabase.rpc('chat_time_off', { p_conv: id }).then(({ data }) => setAway((data as TimeOff[] | null) ?? []))
+  }, [id, canSeeTimeOff])
+
   return (
     <>
       <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
@@ -325,6 +337,16 @@ export default function Conversation({
                     }}
                     onPin={() => void run(() => supabase!.rpc('pin_chat_message', { p_id: m.id, p_pinned: !m.pinned_at }))}
                     onReact={(emoji) => void run(() => supabase!.rpc('toggle_chat_reaction', { p_id: m.id, p_emoji: emoji }))}
+                    onUnsend={() =>
+                      void (async () => {
+                        const { error } = await supabase!.rpc('unsend_chat_message', { p_id: m.id })
+                        if (error) return toast.error(friendlyError(error))
+                        setMessages((list) => list.filter((x) => x.id !== m.id))
+                        toast.success('Message unsent.')
+                        void load()
+                        onChanged()
+                      })()
+                    }
                     onJump={(target) => {
                       setHighlight(target)
                       document.getElementById(`msg-${target}`)?.scrollIntoView({ block: 'center', behavior: 'smooth' })
@@ -341,6 +363,18 @@ export default function Conversation({
             {typers.length > 0 && `${typers.join(', ')} ${typers.length === 1 ? 'is' : 'are'} typing…`}
           </div>
 
+          {canPost && away.length > 0 && (
+            <Can permission="chat.time_off">
+              <div className="border-t border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+                {away.map((p) => (
+                  <p key={p.email}>
+                    {p.name} is on {TIME_OFF_WORDS[p.kind] ?? p.kind}
+                    {p.return_date ? ` and may not read this until ${showDate(p.return_date, 'EEE, MMM d')}.` : ' and may not read this right away.'}
+                  </p>
+                ))}
+              </div>
+            </Can>
+          )}
           {canPost ? (
             <Can anyOf={['chat.send', 'chat.channels.post']} level="edit">
               <div className="border-t border-slate-200 p-2" style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom))' }}>

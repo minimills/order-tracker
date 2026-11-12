@@ -384,6 +384,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'notices.archive', label: 'Archive: expired and archived notices, with search', levels: V, requires: 'notices', db: true },
       { key: 'notices.holidays', label: 'Upcoming holidays and office closures panel', levels: V, requires: 'notices' },
       { key: 'notices.banner', label: 'Red banner at the top of every page for Urgent notices until they acknowledge them', levels: V, requires: 'notices', needs: ['notices.acknowledge'] },
+      { key: 'notices.closures', label: 'Closure and delay alerts: the warning banner on every page (office closed, delayed opening) and their updates (everyone receives them by app, phone and email)', levels: V, db: true },
+      { key: 'notices.closures.post', label: 'Post closure and delay alerts, post updates and end them (notifies everyone)', levels: E, requires: 'notices', db: true },
     ],
     'Posting notices': [
       { key: 'notices.post.everyone', label: 'Post to everyone, or to any mix of people, groups and departments', levels: E, requires: 'notices', db: true },
@@ -407,7 +409,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'notices.events.calendar', label: 'Add to My Calendar (Apple, Google or Outlook)', levels: V, requires: 'notices.events' },
     ],
     'My notes': [
-      { key: 'notices.my_notes', label: 'My notes: private sticky notes with checklists and reminders (nobody else can see them, admins included)', levels: E, requires: 'notices', db: true },
+      { key: 'notices.my_notes', label: 'My notes: private sticky notes with checklists and reminders, archive and restore (nobody else can see them, admins included)', levels: E, requires: 'notices', db: true },
     ],
   }),
 
@@ -461,9 +463,12 @@ export const CATALOG: PermissionItem[] = [
       { key: 'chat.groups', label: 'Start group chats (name, people; add, remove, rename, leave)', levels: E, requires: 'chat', db: true },
       { key: 'chat.channels.post', label: 'Write in department, group and other channels', levels: E, requires: 'chat', db: true },
       { key: 'chat.pin', label: 'Pin and unpin messages', levels: E, requires: 'chat', db: true },
+      { key: 'chat.unsend', label: 'Unsend their own message within 30 seconds (removed for everyone, no trace)', levels: E, requires: 'chat', db: true },
+      { key: 'chat.list_actions', label: 'Their own conversation list: Archive, Hide, Clear chat, Delete for me, Mark read / unread (swipe on a phone, buttons on a computer)', levels: E, requires: 'chat', db: true },
+      { key: 'chat.time_off', label: 'Notice above the message box when someone in the conversation is on approved time off', levels: V, requires: 'chat', db: true },
       { key: 'chat.search', label: 'Search across their conversations', levels: V, requires: 'chat', db: true },
       { key: 'chat.presence', label: 'See who is online or away', levels: V, requires: 'chat' },
-      { key: 'chat.members', label: 'Conversation details (members, notifications for the conversation)', levels: V, requires: 'chat' },
+      { key: 'chat.members', label: 'Conversation details (who started it and when, members, shared links, pinned messages, notifications for the conversation)', levels: V, requires: 'chat' },
       { key: 'chat.attachments', label: 'Photos and files in chat (available in a future update)', levels: V, requires: 'chat' },
     ],
   }),
@@ -509,6 +514,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'settings.push', label: 'Phone notifications on their own phone or computer (enable, test, disable)', levels: E, requires: 'settings', db: true },
       { key: 'settings.quiet_hours', label: 'Quiet hours: no phone notifications at night (edit their own)', levels: E, requires: 'settings', db: true },
       { key: 'settings.chat_status', label: 'Hide their online / away status in chat', levels: E, requires: 'settings', db: true },
+      { key: 'settings.chat_swipe', label: 'Choose what swiping a conversation left or right does in chat', levels: E, requires: 'settings', needs: ['chat.list_actions'], db: true },
       { key: 'settings.signature', label: 'My signature: upload a scanned signature and sign with it (“Use my saved signature”); only they can see or use it (edit: upload, replace, remove)', levels: VE, requires: 'settings', db: true },
     ],
     Alerts: [
