@@ -11,7 +11,7 @@ import SaveTemplateDialog from '../components/boards/SaveTemplateDialog'
 import ShareDialog from '../components/boards/ShareDialog'
 import { inputClass, narrowInputClass, secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
-import { currentStageItems, loadBoard, type BoardData, type Card } from '../lib/boards'
+import { currentStageItems, loadBoard, stampNow, type BoardData, type Card } from '../lib/boards'
 import { useDepartments } from '../lib/useDepartments'
 import { todayISO } from '../lib/dates'
 import { friendlyError } from '../lib/format'
@@ -46,10 +46,11 @@ export default function BoardPage() {
   const [personFilter, setPersonFilter] = useState('')
   const seesComments = can('boards.card.comments')
   const seesLinks = can('boards.card.link')
+  const seesTiming = can('boards.card.timing')
 
   const load = useCallback(async () => {
     try {
-      const d = await loadBoard(id, { comments: seesComments })
+      const d = await loadBoard(id, { comments: seesComments, timing: seesTiming })
       if (!d.board) {
         setError('This board could not be found, or it has not been shared with you.')
         return
@@ -74,7 +75,7 @@ export default function BoardPage() {
     } catch (e) {
       setError(friendlyError(e as Error))
     }
-  }, [id, seesComments, seesLinks])
+  }, [id, seesComments, seesLinks, seesTiming])
 
   useEffect(() => {
     // load() only sets state after the database answers.
@@ -157,6 +158,18 @@ export default function BoardPage() {
     load()
   }
 
+  // One click on the round circle: complete (Start and Finish together if not started) or incomplete again.
+  async function toggleComplete(card: Card) {
+    if (!supabase) return
+    const now = stampNow()
+    const patch = card.finished_at ? { finished_at: null } : card.started_at ? { finished_at: now } : { started_at: now, finished_at: now }
+    setData((d) => d && { ...d, cards: d.cards.map((c) => (c.id === card.id ? { ...c, ...patch } : c)) })
+    const { error: err } = await supabase.from('board_cards').update(patch).eq('id', card.id)
+    if (err) toast.error(friendlyError(err))
+    load()
+  }
+  const canComplete = level >= 2 && can('boards.card.complete', 'edit')
+
   async function addCard(e: FormEvent, stageId: string) {
     e.preventDefault()
     if (!supabase || !newTitle.trim()) return
@@ -168,7 +181,14 @@ export default function BoardPage() {
 
   async function archiveBoard() {
     if (!supabase) return
-    if (!board.archived && !(await confirmAction(`Archive the board “${board.name}”? It is removed from the Boards page and can be restored later.`, { confirmLabel: 'Archive' }))) return
+    if (
+      !board.archived &&
+      !(await confirmAction(
+        `Archive the board “${board.name}”? It is removed from the Boards page and can be restored later. While archived, only its creator and the people who can open it now will see it.`,
+        { confirmLabel: 'Archive' },
+      ))
+    )
+      return
     const { error: err } = await supabase.from('boards').update({ archived: !board.archived }).eq('id', board.id)
     if (err) return toast.error(friendlyError(err))
     toast.success(board.archived ? 'Board restored.' : 'Board archived.')
@@ -306,7 +326,9 @@ export default function BoardPage() {
                       serviceCall={data.serviceCalls.find((c) => c.card_id === card.id) ?? null}
                       stageStep={stage.step}
                       comments={data.commentCounts[card.id] ?? 0}
-                      linkText={[card.order_id, card.customer_id, card.machine_id].map((x) => (x ? links[x] : null)).filter(Boolean).join(' · ') || null}
+                      linkText={[...[card.order_id, card.customer_id, card.machine_id].map((x) => (x ? links[x] : null)), card.link_text].filter(Boolean).join(' · ') || null}
+                      pauses={data.pauses}
+                      onToggleComplete={canComplete ? () => toggleComplete(card) : null}
                       today={today}
                       soonDays={board.due_soon_days}
                       canOpen={can('boards.card.open')}

@@ -5,6 +5,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { badgeClass, orderBadges } from '../components/board/badges'
 import MoveDialog, { type MoveRequest } from '../components/board/MoveDialog'
+import { progressText, type MachineProgress } from '../lib/boards'
 import Can from '../components/Can'
 import { buttonClass, secondaryButtonClass, Section } from '../components/form'
 import ActivityList from '../components/order/ActivityList'
@@ -100,6 +101,7 @@ export default function OrderPage() {
   useBreadcrumbs(order && [{ label: 'Orders', to: '/orders' }, { label: `Order ${order.order_code}` }])
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [machines, setMachines] = useState<Machine[]>([])
+  const [progress, setProgress] = useState<Map<string, MachineProgress>>(new Map())
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [crates, setCrates] = useState<NumberedCrate[]>([])
   const [checks, setChecks] = useState<Map<string, ChecklistStatusRow>>(new Map())
@@ -165,6 +167,11 @@ export default function OrderPage() {
     setPayments((p.data as PaymentRow[]) ?? [])
     setCrates(cr.byOrder.get(id) ?? [])
     setChecks(new Map(((ck.data as ChecklistStatusRow[] | null) ?? []).map((r) => [r.machine_id, r])))
+    // Production stage and % of each machine (0038).
+    if (can('order.machines.progress')) {
+      const { data: pr } = await supabase.from('machine_production_progress').select('*').eq('order_id', id)
+      setProgress(new Map(((pr as MachineProgress[] | null) ?? []).map((r) => [r.machine_id, r])))
+    }
     if (seesProduction) {
       const { data: pb } = await supabase.from('boards').select('id').eq('order_id', id).eq('purpose', 'production').maybeSingle()
       if (pb) {
@@ -175,7 +182,7 @@ export default function OrderPage() {
     setError(null)
     setLoading(false)
     setReloadKey((k) => k + 1)
-  }, [id, seesPayments, seesCrating, seesChecks, seesProduction])
+  }, [id, seesPayments, seesCrating, seesChecks, seesProduction, can])
 
   useEffect(() => {
     // load() only sets state after the database answers.
@@ -447,7 +454,7 @@ export default function OrderPage() {
                                 onChange={() => toggleReady(m)}
                               />
                               <span className={m.ready ? 'font-medium text-green-700' : 'text-slate-500'}>
-                                {m.ready ? 'Built' : 'Not built'}
+                                {m.ready ? 'Built' : progress.has(m.id) && can('order.machines.progress') ? progressText(progress.get(m.id)!) : 'Not built'}
                               </span>
                             </label>
                           </Can>

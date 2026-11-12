@@ -69,6 +69,26 @@ export default function DepartmentDelaysPage() {
   const shown = useMemo(() => results.filter((r) => r.done_on >= from), [results, from])
   const months = useMemo(() => [...new Set(shown.map((r) => r.done_on.slice(0, 7)))].sort().reverse(), [shown])
 
+  // Summary boxes: the whole period, plus the worst department this month.
+  const summary = useMemo(() => {
+    const avg = (xs: number[]) => (xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null)
+    const early = shown.filter((r) => r.days_late < 0).map((r) => -r.days_late)
+    const late = shown.filter((r) => r.days_late > 0).map((r) => r.days_late)
+    const thisMonth = today.slice(0, 7)
+    const worst = DEPTS.map((d) => ({ dept: d, ...summarize(results.filter((r) => r.dept === d && r.done_on.startsWith(thisMonth))) }))
+      .filter((x) => x.onTime !== null)
+      .sort((a, b) => a.onTime! - b.onTime! || (b.avgLate ?? 0) - (a.avgLate ?? 0))[0]
+    return {
+      onTime: shown.length ? Math.round(((shown.length - late.length) / shown.length) * 100) : null,
+      avgEarly: avg(early),
+      avgLate: avg(late),
+      earlyCount: early.length,
+      lateCount: late.length,
+      worst: worst && worst.onTime! < 100 ? worst : null,
+      allOnTimeThisMonth: Boolean(worst && worst.onTime === 100),
+    }
+  }, [shown, results, today])
+
   return (
     <Can permission="reports.department_delays">
       <div className="mx-auto max-w-5xl space-y-5">
@@ -103,6 +123,34 @@ export default function DepartmentDelaysPage() {
           <p className="text-center text-slate-500">Loading…</p>
         ) : (
           <>
+            <Can permission="reports.department_delays.summary">
+              <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))]">
+                <SummaryBox label="On time" value={summary.onTime === null ? '—' : `${summary.onTime}%`} hint={`${shown.length} finished in this period`} tone={summary.onTime !== null && summary.onTime < 80 ? 'bad' : 'good'} />
+                <SummaryBox
+                  label="Average days early"
+                  value={summary.avgEarly === null ? '—' : String(summary.avgEarly)}
+                  hint={summary.earlyCount ? `${summary.earlyCount} finished early` : 'Nothing finished early'}
+                />
+                <SummaryBox
+                  label="Average days late"
+                  value={summary.avgLate === null ? '—' : String(summary.avgLate)}
+                  hint={summary.lateCount ? `${summary.lateCount} finished late` : 'Nothing finished late'}
+                  tone={summary.lateCount ? 'bad' : undefined}
+                />
+                <SummaryBox
+                  label="Worst department this month"
+                  value={summary.worst ? STEP_LABEL[summary.worst.dept] : '—'}
+                  hint={
+                    summary.worst
+                      ? `${summary.worst.onTime}% on time (${summary.worst.count} finished)`
+                      : summary.allOnTimeThisMonth
+                        ? 'Every department was on time this month.'
+                        : 'No work finished this month yet.'
+                  }
+                  tone={summary.worst ? 'bad' : undefined}
+                />
+              </div>
+            </Can>
             <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs text-slate-500">
@@ -187,5 +235,17 @@ export default function DepartmentDelaysPage() {
         )}
       </div>
     </Can>
+  )
+}
+
+/** One summary box at the top of the report. */
+/* @layout-helper */
+function SummaryBox({ label, value, hint, tone }: { label: string; value: string; hint: string; tone?: 'good' | 'bad' }) {
+  return (
+    <div className="min-w-0 rounded-lg border border-slate-200 bg-white p-3">
+      <div className="text-xs text-slate-500">{label}</div>
+      <div className={`mt-0.5 truncate text-2xl font-semibold tabular-nums ${tone === 'bad' ? 'text-red-700' : tone === 'good' ? 'text-green-700' : ''}`}>{value}</div>
+      <div className="text-xs text-slate-500">{hint}</div>
+    </div>
   )
 }

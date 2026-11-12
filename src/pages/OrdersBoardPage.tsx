@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import MoveDialog, { type MoveRequest } from '../components/board/MoveDialog'
 import { ChipLegend, type ChipMachine } from '../components/board/MachineChips'
+import { progressText, type MachineProgress } from '../lib/boards'
 import OrderCard from '../components/board/OrderCard'
 import { nextDeadline, orderPromised } from '../lib/schedule'
 import { useServiceInfo } from '../lib/service'
@@ -94,12 +95,25 @@ export default function OrdersBoardPage() {
       const { data: types } = await supabase!.from('machine_types').select('id, code')
       const codeOf = new Map(((types as { id: string; code: string | null }[]) ?? []).map((t) => [t.id, t.code]))
       const ids = all.map((o) => o.id)
+      // Production stage and % of machines not built yet (0038).
+      const prog = new Map<string, MachineProgress>()
+      if (can('order.machines.progress')) {
+        for (let i = 0; i < ids.length; i += 150) {
+          const { data: p } = await supabase!.from('machine_production_progress').select('*').in('order_id', ids.slice(i, i + 150))
+          for (const r of (p as MachineProgress[]) ?? []) prog.set(r.machine_id, r)
+        }
+      }
       for (let i = 0; i < ids.length; i += 150) {
         const m = await fetchAll<ChipMachine>(() =>
           supabase!.from('order_machine_status').select('*').in('order_id', ids.slice(i, i + 150)).order('id'),
         )
         machineError ??= m.error
-        for (const row of m.data) byOrder.set(row.order_id, [...(byOrder.get(row.order_id) ?? []), { ...row, code: codeOf.get(row.machine_type_id) ?? null }])
+        for (const row of m.data) byOrder.set(row.order_id, [...(byOrder.get(row.order_id) ?? []), {
+          ...row,
+          code: codeOf.get(row.machine_type_id) ?? null,
+          progress: prog.has(row.id) ? progressText(prog.get(row.id)!) : null,
+          progressPercent: prog.get(row.id)?.percent ?? null,
+        }])
       }
     }
     const error = open.error ?? shipped.error ?? machineError
@@ -107,7 +121,7 @@ export default function OrdersBoardPage() {
     setMachines(byOrder)
     setOrders(all)
     setLoading(false)
-  }, [seesChips])
+  }, [seesChips, can])
 
   useEffect(() => {
     // load() only sets state after the database answers.

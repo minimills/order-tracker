@@ -91,7 +91,7 @@ export function checklistStatusText(s: Pick<ChecklistStatusRow, 'status' | 'tota
       s.last_worked_by_name ? `, last worked on by ${s.last_worked_by_name} on ${showDateTime(s.last_worked_at)}` : ''
     }`
   }
-  return s.ready ? 'Not started' : 'Not started (machine not built yet)'
+  return 'Not started'
 }
 
 /** Downloads a signature picture and returns a link the page can show (or null). */

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
+import Icon from '../components/Icon'
 import { narrowInputClass } from '../components/form'
 import { formatDuration } from '../lib/boards'
 import { showDate, todayISO } from '../lib/dates'
@@ -178,6 +179,11 @@ export default function BuildTimesPage() {
                   See department delays against deadlines
                 </Link>
               </p>
+            </Can>
+            <Can permission="admin.machine_types" level="edit">
+              <Link to="/admin/machine-types?find=build-times" className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-50">
+                <Icon name="pencil" /> Edit Build Times
+              </Link>
             </Can>
           </div>
           <Can permission="reports.build_times.filters">

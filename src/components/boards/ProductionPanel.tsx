@@ -1,13 +1,15 @@
 // @permission-scope boards.card.open
 import { useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
+import { friendlyError } from '../../lib/format'
 import { activityTime } from '../../lib/activity'
 import { formatDuration, secondsBetween, type BoardData, type Card, type StageTime } from '../../lib/boards'
 import { supabase } from '../../lib/supabase'
 import { useDepartments } from '../../lib/useDepartments'
 import Can from '../Can'
 import SerialNumber from '../SerialNumber'
-import { secondaryButtonClass } from '../form'
+import { buttonClass, secondaryButtonClass } from '../form'
 
 /**
  * Production details on a machine or leftover card: the machine, the order,
@@ -16,6 +18,8 @@ import { secondaryButtonClass } from '../form'
 export default function ProductionPanel({ card, data, onOpenCard }: { card: Card; data: BoardData; onOpenCard?: (id: string) => void }) {
   const { departments } = useDepartments()
   const [times, setTimes] = useState<StageTime[]>([])
+  const [starting, setStarting] = useState(false)
+  const navigate = useNavigate()
   const stage = data.stages.find((s) => s.id === card.stage_id)
   const machine = data.machines.find((m) => m.id === card.machine_id) ?? null
   const machineCard = card.card_kind === 'leftover' ? data.cards.find((c) => c.id === card.leftover_of) : null
@@ -53,11 +57,33 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
       )}
 
       {card.card_kind === 'machine' && stage?.step === 'final_check' && card.machine_id && (
-        <Can permission="checklist">
-          <Link to={`/checklists/${card.machine_id}`} className={`${secondaryButtonClass} mt-2 inline-block`}>
-            Open Final Check
-          </Link>
-        </Can>
+        <div className="mt-2">
+          {machine?.checklist_status === 'in_progress' || machine?.checklist_status === 'signed' ? (
+            <Can permission="checklist">
+              <Link to={`/checklists/${card.machine_id}`} className={`${secondaryButtonClass} inline-block`}>
+                {machine.checklist_status === 'signed' ? 'View Final Check' : 'Continue Final Check'}
+              </Link>
+            </Can>
+          ) : (
+            <Can permission="checklist.start" level="edit">
+              <button
+                type="button"
+                className={buttonClass}
+                disabled={starting || !supabase}
+                onClick={async () => {
+                  setStarting(true)
+                  const { error } = await supabase!.rpc('start_checklist', { p_machine_id: card.machine_id })
+                  setStarting(false)
+                  if (error) return toast.error(friendlyError(error))
+                  navigate(`/checklists/${card.machine_id}`)
+                }}
+              >
+                {starting ? 'Starting…' : 'Start Final Check'}
+              </button>
+            </Can>
+          )}
+          <p className="mt-1 text-xs text-slate-600">When the final check is signed, the machine is marked as built automatically.</p>
+        </div>
       )}
 
       {machineCard && (

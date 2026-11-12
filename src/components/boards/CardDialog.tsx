@@ -1,9 +1,10 @@
 // @permission-scope boards.card.open
-import { useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { Fragment, useCallback, useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { useAuth } from '../../lib/auth'
 import {
+  activeSeconds,
   averageFor,
   DUE_TONE,
   dueState,
@@ -11,6 +12,9 @@ import {
   eventText,
   formatDuration,
   initials,
+  LABEL_COLOURS,
+  openPause,
+  pausesOf,
   progress,
   secondsBetween,
   taskKey,
@@ -21,6 +25,7 @@ import {
   type CardEvent,
   type ChecklistItem,
   type Comment,
+  type Pause,
   type TaskTime,
 } from '../../lib/boards'
 import { activityTime } from '../../lib/activity'
@@ -33,9 +38,12 @@ import RichText from '../RichText'
 import RichTextEditor from '../RichTextEditor'
 import { buttonClass, inputClass, narrowInputClass, secondaryButtonClass } from '../form'
 import LinkPicker from './LinkPicker'
+import CardNavigator from './CardNavigator'
+import ColourPicker from './ColourPicker'
+import CustomerLabelPicker from './CustomerLabelPicker'
 import ProductionPanel from './ProductionPanel'
 import ServiceCallPanel from './ServiceCallPanel'
-import { confirmAction } from '../../lib/confirm'
+import { askText, confirmAction } from '../../lib/confirm'
 import Icon from '../Icon'
 
 type Props = { cardId: string; data: BoardData; level: BoardLevel; onClose: () => void; onChanged: () => void; onOpenCard?: (id: string) => void }
@@ -74,6 +82,10 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
   const [newList, setNewList] = useState('')
   const [newItem, setNewItem] = useState<Record<string, string>>({})
   const [busy, setBusy] = useState(false)
+  const [labelName, setLabelName] = useState('')
+  const [labelColour, setLabelColour] = useState(LABEL_COLOURS[5])
+  const [subFor, setSubFor] = useState<string | null>(null)
+  const [subText, setSubText] = useState('')
 
   const thisCard = data.cards.find((c) => c.id === cardId)
   const lists = data.checklists
@@ -177,8 +189,56 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
     if (await run(() => supabase!.from('board_comments').insert({ card_id: card!.id, body: newComment.trim() }))) setNewComment('')
   }
 
-  const timing = (started: string | null, finished: string | null) =>
-    started && finished ? formatDuration(secondsBetween(started, finished)) : started ? `running for ${formatDuration(secondsBetween(started, new Date().toISOString()))}` : null
+  /** Active time (pauses not counted): "1 h 15 min", or "running for …" / "paused at …" while not finished. */
+  const timing = (started: string | null, finished: string | null, ps: Pause[]) => {
+    if (!started) return null
+    const secs = formatDuration(activeSeconds(started, finished, ps))
+    if (finished) return secs
+    return ps.some((p) => !p.resumed_at && p.paused_at >= started) ? `paused at ${secs}` : `running for ${secs}`
+  }
+  const cardPauses = pausesOf(data.pauses, card.id, null)
+  const pauseTimer = async (itemId: string | null) => {
+    const note = await askText('Pause the timer. Add a note if you like, for example “waiting for parts”.', { label: 'Note (optional)', confirmLabel: 'Pause' })
+    if (note === null) return
+    run(() => supabase!.rpc('pause_board_timer', { p_card: card.id, p_item: itemId, p_note: note.trim() || null }))
+  }
+  const resumeTimer = (itemId: string | null) => run(() => supabase!.rpc('resume_board_timer', { p_card: card.id, p_item: itemId }))
+  /** Pause history of one timer. */
+  const pauseList = (ps: Pause[]) =>
+    ps.length > 0 && (
+      <ul className="mt-1 space-y-0.5 text-[11px] text-slate-600">
+        {ps.map((p) => (
+          <li key={p.id}>
+            Paused {activityTime.format(new Date(p.paused_at))}
+            {p.paused_by_name && ` by ${p.paused_by_name}`}
+            {p.resumed_at ? ` · resumed ${activityTime.format(new Date(p.resumed_at))} (${formatDuration(secondsBetween(p.paused_at, p.resumed_at))})` : ' · still paused'}
+            {p.note && <span className="text-slate-800"> · {p.note}</span>}
+          </li>
+        ))}
+      </ul>
+    )
+
+  async function addLabel(e: FormEvent) {
+    e.preventDefault()
+    if (!supabase || !labelName.trim()) return
+    setBusy(true)
+    const { data: id, error } = await supabase.rpc('add_board_label', { p_board: board.id, p_name: labelName.trim(), p_colour: labelColour })
+    if (!error && can('boards.card.labels', 'edit')) await supabase.from('board_card_labels').insert({ card_id: card!.id, label_id: id })
+    setBusy(false)
+    if (error) return toast.error(friendlyError(error))
+    setLabelName('')
+    onChanged()
+  }
+
+  async function addSubTask(e: FormEvent, parent: ChecklistItem) {
+    e.preventDefault()
+    const text = subText.trim()
+    if (!text) return
+    if (await run(() => supabase!.from('board_checklist_items').insert({ checklist_id: parent.checklist_id, item_text: text, parent_id: parent.id }))) {
+      setSubText('')
+      setSubFor(null)
+    }
+  }
 
   return (
     <Overlay onClose={onClose} title={card.title} colour={board.colour}>
@@ -227,6 +287,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
             {card.created_by_name && ` by ${card.created_by_name}`}
           </span>
         </div>
+        <Can permission="boards.card.navigate">{onOpenCard && <CardNavigator card={card} data={data} onOpenCard={onOpenCard} />}</Can>
       </div>
 
       <div className="mt-4 grid gap-5 md:grid-cols-[1fr_15rem]">
@@ -273,6 +334,38 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                   })}
                 {data.labels.length === 0 && <span className="text-xs text-slate-500">This board has no labels.</span>}
               </div>
+              <Can permission="boards.labels.create" level="edit">
+                {mayEdit && (
+                  <form onSubmit={addLabel} className="mt-2 space-y-1.5 rounded-md bg-slate-50 p-2">
+                    <div className="flex gap-2">
+                      <input
+                        aria-label="New label name"
+                        className={`${inputClass} py-1`}
+                        placeholder="New label, for example Waiting for parts"
+                        maxLength={40}
+                        value={labelName}
+                        onChange={(e) => setLabelName(e.target.value)}
+                      />
+                      <button type="submit" className={`${small} whitespace-nowrap`} disabled={busy || !labelName.trim()}>
+                        Create Label
+                      </button>
+                    </div>
+                    <ColourPicker colours={LABEL_COLOURS} value={labelColour} onChange={setLabelColour} label="Label colour" />
+                  </form>
+                )}
+              </Can>
+            </Block>
+          </Can>
+
+          {/* ---------- Customer label ---------- */}
+          <Can permission="boards.card.customer_label">
+            <Block title="Customer Label">
+              <CustomerLabelPicker
+                card={card}
+                editable={mayEdit && can('boards.card.customer_label', 'edit')}
+                busy={busy}
+                onSave={(text) => updateCard({ customer_label: text })}
+              />
             </Block>
           </Can>
 
@@ -344,11 +437,21 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                         </Can>
                       </div>
                       <ul className="mt-1 divide-y divide-slate-100">
-                        {its.map((it) => {
+                        {its
+                          .filter((it) => !it.parent_id || !its.some((p) => p.id === it.parent_id))
+                          .flatMap((top) => [top, ...its.filter((c) => c.parent_id === top.id)])
+                          .map((it) => {
+                          const sub = Boolean(it.parent_id && its.some((p) => p.id === it.parent_id))
+                          const itemPauses = pausesOf(data.pauses, card.id, it.id)
+                          const paused = openPause(data.pauses, card.id, it.id, it.started_at, it.finished_at)
                           const avg = averageFor(times, 'task', taskKey(it.item_text), it.id)
-                          const took = timing(it.started_at, it.finished_at)
+                          const took = timing(it.started_at, it.finished_at, itemPauses)
+                          const kids = its.filter((c) => c.parent_id === it.id)
+                          const lastOfGroup = sub ? !its.some((c) => c.parent_id === it.parent_id && c.sort_order > it.sort_order) : kids.length === 0
+                          const parent = sub ? its.find((p) => p.id === it.parent_id)! : it
                           return (
-                            <li key={it.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-sm">
+                            <Fragment key={it.id}>
+                            <li key={it.id} className={`flex flex-wrap items-center gap-x-2 gap-y-1 py-1.5 text-sm ${sub ? 'ml-6 border-l-2 border-slate-200 pl-2' : ''}`}>
                               <Can permission="boards.card.checklists" level="edit" fallback={<span className="text-xs text-slate-500">{it.finished_at ? 'Completed' : 'Open'}</span>}>
                                 <input
                                   type="checkbox"
@@ -373,13 +476,29 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                                     </button>
                                   )}
                                   {mayEdit && it.started_at && !it.finished_at && (
-                                    <button type="button" className={small} disabled={busy} onClick={() => updateItem(it, { finished_at: new Date().toISOString() })}>
-                                      Finish
-                                    </button>
+                                    <>
+                                      {paused ? (
+                                        <button type="button" className={small} disabled={busy} onClick={() => resumeTimer(it.id)}>
+                                          Resume
+                                        </button>
+                                      ) : (
+                                        <button type="button" className={small} disabled={busy} onClick={() => pauseTimer(it.id)}>
+                                          Pause
+                                        </button>
+                                      )}
+                                      <button type="button" className={small} disabled={busy} onClick={() => updateItem(it, { finished_at: new Date().toISOString() })}>
+                                        Finish
+                                      </button>
+                                    </>
                                   )}
                                 </Can>
                               </Can>
                               <Can permission="boards.card.checklists" level="edit">
+                                {mayEdit && !sub && (
+                                  <button type="button" className="text-xs text-slate-600 underline" onClick={() => { setSubFor(subFor === it.id ? null : it.id); setSubText('') }}>
+                                    Add Sub-task
+                                  </button>
+                                )}
                                 {mayEdit && (
                                   <button
                                     type="button"
@@ -391,7 +510,31 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                                   </button>
                                 )}
                               </Can>
+                              <Can permission="boards.card.timing">
+                                <div className="w-full pl-6 empty:hidden">{pauseList(itemPauses)}</div>
+                              </Can>
                             </li>
+                            {lastOfGroup && subFor === parent.id && (
+                              <Can permission="boards.card.checklists" level="edit">
+                                <li className="ml-6 py-1.5 pl-2">
+                                  <form onSubmit={(e) => addSubTask(e, parent)} className="flex gap-2">
+                                    <input
+                                      aria-label={`New sub-task of ${parent.item_text}`}
+                                      className={`${inputClass} py-1`}
+                                      placeholder="Add a sub-task"
+                                      autoFocus
+                                      value={subText}
+                                      onChange={(e) => setSubText(e.target.value)}
+                                      onKeyDown={(e) => e.key === 'Escape' && setSubFor(null)}
+                                    />
+                                    <button type="submit" className={small} disabled={busy}>
+                                      Add
+                                    </button>
+                                  </form>
+                                </li>
+                              </Can>
+                            )}
+                            </Fragment>
                           )
                         })}
                       </ul>
@@ -633,7 +776,13 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                     {card.finished_by_name && ` by ${card.finished_by_name}`}
                   </p>
                 )}
-                {timing(card.started_at, card.finished_at) && <p className="font-medium"><Icon name="timer" /> {timing(card.started_at, card.finished_at)}</p>}
+                {timing(card.started_at, card.finished_at, cardPauses) && (
+                  <p className="font-medium">
+                    <Icon name="timer" /> {timing(card.started_at, card.finished_at, cardPauses)}
+                    {cardPauses.length > 0 && <span className="block text-[11px] font-normal text-slate-500">Active time only: paused time is not counted.</span>}
+                  </p>
+                )}
+                {pauseList(cardPauses.filter((p) => card.started_at && p.paused_at >= card.started_at))}
                 {cardAvg && (
                   <p className="text-xs text-slate-600">
                     Usual for “{card.title}”: {formatDuration(cardAvg.seconds)} (average of {cardAvg.count})
@@ -647,6 +796,17 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                       <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => updateCard({ started_at: new Date().toISOString() })}>
                         {card.card_kind === 'machine' ? 'Start Stage' : 'Start'}
                       </button>
+                    )}
+                    {card.started_at && !card.finished_at && (
+                      openPause(data.pauses, card.id, null, card.started_at, card.finished_at) ? (
+                        <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => resumeTimer(null)}>
+                          Resume
+                        </button>
+                      ) : (
+                        <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => pauseTimer(null)}>
+                          Pause
+                        </button>
+                      )
                     )}
                     {card.started_at && !card.finished_at && (
                       <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => updateCard({ finished_at: new Date().toISOString() })}>

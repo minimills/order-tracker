@@ -61,7 +61,7 @@ export default function BuildTimesSection() {
   const shown = rows.filter((r) => r.name.toLowerCase().includes(filter.trim().toLowerCase()))
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4">
+    <section className="rounded-lg border border-slate-200 bg-white p-4" data-setting="build-times">
       <h2 className="text-base font-semibold">Build Times (Working Days per Step)</h2>
       <p className="mt-1 text-sm text-slate-600">
         The default time each step takes for one machine. Once a type has at least 3 completed builds of a step, the

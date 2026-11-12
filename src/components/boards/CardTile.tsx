@@ -1,16 +1,20 @@
 // @permission-scope boards
-import type { DragEvent, KeyboardEvent } from 'react'
+import { useState, type DragEvent, type KeyboardEvent, type MouseEvent } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { toast } from 'sonner'
 import { showDate } from '../../lib/dates'
 import {
   DUE_TONE,
   dueState,
   dueWords,
   initials,
+  openPause,
   progress,
   textOn,
   type Card,
   type ChecklistItem,
   type Label,
+  type Pause,
   type Person,
   type ProductionMachine,
   type ProductionStep,
@@ -18,6 +22,9 @@ import {
 import SerialNumber from '../SerialNumber'
 import { serviceDates, type ServiceCallInfo } from '../../lib/service'
 import Can from '../Can'
+import Icon from '../Icon'
+import { friendlyError } from '../../lib/format'
+import { supabase } from '../../lib/supabase'
 
 type Props = {
   card: Card
@@ -41,6 +48,10 @@ type Props = {
   stageStep?: ProductionStep | null
   /** Service Calls board: the call behind this card. */
   serviceCall?: ServiceCallInfo | null
+  /** Pauses of this card's timers (0038). */
+  pauses?: Pause[]
+  /** One-click Mark Complete / Mark Incomplete (null = not allowed here). */
+  onToggleComplete?: (() => void) | null
 }
 
 /** A card on the board: the whole card opens it; drag it to move it. */
@@ -49,6 +60,42 @@ export default function CardTile(p: Props) {
   const prog = progress(p.items)
   const due = dueState(card.due_date, p.today, p.soonDays, Boolean(card.finished_at))
   const open = () => p.canOpen && p.onOpen()
+  const navigate = useNavigate()
+  const [starting, setStarting] = useState(false)
+  const paused = openPause(p.pauses ?? [], card.id, null, card.started_at, card.finished_at)
+  const stop = (e: MouseEvent | KeyboardEvent) => e.stopPropagation()
+  async function startFinalCheck(e: MouseEvent) {
+    e.stopPropagation()
+    if (!supabase || !card.machine_id) return
+    setStarting(true)
+    const { error } = await supabase.rpc('start_checklist', { p_machine_id: card.machine_id })
+    setStarting(false)
+    if (error) return toast.error(friendlyError(error))
+    navigate(`/checklists/${card.machine_id}`)
+  }
+  const done = Boolean(card.finished_at)
+  const complete = p.onToggleComplete ? (
+    <Can permission="boards.card.complete" level="edit">
+      <button
+        type="button"
+        draggable={false}
+        onClick={(e) => {
+          e.stopPropagation()
+          p.onToggleComplete?.()
+        }}
+        onKeyDown={stop}
+        aria-label={done ? `Mark incomplete: ${card.title}` : `Mark complete: ${card.title}`}
+        title={done ? 'Mark Incomplete' : 'Mark Complete'}
+        className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-opacity ${
+          done
+            ? 'border-green-600 bg-green-600 text-white'
+            : 'border-slate-400 bg-white text-transparent opacity-0 group-hover:opacity-100 hover:border-green-600 hover:text-green-600 focus:opacity-100 max-md:opacity-100 [@media(hover:none)]:opacity-100'
+        }`}
+      >
+        <Icon name="check" className="h-2.5 w-2.5" />
+      </button>
+    </Can>
+  ) : null
   return (
     <div
       role={p.canOpen ? 'button' : undefined}
@@ -59,7 +106,7 @@ export default function CardTile(p: Props) {
       onDragStart={p.onDragStart}
       onDragEnd={p.onDragEnd}
       onDragOver={p.onDragOver}
-      className={`relative rounded-md border p-2.5 text-sm shadow-sm ${
+      className={`group relative rounded-md border p-2.5 text-sm shadow-sm ${
         card.card_kind === 'leftover' ? 'border-dashed border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
       } ${p.canOpen ? 'cursor-pointer hover:border-slate-400' : ''} ${p.dragging ? 'opacity-40' : ''}`}
       aria-label={`Card: ${card.title}`}
@@ -82,18 +129,31 @@ export default function CardTile(p: Props) {
           <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900">Leftover</span>
         </div>
       )}
-      {card.card_kind === 'machine' && p.machine ? (
-        <div>
-          <div className="font-medium break-words">{p.machine.machine_type}</div>
-          {p.machine.serial_number ? (
-            <SerialNumber serial={p.machine.serial_number} className="text-xs" />
-          ) : (
-            <span className="text-xs text-slate-500">No serial number yet</span>
-          )}
-        </div>
-      ) : (
-        <div className="font-medium break-words">{card.title}</div>
-      )}
+      <div className="flex items-start gap-1.5">
+        {complete}
+        {card.card_kind === 'machine' && p.machine ? (
+          <div className="min-w-0">
+            <div className={`font-medium break-words ${done ? 'text-slate-500' : ''}`}>{p.machine.machine_type}</div>
+            {p.machine.serial_number ? (
+              <SerialNumber serial={p.machine.serial_number} className="text-xs" />
+            ) : (
+              <span className="text-xs text-slate-500">No serial number yet</span>
+            )}
+          </div>
+        ) : (
+          <div className={`min-w-0 font-medium break-words ${done ? 'text-slate-500' : ''}`}>{card.title}</div>
+        )}
+      </div>
+      <Can permission="boards.card.customer_label">
+        {card.customer_label && (
+          <div className="mt-1">
+            <span className="inline-flex max-w-full items-center gap-1 rounded bg-violet-100 px-1.5 py-0.5 text-[11px] font-medium text-violet-900">
+              <Icon name="user" className="h-3 w-3 shrink-0" />
+              <span className="truncate">{card.customer_label}</span>
+            </span>
+          </div>
+        )}
+      </Can>
       {card.card_kind === 'service' && p.serviceCall && (
         <Can permission="service.calls">
           <div className="mt-1 space-y-1 text-xs text-slate-600">
@@ -132,7 +192,12 @@ export default function CardTile(p: Props) {
           )}
         </Can>
         <Can permission="boards.card.timing">
-          {card.started_at && !card.finished_at && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-800 ring-1 ring-blue-200">Started</span>}
+          {card.started_at && !card.finished_at && !paused && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-800 ring-1 ring-blue-200">Started</span>}
+          {paused && (
+            <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-900 ring-1 ring-amber-300" title={paused.note ?? undefined}>
+              Paused
+            </span>
+          )}
           {card.finished_at && <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-800 ring-1 ring-green-200">Finished</span>}
         </Can>
         <Can permission="boards.card.link">{p.linkText && <span className="rounded bg-slate-100 px-1.5 py-0.5">Linked: {p.linkText}</span>}</Can>
@@ -154,6 +219,31 @@ export default function CardTile(p: Props) {
                 ? `${p.machine.checklist_completed ?? 0} of ${p.machine.checklist_total ?? 0} items`
                 : 'not started'}
           </div>
+          {p.machine.checklist_status === 'in_progress' || p.machine.checklist_status === 'signed' ? (
+            <Can permission="checklist">
+              <Link
+                to={`/checklists/${card.machine_id}`}
+                draggable={false}
+                onClick={(e) => e.stopPropagation()}
+                className="mt-1 block rounded border border-slate-300 bg-white px-2 py-1 text-center text-xs font-medium hover:bg-slate-50"
+              >
+                {p.machine.checklist_status === 'signed' ? 'View Final Check' : 'Continue Final Check'}
+              </Link>
+            </Can>
+          ) : (
+            <Can permission="checklist.start" level="edit">
+              <button
+                type="button"
+                draggable={false}
+                disabled={starting}
+                onClick={startFinalCheck}
+                onKeyDown={stop}
+                className="mt-1 w-full rounded bg-slate-900 px-2 py-1 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
+              >
+                {starting ? 'Starting…' : 'Start Final Check'}
+              </button>
+            </Can>
+          )}
         </Can>
       )}
       <Can permission="boards.card.checklists">
