@@ -44,7 +44,7 @@ export default function OrderServiceSection({ orderId }: { orderId: string }) {
   if (!info) return null
   return (
     <Section
-      title="Service"
+      title="Service / Training"
       aside={
         <div className="flex flex-wrap gap-2">
           <Can permission="service">

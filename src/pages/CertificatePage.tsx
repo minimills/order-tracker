@@ -29,8 +29,10 @@ import {
 import { supabase } from '../lib/supabase'
 
 type Editable = Pick<Certificate, 'title' | 'part1' | 'part2' | 'machines' | 'start_date' | 'end_date' | 'site_address' | 'tech_name'>
-type Send = { id: string; to_emails: string[]; status: 'sent' | 'failed'; error: string | null; sent_by: string | null; sent_at: string }
-type Preview = { to: string[]; subject: string; html: string; warnings: string[]; file_name: string }
+type Send = { id: string; to_emails: string[]; cc_emails?: string[] | null; bcc_emails?: string[] | null; subject?: string | null; status: 'sent' | 'failed'; error: string | null; sent_by: string | null; sent_at: string }
+type Preview = { to: string[]; cc: string[]; bcc: string[]; subject: string; html: string; warnings: string[]; file_name: string }
+type Recipients = { to: string; cc: string; bcc: string; subject: string }
+const splitEmails = (s: string) => s.split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean)
 const pick = (c: Certificate): Editable => ({
   title: c.title,
   part1: c.part1,
@@ -51,7 +53,7 @@ export default function CertificatePage() {
   const [cert, setCert] = useState<Certificate | null>(null)
   useBreadcrumbs(
     cert && [
-      { label: 'Service', to: '/service' },
+      { label: 'Service / Training', to: '/service' },
       { label: documentReference(cert), to: cert.order_id ? `/service/${cert.order_id}?tab=certificate` : `/service/calls/${cert.service_call_id}?tab=certificate` },
       { label: cert.title },
     ],
@@ -63,6 +65,7 @@ export default function CertificatePage() {
   const [saving, setSaving] = useState(false)
   const [newRow, setNewRow] = useState({ machine: '', serial: '' })
   const [preview, setPreview] = useState<Preview | null>(null)
+  const [rcpt, setRcpt] = useState<Recipients>({ to: '', cc: '', bcc: '', subject: '' })
   const [busy, setBusy] = useState<string | null>(null)
   const today = todayISO()
 
@@ -149,14 +152,26 @@ export default function CertificatePage() {
     setBusy(null)
     if (!r.ok) return toast.error(r.message)
     setPreview(r.data)
+    setRcpt({ to: r.data.to.join(', '), cc: (r.data.cc ?? []).join(', '), bcc: (r.data.bcc ?? []).join(', '), subject: r.data.subject })
   }
 
   async function sendEmail() {
+    if (!splitEmails(rcpt.to).length) return toast.error('Enter at least one email address in To.')
+    if (!rcpt.subject.trim()) return toast.error('Enter a subject.')
     setBusy('send')
     try {
       const { toBase64 } = await import('../lib/certificatePdf')
       const pdf = toBase64(await makePdf())
-      const r = await callFunction('send-email', { action: 'certificate_send', certificate_id: cert!.id, pdf_base64: pdf, file_name: certificateFileName(cert!) })
+      const r = await callFunction('send-email', {
+        action: 'certificate_send',
+        certificate_id: cert!.id,
+        to: splitEmails(rcpt.to),
+        cc: splitEmails(rcpt.cc),
+        bcc: splitEmails(rcpt.bcc),
+        subject: rcpt.subject.trim(),
+        pdf_base64: pdf,
+        file_name: certificateFileName(cert!),
+      })
       if (!r.ok) toast.error(r.message)
       else {
         toast.success(r.message || 'Certificate sent.')
@@ -389,6 +404,9 @@ export default function CertificatePage() {
                   <li key={s.id} className="py-2">
                     <span className={s.status === 'sent' ? 'text-green-800' : 'text-red-700'}>{s.status === 'sent' ? 'Sent' : 'Not sent'}</span> {showDate(s.sent_at, 'MMM d, yyyy h:mm a')} to{' '}
                     {s.to_emails.join(', ')}
+                    {s.cc_emails?.length ? <span className="text-slate-600"> · CC {s.cc_emails.join(', ')}</span> : null}
+                    {s.bcc_emails?.length ? <span className="text-slate-600"> · BCC {s.bcc_emails.join(', ')}</span> : null}
+                    {s.subject ? <span className="block text-xs text-slate-500">{s.subject}</span> : null}
                     {s.sent_by ? <span className="text-slate-500"> · by {s.sent_by}</span> : null}
                     {s.error && <p className="text-xs text-red-700">{s.error}</p>}
                   </li>
@@ -429,20 +447,26 @@ export default function CertificatePage() {
                   Cancel
                 </button>
                 <Can permission="service.certificate.email" level="edit">
-                  <button type="button" className={buttonClass} onClick={sendEmail} disabled={busy === 'send' || preview.to.length === 0}>
-                    {busy === 'send' ? 'Sending…' : 'Send'}
+                  <button type="button" className={buttonClass} onClick={sendEmail} disabled={busy === 'send'}>
+                    {busy === 'send' ? 'Sending…' : 'Send Email'}
                   </button>
                 </Can>
               </>
             }
           >
             <div className="space-y-2 text-sm">
-              <p>
-                <span className="text-slate-500">To:</span> {preview.to.join(', ') || 'no one'}
-              </p>
-              <p>
-                <span className="text-slate-500">Subject:</span> {preview.subject}
-              </p>
+              <Field label="To" htmlFor="cert-to" hint="Separate several addresses with commas. The customer and the technician are filled in; add any others.">
+                <input id="cert-to" className={inputClass} value={rcpt.to} onChange={(e) => setRcpt({ ...rcpt, to: e.target.value })} />
+              </Field>
+              <Field label="CC" htmlFor="cert-cc" hint="The office email is filled in (Admin → Email Templates).">
+                <input id="cert-cc" className={inputClass} value={rcpt.cc} onChange={(e) => setRcpt({ ...rcpt, cc: e.target.value })} />
+              </Field>
+              <Field label="BCC" htmlFor="cert-bcc" hint="Hidden from the other recipients.">
+                <input id="cert-bcc" className={inputClass} value={rcpt.bcc} onChange={(e) => setRcpt({ ...rcpt, bcc: e.target.value })} />
+              </Field>
+              <Field label="Subject" htmlFor="cert-subject">
+                <input id="cert-subject" className={inputClass} maxLength={300} value={rcpt.subject} onChange={(e) => setRcpt({ ...rcpt, subject: e.target.value })} />
+              </Field>
               <p>
                 <span className="text-slate-500">Attachment:</span> {preview.file_name}
               </p>

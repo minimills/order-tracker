@@ -45,7 +45,7 @@ export function crumbsForPath(path: string): Crumb[] {
     '/orders': [{ label: 'Orders' }],
     '/orders/new': [{ label: 'Orders', to: '/orders' }, { label: 'New Order' }],
     '/settings/notifications': [{ label: 'Settings', to: '/settings' }, { label: 'Notifications' }],
-    '/service/calendar': [{ label: 'Service', to: '/service' }, { label: 'Tech Calendar' }],
+    '/service/calendar': [{ label: 'Service / Training', to: '/service' }, { label: 'Tech Calendar' }],
     '/reports/department-delays': [{ label: 'Reports' }, { label: 'Department Delays' }],
     '/reports/build-times': [{ label: 'Reports' }, { label: 'Build Times' }],
     '/crating': [{ label: 'Reports' }, { label: 'Crating Report' }],
@@ -58,7 +58,7 @@ export function crumbsForPath(path: string): Crumb[] {
     checklists: { label: 'Orders', to: '/orders' },
     boards: { label: 'Boards', to: '/boards' },
     chat: { label: 'Chat', to: '/chat' },
-    service: { label: 'Service', to: '/service' },
+    service: { label: 'Service / Training', to: '/service' },
     notices: { label: 'Notice Board', to: '/notices' },
     settings: { label: 'Settings', to: '/settings' },
   }

@@ -19,6 +19,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2'
 type Any = any
 type Env = (key: string) => string | undefined
 export type Row = {
+  /** Set on entries with a time (own entries since 0041); others are all-day. */
+  start_at?: string | null
+  end_at?: string | null
   source: string
   source_id: string
   tech_email: string
@@ -68,6 +71,7 @@ function nextDay(iso: string) {
 
 /** The whole calendar. All-day events; the end date is the day after (iCal rule). */
 export function buildIcs(rows: Row[], o: { calendarName: string; appUrl: string; now: Date }) {
+  const utc = (iso: string) => new Date(iso).toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')
   const stamp = o.now.toISOString().replace(/[-:]/g, '').replace(/\.\d+Z$/, 'Z')
   const lines = [
     'BEGIN:VCALENDAR',
@@ -93,8 +97,9 @@ export function buildIcs(rows: Row[], o: { calendarName: string; appUrl: string;
       'BEGIN:VEVENT',
       `UID:${r.source}-${r.source_id}@order-tracker`,
       `DTSTAMP:${stamp}`,
-      `DTSTART;VALUE=DATE:${day(r.start_date)}`,
-      `DTEND;VALUE=DATE:${day(nextDay(r.end_date))}`,
+      ...(r.start_at && r.end_at
+        ? [`DTSTART:${utc(r.start_at)}`, `DTEND:${utc(r.end_at)}`]
+        : [`DTSTART;VALUE=DATE:${day(r.start_date)}`, `DTEND;VALUE=DATE:${day(nextDay(r.end_date))}`]),
       `SUMMARY:${icsText(r.title)}`,
       `DESCRIPTION:${icsText(description)}`,
       ...(r.country ? [`LOCATION:${icsText(r.country)}`] : []),

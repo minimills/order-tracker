@@ -1,6 +1,5 @@
 // @permission-scope service.calendar.import
 import { useCallback, useEffect, useState } from 'react'
-import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import Icon from '../Icon'
 import { buttonClass, inputClass, secondaryButtonClass } from '../form'
@@ -22,8 +21,12 @@ type App = 'apple' | 'google'
 
 const when = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', dateStyle: 'medium', timeStyle: 'short' })
 
-/** My settings → Calendar: link a work calendar from the phone so its entries show in the app. */
-export default function CalendarImportSettings() {
+/**
+ * Technician Calendar → Calendar Connection → "From your phone to the app":
+ * link a work calendar from the phone so its entries show in the app.
+ * `version` reloads it (after Refresh Now on the page); `onSynced` tells the page.
+ */
+export default function CalendarImportSettings({ version = 0, onSynced }: { version?: number; onSynced?: () => void }) {
   const { session } = useAuth()
   const me = session?.user.email?.toLowerCase() ?? ''
   const [link, setLink] = useState<Link_ | null>(null)
@@ -32,6 +35,7 @@ export default function CalendarImportSettings() {
   const [url, setUrl] = useState('')
   const [busy, setBusy] = useState(false)
   const [app, setApp] = useState<App>('apple')
+  const [steps, setSteps] = useState(false)
 
   const load = useCallback(async () => {
     if (!supabase || !me) return
@@ -42,7 +46,9 @@ export default function CalendarImportSettings() {
       .maybeSingle()
     setLink((data as Link_ | null) ?? null)
     setLoaded(true)
-  }, [me])
+    // version: reload after the page's Refresh Now.
+    // oxlint-disable-next-line react-hooks/exhaustive-deps
+  }, [me, version])
 
   useEffect(() => {
     // load() only sets state after the database answers.
@@ -57,6 +63,7 @@ export default function CalendarImportSettings() {
     if (!r.ok) toast.error(r.message)
     else if (!quiet) toast.success(r.message || 'Phone calendar read.')
     load()
+    onSynced?.()
   }
 
   async function save() {
@@ -85,25 +92,21 @@ export default function CalendarImportSettings() {
     if (error) return toast.error(friendlyError(error))
     toast.success('Link removed.')
     load()
+    onSynced?.()
   }
 
   return (
-    <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-      <h2 className="text-base font-semibold">Calendar</h2>
+    <div className="space-y-3 text-sm">
       <p className="text-slate-700">
-        Show the work entries from your phone in the Order Tracker’s{' '}
-        <Link to="/service/calendar" className="text-blue-700 underline">
-          Technician Calendar
-        </Link>
-        . Make a separate calendar on your phone just for work (for example “BMM – to app”) and paste its private link here.
-        Entries you put in that calendar appear in the app within 15 minutes, marked “From phone”.
+        Show the work entries from your phone on this calendar. Make a separate calendar on your phone just for work (for example “BMM – to app”) and paste its private link here.
+        Entries you put in that calendar appear in the app within 5 minutes, marked “From phone”.
       </p>
       <ul className="list-disc space-y-1 pl-5 text-slate-700">
         <li>
           Only that one calendar is read, never your other calendars. Entries from the phone can only be changed on the phone; the
           office can set their type and link them to a customer or order.
         </li>
-        <li>Entries made in the app still go to your phone through your calendar link on the Technician Calendar page. Phone entries are never sent back, so nothing appears twice.</li>
+        <li>Entries made in the app still go to your phone through “From the app to your phone” below. Phone entries are never sent back, so nothing appears twice.</li>
       </ul>
 
       {loaded && link && !editing && (
@@ -114,7 +117,7 @@ export default function CalendarImportSettings() {
           </p>
           <p className="break-all font-mono text-xs text-slate-600">{link.url.replace(/(private-)[^/]+/, '$1…').replace(/(published\/\d+\/).{6,}/, '$1…')}</p>
           <p className="text-slate-700">
-            Last synced: {link.last_synced_at ? when.format(new Date(link.last_synced_at)) : 'not yet'}
+            Last synced {link.last_synced_at ? when.format(new Date(link.last_synced_at)) : 'not yet'} (checked every 5 minutes)
             {link.status === 'ok' ? ` · ${link.event_count} ${link.event_count === 1 ? 'entry' : 'entries'}` : ''}
           </p>
           {link.status === 'error' && link.last_error && (
@@ -124,7 +127,7 @@ export default function CalendarImportSettings() {
           )}
           <div className="flex flex-wrap gap-2 pt-1">
             <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => syncNow()}>
-              {busy ? 'Reading…' : 'Sync Now'}
+              {busy ? 'Reading…' : 'Refresh Now'}
             </button>
             <button type="button" className={secondaryButtonClass} onClick={() => setEditing(true)}>
               Replace Link
@@ -162,6 +165,11 @@ export default function CalendarImportSettings() {
         </div>
       )}
 
+      <button type="button" className="font-medium text-blue-700 underline" aria-expanded={steps} onClick={() => setSteps(!steps)}>
+        {steps ? '▾ Hide the steps for getting the link' : '▸ Show the steps for getting the link'}
+      </button>
+      {steps && (
+        <>
       <div className="flex gap-1 border-b border-slate-200" role="tablist" aria-label="Calendar app">
         {(
           [
@@ -235,6 +243,8 @@ export default function CalendarImportSettings() {
           </p>
         </div>
       )}
-    </section>
+        </>
+      )}
+    </div>
   )
 }

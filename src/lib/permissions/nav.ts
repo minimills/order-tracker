@@ -23,7 +23,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/boards', label: 'Boards', icon: 'boards', permission: 'boards' },
   { to: '/notices', label: 'Notice Board', icon: 'pin', permission: 'notices', badge: 'notices' },
   { to: '/chat', label: 'Chat', icon: 'chat', permission: 'chat', badge: 'chat' },
-  { to: '/service', label: 'Service', icon: 'cog', permission: 'service' },
+  { to: '/service', label: 'Service / Training', icon: 'cog', permission: 'service' },
   { to: '/service/calendar', label: 'Tech Calendar', icon: 'calendar', permission: 'service.calendar' },
   { to: '/payments', label: 'Payments', icon: 'money', permission: 'payments.page' },
   { to: '/crating', label: 'Crating Report', icon: 'box', permission: 'reports.crating' },

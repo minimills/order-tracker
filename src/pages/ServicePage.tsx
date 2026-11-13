@@ -95,7 +95,7 @@ export default function ServicePage() {
       <div className="mx-auto max-w-5xl space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Service</h1>
+            <h1 className="text-2xl font-semibold">Service / Training</h1>
             <p className="text-sm text-slate-600">On-site training and commissioning. Open an order to log the days and create the certificate.</p>
           </div>
           <Can permission="service.filters">

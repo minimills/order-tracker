@@ -9,7 +9,7 @@ import { supabase } from '../../lib/supabase'
 
 type App = 'apple' | 'google' | 'outlook'
 
-/** The technician's private calendar link for Apple Calendar, Google Calendar or Outlook, with steps. */
+/** Calendar Connection → "From the app to your phone": the private calendar link for Apple Calendar, Google Calendar or Outlook, with steps. */
 export default function PhoneCalendarSync() {
   const [url, setUrl] = useState<string | null>(null)
   const [app, setApp] = useState<App>('apple')
@@ -51,8 +51,7 @@ export default function PhoneCalendarSync() {
   const webcal = url?.replace(/^https?:\/\//, 'webcal://') ?? ''
 
   return (
-    <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-      <h2 className="text-base font-semibold">Show This Calendar on Your Phone</h2>
+    <div className="space-y-3 text-sm">
       <p className="text-slate-700">
         Your private calendar link adds your training visits, service calls, travel days and your own entries to the calendar app on
         your phone or computer, and keeps them up to date by itself.
@@ -159,6 +158,6 @@ export default function PhoneCalendarSync() {
           </button>
         </div>
       )}
-    </section>
+    </div>
   )
 }
