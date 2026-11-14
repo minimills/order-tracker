@@ -94,7 +94,7 @@ export default function PhoneEventDialog({ entry, onClose, onSaved }: { entry: C
       <div className="space-y-3 text-sm">
         <p className="flex items-center gap-2 rounded-md bg-slate-100 p-2 text-slate-700">
           <Icon name="phone" />
-          From {entry.tech_name ?? 'the technician'}’s phone calendar. Edit this on your phone; changes appear here within 15 minutes.
+          From {entry.tech_name ?? 'the technician'}’s phone calendar. Edit this on your phone; changes appear here within 5 minutes.
         </p>
         <dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1">
           <dt className="text-slate-500">When</dt>

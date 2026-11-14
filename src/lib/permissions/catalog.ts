@@ -32,7 +32,7 @@ export const GROUPS = [
   'Crating',
   'Boards',
   'Notice Board',
-  'Service',
+  'Service / Training',
   'Chat',
   'Reports',
   'Agent',
@@ -255,8 +255,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.ship_history', label: 'Revised ship date: original date, number of changes and the history (old, new, who, when, reason)', levels: V, requires: 'order.section.shipping' },
       { key: 'order.field.currency', label: 'Currency', levels: VE, db: true },
     ],
-    'Service section': [
-      { key: 'order.section.service', label: 'Service section (on-site training and commissioning plan)', levels: V, requires: 'order.page' },
+    'Service / Training section': [
+      { key: 'order.section.service', label: 'Service / Training section (on-site training and commissioning plan)', levels: V, requires: 'order.page' },
       { key: 'order.field.training_needed', label: 'Training needed', levels: VE, requires: 'order.section.service', db: true },
       { key: 'order.field.training_days', label: 'On-site training days', levels: VE, requires: 'order.section.service', db: true },
       { key: 'order.field.travel_days', label: 'Travel days', levels: VE, requires: 'order.section.service', db: true },
@@ -413,9 +413,9 @@ export const CATALOG: PermissionItem[] = [
     ],
   }),
 
-  ...group('Service', {
+  ...group('Service / Training', {
     Page: [
-      { key: 'service', label: 'Service page (on-site training and commissioning)', levels: V, page: true, db: true },
+      { key: 'service', label: 'Service / Training page (on-site training, commissioning and service calls)', levels: V, page: true, db: true },
       { key: 'service.filters', label: 'Search and “Only mine”', levels: V, requires: 'service' },
       { key: 'service.list.in_progress', label: 'List: in progress', levels: V, requires: 'service' },
       { key: 'service.list.upcoming', label: 'List: upcoming', levels: V, requires: 'service' },
@@ -533,6 +533,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
       { key: 'admin.chat', label: 'Chat channels (department, group and other channels; never private chats)', levels: E, db: true },
       { key: 'admin.templates', label: 'Templates (commissioning certificate and service report text)', levels: E, db: true },
+      { key: 'admin.email_templates', label: 'Email templates (default subject and CC of the commissioning certificate and service report emails)', levels: E, db: true },
       { key: 'admin.ce', label: 'Declaration of Conformity: CE template and settings (EC or EU type, authorised person, signer, email text) and the register of all declarations', levels: E, db: true },
       { key: 'admin.build_checklists', label: 'Build checklists (parts and tasks per machine type and step)', levels: E, db: true },
       { key: 'admin.production', label: 'Production boards (default stages and their departments, office, colour)', levels: E, db: true },

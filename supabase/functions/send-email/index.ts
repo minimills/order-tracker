@@ -20,7 +20,7 @@
 //   certificate_preview – who a signed commissioning certificate or service report goes to, and the email
 //                 ({ certificate_id })                                     (service.certificate.email)
 //   certificate_send    – email it with the PDF made by the app attached
-//                 ({ certificate_id, pdf_base64, file_name })              (service.certificate.email)
+//                 ({ certificate_id, to, cc, bcc, subject, pdf_base64, file_name }) (service.certificate.email)
 //   ce_preview  – suggested recipients, subject and message for CE / EU declarations of conformity
 //                 ({ declaration_ids })                                    (ce.email)
 //   ce_send     – email them with the PDFs made by the app attached
@@ -433,22 +433,26 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       if (cert.status !== 'signed') return reply(409, { error: `The ${what} can be emailed once both the technician and the customer have signed.` })
       // An order (commissioning certificate) or a service call (service report): its customer gets it.
       const { data: order } = cert.order_id
-        ? await db.from('orders').select('order_code, customers(name, emails)').eq('id', cert.order_id).maybeSingle()
-        : await db.from('service_calls').select('call_number, customers(name, emails)').eq('card_id', cert.service_call_id).maybeSingle()
+        ? await db.from('orders').select('order_code, customers(name, company, emails)').eq('id', cert.order_id).maybeSingle()
+        : await db.from('service_calls').select('call_number, customers(name, company, emails)').eq('card_id', cert.service_call_id).maybeSingle()
       const company = await loadCompany()
+      const { data: tplRow } = await db.from('app_settings').select('value').eq('key', 'email_templates').maybeSingle()
+      const tpl = (tplRow?.value as Json) ?? {}
+      const report = cert.kind === 'service_report'
       const office = (company.office_email || company.email || '').trim().toLowerCase()
       const customerEmails: string[] = ((order?.customers?.emails as string[] | null) ?? []).map((e) => e.trim().toLowerCase())
       const tech = String(cert.tech_email ?? '').trim().toLowerCase()
-      const to = [...new Set([tech, office, ...customerEmails].filter((e) => EMAIL.test(e)))]
-      const warnings = [
-        !EMAIL.test(tech) ? `No technician email: assign a technician on the ${cert.order_id ? 'order' : 'service call'}.` : '',
-        !EMAIL.test(office) ? 'No office email: add it in Admin → Company Details.' : '',
-        !customerEmails.some((e) => EMAIL.test(e)) ? `The customer on this ${cert.order_id ? 'order' : 'service call'} has no email address.` : '',
-      ].filter(Boolean)
       const code = String(order?.order_code ?? (order?.call_number ? `S-${order.call_number}` : '') ?? cert.info?.order_number ?? '')
       const ref = cert.order_id ? `Order ${code}` : `Service call ${code}`
       const customer = String(order?.customers?.name ?? cert.info?.customer_name ?? '')
-      const subject = `${cert.title} – ${ref}${customer ? ` – ${customer}` : ''}`
+      const customerCompany = String(order?.customers?.company || customer)
+      const values: Record<string, string> = {
+        customer_company: customerCompany, customer_name: customer, order_number: code, title: String(cert.title ?? ''),
+        company_name: String(company.name || 'Belfast Mini Mills'), office_email: office,
+      }
+      const fill = (t: string) => t.replace(/\{(\w+)\}/g, (m, k) => (k in values ? values[k] : m)).replace(/\s+–\s*$/, '').trim()
+      const list = (v: unknown) => [...new Set((Array.isArray(v) ? v : String(v ?? '').split(/[,;\s]+/)).map((e) => String(e).trim().toLowerCase()).filter(Boolean))]
+      const defaultSubject = report ? 'Service Report Belfast Mini Mills – {customer_company}' : 'Commissioning Certificate Belfast Mini Mills – {customer_company}'
       const fileName = String(body.file_name || `${cert.title} - ${ref}.pdf`).replace(/[\\/:*?"<>|]+/g, '-')
       const { html, text } = layout({
         company, appUrl, heading: cert.title, button: false,
@@ -460,17 +464,38 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
         }],
         link: null, footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.${company.email ? ` Questions: ${company.email}` : ''}`,
       })
-      if (action === 'certificate_preview') return reply(200, { ok: true, to, subject, html, text, warnings, file_name: fileName })
-      if (!to.length) return reply(400, { error: 'There is no one to send it to. ' + warnings.join(' ') })
+      if (action === 'certificate_preview') {
+        // To: the customer and the technician; CC: from Admin → Email Templates (the office email by default).
+        const to = [...new Set([...customerEmails, tech].filter((e) => EMAIL.test(e)))]
+        const ccTemplate = String(tpl[report ? 'service_report_cc' : 'certificate_cc'] ?? '{office_email}')
+        const cc = list(ccTemplate.replace(/\{office_email\}/g, office)).filter((e) => EMAIL.test(e) && !to.includes(e))
+        const warnings = [
+          !EMAIL.test(tech) ? `No technician email: assign a technician on the ${cert.order_id ? 'order' : 'service call'}.` : '',
+          !EMAIL.test(office) ? 'No office email: add it in Admin → Company Details.' : '',
+          !customerEmails.some((e) => EMAIL.test(e)) ? `The customer on this ${cert.order_id ? 'order' : 'service call'} has no email address. Add the recipients below.` : '',
+        ].filter(Boolean)
+        const subject = fill(String(tpl[report ? 'service_report_subject' : 'certificate_subject'] || defaultSubject))
+        return reply(200, { ok: true, to, cc, bcc: [], subject, html, text, warnings, file_name: fileName })
+      }
+      const to = list(body.to)
+      const cc = list(body.cc)
+      const bcc = list(body.bcc)
+      const bad = [...to, ...cc, ...bcc].filter((e) => !EMAIL.test(e))
+      if (bad.length) return reply(400, { error: `Check these email addresses: ${bad.join(', ')}` })
+      if (!to.length) return reply(400, { error: 'Enter at least one email address in To.' })
+      const subject = String(body.subject ?? '').trim().slice(0, 300) || fill(defaultSubject)
       const pdf = String(body.pdf_base64 ?? '')
       if (!pdf.startsWith('JVBER') || pdf.length > 7_000_000) return reply(400, { error: 'The PDF could not be attached. Download it to check it, then try again.' })
       const r = await deliver({
-        to: to.join(', '), subject, html, text, kind: 'certificate', company,
+        to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'certificate', company,
         attachments: [{ filename: fileName, content: pdf, encoding: 'base64', contentType: 'application/pdf' }],
       })
-      await db.from('certificate_sends').insert({ certificate_id: cert.id, to_emails: to, status: r.status, error: r.error, email_log_id: r.logId, sent_by: callerEmail })
+      await db.from('certificate_sends').insert({
+        certificate_id: cert.id, to_emails: to, cc_emails: cc, bcc_emails: bcc, subject,
+        status: r.status, error: r.error, email_log_id: r.logId, sent_by: callerEmail,
+      })
       return r.status === 'sent'
-        ? reply(200, { ok: true, to, message: `${what === 'certificate' ? 'Certificate' : 'Service report'} sent to ${to.join(', ')}.` })
+        ? reply(200, { ok: true, to, message: `${what === 'certificate' ? 'Certificate' : 'Service report'} sent to ${[...to, ...cc].join(', ')}${bcc.length ? ` (and ${bcc.length} in BCC)` : ''}.` })
         : reply(502, { error: `The ${what} could not be sent: ${r.error}` })
     }
     case 'ce_preview':

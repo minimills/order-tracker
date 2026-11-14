@@ -336,9 +336,11 @@ export type CalendarRow = {
   link: string | null
   /** Read from the technician's own phone calendar (read-only in the app). */
   from_phone: boolean
-  /** Start time of a timed phone entry (null = all day). */
+  /** Start time of a timed entry (null = all day). */
   start_at: string | null
   location: string | null
+  /** End time of a timed entry (may be empty on old phone entries: shown as one hour). */
+  end_at: string | null
 }
 /** Colours (light background, dark text, solid dot) per kind, readable for colour-blind people (also labelled). */
 export const CALENDAR_KINDS: Record<CalendarKind, { label: string; chip: string; dot: string }> = {

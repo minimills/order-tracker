@@ -5,10 +5,10 @@
 // app's technician calendar as "From phone".
 //
 // Actions (POST JSON { action }):
-//   sync_all  – every linked calendar; called every 15 minutes by the database
+//   sync_all  – every linked calendar; called every 5 minutes by the database
 //               scheduler with the x-dispatch-key header (Admin → Email →
 //               Turn On Automatic Sending also starts this job)
-//   sync_mine – the signed-in technician's own link ("Sync Now" in Settings)
+//   sync_mine – the signed-in technician's own link ("Refresh Now" on the Technician Calendar)
 //
 // "Verify JWT" must be OFF: the scheduler has no login (the function checks
 // every caller itself). SUPABASE_URL, SUPABASE_ANON_KEY and
@@ -27,6 +27,7 @@ export type PhoneEvent = {
   description: string | null
   all_day: boolean
   start_at: string | null
+  end_at: string | null
   start_date: string
   end_date: string
 }
@@ -78,6 +79,7 @@ function toRow(key: string, item: Any, start: Any, end: Any | null): PhoneEvent 
     description: text(item.description),
     all_day: allDay,
     start_at: allDay ? null : start.zone?.tzid === 'floating' ? null : start.toJSDate().toISOString(),
+    end_at: allDay || !end || start.zone?.tzid === 'floating' ? null : end.toJSDate().toISOString(),
     start_date: startDate,
     end_date: endDate,
   }
@@ -139,7 +141,7 @@ function problem(status: number) {
   if (status === 401 || status === 403) {
     return 'The calendar is no longer shared. Turn sharing on again (Apple: Public Calendar; Google: copy the secret address again) and paste the new link.'
   }
-  return `The calendar could not be read (the calendar service answered with error ${status}). It will be tried again in 15 minutes.`
+  return `The calendar could not be read (the calendar service answered with error ${status}). It will be tried again in 5 minutes.`
 }
 
 /** Fetches and reads one link; returns the events, or a plain-words error. */
@@ -163,8 +165,8 @@ export async function readLink(url: string, deps: Deps): Promise<{ events: Phone
     return {
       error:
         (e as Error).name === 'AbortError'
-          ? 'The calendar service did not answer in time. It will be tried again in 15 minutes.'
-          : 'The calendar link could not be reached. Check that the whole link was copied. It will be tried again in 15 minutes.',
+          ? 'The calendar service did not answer in time. It will be tried again in 5 minutes.'
+          : 'The calendar link could not be reached. Check that the whole link was copied. It will be tried again in 5 minutes.',
     }
   } finally {
     clearTimeout(timer)

@@ -20,6 +20,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   { to: '/admin/chat', permission: 'admin.chat', icon: 'chat' as const, title: 'Chat Channels', text: 'Department, group and other channels: rename, archive, members. Private chats are not shown.' },
   { to: '/admin/holidays', permission: 'admin.holidays', icon: 'calendar' as const, title: 'Company Holidays', text: 'PEI statutory holidays (imported every year), company holidays and office closures. Used for ship dates.' },
   { to: '/admin/email', permission: 'admin.email', icon: 'inbox' as const, title: 'Email', text: 'Mailbox set-up, test email, automatic sending and phone notification keys.' },
+  { to: '/admin/email-templates', permission: 'admin.email_templates', icon: 'template' as const, title: 'Email Templates', text: 'Default subject and CC of the commissioning certificate and service report emails.' },
   { to: '/admin/email-log', permission: 'admin.email_log', icon: 'list' as const, title: 'Email Log', text: 'Every email sent, with Resend.' },
   { to: '/admin/groups', permission: 'admin.groups', icon: 'users' as const, title: 'Groups', text: 'Groups of people (for example Procurement, Techs) for sharing boards and notifications.' },
   { to: '/admin/board-templates', permission: 'admin.board_templates', icon: 'template' as const, title: 'Board Templates', text: 'Stages, labels and checklists new boards can start with.' },

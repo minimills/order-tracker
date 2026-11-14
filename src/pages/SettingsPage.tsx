@@ -4,7 +4,6 @@ import Can from '../components/Can'
 import Icon, { type IconName } from '../components/Icon'
 import SettingsSearch from '../components/SettingsSearch'
 import UnitsSwitch from '../components/crating/UnitsSwitch'
-import CalendarImportSettings from '../components/settings/CalendarImportSettings'
 import ChatSettings from '../components/settings/ChatSettings'
 import MySignature from '../components/settings/MySignature'
 import { useAuth } from '../lib/auth'
@@ -135,10 +134,13 @@ export default function SettingsPage() {
             </section>
           </Can>
 
-          <Can permission="service.calendar.import" level="edit">
-            <div data-setting="calendar-import" className="[grid-column:1/-1] lg:[grid-column:auto]">
-              <CalendarImportSettings />
-            </div>
+          <Can anyOf={['service.calendar.sync', 'service.calendar.import']} level="edit">
+            <Link to="/service/calendar?connection=1" className={`${card} block hover:border-slate-400`} data-setting="calendar-connection">
+              <div className="flex items-center gap-2 font-semibold">
+                <Icon name="calendar" /> Calendar Connection
+              </div>
+              <p className="mt-1 text-sm text-slate-600">Your phone calendar links are now on the Technician Calendar page, under Calendar Connection.</p>
+            </Link>
           </Can>
 
           <Can anyOf={ADMIN_KEYS}>
