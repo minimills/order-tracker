@@ -3,7 +3,7 @@ import Layout from './components/Layout'
 import HomeRedirect from './components/HomeRedirect'
 import Page from './components/Page'
 import RequireAuth from './components/RequireAuth'
-import { ADMIN_KEYS } from './lib/permissions/catalog'
+import { ADMIN_KEYS, FREIGHT_KEYS } from './lib/permissions/catalog'
 import ActivityPage from './pages/admin/ActivityPage'
 import AdminHomePage from './pages/admin/AdminHomePage'
 import ArchivePage from './pages/admin/ArchivePage'
@@ -45,7 +45,11 @@ import ChecklistPrintPage from './pages/ChecklistPrintPage'
 import BoardPage from './pages/BoardPage'
 import BoardsPage from './pages/BoardsPage'
 import DepartmentDelaysPage from './pages/DepartmentDelaysPage'
-import CratingReportPage from './pages/CratingReportPage'
+import FreightPage from './pages/FreightPage'
+import FreightBreakdownPage from './pages/FreightBreakdownPage'
+import FreightBreakdownPrintPage from './pages/FreightBreakdownPrintPage'
+import FreightQuotePage from './pages/FreightQuotePage'
+import FreightSettingsPage from './pages/admin/FreightSettingsPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import MachineTypesPage from './pages/MachineTypesPage'
@@ -73,6 +77,17 @@ export default function App() {
           <RequireAuth>
             <Page permission="shop_board">
               <ShopBoardPage />
+            </Page>
+          </RequireAuth>
+        }
+      />
+      {/* A shipment cost breakdown laid out for printing (no sidebar). */}
+      <Route
+        path="freight/breakdowns/:id/print"
+        element={
+          <RequireAuth>
+            <Page permission="freight.breakdowns.print">
+              <FreightBreakdownPrintPage />
             </Page>
           </RequireAuth>
         }
@@ -116,7 +131,12 @@ export default function App() {
         <Route path="machines/:id" element={<Page permission="machines"><MachinePage /></Page>} />
         <Route path="payments" element={<Page permission="payments.page"><PaymentsPage /></Page>} />
         <Route path="checklists/:machineId" element={<Page permission="checklist"><ChecklistPage /></Page>} />
-        <Route path="crating" element={<Page permission="reports.crating"><CratingReportPage /></Page>} />
+        <Route path="freight" element={<Page anyOf={FREIGHT_KEYS}><FreightPage /></Page>} />
+        <Route path="freight/breakdowns/new" element={<Page permission="freight.breakdowns" level="edit"><FreightBreakdownPage /></Page>} />
+        <Route path="freight/breakdowns/:id" element={<Page permission="freight.breakdowns"><FreightBreakdownPage /></Page>} />
+        <Route path="freight/quote" element={<Page permission="freight.quote"><FreightQuotePage /></Page>} />
+        {/* The old address of the Crating Report. */}
+        <Route path="crating" element={<Navigate to="/freight?tab=crating" replace />} />
         <Route path="boards" element={<Page permission="boards"><BoardsPage /></Page>} />
         <Route path="notices" element={<Page permission="notices"><NoticeBoardPage /></Page>} />
         <Route path="chat" element={<Page permission="chat"><ChatPage /></Page>} />
@@ -154,6 +174,7 @@ export default function App() {
           <Route path="chat" element={<Page permission="admin.chat" level="edit"><ChatChannelsPage /></Page>} />
           <Route path="templates" element={<Page permission="admin.templates" level="edit"><TemplatesPage /></Page>} />
           <Route path="ce" element={<Page permission="admin.ce" level="edit"><CeAdminPage /></Page>} />
+          <Route path="freight" element={<Page permission="admin.freight" level="edit"><FreightSettingsPage /></Page>} />
           <Route path="email-templates" element={<Page permission="admin.email_templates" level="edit"><EmailTemplatesPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />
           <Route path="production" element={<Page permission="admin.production" level="edit"><ProductionPage /></Page>} />

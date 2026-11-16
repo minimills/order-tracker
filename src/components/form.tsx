@@ -61,12 +61,15 @@ export function Modal({
   children,
   footer,
   busy = false,
+  wide = false,
 }: {
   title: string
   onClose: () => void
   children: ReactNode
   footer: ReactNode
   busy?: boolean
+  /** A wider box, for tables and previews. */
+  wide?: boolean
 }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => e.key === 'Escape' && !busy && onClose()
@@ -80,7 +83,7 @@ export function Modal({
       aria-modal="true"
       aria-label={title}
     >
-      <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-lg bg-white p-5 shadow-xl sm:max-w-lg sm:rounded-lg">
+      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-t-lg bg-white p-5 shadow-xl sm:rounded-lg ${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'}`}>
         <h2 className="text-lg font-semibold">{title}</h2>
         <div className="mt-4">{children}</div>
         <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>

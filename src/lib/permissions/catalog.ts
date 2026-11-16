@@ -30,6 +30,7 @@ export const GROUPS = [
   'CE Declarations',
   'Payments',
   'Crating',
+  'Freight',
   'Boards',
   'Notice Board',
   'Service / Training',
@@ -256,6 +257,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.field.currency', label: 'Currency', levels: VE, db: true },
     ],
     'Service / Training section': [
+      { key: 'order.section.freight', label: 'Freight section (shipment cost breakdowns and the freight quote request of the order)', levels: V, requires: 'order.page', hint: 'Shows what the Freight permissions allow.' },
       { key: 'order.section.service', label: 'Service / Training section (on-site training and commissioning plan)', levels: V, requires: 'order.page' },
       { key: 'order.field.training_needed', label: 'Training needed', levels: VE, requires: 'order.section.service', db: true },
       { key: 'order.field.training_days', label: 'On-site training days', levels: VE, requires: 'order.section.service', db: true },
@@ -322,6 +324,27 @@ export const CATALOG: PermissionItem[] = [
       { key: 'payments.action.delete', label: 'Delete a payment', levels: E, needs: ['payments'], db: true },
       { key: 'payments.action.mark_received', label: 'Mark received', levels: E, needs: ['payments'], db: true },
       { key: 'payments.action.undo_received', label: 'Undo received', levels: E, needs: ['payments'] },
+    ],
+  }),
+
+  ...group('Freight', {
+    Dashboard: [
+      { key: 'freight.dashboard', label: 'Freight dashboard: plywood sheets, crates made and crating hours (today, week, month, year) and the charts by month', levels: V, needs: ['crating'] },
+      { key: 'freight.dashboard.filters', label: 'Year and custom date filter', levels: V, requires: 'freight.dashboard' },
+    ],
+    'Shipment cost breakdowns': [
+      { key: 'freight.breakdowns', label: 'Shipment cost breakdowns: the list and each breakdown (Edit: create and change)', levels: VE, db: true, hint: 'Shows invoice totals, cargo values and margins.' },
+      { key: 'freight.breakdowns.filters', label: 'Search and filters', levels: V, requires: 'freight.breakdowns' },
+      { key: 'freight.breakdowns.copy', label: 'Copy buttons on the results', levels: V, requires: 'freight.breakdowns' },
+      { key: 'freight.breakdowns.print', label: 'Print a breakdown', levels: V, requires: 'freight.breakdowns' },
+      { key: 'freight.breakdowns.archive', label: 'Archive and restore a breakdown', levels: E, requires: 'freight.breakdowns', db: true },
+      { key: 'freight.breakdowns.import', label: 'Import old Freight Multitool data (CSV)', levels: E, requires: 'freight.breakdowns', db: true },
+      { key: 'freight.agents.add', label: '“Add new” in the shipping agent list', levels: E, db: true },
+    ],
+    'Quote requests and insurance': [
+      { key: 'freight.quote', label: 'Freight quote request email (View: write and copy; Edit: send it from the app)', levels: VE, db: true, hint: 'Uses the customer’s contact details only with “Customer contact details”.' },
+      { key: 'freight.insurance', label: 'Insurance summary (cargo and insured values by date range)', levels: V, db: true },
+      { key: 'freight.insurance.export', label: 'Insurance summary: Export CSV', levels: V, requires: 'freight.insurance' },
     ],
   }),
 
@@ -486,9 +509,9 @@ export const CATALOG: PermissionItem[] = [
       { key: 'reports.build_times.filters', label: 'Machine type and period filters', levels: V, requires: 'reports.build_times' },
       { key: 'reports.build_times.trend', label: 'Table: trend by month', levels: V, requires: 'reports.build_times' },
     ],
-    'Crating report': [
+    'Freight: crating tables': [
 
-      { key: 'reports.crating', label: 'Crating report page', levels: V, needs: ['crating'], page: true },
+      { key: 'reports.crating', label: 'Freight page: Crating Tables (the former Crating Report)', levels: V, needs: ['crating'], page: true },
       { key: 'reports.crating.filters', label: 'Date and machine type filters', levels: V, requires: 'reports.crating' },
       { key: 'reports.crating.by_type', label: 'Table: by machine type', levels: V, requires: 'reports.crating' },
       { key: 'reports.crating.every_crate', label: 'Table: every crate', levels: V, requires: 'reports.crating' },
@@ -534,6 +557,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.chat', label: 'Chat channels (department, group and other channels; never private chats)', levels: E, db: true },
       { key: 'admin.templates', label: 'Templates (commissioning certificate and service report text)', levels: E, db: true },
       { key: 'admin.email_templates', label: 'Email templates (default subject and CC of the commissioning certificate and service report emails)', levels: E, db: true },
+      { key: 'admin.freight', label: 'Freight settings (broker fee, hourly and plywood rates, insurance rule, margin buttons, pick-up locations, shipping agents)', levels: E, db: true },
       { key: 'admin.ce', label: 'Declaration of Conformity: CE template and settings (EC or EU type, authorised person, signer, email text) and the register of all declarations', levels: E, db: true },
       { key: 'admin.build_checklists', label: 'Build checklists (parts and tasks per machine type and step)', levels: E, db: true },
       { key: 'admin.production', label: 'Production boards (default stages and their departments, office, colour)', levels: E, db: true },
@@ -561,4 +585,7 @@ export const CATALOG: PermissionItem[] = [
 export const CATALOG_BY_KEY = new Map(CATALOG.map((i) => [i.key, i]))
 
 /** Every Admin page key (the Admin menu shows when any of them is allowed). */
+/** Any of these opens the Freight page (each tab has its own key). */
+export const FREIGHT_KEYS = ['freight.dashboard', 'freight.breakdowns', 'freight.insurance', 'reports.crating', 'freight.quote']
+
 export const ADMIN_KEYS = CATALOG.filter((i) => i.group === 'Admin').map((i) => i.key)

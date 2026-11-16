@@ -48,7 +48,6 @@ export function crumbsForPath(path: string): Crumb[] {
     '/service/calendar': [{ label: 'Service / Training', to: '/service' }, { label: 'Tech Calendar' }],
     '/reports/department-delays': [{ label: 'Reports' }, { label: 'Department Delays' }],
     '/reports/build-times': [{ label: 'Reports' }, { label: 'Build Times' }],
-    '/crating': [{ label: 'Reports' }, { label: 'Crating Report' }],
   }
   if (exact[p]) return exact[p]
   if (NAV_LABEL.has(p)) return [{ label: NAV_LABEL.get(p)! }]
@@ -61,6 +60,7 @@ export function crumbsForPath(path: string): Crumb[] {
     service: { label: 'Service / Training', to: '/service' },
     notices: { label: 'Notice Board', to: '/notices' },
     settings: { label: 'Settings', to: '/settings' },
+    freight: { label: 'Freight', to: '/freight' },
   }
   const first = section[parts[0]]
   if (!first) return []

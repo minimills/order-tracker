@@ -32,6 +32,7 @@ import RichTextEditor from '../components/RichTextEditor'
 import SerialNumber from '../components/SerialNumber'
 import { confirmAction } from '../lib/confirm'
 import Icon from '../components/Icon'
+import OrderFreightSection from '../components/freight/OrderFreightSection'
 import OrderServiceSection from '../components/service/OrderServiceSection'
 import CeIssueDialog from '../components/ce/CeIssueDialog'
 import CeRegister from '../components/ce/CeRegister'
@@ -737,6 +738,11 @@ export default function OrderPage() {
                 <Section title="CE Certificates">
                   <CeRegister orderId={order.id} refreshKey={ceRefresh} />
                 </Section>
+              </Can>
+
+              {/* ---------- Freight ---------- */}
+              <Can permission="order.section.freight">
+                <OrderFreightSection orderId={order.id} />
               </Can>
 
               {/* ---------- Service ---------- */}
