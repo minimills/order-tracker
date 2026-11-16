@@ -21,6 +21,8 @@
 //                 ({ certificate_id })                                     (service.certificate.email)
 //   certificate_send    – email it with the PDF made by the app attached
 //                 ({ certificate_id, to, cc, bcc, subject, pdf_base64, file_name }) (service.certificate.email)
+//   freight_quote_send – email a freight quote request to a shipping agent
+//                 ({ order_id, agent_id, agent_name, to, cc, bcc, subject, body })  (freight.quote)
 //   ce_preview  – suggested recipients, subject and message for CE / EU declarations of conformity
 //                 ({ declaration_ids })                                    (ce.email)
 //   ce_send     – email them with the PDFs made by the app attached
@@ -580,6 +582,42 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       return r.status === 'sent'
         ? reply(200, { ok: true, message: `Sent to ${[...to, ...cc].join(', ')}${bcc.length ? ` (and ${bcc.length} in BCC)` : ''}.` })
         : reply(502, { error: `The email could not be sent: ${r.error}` })
+    }
+    case 'freight_quote_send': {
+      if (!(await callerCan('has_perm', { p_key: 'freight.quote', p_level: 'edit' }))) {
+        return reply(403, { error: 'You do not have permission to send freight quote requests.' })
+      }
+      const list = (v: unknown) => [...new Set((Array.isArray(v) ? v : String(v ?? '').split(/[,;\s]+/)).map((e) => String(e).trim().toLowerCase()).filter(Boolean))]
+      const to = list(body.to)
+      const cc = list(body.cc)
+      const bcc = list(body.bcc)
+      const bad = [...to, ...cc, ...bcc].filter((e) => !EMAIL.test(e))
+      if (bad.length) return reply(400, { error: `Check these email addresses: ${bad.join(', ')}` })
+      if (!to.length) return reply(400, { error: 'Enter at least one email address in To.' })
+      const subject = String(body.subject ?? '').trim().slice(0, 300)
+      const message = String(body.body ?? '').slice(0, 8000)
+      if (!subject || !message.trim()) return reply(400, { error: 'The email needs a subject and a message.' })
+      const orderId = body.order_id ? String(body.order_id) : null
+      const company = await loadCompany()
+      // A plain letter: the message exactly as previewed in the app, on the letterhead.
+      const { html, text } = layout({
+        company, appUrl, heading: subject, button: false, intro: message.trimEnd(), notes: [], link: null,
+        footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.${company.email ? ` Reply to ${company.email}` : ''}`,
+      })
+      const r = await deliver({ to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'freight_quote', company })
+      await db.from('freight_quote_requests').insert({
+        order_id: orderId, agent_id: body.agent_id ? String(body.agent_id) : null, agent_name: body.agent_name ? String(body.agent_name).slice(0, 80) : null,
+        to_emails: to, cc_emails: cc, bcc_emails: bcc, subject, body: message, status: r.status, error: r.error, email_log_id: r.logId, sent_by: callerEmail,
+      })
+      if (orderId) {
+        await db.from('activity_log').insert({
+          user_email: callerEmail, table_name: 'freight_quote_requests', record_id: orderId, order_id: orderId, action: 'insert',
+          changes: { to, agent: body.agent_name ?? null, subject, status: r.status, error: r.error },
+        })
+      }
+      return r.status === 'sent'
+        ? reply(200, { ok: true, message: `Quote request sent to ${[...to, ...cc].join(', ')}.` })
+        : reply(502, { error: `The quote request could not be sent: ${r.error}` })
     }
     case 'push_key': {
       if (!(await callerCan('is_allowed_user', {}))) return reply(403, { error: 'Please sign in again.' })

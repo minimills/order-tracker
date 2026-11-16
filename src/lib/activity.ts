@@ -180,6 +180,13 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
         title: `${c.title ?? 'Declaration of Conformity'} ${c.number} issued`,
         lines: [`Machine ${c.serial ?? ''}`, ...(c.replaces ? [`Replaces ${c.replaces}`] : [])],
       }
+    if (e.table_name === 'freight_breakdowns')
+      return {
+        title: c.archived === true ? 'Shipment cost breakdown archived' : c.archived === false ? 'Shipment cost breakdown restored' : e.action === 'insert' ? 'Shipment cost breakdown created' : 'Shipment cost breakdown changed',
+        lines: [[c.freight_type, c.agent, c.invoice_number ? `invoice ${c.invoice_number}` : null].filter(Boolean).join(' · ')].filter(Boolean),
+      }
+    if (e.table_name === 'freight_quote_requests')
+      return { title: c.status === 'failed' ? 'Freight quote request could not be emailed' : 'Freight quote request emailed', lines: [`To ${((c.to as string[]) ?? []).join(', ')}${c.agent ? ` (${c.agent})` : ''}`] }
     if (e.table_name === 'ce_declaration_sends') {
       const to = [...((c.to as string[]) ?? []), ...((c.cc as string[]) ?? [])].join(', ')
       return {

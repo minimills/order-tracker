@@ -53,6 +53,7 @@ function inUnits(key: Measure, metric: number, units: Units) {
 
 type Group = { label: string; crates: CrateRow[]; stats: Record<Measure, Stat> }
 
+/** Freight → Crating Tables (the former Crating Report page; shown as a tab of FreightPage). */
 export default function CratingReportPage() {
   const { units } = usePreferences()
   const [params, setParams] = useSearchParams()
@@ -170,10 +171,10 @@ export default function CratingReportPage() {
 
   return (
     <Can permission="reports.crating">
-    <div className="mx-auto max-w-7xl space-y-5">
+    <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Crating Report</h1>
+          <h2 className="text-lg font-semibold">Crating Tables</h2>
           <p className="text-sm text-slate-600">
             The weight, size and build time of our crates, based on every crate entered so far.
           </p>
@@ -205,7 +206,7 @@ export default function CratingReportPage() {
           </select>
         </label>
         {filtersOn && (
-          <button type="button" className="text-sm underline sm:pb-2" onClick={() => setParams({}, { replace: true })}>
+          <button type="button" className="text-sm underline sm:pb-2" onClick={() => setParams(params.get('tab') ? { tab: params.get('tab')! } : {}, { replace: true })}>
             Clear Filters
           </button>
         )}
