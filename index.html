@@ -16,7 +16,13 @@
       // The theme chosen in Settings (kept in this browser), set before the page draws.
       try {
         var t = localStorage.getItem('bmm.theme') || 'system'
-        if (t === 'dark' || (t === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) document.documentElement.classList.add('dark')
+        var c = t === 'glass' ? localStorage.getItem('bmm.glassbase') || 'system' : t
+        var r = document.documentElement
+        if (c === 'dark' || (c === 'system' && matchMedia('(prefers-color-scheme: dark)').matches)) r.classList.add('dark')
+        if (t === 'glass') {
+          r.classList.add('glass')
+          if (localStorage.getItem('bmm.glasslite') === 'slow' || matchMedia('(prefers-reduced-transparency: reduce), (prefers-reduced-motion: reduce), (prefers-contrast: more)').matches) r.classList.add('glass-lite')
+        }
       } catch (e) {}
     </script>
   </head>

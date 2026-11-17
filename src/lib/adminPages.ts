@@ -23,6 +23,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   { to: '/admin/holidays', permission: 'admin.holidays', icon: 'calendar' as const, title: 'Company Holidays', text: 'PEI statutory holidays (imported every year), company holidays and office closures. Used for ship dates.' },
   { to: '/admin/email', permission: 'admin.email', icon: 'inbox' as const, title: 'Email', text: 'Mailbox set-up, test email, automatic sending and phone notification keys.' },
   { to: '/admin/dashboard-charts', permission: 'admin.dashboard_charts', icon: 'pulse' as const, title: 'Dashboard Charts', text: 'Green, amber and red targets for the gauges, and the charts a new dashboard starts with.' },
+  { to: '/admin/dashboard-templates', permission: 'admin.dashboards', icon: 'home' as const, title: 'Dashboard Templates', text: 'Starting dashboards for people or departments, and locked dashboards.' },
   { to: '/admin/freight', permission: 'admin.freight', icon: 'truck' as const, title: 'Freight Settings', text: 'Broker fee, handling rates, insurance rule, margin buttons, pick-up locations and shipping agents.' },
   { to: '/admin/email-templates', permission: 'admin.email_templates', icon: 'template' as const, title: 'Email Templates', text: 'Default subject and CC of the commissioning certificate and service report emails.' },
   { to: '/admin/email-log', permission: 'admin.email_log', icon: 'list' as const, title: 'Email Log', text: 'Every email sent, with Resend.' },

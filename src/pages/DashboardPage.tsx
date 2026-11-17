@@ -1,426 +1,368 @@
-import { format, parseISO } from 'date-fns'
-import WhosOff from '../components/timesheets/WhosOff'
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link } from 'react-router-dom'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
-import ScheduleChanges from '../components/schedule/ScheduleChanges'
-import DashboardCharts from '../components/dashboard/DashboardCharts'
-import DelayChart, { type MonthDelay } from '../components/dashboard/DelayChart'
-import { dueText } from '../components/payments/dueText'
-import { countryFlag } from '../lib/country'
+import DashboardCanvas from '../components/dashboard/DashboardCanvas'
+import { PrintDashboardDialog, ShareDashboardDialog } from '../components/dashboard/DashboardDialogs'
+import { buttonClass, secondaryButtonClass } from '../components/form'
+import { useAuth } from '../lib/auth'
+import { askText, confirmAction } from '../lib/confirm'
+import { loadChartSettings } from '../lib/dashboardCharts'
+import { dashData, updatedText } from '../lib/dashboardData'
 import { showDate, todayISO } from '../lib/dates'
-import { fetchAll } from '../lib/fetchAll'
-import { formatMoney, friendlyError } from '../lib/format'
+import { friendlyError } from '../lib/format'
+import type { Layouts } from '../lib/gridLayout'
 import { usePermissions } from '../lib/permissions'
-import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
-import { BOARD_STAGES, type OrderSummaryRow, type PaymentRow } from '../lib/types'
+import { PRINT_KEY } from '../lib/useChart'
+import { starterDashboard, type Dashboard, type Widget } from '../lib/widgets'
+import { ACTION } from '../lib/wording'
 
-/** Stages where the money is really owed (not quotes, not cancelled). */
-const OWED_STAGES = ['Confirmed', 'In production', 'Ready', 'Ready to ship', 'Shipped']
+const STARTER = 'starter'
+/** Tables whose changes refresh the widgets (row security decides what each person receives). */
+const LIVE_TABLES = ['orders', 'payments', 'order_machines', 'board_cards', 'notices', 'crates', 'time_off_requests', 'company_events']
 
-function sumByCurrency<T>(rows: T[], currency: (r: T) => string, amount: (r: T) => number) {
-  const sums: Record<string, number> = {}
-  for (const r of rows) sums[currency(r)] = (sums[currency(r)] ?? 0) + Number(amount(r))
-  return Object.entries(sums)
-    .filter(([, n]) => Math.abs(n) >= 0.005)
-    .sort(([a], [b]) => a.localeCompare(b))
+/** The live data: a new snapshot when something changes (realtime), every 2 minutes, and when the window comes back. */
+function useLiveData() {
+  const [data, setData] = useState(() => dashData())
+  const fresh = useCallback(() => setData(dashData()), [])
+  const timer = useRef<number | undefined>(undefined)
+  const bump = useCallback(() => {
+    window.clearTimeout(timer.current)
+    timer.current = window.setTimeout(fresh, 2500)
+  }, [fresh])
+  useEffect(() => {
+    if (!supabase) return
+    let channel = supabase.channel(`dashboard-live-${Math.random().toString(36).slice(2)}`)
+    for (const t of LIVE_TABLES) channel = channel.on('postgres_changes', { event: '*', schema: 'public', table: t }, bump)
+    channel.subscribe()
+    const every = window.setInterval(fresh, 120000)
+    const onFocus = () => document.visibilityState === 'visible' && bump()
+    document.addEventListener('visibilitychange', onFocus)
+    return () => {
+      supabase?.removeChannel(channel)
+      window.clearInterval(every)
+      document.removeEventListener('visibilitychange', onFocus)
+    }
+  }, [bump, fresh])
+  return { data, refresh: fresh }
 }
 
-function delayWords(d: number) {
-  const r = Math.round(d * 10) / 10
-  if (r === 0) return 'On time'
-  return r > 0 ? `${r} day${r === 1 ? '' : 's'} late` : `${-r} day${r === -1 ? '' : 's'} early`
-}
-
-/* @layout-helper */
-function Card({
-  title,
-  to,
-  children,
-  tone = '',
-  className = '',
-}: {
-  title: string
-  /** Where a click goes; no link when the person can't open that page. */
-  to?: string
-  children: ReactNode
-  tone?: string
-  className?: string
-}) {
-  const inner = (
-    <>
-      <div className="text-sm text-slate-600">{title}</div>
-      <div className="mt-1">{children}</div>
-    </>
-  )
-  const cls = `block rounded-lg border bg-white p-4 ${tone || 'border-slate-200'} ${className}`
-  return to ? (
-    <Link to={to} className={`${cls} hover:border-slate-400 hover:shadow-sm`}>
-      {inner}
-    </Link>
-  ) : (
-    <div className={cls}>{inner}</div>
-  )
-}
-
-/** A row that opens the order, or plain text for people without the order page. */
-/* @layout-helper */
-function OrderRow({ id, children }: { id: string; children: ReactNode }) {
-  const { can } = usePermissions()
-  const cls = 'flex items-center justify-between gap-3 py-2'
-  return can('order.page') ? (
-    <Link to={`/orders/${id}`} className={`${cls} hover:bg-slate-50`}>
-      {children}
-    </Link>
-  ) : (
-    <div className={cls}>{children}</div>
-  )
-}
-
-/* @layout-helper */
-function Big({ children }: { children: ReactNode }) {
-  return <div className="text-3xl font-semibold tabular-nums">{children}</div>
-}
-
-/* @layout-helper */
-function Box({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
-  return (
-    <section className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 md:p-5">
-      <div className="mb-3 flex items-baseline justify-between gap-2">
-        <h2 className="font-semibold">{title}</h2>
-        {aside}
-      </div>
-      {children}
-    </section>
-  )
-}
-
+/** The dashboard: the person's dashboards as tabs, each a grid of widgets they are allowed to see. */
 export default function DashboardPage() {
   const { can } = usePermissions()
-  const seesPayments = can('payments')
-  const label = useStageLabels()
-  const [orders, setOrders] = useState<OrderSummaryRow[]>([])
-  const [payments, setPayments] = useState<PaymentRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const today = todayISO()
+  const { session } = useAuth()
+  const navigate = useNavigate()
+  const [params, setParams] = useSearchParams()
+  const [list, setList] = useState<Dashboard[] | null>(null)
+  const [editing, setEditing] = useState<{
+    widgets: Widget[]
+    layouts: Layouts
+  } | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [sharing, setSharing] = useState(false)
+  const [printing, setPrinting] = useState(false)
+  const { data, refresh } = useLiveData()
+  const canCustomize = can('dashboard.charts.customize', 'edit')
+  const canTabs = can('dashboard.tabs', 'edit')
 
   const load = useCallback(async () => {
     if (!supabase) return
-    const [o, p] = await Promise.all([
-      fetchAll<OrderSummaryRow>(() => supabase!.from('order_summary').select('*').eq('archived', false).order('id')),
-      // Payment data only for people allowed to see it (the database refuses it anyway).
-      seesPayments
-        ? fetchAll<PaymentRow>(() =>
-            supabase!
-              .from('payment_overview')
-              .select('*')
-              .gt('remaining', 0)
-              .eq('order_archived', false)
-              .neq('stage', 'Cancelled')
-              .order('due_date', { nullsFirst: false })
-              .order('id'),
-          )
-        : Promise.resolve({ data: [] as PaymentRow[], error: null }),
-    ])
-    const error = o.error ?? p.error
+    const { data: rows, error } = await supabase.rpc('my_dashboards')
     if (error) toast.error(friendlyError(error))
-    setOrders(o.data)
-    setPayments(p.data)
-    setLoading(false)
-  }, [seesPayments])
-
+    let ds = ((rows as Dashboard[] | null) ?? []).map((d) => ({
+      ...d,
+      widgets: d.widgets ?? [],
+      layouts: d.layouts ?? {},
+    }))
+    if (!ds.length) {
+      // No saved dashboard and no template: start from the old dashboard and the old "My Charts".
+      const email = session?.user.email?.toLowerCase()
+      const old = email ? await supabase.from('user_preferences').select('dashboard').eq('user_email', email).maybeSingle() : null
+      const settings = await loadChartSettings()
+      const start = starterDashboard((k) => can(k), (old?.data?.dashboard as Parameters<typeof starterDashboard>[1]) ?? null, settings.defaults)
+      ds = [
+        {
+          id: STARTER,
+          name: 'Overview',
+          sort_order: 0,
+          is_default: true,
+          widgets: start.widgets,
+          layouts: start.layouts,
+          template_id: null,
+          locked: false,
+          shared_by_name: null,
+        },
+      ]
+    }
+    setList(ds)
+  }, [session, can])
   useEffect(() => {
     // load() only sets state after the database answers.
     // oxlint-disable-next-line react/set-state-in-effect
     load()
   }, [load])
 
-  const stats = useMemo(() => {
-    const year = today.slice(0, 4)
-    const inProduction = orders.filter((o) => o.stage === 'In production').length
-    const ready = orders.filter((o) => o.stage === 'Ready').length
-    const readyToShip = orders.filter((o) => o.stage === 'Ready to ship').length
-    const outstanding = sumByCurrency(
-      orders.filter((o) => OWED_STAGES.includes(o.stage) && (o.amount_outstanding ?? 0) > 0),
-      (o) => o.currency,
-      (o) => o.amount_outstanding ?? 0,
-    )
-    const overdue = payments.filter((p) => p.status === 'Overdue')
-    const overdueSums = sumByCurrency(overdue, (p) => p.currency, (p) => p.remaining)
-
-    const shipped = orders.filter((o) => o.stage === 'Shipped' && o.actual_ship_date)
-    const withDelay = shipped.filter((o) => o.delay_days !== null)
-    const thisYear = withDelay.filter((o) => o.actual_ship_date!.startsWith(year))
-    const avgDelay = thisYear.length ? thisYear.reduce((s, o) => s + o.delay_days!, 0) / thisYear.length : null
-
-    // Last 12 months, oldest first.
-    const months: MonthDelay[] = []
-    const start = parseISO(`${today.slice(0, 7)}-01`)
-    for (let i = 11; i >= 0; i--) {
-      const d = new Date(start.getFullYear(), start.getMonth() - i, 1)
-      const key = format(d, 'yyyy-MM')
-      const list = withDelay.filter((o) => o.actual_ship_date!.startsWith(key))
-      months.push({
-        month: key,
-        label: format(d, 'MMM'),
-        longLabel: format(d, 'MMMM yyyy'),
-        average: list.length ? list.reduce((s, o) => s + o.delay_days!, 0) / list.length : null,
-        orders: list.length,
-      })
-    }
-
-    const latestShipped = [...shipped]
-      .sort((a, b) => b.actual_ship_date!.localeCompare(a.actual_ship_date!) || b.order_number - a.order_number)
-      .slice(0, 5)
-
-    const upcomingShips = orders
-      .filter((o) => BOARD_STAGES.includes(o.stage) && o.expected_ship_date)
-      .sort((a, b) => a.expected_ship_date!.localeCompare(b.expected_ship_date!))
-      .slice(0, 10)
-
-    const upcomingPayments = payments.filter((p) => p.due_date && p.due_date >= today).slice(0, 10)
-
-    return {
-      year,
-      inProduction,
-      ready,
-      readyToShip,
-      outstanding,
-      overdue,
-      overdueSums,
-      avgDelay,
-      shippedThisYear: thisYear.length,
-      months,
-      latestShipped,
-      upcomingShips,
-      upcomingPayments,
-    }
-  }, [orders, payments, today])
-
-  if (loading)
+  if (!list)
     return (
       <Can permission="dashboard">
         <div className="p-8 text-center text-slate-500">Loading…</div>
       </Can>
     )
+  const current = list.find((d) => d.id === params.get('tab')) ?? list.find((d) => d.is_default) ?? list[0]
+  const shown = editing ?? {
+    widgets: current.widgets,
+    layouts: current.layouts,
+  }
+  const editable = canCustomize && !current.locked
+  const choose = (id: string) => {
+    if (editing) return toast.error('Select Done or Cancel first.')
+    setParams(id === (list.find((d) => d.is_default) ?? list[0]).id ? {} : { tab: id }, { replace: true })
+  }
 
-  const boardLink = can('orders.board') ? '/board' : undefined
-  const paymentsLink = can('payments.page') ? '/payments' : undefined
-  const shippedLink = can('orders.list') ? '/orders?stage=Shipped&sort=actual&dir=desc' : undefined
+  async function save(d: Dashboard, patch: { name?: string; widgets?: Widget[]; layouts?: Layouts }) {
+    if (!supabase) return null
+    const p =
+      d.id === STARTER
+        ? {
+            name: patch.name ?? d.name,
+            widgets: patch.widgets ?? d.widgets,
+            layouts: patch.layouts ?? d.layouts,
+          }
+        : { id: d.id, ...patch }
+    const { data: id, error } = await supabase.rpc('save_dashboard', { p })
+    if (error) {
+      toast.error(friendlyError(error))
+      return null
+    }
+    return id as string
+  }
+  async function done() {
+    if (!editing) return
+    setBusy(true)
+    const id = await save(current, editing)
+    setBusy(false)
+    if (!id) return
+    setEditing(null)
+    await load()
+    if (current.id === STARTER) setParams({}, { replace: true })
+    toast.success('Dashboard saved.')
+  }
+  async function rpc(name: string, args: Record<string, unknown>, ok?: string) {
+    if (!supabase) return null
+    const { data: res, error } = await supabase.rpc(name, args)
+    if (error) {
+      toast.error(friendlyError(error))
+      return null
+    }
+    if (ok) toast.success(ok)
+    await load()
+    return res ?? true
+  }
+  const saved = current.id !== STARTER
+
+  async function newDashboard() {
+    const name = await askText('Name of the new dashboard, for example “Production”', { label: 'Name', confirmLabel: ACTION.create })
+    if (!name) return
+    if (!saved) await save(current, {})
+    const id = await save({ ...current, id: STARTER }, { name, widgets: [], layouts: {} })
+    if (!id) return
+    await load()
+    setParams({ tab: id }, { replace: true })
+    setEditing({ widgets: [], layouts: {} })
+  }
+  async function rename() {
+    const name = await askText('New name of this dashboard', {
+      initial: current.name,
+      label: 'Name',
+      confirmLabel: ACTION.save,
+    })
+    if (name && (await save(current, { name }))) load()
+  }
+  async function move(dir: -1 | 1) {
+    const ids = list!.map((d) => d.id)
+    const i = ids.indexOf(current.id)
+    const j = i + dir
+    if (j < 0 || j >= ids.length) return
+    ;[ids[i], ids[j]] = [ids[j], ids[i]]
+    rpc('reorder_dashboards', { p_ids: ids })
+  }
+  async function remove() {
+    if (!(await confirmAction(`Permanently delete the dashboard “${current.name}”?`, { danger: true, confirmLabel: ACTION.permanentlyDelete }))) return
+    if (await rpc('delete_dashboard', { p_id: current.id }, 'Dashboard deleted.')) setParams({}, { replace: true })
+  }
+  async function reset() {
+    if (!(await confirmAction(`Reset “${current.name}” to its template? Your changes to it are replaced.`, { confirmLabel: 'Reset to Template' }))) return
+    const id = await rpc('reset_dashboard', { p_id: current.id }, 'Dashboard reset to the template.')
+    if (typeof id === 'string') setParams({ tab: id }, { replace: true })
+  }
+  async function saveNote(widgetId: string, text: string) {
+    const ws = current.widgets.map((w) => (w.id === widgetId ? { ...w, text } : w))
+    if (await save(current, { widgets: ws })) setList(list!.map((d) => (d.id === current.id ? { ...d, widgets: ws } : d)))
+  }
+  function print(title: string, ids: string[]) {
+    try {
+      sessionStorage.setItem(
+        PRINT_KEY,
+        JSON.stringify({
+          title,
+          widgets: current.widgets.filter((w) => ids.includes(w.id)),
+        }),
+      )
+    } catch {
+      return toast.error('This browser does not allow the printable page. Allow site data for this page and try again.')
+    }
+    navigate('/dashboard/print')
+  }
+  const small = 'rounded-md border border-slate-300 bg-white px-2.5 py-1 text-sm hover:bg-slate-50 disabled:opacity-50'
 
   return (
     <Can permission="dashboard">
-      <div className="mx-auto max-w-6xl space-y-5">
-        <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
-          <p className="text-sm text-slate-600">{showDate(today, 'EEEE, MMMM d, yyyy')}</p>
-        </div>
-
-        <Can permission="dashboard.whos_off">
-          <WhosOff />
-        </Can>
-
-        <Can permission="dashboard.list.schedule_changes">
-          <ScheduleChanges orders={orders} onChanged={load} />
-        </Can>
-
-        {/* ---------- Cards ---------- */}
-        <div className="grid gap-3 empty:hidden [grid-template-columns:repeat(auto-fit,minmax(min(100%,10.5rem),1fr))]">
-          <Can permission="dashboard.card.in_production">
-            <Card title={label('In production')} to={boardLink}>
-              <Big>{stats.inProduction}</Big>
-            </Card>
-          </Can>
-          <Can permission="dashboard.card.ready">
-            <Card title={label('Ready')} to={boardLink}>
-              <Big>{stats.ready}</Big>
-            </Card>
-          </Can>
-          <Can permission="dashboard.card.ready_to_ship">
-            <Card title={label('Ready to ship')} to={boardLink}>
-              <Big>{stats.readyToShip}</Big>
-            </Card>
-          </Can>
-          <Can permission="dashboard.card.payments_overdue">
-            <Card title="Payments Overdue" to={paymentsLink} tone={stats.overdue.length ? 'border-red-300 bg-red-50' : ''}>
-              <Big>
-                <span className={stats.overdue.length ? 'text-red-800' : ''}>{stats.overdue.length}</span>
-              </Big>
-              {stats.overdueSums.map(([cur, n]) => (
-                <div key={cur} className="text-sm text-red-800 tabular-nums">
-                  {formatMoney(n, cur)}
-                </div>
-              ))}
-            </Card>
-          </Can>
-          <Can permission="dashboard.card.money_owed">
-            <Card title="Amount Outstanding" to={paymentsLink}>
-              {stats.outstanding.length === 0 ? (
-                <Big>—</Big>
-              ) : (
-                stats.outstanding.map(([cur, n]) => (
-                  <div key={cur} className="text-lg font-semibold tabular-nums [overflow-wrap:anywhere] 2xl:text-xl">
-                    {formatMoney(n, cur)}
-                  </div>
-                ))
-              )}
-            </Card>
-          </Can>
-          <Can permission="dashboard.card.average_delay">
-            <Card title={`Average Delay (${stats.year})`} to={shippedLink}>
-              {stats.avgDelay === null ? (
-                <Big>—</Big>
-              ) : (
-                <Big>
-                  <span className={stats.avgDelay > 0 ? 'text-red-700' : 'text-green-700'}>
-                    {Math.round(stats.avgDelay * 10) / 10 > 0 ? '+' : ''}
-                    {Math.round(stats.avgDelay * 10) / 10}
-                  </span>
-                  <span className="ml-1 text-base font-normal text-slate-500">days</span>
-                </Big>
-              )}
-              <div className="text-xs text-slate-500">
-                {stats.shippedThisYear} order{stats.shippedThisYear === 1 ? '' : 's'} shipped this year
-              </div>
-            </Card>
-          </Can>
-        </div>
-
-        <Can permission="dashboard.charts">
-          <DashboardCharts />
-        </Can>
-
-        {/* ---------- Delay chart + latest shipped ---------- */}
-        <div className="grid gap-5 empty:hidden [grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))]">
-          {/* People with My Charts get this chart there, in the form they choose. */}
-          <Can permission="dashboard.chart.delay_by_month">
-            {!can('dashboard.charts') && (
-            <Box title="Average Delay by Month" aside={<span className="text-xs text-slate-500">last 12 months</span>}>
-              <DelayChart months={stats.months} />
-            </Box>
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            <p className="text-sm text-slate-600">
+              {showDate(todayISO(), 'EEEE, MMMM d, yyyy')} · {updatedText(data.loadedAt)}
+              <Can permission="dashboard.refresh">
+                {' · '}
+                <button type="button" className="underline" onClick={refresh}>
+                  Refresh Now
+                </button>
+              </Can>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {editing ? (
+              <Can permission="dashboard.charts.customize" level="edit">
+                <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => setEditing(null)}>
+                  {ACTION.cancel}
+                </button>
+                <button type="button" className={buttonClass} disabled={busy} onClick={done}>
+                  {busy ? ACTION.saving : ACTION.done}
+                </button>
+              </Can>
+            ) : (
+              <>
+                <Can permission="dashboard.charts.print">
+                  <button type="button" className={secondaryButtonClass} onClick={() => setPrinting(true)}>
+                    {ACTION.print}
+                  </button>
+                </Can>
+                <Can permission="dashboard.charts.customize" level="edit">
+                  {editable && (
+                    <button
+                      type="button"
+                      className={buttonClass}
+                      onClick={() =>
+                        setEditing({
+                          widgets: current.widgets,
+                          layouts: current.layouts,
+                        })
+                      }
+                    >
+                      Edit Dashboard
+                    </button>
+                  )}
+                </Can>
+              </>
             )}
-          </Can>
-          <Can permission="dashboard.list.latest_shipped">
-            <Box title="Latest Shipped">
-              {stats.latestShipped.length === 0 ? (
-                <p className="text-sm text-slate-500">No orders have shipped yet.</p>
-              ) : (
-                <ul className="divide-y divide-slate-100 text-sm">
-                  {stats.latestShipped.map((o) => (
-                    <li key={o.id}>
-                      <OrderRow id={o.id}>
-                        <span className="min-w-0">
-                          <span className="font-medium">Order {o.order_code}</span>
-                          <span className="block truncate text-slate-600">
-                            {o.customer_name} {countryFlag(o.customer_country)}
-                          </span>
-                        </span>
-                        <span className="shrink-0 text-right">
-                          <span className="block text-slate-600">{showDate(o.actual_ship_date)}</span>
-                          <span
-                            className={`block font-medium ${
-                              o.delay_days === null ? 'text-slate-400' : o.delay_days > 0 ? 'text-red-700' : 'text-green-700'
-                            }`}
-                          >
-                            {o.delay_days === null ? 'No expected date' : delayWords(o.delay_days)}
-                          </span>
-                        </span>
-                      </OrderRow>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </Box>
-          </Can>
+          </div>
         </div>
 
-        {/* ---------- Upcoming ---------- */}
-        <div className="grid gap-5 empty:hidden [grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))]">
-          <Can permission="dashboard.list.next_ship_dates">
-            <Box
-              title="Next Ship Dates"
-              aside={
-                boardLink && (
-                  <Link to={boardLink} className="text-xs text-slate-600 underline">
-                    Board
-                  </Link>
-                )
-              }
-            >
-              {stats.upcomingShips.length === 0 ? (
-                <p className="text-sm text-slate-500">No orders have an expected ship date yet.</p>
-              ) : (
-                <ul className="divide-y divide-slate-100 text-sm">
-                  {stats.upcomingShips.map((o) => {
-                    const d = o.days_until_ship ?? 0
-                    return (
-                      <li key={o.id}>
-                        <OrderRow id={o.id}>
-                          <span className="min-w-0">
-                            <span className="font-medium">Order {o.order_code}</span>
-                            <span className="block truncate text-slate-600">
-                              {o.customer_name} · {o.machines_ready_count}/{o.machines_count} built · {label(o.stage)}
-                            </span>
-                          </span>
-                          <span className="shrink-0 text-right">
-                            <span className="block">{showDate(o.expected_ship_date)}</span>
-                            <span className={`block text-xs ${d < 0 ? 'font-medium text-red-700' : d <= 14 ? 'text-amber-700' : 'text-slate-500'}`}>
-                              {d < 0 ? `${-d} day${d === -1 ? '' : 's'} ago` : d === 0 ? 'Today' : `in ${d} day${d === 1 ? '' : 's'}`}
-                            </span>
-                          </span>
-                        </OrderRow>
-                      </li>
-                    )
-                  })}
-                </ul>
+        {/* Tabs: one per dashboard */}
+        {(list.length > 1 || canTabs) && (
+          <div className="flex flex-wrap items-center gap-1 border-b border-slate-200" role="tablist" aria-label="Dashboards">
+            {list.map((d) => (
+              <Can key={d.id} permission="dashboard.switch">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={d.id === current.id}
+                  onClick={() => choose(d.id)}
+                  className={`-mb-px max-w-[14rem] truncate border-b-2 px-3 py-2 text-sm ${d.id === current.id ? 'border-slate-900 font-semibold' : 'border-transparent text-slate-600'}`}
+                >
+                  {d.name}
+                  {d.is_default && list.length > 1 && <span className="ml-1 text-xs font-normal text-slate-500">(default)</span>}
+                </button>
+              </Can>
+            ))}
+            <Can permission="dashboard.tabs" level="edit">
+              {!editing && (
+                <button type="button" className="px-2 py-2 text-sm text-blue-700 underline" onClick={newDashboard}>
+                  + New Dashboard
+                </button>
               )}
-            </Box>
-          </Can>
+            </Can>
+          </div>
+        )}
 
-          <Can permission="dashboard.list.next_payments">
-            <Box
-              title="Next Payments Due"
-              aside={
-                paymentsLink && (
-                  <Link to={paymentsLink} className="text-xs text-slate-600 underline">
-                    All Payments
-                  </Link>
-                )
-              }
-            >
-              {stats.upcomingPayments.length === 0 ? (
-                <p className="text-sm text-slate-500">No payments are due soon.</p>
-              ) : (
-                <ul className="divide-y divide-slate-100 text-sm">
-                  {stats.upcomingPayments.map((p) => (
-                    <li key={p.id}>
-                      <OrderRow id={p.order_id}>
-                        <span className="min-w-0">
-                          <span className="font-medium">Order {p.order_code}</span>
-                          <span className="text-slate-500"> · {p.payment_type}</span>
-                          <span className="block truncate text-slate-600">{p.customer_name}</span>
-                        </span>
-                        <span className="shrink-0 text-right">
-                          <span className="block font-medium tabular-nums">{formatMoney(p.remaining, p.currency)}</span>
-                          <span className={`block text-xs ${p.status === 'Due soon' ? 'text-amber-700' : 'text-slate-500'}`}>
-                            {showDate(p.due_date)} · {dueText(p) || 'Upcoming'}
-                          </span>
-                        </span>
-                      </OrderRow>
-                    </li>
-                  ))}
-                </ul>
+        {/* What can be done with this dashboard */}
+        {!editing && (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {current.locked && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Locked by an admin</span>}
+            {current.shared_by_name && <span className="text-xs text-slate-500">A copy shared by {current.shared_by_name}</span>}
+            <Can permission="dashboard.tabs" level="edit">
+              {saved && !current.locked && (
+                <button type="button" className={small} onClick={rename}>
+                  Rename
+                </button>
               )}
-              {stats.overdue.length > 0 && paymentsLink && (
-                <Link to={paymentsLink} className="mt-3 block rounded-md bg-red-50 px-3 py-2 text-sm text-red-800 hover:bg-red-100">
-                  Plus {stats.overdue.length} overdue payment{stats.overdue.length === 1 ? '' : 's'} →
-                </Link>
+              {saved && (
+                <button type="button" className={small} onClick={() => rpc('duplicate_dashboard', { p_id: current.id, p_name: null }, 'Dashboard duplicated.')}>
+                  Duplicate
+                </button>
               )}
-            </Box>
-          </Can>
-        </div>
+              {saved && !current.is_default && (
+                <button type="button" className={small} onClick={() => rpc('set_default_dashboard', { p_id: current.id }, `“${current.name}” opens first now.`)}>
+                  Make Default
+                </button>
+              )}
+              {saved && list.length > 1 && (
+                <>
+                  <button type="button" className={small} aria-label="Move this tab left" disabled={list[0].id === current.id} onClick={() => move(-1)}>
+                    ←
+                  </button>
+                  <button type="button" className={small} aria-label="Move this tab right" disabled={list.at(-1)!.id === current.id} onClick={() => move(1)}>
+                    →
+                  </button>
+                </>
+              )}
+              {saved && !current.locked && (
+                <button type="button" className={`${small} text-red-700`} onClick={remove}>
+                  {ACTION.permanentlyDelete}
+                </button>
+              )}
+            </Can>
+            <Can permission="dashboard.share" level="edit">
+              {saved && (
+                <button type="button" className={small} onClick={() => setSharing(true)}>
+                  Share a Copy
+                </button>
+              )}
+            </Can>
+            <Can permission="dashboard.reset" level="edit">
+              {current.template_id && (
+                <button type="button" className={small} onClick={reset}>
+                  Reset to Template
+                </button>
+              )}
+            </Can>
+          </div>
+        )}
+
+        <DashboardCanvas
+          widgets={shown.widgets}
+          layouts={shown.layouts}
+          editing={!!editing}
+          data={data}
+          onChange={(widgets, layouts) => setEditing({ widgets, layouts })}
+          onNote={saveNote}
+          canEditNote={editable && saved}
+        />
+
+        {sharing && <ShareDashboardDialog dashboardId={current.id} name={current.name} onClose={() => setSharing(false)} />}
+        {printing && <PrintDashboardDialog widgets={current.widgets} name={current.name} onClose={() => setPrinting(false)} onPrint={print} />}
       </div>
     </Can>
   )

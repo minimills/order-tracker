@@ -77,7 +77,7 @@ export default function Layout() {
       {menuOpen && !collapsed && <div className="fixed inset-0 z-20 bg-black/40 md:hidden" onClick={() => setMenuOpen(false)} aria-hidden="true" />}
 
       <aside
-        className={`keep-dark fixed inset-y-0 left-0 z-30 flex flex-col bg-slate-900 text-slate-100 transition-[width,transform] md:static md:translate-x-0 ${
+        className={`app-sidebar keep-dark fixed inset-y-0 left-0 z-30 flex flex-col bg-slate-900 text-slate-100 transition-[width,transform] md:static md:translate-x-0 ${
           collapsed ? 'w-14 translate-x-0' : `w-60 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`
         }`}
         aria-label="Main menu"
@@ -162,7 +162,7 @@ export default function Layout() {
       {/* With the collapsed menu always showing on phones, the page starts after it. */}
       <div className={`flex min-w-0 flex-1 flex-col ${collapsed ? 'pl-14 md:pl-0' : ''}`}>
         {/* Top bar: menu button (phones, expanded menu) and the bells */}
-        <header className="flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 md:px-8">
+        <header className="app-topbar flex items-center gap-3 border-b border-slate-200 bg-white px-4 py-2 md:px-8">
           {!collapsed && (
             <button type="button" onClick={() => setMenuOpen(true)} className="rounded-md border border-slate-300 px-3 py-1 text-sm md:hidden">
               <span className="flex items-center gap-1.5">

@@ -14,12 +14,18 @@ export const CHART_TYPES = [
   { key: 'pie', label: 'Pie' },
   { key: 'gauge', label: 'Gauge' },
   { key: 'gauge_targets', label: 'Gauge With Targets' },
+  { key: 'number', label: 'Number' },
+  { key: 'table', label: 'Table' },
 ] as const
 export type ChartType = (typeof CHART_TYPES)[number]['key']
 
 export const RANGES = [
-  { key: '12m', label: 'Last 12 months' },
+  { key: 'today', label: 'Today' },
+  { key: 'week', label: 'This week' },
+  { key: 'month', label: 'This month' },
+  { key: 'quarter', label: 'This quarter' },
   { key: 'ytd', label: 'This year' },
+  { key: '12m', label: 'Last 12 months' },
   { key: 'last_year', label: 'Last year' },
   { key: '3y', label: 'Last 3 years' },
   { key: 'all', label: 'All time' },
@@ -37,7 +43,13 @@ export type ChartConfig = {
   to?: string
   /** "Open cards by stage": the boards to count. */
   boards?: string[]
+  /** Widget filters (each chart uses the ones it lists in `filters`). */
+  filters?: WidgetFilters
 }
+
+/** Filters a widget can have. Machine type and country are stored as the names people see. */
+export type WidgetFilters = { department?: string; machineType?: string; country?: string; board?: string }
+export type FilterKey = keyof WidgetFilters
 
 export type ChartPoint = { label: string; value: number; long?: string }
 export type ChartResult = {
@@ -56,7 +68,20 @@ export const CHART_SETTINGS_DEFAULT: ChartSettings = { targets: {}, defaults: ['
 export function rangeDates(c: Pick<ChartConfig, 'range' | 'from' | 'to'>): { from: string; to: string } {
   const today = todayISO()
   const y = Number(today.slice(0, 4))
+  const d = parseISO(today)
   switch (c.range) {
+    case 'today':
+      return { from: today, to: today }
+    case 'week': {
+      const back = (d.getDay() + 6) % 7
+      return { from: format(new Date(d.getFullYear(), d.getMonth(), d.getDate() - back), 'yyyy-MM-dd'), to: today }
+    }
+    case 'month':
+      return { from: `${today.slice(0, 7)}-01`, to: today }
+    case 'quarter': {
+      const q = Math.floor(d.getMonth() / 3) * 3
+      return { from: format(new Date(d.getFullYear(), q, 1), 'yyyy-MM-dd'), to: today }
+    }
     case 'ytd':
       return { from: `${y}-01-01`, to: today }
     case 'last_year':
@@ -70,6 +95,12 @@ export function rangeDates(c: Pick<ChartConfig, 'range' | 'from' | 'to'>): { fro
     default:
       return { from: format(startOfMonth(addMonths(parseISO(today), -11)), 'yyyy-MM-dd'), to: today }
   }
+}
+
+/** The same dates one year earlier ("compare with last year"). */
+export function lastYear(r: { from: string; to: string }) {
+  const back = (iso: string) => (iso < '2001-01-01' || iso > '2998-01-01' ? iso : `${Number(iso.slice(0, 4)) - 1}${iso.slice(4) === '-02-29' ? '-02-28' : iso.slice(4)}`)
+  return { from: back(r.from), to: back(r.to) }
 }
 
 export function rangeText(c: Pick<ChartConfig, 'range' | 'from' | 'to'>) {
@@ -122,6 +153,7 @@ export function chartData() {
         const { data } = await supabase!.rpc('chart_task_times', { p_from: from < '2000-01-01' ? '2000-01-01' : from, p_to: to > '2100-01-01' ? '2100-01-01' : to })
         return ((data as TaskTime[] | null) ?? []).map((t) => ({ ...t, seconds: Number(t.seconds) }))
       }),
+    stageDepartments: () => once('stageDepartments', async () => ((await supabase!.from('production_stage_template').select('step, department_id').eq('archived', false)).data as { step: string; department_id: string | null }[] | null) ?? []),
     boards: () => once('boards', () => all<{ id: string; name: string; purpose: string | null }>(() => supabase!.from('boards').select('id, name, purpose').eq('archived', false).order('name'))),
     boardCards: (ids: string[]) =>
       once(`cards:${ids.join(',')}`, async () => {
@@ -141,6 +173,18 @@ export function chartData() {
 const inRange = (d: string | null | undefined, from: string, to: string) => !!d && d >= from && d <= to
 const round1 = (n: number) => Math.round(n * 10) / 10
 const REAL_ORDER = (o: Order) => o.stage !== 'Quote' && o.stage !== 'Cancelled'
+/** The order passes the widget's customer country filter. */
+const countryOk = (o: Order, c: ChartConfig) => !c.filters?.country || (o.customer_country ?? '') === c.filters.country
+const typeOk = (m: Machine, c: ChartConfig) => !c.filters?.machineType || m.machine_type === c.filters.machineType
+/** Orders (in the dates, real orders) that pass the country filter, and with machine type filter: have such a machine. */
+async function filteredOrders(d: ChartData, c: ChartConfig, keep: (o: Order) => boolean) {
+  let rows = (await d.orders()).filter((o) => keep(o) && countryOk(o, c))
+  if (c.filters?.machineType) {
+    const ids = new Set((await d.machines()).filter((m) => typeOk(m, c)).map((m) => m.order_id))
+    rows = rows.filter((o) => ids.has(o.id))
+  }
+  return rows
+}
 
 /** The months from the first to the last date that has data (at most 36). */
 function months(from: string, to: string, dates: string[]) {
@@ -188,18 +232,20 @@ export type ChartDef = {
   now?: boolean
   /** Needs boards chosen. */
   boards?: boolean
+  /** The widget filters this chart uses. */
+  filters?: FilterKey[]
   load: (d: ChartData, range: { from: string; to: string }, c: ChartConfig) => Promise<ChartResult>
 }
 
-const ALL: ChartType[] = ['column', 'bar', 'line', 'pie', 'gauge', 'gauge_targets']
-const NO_PIE: ChartType[] = ['column', 'bar', 'line', 'gauge', 'gauge_targets']
-const NO_GAUGE: ChartType[] = ['column', 'bar', 'line', 'pie']
+const ALL: ChartType[] = ['column', 'bar', 'line', 'pie', 'gauge', 'gauge_targets', 'number', 'table']
+const NO_PIE: ChartType[] = ['column', 'bar', 'line', 'gauge', 'gauge_targets', 'number', 'table']
+const NO_GAUGE: ChartType[] = ['column', 'bar', 'line', 'pie', 'number', 'table']
 
 export const CHARTS: ChartDef[] = [
   {
-    key: 'delay_by_month', title: 'Average Delay by Month', group: 'Shipping', permission: 'dashboard.chart.delay_by_month', types: NO_PIE, defaultType: 'column',
-    load: async (d, { from, to }) => {
-      const rows = (await d.orders()).filter((o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
+    key: 'delay_by_month', title: 'Average Delay by Month', group: 'Shipping', permission: 'dashboard.chart.delay_by_month', types: NO_PIE, defaultType: 'column', filters: ['country', 'machineType'],
+    load: async (d, { from, to }, c) => {
+      const rows = await filteredOrders(d, c, (o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
       const ms = months(from, to, rows.map((o) => o.actual_ship_date!))
       const points = ms.map((m) => {
         const list = rows.filter((o) => o.actual_ship_date!.startsWith(m.key))
@@ -210,9 +256,9 @@ export const CHARTS: ChartDef[] = [
     },
   },
   {
-    key: 'delay_by_year', title: 'Average Delay by Year', group: 'Shipping', permission: 'dashboard.chart.delay_by_year', types: NO_PIE, defaultType: 'column',
-    load: async (d, { from, to }) => {
-      const rows = (await d.orders()).filter((o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
+    key: 'delay_by_year', title: 'Average Delay by Year', group: 'Shipping', permission: 'dashboard.chart.delay_by_year', types: NO_PIE, defaultType: 'column', filters: ['country', 'machineType'],
+    load: async (d, { from, to }, c) => {
+      const rows = await filteredOrders(d, c, (o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
       const years = [...new Set(rows.map((o) => o.actual_ship_date!.slice(0, 4)))].sort()
       const points = years.map((y) => {
         const list = rows.filter((o) => o.actual_ship_date!.startsWith(y))
@@ -223,33 +269,33 @@ export const CHARTS: ChartDef[] = [
     },
   },
   {
-    key: 'on_time', title: 'On-time and Late Shipments', group: 'Shipping', permission: 'dashboard.chart.on_time', types: ALL, defaultType: 'pie',
-    load: async (d, { from, to }) => {
-      const rows = (await d.orders()).filter((o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
+    key: 'on_time', title: 'On-time and Late Shipments', group: 'Shipping', permission: 'dashboard.chart.on_time', types: ALL, defaultType: 'pie', filters: ['country', 'machineType'],
+    load: async (d, { from, to }, c) => {
+      const rows = await filteredOrders(d, c, (o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
       const ok = rows.filter((o) => Number(o.delay_days) <= 0).length
       return { points: [{ label: 'On time or early', value: ok }, { label: 'Late', value: rows.length - ok }], unit: 'shipments', headline: { value: share(ok, rows.length), label: '% shipped on time' } }
     },
   },
   {
-    key: 'top_machines', title: 'Most Ordered Machines', group: 'Orders', permission: 'dashboard.chart.top_machines', types: NO_GAUGE, defaultType: 'bar',
-    load: async (d, { from, to }) => {
-      const orders = new Map((await d.orders()).filter((o) => REAL_ORDER(o) && inRange(o.order_date, from, to)).map((o) => [o.id, o]))
-      const rows = (await d.machines()).filter((m) => orders.has(m.order_id))
+    key: 'top_machines', title: 'Most Ordered Machines', group: 'Orders', permission: 'dashboard.chart.top_machines', types: NO_GAUGE, defaultType: 'bar', filters: ['country', 'machineType'],
+    load: async (d, { from, to }, c) => {
+      const orders = new Map((await filteredOrders(d, c, (o) => REAL_ORDER(o) && inRange(o.order_date, from, to))).map((o) => [o.id, o]))
+      const rows = (await d.machines()).filter((m) => orders.has(m.order_id) && typeOk(m, c))
       return { points: countBy(rows, (m) => m.machine_type), unit: 'machines', headline: { value: rows.length, label: 'machines ordered' } }
     },
   },
   {
-    key: 'by_country', title: 'Orders by Country', group: 'Orders', permission: 'dashboard.chart.by_country', types: NO_GAUGE, defaultType: 'bar',
-    load: async (d, { from, to }) => {
-      const rows = (await d.orders()).filter((o) => REAL_ORDER(o) && inRange(o.order_date, from, to))
+    key: 'by_country', title: 'Orders by Country', group: 'Orders', permission: 'dashboard.chart.by_country', types: NO_GAUGE, defaultType: 'bar', filters: ['machineType'],
+    load: async (d, { from, to }, c) => {
+      const rows = await filteredOrders(d, c, (o) => REAL_ORDER(o) && inRange(o.order_date, from, to))
       return { points: countBy(rows, (o) => o.customer_country || 'Not set'), unit: 'orders', headline: { value: rows.length, label: 'orders' } }
     },
   },
   {
-    key: 'voltage', title: '120V and 240V Machines Built', group: 'Orders', permission: 'dashboard.chart.voltage', types: NO_GAUGE, defaultType: 'pie',
-    load: async (d, { from, to }) => {
-      const orders = new Map((await d.orders()).filter((o) => REAL_ORDER(o) && inRange(o.order_date, from, to)).map((o) => [o.id, o]))
-      const rows = (await d.machines()).filter((m) => m.ready && orders.has(m.order_id))
+    key: 'voltage', title: '120V and 240V Machines Built', group: 'Orders', permission: 'dashboard.chart.voltage', types: NO_GAUGE, defaultType: 'pie', filters: ['country', 'machineType'],
+    load: async (d, { from, to }, c) => {
+      const orders = new Map((await filteredOrders(d, c, (o) => REAL_ORDER(o) && inRange(o.order_date, from, to))).map((o) => [o.id, o]))
+      const rows = (await d.machines()).filter((m) => m.ready && orders.has(m.order_id) && typeOk(m, c))
       return { points: countBy(rows, (m) => orders.get(m.order_id)!.voltage || 'Unknown'), unit: 'machines', headline: { value: rows.length, label: 'machines built' }, note: 'Built machines on orders placed in these dates.' }
     },
   },
@@ -276,9 +322,11 @@ export const CHARTS: ChartDef[] = [
     },
   },
   {
-    key: 'department_delays', title: 'Department Delays', group: 'Production', permission: 'dashboard.chart.department_delays', types: NO_PIE, defaultType: 'column',
-    load: async (d, { from, to }) => {
-      const rows = (await d.delays()).filter((r) => inRange(r.done_on, from, to))
+    key: 'department_delays', title: 'Department Delays', group: 'Production', permission: 'dashboard.chart.department_delays', types: NO_PIE, defaultType: 'column', filters: ['department'],
+    load: async (d, { from, to }, c) => {
+      const dept = c.filters?.department
+      const keep = dept ? new Set((await d.stageDepartments()).filter((s) => s.department_id === dept).map((s) => s.step)) : null
+      const rows = (await d.delays()).filter((r) => inRange(r.done_on, from, to) && (!keep || keep.has(r.step)))
       const steps = [...new Set(rows.map((r) => r.step))]
       const points = steps.map((s) => {
         const list = rows.filter((r) => r.step === s)
@@ -314,7 +362,7 @@ export const CHARTS: ChartDef[] = [
     },
   },
   {
-    key: 'outstanding', title: 'Money Outstanding by Currency', group: 'Payments', permission: 'dashboard.chart.outstanding', types: ['column', 'bar', 'pie'], defaultType: 'column', now: true,
+    key: 'outstanding', title: 'Money Outstanding by Currency', group: 'Payments', permission: 'dashboard.chart.outstanding', types: ['column', 'bar', 'pie', 'table'], defaultType: 'column', now: true,
     load: async (d) => {
       const rows = (await d.payments()).filter((p) => Number(p.remaining) > 0 && !p.order_archived && p.stage !== 'Quote' && p.stage !== 'Cancelled')
       const by = new Map<string, number>()
@@ -323,9 +371,9 @@ export const CHARTS: ChartDef[] = [
     },
   },
   {
-    key: 'board_cards', title: 'Open Cards by Stage', group: 'Boards', permission: 'dashboard.chart.board_cards', types: NO_GAUGE, defaultType: 'bar', now: true, boards: true,
+    key: 'board_cards', title: 'Open Cards by Stage', group: 'Boards', permission: 'dashboard.chart.board_cards', types: NO_GAUGE, defaultType: 'bar', now: true, boards: true, filters: ['board'],
     load: async (d, _r, c) => {
-      const ids = c.boards ?? []
+      const ids = c.boards?.length ? c.boards : c.filters?.board ? [c.filters.board] : []
       if (!ids.length) return { points: [], unit: 'cards', headline: null, note: 'Choose the boards to count.' }
       const boards = new Map((await d.boards()).map((b) => [b.id, b.name]))
       const { stages, cards } = await d.boardCards([...ids].sort())
