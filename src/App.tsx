@@ -47,6 +47,7 @@ import BoardsPage from './pages/BoardsPage'
 import DepartmentDelaysPage from './pages/DepartmentDelaysPage'
 import DashboardPrintPage from './pages/DashboardPrintPage'
 import DashboardChartsPage from './pages/admin/DashboardChartsPage'
+import DashboardTemplatesPage from './pages/admin/DashboardTemplatesPage'
 import FreightPage from './pages/FreightPage'
 import FreightBreakdownPage from './pages/FreightBreakdownPage'
 import FreightBreakdownPrintPage from './pages/FreightBreakdownPrintPage'
@@ -215,6 +216,7 @@ export default function App() {
           <Route path="payroll" element={<Page permission="admin.payroll" level="edit"><PayrollSettingsPage /></Page>} />
           <Route path="timesheets" element={<Page permission="admin.timesheets" level="edit"><TimesheetsAdminPage /></Page>} />
           <Route path="dashboard-charts" element={<Page permission="admin.dashboard_charts" level="edit"><DashboardChartsPage /></Page>} />
+          <Route path="dashboard-templates" element={<Page permission="admin.dashboards" level="edit"><DashboardTemplatesPage /></Page>} />
           <Route path="email-templates" element={<Page permission="admin.email_templates" level="edit"><EmailTemplatesPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />
           <Route path="production" element={<Page permission="admin.production" level="edit"><ProductionPage /></Page>} />

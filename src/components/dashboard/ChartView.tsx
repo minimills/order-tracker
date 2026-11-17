@@ -35,11 +35,27 @@ function arc(cx: number, cy: number, r: number, from: number, to: number) {
  * "Show as Table" lists every number. `print` draws it without buttons and
  * with the numbers underneath.
  */
-export default function ChartView({ title, type, result, target, print = false }: { title: string; type: ChartType; result: ChartResult; target?: Target; print?: boolean }) {
+export default function ChartView({ title, type, result, target, print = false, color = BLUE }: { title: string; type: ChartType; result: ChartResult; target?: Target; print?: boolean; color?: string }) {
   const [active, setActive] = useState<number | null>(null)
   const [table, setTable] = useState(false)
   const { points, unit, headline } = result
   const isGauge = type === 'gauge' || type === 'gauge_targets'
+
+  // One big number (the chart's headline, or the total).
+  if (type === 'number') {
+    const v = headline?.value ?? points.reduce((sum, p) => sum + p.value, 0)
+    const state = target && headline ? targetState(v, target) : null
+    return (
+      <div className="flex h-full flex-col justify-center py-2">
+        <p className="text-4xl font-semibold tabular-nums" style={{ color: state ? STATUS[state] : undefined }}>
+          {showNumber(v)}
+        </p>
+        <p className="text-sm text-slate-600">{headline?.label ?? unit}</p>
+        {state && <p className="text-xs font-semibold">{STATUS_WORD[state]}</p>}
+        {result.note && <p className="mt-1 text-xs text-slate-500">{result.note}</p>}
+      </div>
+    )
+  }
 
   if (!isGauge && points.length === 0) return <p className="py-8 text-center text-sm text-slate-500">{result.note && !headline ? result.note : 'Nothing to show for these dates.'}</p>
   if (isGauge && !headline) return <p className="py-8 text-center text-sm text-slate-500">This chart has no single number for a gauge. Choose another form.</p>
@@ -71,7 +87,7 @@ export default function ChartView({ title, type, result, target, print = false }
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full text-slate-600" role="img" aria-label={`${title}: ${points.map((p) => text(p, unit)).join('; ')}`}>
         <line x1={padL} x2={W - padL} y1={y(0)} y2={y(0)} stroke="currentColor" strokeOpacity="0.4" />
         {type === 'line' && points.length > 1 && (
-          <polyline fill="none" stroke={BLUE} strokeWidth="2" points={points.map((p, i) => `${padL + band * (i + 0.5)},${y(p.value)}`).join(' ')} />
+          <polyline fill="none" stroke={color} strokeWidth="2" points={points.map((p, i) => `${padL + band * (i + 0.5)},${y(p.value)}`).join(' ')} />
         )}
         {points.map((p, i) => {
           const cx = padL + band * (i + 0.5)
@@ -83,9 +99,9 @@ export default function ChartView({ title, type, result, target, print = false }
               {/* a wider invisible target than the mark */}
               <rect x={cx - band / 2} y={0} width={band} height={H - 22} fill="transparent" />
               {type === 'column' ? (
-                <rect x={cx - bw / 2} y={top} width={bw} height={h} rx="3" fill={BLUE} opacity={active === null || active === i ? 1 : 0.55} />
+                <rect x={cx - bw / 2} y={top} width={bw} height={h} rx="3" fill={color} opacity={active === null || active === i ? 1 : 0.55} />
               ) : (
-                <circle cx={cx} cy={y(p.value)} r={active === i ? 6 : 4} fill={BLUE} stroke="white" strokeWidth="2" />
+                <circle cx={cx} cy={y(p.value)} r={active === i ? 6 : 4} fill={color} stroke="white" strokeWidth="2" />
               )}
               {numbers && (
                 <text x={cx} y={(p.value >= 0 ? top : top + h + 12) - (p.value >= 0 ? (type === 'line' ? 9 : 4) : 0)} textAnchor="middle" fontSize="11" fill="currentColor">
@@ -111,7 +127,7 @@ export default function ChartView({ title, type, result, target, print = false }
           <li key={i} {...hover(i)} className="grid grid-cols-[minmax(0,10rem)_1fr_auto] items-center gap-2 text-xs outline-none" title={text(p, unit)}>
             <span className="truncate text-slate-700">{p.label}</span>
             <span className="h-4 rounded-sm bg-slate-100">
-              <span className="block h-4 rounded-sm" style={{ width: `${Math.max((Math.abs(p.value) / max) * 100, p.value ? 1.5 : 0)}%`, background: BLUE, opacity: p.value < 0 ? 0.55 : active === null || active === i ? 1 : 0.6 }} />
+              <span className="block h-4 rounded-sm" style={{ width: `${Math.max((Math.abs(p.value) / max) * 100, p.value ? 1.5 : 0)}%`, background: color, opacity: p.value < 0 ? 0.55 : active === null || active === i ? 1 : 0.6 }} />
             </span>
             <span className="w-14 text-right text-slate-700 tabular-nums">{showNumber(p.value)}</span>
           </li>
@@ -177,7 +193,7 @@ export default function ChartView({ title, type, result, target, print = false }
           ) : (
             <>
               <path d={arc(120, 120, 100, -90, 90)} fill="none" stroke="currentColor" strokeOpacity="0.15" strokeWidth="16" />
-              {pos(v) > -90 && <path d={arc(120, 120, 100, -90, pos(v))} fill="none" stroke={BLUE} strokeWidth="16" />}
+              {pos(v) > -90 && <path d={arc(120, 120, 100, -90, pos(v))} fill="none" stroke={color} strokeWidth="16" />}
             </>
           )}
           {withTargets && (
@@ -224,14 +240,14 @@ export default function ChartView({ title, type, result, target, print = false }
 
   return (
     <div>
-      {!print && points.length > 0 && (
+      {!print && points.length > 0 && type !== 'table' && (
         <div className="mb-1 flex justify-end">
           <button type="button" className="text-xs underline" aria-pressed={table} onClick={() => setTable(!table)}>
             {table ? 'Show as Chart' : 'Show as Table'}
           </button>
         </div>
       )}
-      {table && !print ? list : body}
+      {(table && !print) || type === 'table' ? list : body}
       {!print && !table && !isGauge && (
         <p className="mt-1 min-h-4 text-xs text-slate-700" aria-live="polite">
           {active !== null && points[active] ? text(type === 'pie' ? slices(points)[active] ?? points[active] : points[active], unit) : headline ? `${showNumber(headline.value)} ${headline.label}` : ''}

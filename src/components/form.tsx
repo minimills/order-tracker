@@ -78,12 +78,12 @@ export function Modal({
   }, [onClose, busy])
   return (
     <div
-      className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
+      className="glass-backdrop fixed inset-0 z-40 flex items-end justify-center bg-black/40 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-label={title}
     >
-      <div className={`max-h-[90vh] w-full overflow-y-auto rounded-t-lg bg-white p-5 shadow-xl sm:rounded-lg ${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'}`}>
+      <div className={`glass-panel max-h-[90vh] w-full overflow-y-auto rounded-t-lg bg-white p-5 shadow-xl sm:rounded-lg ${wide ? 'sm:max-w-4xl' : 'sm:max-w-lg'}`}>
         <h2 className="text-lg font-semibold">{title}</h2>
         <div className="mt-4">{children}</div>
         <div className="mt-6 flex flex-wrap justify-end gap-3">{footer}</div>

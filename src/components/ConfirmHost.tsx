@@ -30,9 +30,9 @@ export default function ConfirmHost() {
     setAsk(null)
   }
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4" role="alertdialog" aria-modal="true" aria-label="Please confirm">
+    <div className="glass-backdrop fixed inset-0 z-50 flex items-end justify-center bg-black/40 sm:items-center sm:p-4" role="alertdialog" aria-modal="true" aria-label="Please confirm">
       <form
-        className="w-full rounded-t-lg bg-white p-5 shadow-xl sm:max-w-md sm:rounded-lg"
+        className="glass-panel w-full rounded-t-lg bg-white p-5 shadow-xl sm:max-w-md sm:rounded-lg"
         onSubmit={(e) => {
           e.preventDefault()
           answer(true)

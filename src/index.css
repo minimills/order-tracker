@@ -116,3 +116,123 @@ html.dark .rich-text ul[data-type='taskList'] > li[data-checked='true'] > div {
 html.dark {
   --board-sheen: none;
 }
+
+/* ---------------------------------------------------------------------------
+   Glass appearance (Settings → Appearance → Glass; classes set by src/lib/theme.ts).
+   Only the frames are see-through: the menu, top bar, dialogs and widget frames.
+   Text, tables, boards and forms stay on solid backgrounds (WCAG AA contrast):
+   the menu keeps light text on at least 80 % dark glass, the top bar dark text
+   on at least 70 % white glass. "glass-lite" (slow device, or the device asks
+   for less transparency, less motion or more contrast) keeps the colours but
+   no blur and nearly solid frames.
+   --------------------------------------------------------------------------- */
+html.glass body {
+  background:
+    radial-gradient(at 10% 6%, rgb(96 165 250 / 0.38), transparent 42%),
+    radial-gradient(at 92% 10%, rgb(167 139 250 / 0.32), transparent 45%),
+    radial-gradient(at 70% 95%, rgb(45 212 191 / 0.28), transparent 48%),
+    radial-gradient(at 15% 90%, rgb(251 191 36 / 0.18), transparent 40%),
+    #eef2f7;
+  background-attachment: fixed;
+}
+html.glass.dark body {
+  background:
+    radial-gradient(at 10% 6%, rgb(37 99 235 / 0.35), transparent 42%),
+    radial-gradient(at 92% 10%, rgb(124 58 237 / 0.3), transparent 45%),
+    radial-gradient(at 70% 95%, rgb(13 148 136 / 0.28), transparent 48%),
+    #0b1220;
+  background-attachment: fixed;
+}
+html.glass .app-sidebar {
+  background: rgb(15 23 42 / 0.8) !important;
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  border-right: 1px solid rgb(255 255 255 / 0.12);
+  box-shadow: 4px 0 24px rgb(15 23 42 / 0.12);
+}
+html.glass .app-topbar {
+  background: rgb(255 255 255 / 0.7) !important;
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-bottom-color: rgb(255 255 255 / 0.6) !important;
+}
+html.glass.dark .app-topbar {
+  background: rgb(15 23 42 / 0.72) !important;
+  border-bottom-color: rgb(255 255 255 / 0.08) !important;
+}
+html.glass .glass-backdrop {
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+html.glass .glass-panel {
+  background: rgb(255 255 255 / 0.9) !important;
+  backdrop-filter: blur(22px) saturate(150%);
+  -webkit-backdrop-filter: blur(22px) saturate(150%);
+  border: 1px solid rgb(255 255 255 / 0.7);
+  box-shadow: 0 24px 60px rgb(15 23 42 / 0.28);
+}
+html.glass.dark .glass-panel {
+  background: rgb(17 24 39 / 0.9) !important;
+  border-color: rgb(255 255 255 / 0.1);
+}
+html.glass .widget-frame {
+  background: rgb(255 255 255 / 0.5) !important;
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-color: rgb(255 255 255 / 0.75) !important;
+  box-shadow: 0 10px 30px rgb(15 23 42 / 0.1);
+}
+html.glass.dark .widget-frame {
+  background: rgb(30 41 59 / 0.5) !important;
+  border-color: rgb(255 255 255 / 0.1) !important;
+}
+/* the content of a widget stays solid */
+html.glass .widget-frame > header {
+  border-bottom-color: transparent;
+}
+html.glass .widget-body {
+  margin: 0 6px 6px;
+  border-radius: 10px;
+}
+
+/* Less glass: slow devices, reduced transparency / motion, more contrast. */
+html.glass.glass-lite .app-sidebar,
+html.glass.glass-lite .app-topbar,
+html.glass.glass-lite .glass-backdrop,
+html.glass.glass-lite .glass-panel,
+html.glass.glass-lite .widget-frame {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+html.glass.glass-lite .app-sidebar {
+  background: rgb(15 23 42) !important;
+}
+html.glass.glass-lite .app-topbar,
+html.glass.glass-lite .glass-panel {
+  background: rgb(255 255 255) !important;
+}
+html.glass.glass-lite .widget-frame {
+  background: rgb(248 250 252 / 0.97) !important;
+}
+html.glass.dark.glass-lite .app-topbar,
+html.glass.dark.glass-lite .glass-panel {
+  background: rgb(17 24 39) !important;
+}
+html.glass.dark.glass-lite .widget-frame {
+  background: rgb(30 41 59 / 0.97) !important;
+}
+@media (prefers-reduced-transparency: reduce), (prefers-reduced-motion: reduce) {
+  html.glass .app-sidebar,
+  html.glass .app-topbar,
+  html.glass .glass-backdrop,
+  html.glass .glass-panel,
+  html.glass .widget-frame {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+}
+@media print {
+  html.glass body {
+    background: #fff;
+  }
+}

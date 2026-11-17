@@ -22,7 +22,7 @@ export type SettingEntry = {
 
 const MY: SettingEntry[] = [
   { label: 'Your account and departments', where: 'Settings', keywords: 'email role department name', to: '/settings', find: 'account', permission: 'settings.account' },
-  { label: 'Theme: Light, Dark or System', where: 'Settings', keywords: 'dark mode night colours appearance look', to: '/settings', find: 'theme', permission: 'settings.theme', level: 'edit' },
+  { label: 'Appearance: Light, Dark, System or Glass', where: 'Settings', keywords: 'theme dark mode night colours glass frosted blur transparent look', to: '/settings', find: 'theme', permission: 'settings.theme', level: 'edit' },
   { label: 'Start page', where: 'Settings', keywords: 'home first page after sign in', to: '/settings', find: 'start-page', permission: 'settings.start_page', level: 'edit' },
   { label: 'Units for crate sizes and weights', where: 'Settings', keywords: 'imperial metric inches pounds kg cm', to: '/settings', find: 'units', permission: 'settings.units' },
   { label: 'Phone calendar link (calendar to app)', where: 'Tech Calendar → Calendar Connection', keywords: 'ical icloud google calendar sync refresh', to: '/service/calendar', find: 'calendar-import', permission: 'service.calendar.import', level: 'edit' },
@@ -47,6 +47,7 @@ const inner = (page: string, label: string, find: string, keywords = ''): Settin
 
 const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/users', 'Add a user', 'new-email', 'invite login new person staff'),
+  inner('/admin/dashboard-templates', 'Dashboard templates for people or departments', 'dt-name', 'dashboard template starting layout lock department'),
   inner('/admin/payroll', 'Overtime threshold (hours per week)', 'pr-overtime', 'overtime 44 hours week pei'),
   inner('/admin/payroll', 'Banked overtime: 1× or 1.5× the hours', 'pr-bank', 'bank banked time in lieu overtime'),
   inner('/admin/payroll', 'Vacation days by years of service', 'pr-vacation', 'vacation holidays weeks entitlement'),

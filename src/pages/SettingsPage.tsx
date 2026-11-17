@@ -16,7 +16,7 @@ import { usePreferences } from '../lib/preferences'
 import { supabase } from '../lib/supabase'
 import { THEMES, type Theme } from '../lib/theme'
 
-const THEME_ICON: Record<Theme, IconName> = { light: 'sun', dark: 'moon', system: 'monitor' }
+const THEME_ICON: Record<Theme, IconName> = { light: 'sun', dark: 'moon', system: 'monitor', glass: 'glass' }
 /** A settings card. The grid places as many side by side as fit, so there are no gaps. */
 const card = 'rounded-lg border border-slate-200 bg-white p-4 text-sm'
 
@@ -24,7 +24,7 @@ const card = 'rounded-lg border border-slate-200 bg-white p-4 text-sm'
 export default function SettingsPage() {
   const { session, role } = useAuth()
   const { can, canAny } = usePermissions()
-  const { startPage, setStartPage, theme, setLook } = usePreferences()
+  const { startPage, setStartPage, theme, glassBase, setLook } = usePreferences()
   const [departments, setDepartments] = useState<string[] | null>(null)
   useEffect(() => {
     supabase?.rpc('my_departments').then(({ data }) => setDepartments((data as string[] | null) ?? []))
@@ -75,9 +75,9 @@ export default function SettingsPage() {
 
           <Can permission="settings.theme" level="edit">
             <section className={card} data-setting="theme">
-              <h2 className="mb-1 font-semibold">Theme</h2>
+              <h2 className="mb-1 font-semibold">Appearance</h2>
               <p className="mb-3 text-slate-600">How the app looks on your devices.</p>
-              <div className="grid grid-cols-3 gap-2" role="radiogroup" aria-label="Theme">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Appearance">
                 {THEMES.map((t) => (
                   <button
                     key={t.value}
@@ -96,6 +96,31 @@ export default function SettingsPage() {
                 ))}
               </div>
               <p className="mt-2 text-xs text-slate-500">{THEMES.find((t) => t.value === theme)?.hint}</p>
+              {theme === 'glass' && (
+                <div className="mt-3">
+                  <p className="mb-1 text-sm font-medium">Glass colours</p>
+                  <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Glass colours">
+                    {(
+                      [
+                        ['light', 'Light'],
+                        ['dark', 'Dark'],
+                        ['system', 'As this device'],
+                      ] as const
+                    ).map(([v, l]) => (
+                      <button
+                        key={v}
+                        type="button"
+                        role="radio"
+                        aria-checked={glassBase === v}
+                        onClick={() => setLook({ glassBase: v })}
+                        className={`rounded-full border px-3 py-1 text-sm ${glassBase === v ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white hover:bg-slate-50'}`}
+                      >
+                        {l}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </section>
           </Can>
 
