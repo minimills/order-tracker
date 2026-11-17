@@ -23,6 +23,9 @@
 //                 ({ certificate_id, to, cc, bcc, subject, pdf_base64, file_name }) (service.certificate.email)
 //   freight_quote_send – email a freight quote request to a shipping agent
 //                 ({ order_id, agent_id, agent_name, to, cc, bcc, subject, body })  (freight.quote)
+//   reminder_send – a reminder to a customer about an order (payment due, overdue, ship date, custom)
+//                 ({ order_id, payment_id, template, to, cc, bcc, subject, body })  (reminders.send)
+//   welcome_send  – the welcome email for a person on the users list ({ email, subject, body })  (admin.users)
 //   ce_preview  – suggested recipients, subject and message for CE / EU declarations of conformity
 //                 ({ declaration_ids })                                    (ce.email)
 //   ce_send     – email them with the PDFs made by the app attached
@@ -44,7 +47,7 @@ type Json = Record<string, unknown>
 // deno-lint-ignore no-explicit-any
 type Any = any
 type Env = (key: string) => string | undefined
-export type Mail = { from: string; to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; attachments?: Json[] }
+export type Mail = { from: string; replyTo?: string; to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; attachments?: Json[] }
 export type Deps = {
   env: Env
   makeClient: (url: string, key: string, options?: Json) => Any
@@ -101,7 +104,7 @@ export function layout(o: { company: Company; appUrl: string; heading: string; i
     .map(
       (n) => `<tr><td style="padding:10px 0;border-top:1px solid #e2e8f0">
         <div style="font-weight:600;color:#0f172a">${esc(n.title)}</div>
-        ${n.body ? `<div style="color:#334155;margin-top:2px">${esc(n.body)}</div>` : ''}
+        ${n.body ? `<div style="color:#334155;margin-top:2px;white-space:pre-line">${esc(n.body)}</div>` : ''}
         <div style="color:#64748b;font-size:12px;margin-top:2px">${esc(halifax(n.created_at))}</div>
       </td></tr>`,
     )
@@ -208,13 +211,13 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
   }
 
   /** Sends one email, saves the Sent copy, writes the email log. */
-  const deliver = async (o: { to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; kind: string; notificationIds?: string[]; resendOf?: string; company: Company; attachments?: Json[] }) => {
+  const deliver = async (o: { from?: string; replyTo?: string; to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; kind: string; notificationIds?: string[]; resendOf?: string; company: Company; attachments?: Json[] }) => {
     let status: 'sent' | 'failed' = 'sent'
     let error: string | null = null
     let saved: boolean | null = null
     try {
       if (!mailReady) throw new Error('The mailbox settings (SMTP_HOST, SMTP_USER, SMTP_PASSWORD) are not set in Supabase.')
-      const { raw } = await deps.sendMail({ from, to: o.to, cc: o.cc || undefined, bcc: o.bcc || undefined, subject: o.subject, html: o.html, text: o.text, attachments: [...logoAttachment(o.company), ...(o.attachments ?? [])] })
+      const { raw } = await deps.sendMail({ from: o.from || from, replyTo: o.replyTo || undefined, to: o.to, cc: o.cc || undefined, bcc: o.bcc || undefined, subject: o.subject, html: o.html, text: o.text, attachments: [...logoAttachment(o.company), ...(o.attachments ?? [])] })
       if (saveCopy) {
         try {
           await deps.saveSent(raw)
@@ -618,6 +621,68 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       return r.status === 'sent'
         ? reply(200, { ok: true, message: `Quote request sent to ${[...to, ...cc].join(', ')}.` })
         : reply(502, { error: `The quote request could not be sent: ${r.error}` })
+    }
+    case 'reminder_send': {
+      // A reminder to a customer about an order: the text was previewed and edited in the app.
+      if (!(await callerCan('has_perm', { p_key: 'reminders.send', p_level: 'edit' }))) {
+        return reply(403, { error: 'You do not have permission to send reminders to customers.' })
+      }
+      const list = (v: unknown) => [...new Set((Array.isArray(v) ? v : String(v ?? '').split(/[,;\s]+/)).map((e) => String(e).trim().toLowerCase()).filter(Boolean))]
+      const to = list(body.to)
+      const cc = list(body.cc)
+      const bcc = list(body.bcc)
+      const bad = [...to, ...cc, ...bcc].filter((e) => !EMAIL.test(e))
+      if (bad.length) return reply(400, { error: `Check these email addresses: ${bad.join(', ')}` })
+      if (!to.length) return reply(400, { error: 'Enter at least one email address in To.' })
+      const subject = String(body.subject ?? '').trim().slice(0, 300)
+      const message = String(body.body ?? '').slice(0, 8000)
+      if (!subject || !message.trim()) return reply(400, { error: 'The email needs a subject and a message.' })
+      const orderId = String(body.order_id ?? '')
+      const { data: order } = await db.from('orders').select('id, order_code').eq('id', orderId).maybeSingle()
+      if (!order) return reply(404, { error: 'That order could not be found.' })
+      const company = await loadCompany()
+      const { data: tplRow } = await db.from('app_settings').select('value').eq('key', 'email_templates').maybeSingle()
+      const tpl = (tplRow?.value as Json) ?? {}
+      // From name / address and Reply-to from Admin → Email Templates (the mailbox itself always sends).
+      const fromNameSet = String(tpl.from_name ?? '').trim().replace(/["<>]/g, '')
+      const fromAddress = String(tpl.from_address ?? '').trim()
+      const customFrom = fromNameSet || EMAIL.test(fromAddress) ? `"${fromNameSet || fromName.replace(/"/g, '')}" <${EMAIL.test(fromAddress) ? fromAddress : smtpUser}>` : undefined
+      const replyTo = EMAIL.test(String(tpl.reply_to ?? '').trim()) ? String(tpl.reply_to).trim() : undefined
+      const { data: me } = await db.from('allowed_users').select('name').eq('email', callerEmail).maybeSingle()
+      const { html, text } = layout({
+        company, appUrl, heading: subject, button: false, intro: message.trimEnd(), notes: [], link: null,
+        footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.${replyTo || company.email ? ` Questions: ${replyTo || company.email}` : ''}`,
+      })
+      const r = await deliver({ from: customFrom, replyTo, to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'reminder', company })
+      await db.from('order_reminders').insert({
+        order_id: order.id, payment_id: body.payment_id ? String(body.payment_id) : null, template: String(body.template ?? 'custom').slice(0, 60),
+        to_emails: to, cc_emails: cc, bcc_emails: bcc, subject, body: message, status: r.status, error: r.error, email_log_id: r.logId,
+        sent_by: callerEmail, sent_by_name: (me?.name as string | null) ?? null,
+      })
+      await db.from('activity_log').insert({
+        user_email: callerEmail, table_name: 'order_reminders', record_id: order.id, order_id: order.id, action: 'insert',
+        changes: { to, cc, bcc_count: bcc.length, subject, template: String(body.template ?? 'custom'), status: r.status, error: r.error },
+      })
+      return r.status === 'sent'
+        ? reply(200, { ok: true, message: `Reminder sent to ${[...to, ...cc].join(', ')}${bcc.length ? ` (and ${bcc.length} in BCC)` : ''}.` })
+        : reply(502, { error: `The reminder could not be sent: ${r.error}` })
+    }
+    case 'welcome_send': {
+      // The welcome email for a person on the users list (text made and previewed in the app).
+      if (!(await callerCan('can_admin', { p_area: 'users' }))) return reply(403, { error: 'Only admins can send the welcome email (Admin → Users).' })
+      const to = String(body.email ?? '').trim().toLowerCase()
+      const { data: person } = await db.from('allowed_users').select('email, name').eq('email', to).maybeSingle()
+      if (!person) return reply(404, { error: `${to || 'That email'} is not on the users list.` })
+      const subject = String(body.subject ?? '').trim().slice(0, 300)
+      const message = String(body.body ?? '').slice(0, 8000)
+      if (!subject || !message.trim()) return reply(400, { error: 'The email needs a subject and a message.' })
+      const company = await loadCompany()
+      const { html, text } = layout({
+        company, appUrl, heading: subject, button: true, intro: message.trimEnd(), notes: [], link: '/',
+        footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.`,
+      })
+      const r = await deliver({ to, subject, html, text, kind: 'welcome', company })
+      return r.status === 'sent' ? reply(200, { ok: true, message: `Welcome email sent to ${to}.` }) : reply(502, { error: `The welcome email could not be sent: ${r.error}` })
     }
     case 'push_key': {
       if (!(await callerCan('is_allowed_user', {}))) return reply(403, { error: 'Please sign in again.' })

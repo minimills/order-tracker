@@ -45,6 +45,8 @@ import ChecklistPrintPage from './pages/ChecklistPrintPage'
 import BoardPage from './pages/BoardPage'
 import BoardsPage from './pages/BoardsPage'
 import DepartmentDelaysPage from './pages/DepartmentDelaysPage'
+import DashboardPrintPage from './pages/DashboardPrintPage'
+import DashboardChartsPage from './pages/admin/DashboardChartsPage'
 import FreightPage from './pages/FreightPage'
 import FreightBreakdownPage from './pages/FreightBreakdownPage'
 import FreightBreakdownPrintPage from './pages/FreightBreakdownPrintPage'
@@ -77,6 +79,17 @@ export default function App() {
           <RequireAuth>
             <Page permission="shop_board">
               <ShopBoardPage />
+            </Page>
+          </RequireAuth>
+        }
+      />
+      {/* The chosen dashboard charts as a printed report (no sidebar). */}
+      <Route
+        path="dashboard/print"
+        element={
+          <RequireAuth>
+            <Page permission="dashboard.charts.print">
+              <DashboardPrintPage />
             </Page>
           </RequireAuth>
         }
@@ -175,6 +188,7 @@ export default function App() {
           <Route path="templates" element={<Page permission="admin.templates" level="edit"><TemplatesPage /></Page>} />
           <Route path="ce" element={<Page permission="admin.ce" level="edit"><CeAdminPage /></Page>} />
           <Route path="freight" element={<Page permission="admin.freight" level="edit"><FreightSettingsPage /></Page>} />
+          <Route path="dashboard-charts" element={<Page permission="admin.dashboard_charts" level="edit"><DashboardChartsPage /></Page>} />
           <Route path="email-templates" element={<Page permission="admin.email_templates" level="edit"><EmailTemplatesPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />
           <Route path="production" element={<Page permission="admin.production" level="edit"><ProductionPage /></Page>} />

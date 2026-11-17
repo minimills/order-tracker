@@ -6,6 +6,7 @@ import { buttonClass, secondaryButtonClass } from '../components/form'
 import { dueText } from '../components/payments/dueText'
 import PaymentStatus from '../components/payments/PaymentStatus'
 import ReceivePaymentDialog from '../components/payments/ReceivePaymentDialog'
+import ReminderDialog from '../components/reminders/ReminderDialog'
 import { countryFlag } from '../lib/country'
 import { showDate } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
@@ -43,6 +44,7 @@ export default function PaymentsPage() {
   const [rows, setRows] = useState<PaymentRow[]>([])
   const [loading, setLoading] = useState(true)
   const [receiving, setReceiving] = useState<PaymentRow | null>(null)
+  const [reminding, setReminding] = useState<PaymentRow | null>(null)
 
   const load = useCallback(async () => {
     if (!supabase) return
@@ -167,11 +169,18 @@ export default function PaymentsPage() {
                       <PaymentStatus payment={p} />
                     </div>
                     <div className="lg:text-right">
-                      <Can permission="payments.action.mark_received" level="edit">
-                        <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
-                          Mark as Received
-                        </button>
-                      </Can>
+                      <div className="flex flex-wrap gap-2 lg:justify-end">
+                        <Can permission="reminders.send" level="edit">
+                          <button type="button" className={secondaryButtonClass} onClick={() => setReminding(p)}>
+                            Send Reminder
+                          </button>
+                        </Can>
+                        <Can permission="payments.action.mark_received" level="edit">
+                          <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
+                            Mark as Received
+                          </button>
+                        </Can>
+                      </div>
                     </div>
                   </li>
                 ))}
@@ -180,6 +189,11 @@ export default function PaymentsPage() {
           ),
         )}
 
+      {reminding && (
+        <Can permission="reminders.send" level="edit">
+          <ReminderDialog orderId={reminding.order_id} paymentId={reminding.id} onClose={() => setReminding(null)} />
+        </Can>
+      )}
       {receiving && (
         <ReceivePaymentDialog
           payment={receiving}

@@ -7,7 +7,7 @@ type Result = { ok: true; message: string; emailed?: boolean } | { ok: false; me
  * with the Supabase admin API; sign-ups stay off). The function checks on the
  * server that the caller may manage users.
  */
-export async function adminUsers(action: 'create' | 'resend' | 'remove', body: Record<string, unknown>): Promise<Result> {
+export async function adminUsers(action: 'create' | 'resend' | 'remove' | 'change_email', body: Record<string, unknown>): Promise<Result> {
   if (!supabase) return { ok: false, message: 'Not connected to the database.' }
   const { data, error } = await supabase.functions.invoke('admin-users', {
     body: { action, redirect_to: window.location.origin + window.location.pathname, ...body },

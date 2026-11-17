@@ -139,6 +139,28 @@ export async function handle(req: Request, { env, makeClient }: Deps): Promise<R
       }
       return reply(200, { ok: true, message: `${email} can no longer sign in. Their past changes stay in the activity log.` })
     }
+    case 'change_email': {
+      // Admin → Users → Change Email: the users list first (as the admin), then the login.
+      const next = String(body.new_email ?? '').trim().toLowerCase()
+      if (!EMAIL.test(next)) return reply(400, { error: 'Enter the new email address in full, e.g. name@minimills.net' })
+      if (next === email) return reply(400, { error: 'That is already their sign-in email.' })
+      if (!(await onList())) return reply(404, { error: `${email} is not on the users list.` })
+      const id = await loginId()
+      const { error } = await caller.rpc('admin_change_user_email', { p_old: email, p_new: next })
+      if (error) return reply(error.code === '23505' ? 409 : 400, { error: error.message })
+      if (id) {
+        const { error: authError } = await service.auth.admin.updateUserById(id, { email: next, email_confirm: true })
+        if (authError) {
+          // All or nothing: put the users list back.
+          await caller.rpc('admin_change_user_email', { p_old: next, p_new: email })
+          return reply(400, { error: `The login could not be changed: ${authError.message}` })
+        }
+      } else {
+        const made = await service.auth.admin.createUser({ email: next, email_confirm: true })
+        if (made.error) return reply(200, { ok: true, message: `${email} is now ${next} on the users list, but a login could not be made: ${made.error.message}. Use “Resend login code”.` })
+      }
+      return reply(200, { ok: true, message: `${email} now signs in as ${next}. Their history and permissions moved with them.` })
+    }
     default:
       return reply(400, { error: 'Unknown action.' })
   }

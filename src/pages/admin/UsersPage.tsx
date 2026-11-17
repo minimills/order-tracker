@@ -8,6 +8,10 @@ import { emailPattern } from '../../components/order/customer'
 import { useAuth } from '../../lib/auth'
 import { showDate } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
+import WelcomeEmailDialog from '../../components/admin/WelcomeEmailDialog'
+import { composeWelcome, sendWelcome } from '../../lib/welcome'
+import { useCompany } from '../../lib/company'
+import { askText } from '../../lib/confirm'
 import { allowedBy, type Perms } from '../../lib/permissions'
 import { startPageChoices } from '../../lib/permissions/nav'
 import { CATALOG } from '../../lib/permissions/catalog'
@@ -33,6 +37,8 @@ export default function UsersPage() {
   const [role, setRole] = useState<Role>('staff')
   const [error, setError] = useState<string | null>(null)
   const [removing, setRemoving] = useState<User | null>(null)
+  const [welcoming, setWelcoming] = useState<User | null>(null)
+  const company = useCompany()
   const { departments, reload: reloadDepartments } = useDepartments()
   const activeDepartments = departments.filter((d) => !d.archived)
   // email → department ids
@@ -134,8 +140,12 @@ export default function UsersPage() {
     })
     setAdding(false)
     if (!result.ok) return setError(result.message)
+    // The welcome email (Admin → Email Templates), with the features their permissions give.
+    const welcome = await composeWelcome({ email: address, name: name.trim() || null, role }, (start?.perms as Perms | undefined) ?? {}, company.name)
+    const sentWelcome = await sendWelcome(address, welcome.subject, welcome.body)
+    if (!sentWelcome.ok) toast.warning(`The welcome email could not be sent: ${sentWelcome.message} Use “Welcome Email” next to their name to try again.`, { duration: 12000 })
     if (result.emailed === false) toast.warning(result.message, { duration: 12000 })
-    else toast.success(`${result.message}${role === 'staff' && !start ? ' No permissions are allowed yet: select “Permissions” to choose what they can see.' : ''}`, { duration: 8000 })
+    else toast.success(`${result.message}${sentWelcome.ok ? ' A welcome email was sent too.' : ''}${role === 'staff' && !start ? ' No permissions are allowed yet: select “Permissions” to choose what they can see.' : ''}`, { duration: 8000 })
     setStartWith('')
     setNewDepts([])
     setNewStartPage('')
@@ -143,6 +153,20 @@ export default function UsersPage() {
     setName('')
     setRole('staff')
     setError(null)
+    load()
+  }
+
+  async function changeEmail(u: User) {
+    const next = await askText(`New sign-in email for ${u.name || u.email}. Their history, departments and permissions move with them, and they sign in with the new address from now on.`, {
+      label: 'New email address',
+      confirmLabel: 'Change Email',
+    })
+    if (!next?.trim()) return
+    setBusyEmail(u.email)
+    const result = await adminUsers('change_email', { email: u.email, new_email: next.trim().toLowerCase() })
+    setBusyEmail(null)
+    if (!result.ok) return toast.error(result.message, { duration: 10000 })
+    toast.success(result.message, { duration: 8000 })
     load()
   }
 
@@ -421,12 +445,20 @@ export default function UsersPage() {
             <button type="button" className="text-sm text-blue-700 underline disabled:opacity-50" disabled={busyEmail === u.email} onClick={() => resend(u)}>
               {busyEmail === u.email ? 'Sending…' : 'Resend Login Code'}
             </button>
+            <button type="button" className="text-sm text-blue-700 underline" onClick={() => setWelcoming(u)}>
+              Welcome Email
+            </button>
+            <button type="button" className="text-sm text-blue-700 underline disabled:opacity-50" disabled={busyEmail === u.email} onClick={() => changeEmail(u)}>
+              Change Email
+            </button>
             <button type="button" className="text-sm text-red-700 underline" onClick={() => setRemoving(u)}>
               Revoke Access
             </button>
           </div>
         ))}
       </div>
+
+      {welcoming && <WelcomeEmailDialog user={welcoming} perms={permsByUser[welcoming.email] ?? {}} companyName={company.name} onClose={() => setWelcoming(null)} />}
 
       {editingPerms && (
         <PermissionEditor

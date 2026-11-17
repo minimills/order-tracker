@@ -33,6 +33,7 @@ import SerialNumber from '../components/SerialNumber'
 import { confirmAction } from '../lib/confirm'
 import Icon from '../components/Icon'
 import OrderFreightSection from '../components/freight/OrderFreightSection'
+import ReminderDialog from '../components/reminders/ReminderDialog'
 import OrderServiceSection from '../components/service/OrderServiceSection'
 import CeIssueDialog from '../components/ce/CeIssueDialog'
 import CeRegister from '../components/ce/CeRegister'
@@ -121,6 +122,7 @@ export default function OrderPage() {
   // Pop-ups
   const [move, setMove] = useState<MoveRequest | null>(null)
   const [editing, setEditing] = useState(false)
+  const [reminding, setReminding] = useState(false)
   const [machineChange, setMachineChange] = useState<
     { kind: 'add' } | { kind: 'remove'; machineId: string; label: string; built: boolean } | null
   >(null)
@@ -337,6 +339,11 @@ export default function OrderPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
+              <Can permission="reminders.send" level="edit">
+                <button type="button" className={secondaryButtonClass} onClick={() => setReminding(true)}>
+                  <Icon name="inbox" /> Send Reminder
+                </button>
+              </Can>
               <Can permission="order.action.edit" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={() => setEditing(true)}>
                   <Icon name="pencil" /> Edit
@@ -826,6 +833,17 @@ export default function OrderPage() {
               load()
             }}
           />
+        )}
+        {reminding && (
+          <Can permission="reminders.send" level="edit">
+            <ReminderDialog
+              orderId={order.id}
+              onClose={() => {
+                setReminding(false)
+                load()
+              }}
+            />
+          </Can>
         )}
         {editing && (
           <EditOrderDialog
