@@ -1,4 +1,5 @@
 import { format, parseISO } from 'date-fns'
+import WhosOff from '../components/timesheets/WhosOff'
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -216,6 +217,10 @@ export default function DashboardPage() {
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-slate-600">{showDate(today, 'EEEE, MMMM d, yyyy')}</p>
         </div>
+
+        <Can permission="dashboard.whos_off">
+          <WhosOff />
+        </Can>
 
         <Can permission="dashboard.list.schedule_changes">
           <ScheduleChanges orders={orders} onChanged={load} />

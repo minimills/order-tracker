@@ -47,6 +47,15 @@ const inner = (page: string, label: string, find: string, keywords = ''): Settin
 
 const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/users', 'Add a user', 'new-email', 'invite login new person staff'),
+  inner('/admin/payroll', 'Overtime threshold (hours per week)', 'pr-overtime', 'overtime 44 hours week pei'),
+  inner('/admin/payroll', 'Banked overtime: 1× or 1.5× the hours', 'pr-bank', 'bank banked time in lieu overtime'),
+  inner('/admin/payroll', 'Vacation days by years of service', 'pr-vacation', 'vacation holidays weeks entitlement'),
+  inner('/admin/payroll', 'Paid sick days', 'pr-sick', 'sick days leave entitlement'),
+  inner('/admin/payroll', 'PEI minimum standards', 'pr-minimum', 'employment standards act minimum warning'),
+  inner('/admin/payroll', 'Statutory holiday pay and employer costs', 'pr-stat', 'stat holiday pay cpp ei wcb labour cost'),
+  inner('/admin/timesheets', 'Import old timesheets (Excel or CSV)', 'ts-import', 'import 2025 2026 sheet xlsx csv layout'),
+  inner('/admin/timesheets', 'Employees without a login', 'ts-employees', 'employee former staff payroll'),
+  inner('/admin/departments', 'Department managers (approve timesheets and time off)', 'dept-managers', 'manager approve timesheet time off'),
   inner('/admin/order-defaults', 'Default currency (Canada / other countries)', 'od-cad', 'cad usd money'),
   inner('/admin/order-defaults', 'Default voltage on new orders', 'od-volt', '120v 240v'),
   inner('/admin/order-defaults', 'Crate machines by default', 'od-crate', 'crating'),

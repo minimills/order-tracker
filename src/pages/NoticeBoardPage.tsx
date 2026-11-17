@@ -7,6 +7,7 @@ import { buttonClass, narrowInputClass } from '../components/form'
 import AckDialog from '../components/notices/AckDialog'
 import EventsPanel, { PastEvents } from '../components/notices/EventsPanel'
 import HolidaysPanel from '../components/notices/HolidaysPanel'
+import WhosOff from '../components/timesheets/WhosOff'
 import ClosureAlertsPanel from '../components/notices/ClosureAlertsPanel'
 import MyNotes from '../components/notices/MyNotes'
 import NoticeCard from '../components/notices/NoticeCard'
@@ -345,6 +346,9 @@ export default function NoticeBoardPage() {
                 )}
               </div>
               <aside className="w-full shrink-0 space-y-4 empty:hidden lg:w-[17rem]">
+                <Can permission="notices.whos_off">
+                  <WhosOff />
+                </Can>
                 <Can permission="notices.holidays">
                   <HolidaysPanel />
                 </Can>

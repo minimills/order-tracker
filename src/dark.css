@@ -66,7 +66,7 @@
   html.dark :is(.border-blue-200):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(62.3% 0.214 259.815) 45%, #131c2e); }
   html.dark :is(.border-red-200, .border-red-300, .divide-red-100 > :not(:last-child)):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(63.7% 0.237 25.331) 45%, #131c2e); }
   html.dark :is(.border-teal-200, .divide-teal-100 > :not(:last-child)):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(70.4% 0.14 182.503) 45%, #131c2e); }
-  html.dark :is(.border-green-300):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(72.3% 0.219 149.579) 45%, #131c2e); }
+  html.dark :is(.border-green-200, .border-green-300):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(72.3% 0.219 149.579) 45%, #131c2e); }
   html.dark :is(.border-amber-200, .border-amber-300):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 45%, #131c2e); }
   html.dark :is(.text-slate-300):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: #475569; }
   html.dark :is(.disabled\:text-slate-400:disabled, .text-slate-400):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: #6b778a; }
