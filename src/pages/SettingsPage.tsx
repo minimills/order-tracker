@@ -4,7 +4,9 @@ import Can from '../components/Can'
 import Icon, { type IconName } from '../components/Icon'
 import SettingsSearch from '../components/SettingsSearch'
 import UnitsSwitch from '../components/crating/UnitsSwitch'
+import ChangeEmail from '../components/settings/ChangeEmail'
 import ChatSettings from '../components/settings/ChatSettings'
+import DailySummary from '../components/settings/DailySummary'
 import MySignature from '../components/settings/MySignature'
 import { useAuth } from '../lib/auth'
 import { usePermissions } from '../lib/permissions'
@@ -52,6 +54,22 @@ export default function SettingsPage() {
                   Department{departments.length === 1 ? '' : 's'}: {departments.length ? departments.join(', ') : 'none yet (an administrator can add you)'}
                 </p>
               )}
+            </section>
+          </Can>
+
+          <Can permission="settings.change_email" level="edit">
+            <section className={card} data-setting="change-email">
+              <h2 className="mb-2 font-semibold">Change Sign-in Email</h2>
+              <ChangeEmail />
+            </section>
+          </Can>
+
+          <Can permission="settings.daily_summary" level="edit">
+            <section className={`${card} [grid-column:1/-1] lg:[grid-column:auto]`} data-setting="daily-summary">
+              <h2 className="mb-2 flex items-center gap-2 font-semibold">
+                <Icon name="inbox" /> Daily Summary
+              </h2>
+              <DailySummary />
             </section>
           </Can>
 

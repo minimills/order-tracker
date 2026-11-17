@@ -163,7 +163,10 @@ export default function NotificationsBell() {
                     {n.kind === 'board_overdue' && <Icon name="alert" className="mr-1 h-3.5 w-3.5 text-red-700" label="Overdue" />}
                     {n.title}
                   </div>
-                  {n.body && <div className={`line-clamp-2 text-xs ${n.read_at ? 'text-slate-400' : 'text-slate-600'}`}>{n.body}</div>}
+                  {n.body && (
+                    // A daily summary has many lines: show all of it, scrolling when long.
+                    <div className={`text-xs ${n.body.includes('\n') ? 'max-h-64 overflow-y-auto whitespace-pre-line' : 'line-clamp-2'} ${n.read_at ? 'text-slate-400' : 'text-slate-600'}`}>{n.body}</div>
+                  )}
                   <div className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
                     {!n.read_at && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-label="Unread" />}
                     {activityTime.format(new Date(n.created_at))}

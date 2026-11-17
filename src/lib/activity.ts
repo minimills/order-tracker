@@ -180,6 +180,11 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
         title: `${c.title ?? 'Declaration of Conformity'} ${c.number} issued`,
         lines: [`Machine ${c.serial ?? ''}`, ...(c.replaces ? [`Replaces ${c.replaces}`] : [])],
       }
+    if (e.table_name === 'order_reminders')
+      return {
+        title: c.status === 'failed' ? 'Reminder to the customer could not be emailed' : 'Reminder emailed to the customer',
+        lines: [String(c.subject ?? ''), `To ${[...((c.to as string[]) ?? []), ...((c.cc as string[]) ?? [])].join(', ')}${Number(c.bcc_count) ? ` (+${c.bcc_count} BCC)` : ''}`, ...(c.error ? [`Error: ${c.error}`] : [])],
+      }
     if (e.table_name === 'freight_breakdowns')
       return {
         title: c.archived === true ? 'Shipment cost breakdown archived' : c.archived === false ? 'Shipment cost breakdown restored' : e.action === 'insert' ? 'Shipment cost breakdown created' : 'Shipment cost breakdown changed',

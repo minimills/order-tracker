@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
 import ScheduleChanges from '../components/schedule/ScheduleChanges'
+import DashboardCharts from '../components/dashboard/DashboardCharts'
 import DelayChart, { type MonthDelay } from '../components/dashboard/DelayChart'
 import { dueText } from '../components/payments/dueText'
 import { countryFlag } from '../lib/country'
@@ -282,12 +283,19 @@ export default function DashboardPage() {
           </Can>
         </div>
 
+        <Can permission="dashboard.charts">
+          <DashboardCharts />
+        </Can>
+
         {/* ---------- Delay chart + latest shipped ---------- */}
         <div className="grid gap-5 empty:hidden [grid-template-columns:repeat(auto-fit,minmax(min(100%,26rem),1fr))]">
+          {/* People with My Charts get this chart there, in the form they choose. */}
           <Can permission="dashboard.chart.delay_by_month">
+            {!can('dashboard.charts') && (
             <Box title="Average Delay by Month" aside={<span className="text-xs text-slate-500">last 12 months</span>}>
               <DelayChart months={stats.months} />
             </Box>
+            )}
           </Can>
           <Can permission="dashboard.list.latest_shipped">
             <Box title="Latest Shipped">

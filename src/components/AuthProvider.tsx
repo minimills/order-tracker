@@ -27,10 +27,19 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!supabase || !email) return
     let cancelled = false
-    supabase.rpc('current_user_role').then(({ data, error }) => {
-      const role = !error && (data === 'admin' || data === 'staff') ? (data as Role) : null
+    const read = async () => {
+      const { data, error } = await supabase!.rpc('current_user_role')
+      return !error && (data === 'admin' || data === 'staff') ? (data as Role) : null
+    }
+    ;(async () => {
+      let role = await read()
+      if (role === null) {
+        // A sign-in email change confirmed at both addresses is finished here (migration 0043).
+        const { data: applied } = await supabase!.rpc('apply_my_email_change')
+        if (applied === true) role = await read()
+      }
       if (!cancelled) setCheck({ email, role })
-    })
+    })()
     return () => {
       cancelled = true
     }
