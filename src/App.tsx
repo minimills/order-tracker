@@ -3,7 +3,7 @@ import Layout from './components/Layout'
 import HomeRedirect from './components/HomeRedirect'
 import Page from './components/Page'
 import RequireAuth from './components/RequireAuth'
-import { ADMIN_KEYS, FREIGHT_KEYS } from './lib/permissions/catalog'
+import { ADMIN_KEYS, FREIGHT_KEYS, TIMESHEET_KEYS } from './lib/permissions/catalog'
 import ActivityPage from './pages/admin/ActivityPage'
 import AdminHomePage from './pages/admin/AdminHomePage'
 import ArchivePage from './pages/admin/ArchivePage'
@@ -52,6 +52,13 @@ import FreightBreakdownPage from './pages/FreightBreakdownPage'
 import FreightBreakdownPrintPage from './pages/FreightBreakdownPrintPage'
 import FreightQuotePage from './pages/FreightQuotePage'
 import FreightSettingsPage from './pages/admin/FreightSettingsPage'
+import PayrollSettingsPage from './pages/admin/PayrollSettingsPage'
+import TimesheetsAdminPage from './pages/admin/TimesheetsAdminPage'
+import TimesheetsPage from './pages/TimesheetsPage'
+import TimesheetWeekPage from './pages/TimesheetWeekPage'
+import MyTimesheetPage from './pages/MyTimesheetPage'
+import TimeOffPage from './pages/TimeOffPage'
+import LabourCostPrintPage from './pages/LabourCostPrintPage'
 import DashboardPage from './pages/DashboardPage'
 import LoginPage from './pages/LoginPage'
 import MachineTypesPage from './pages/MachineTypesPage'
@@ -90,6 +97,19 @@ export default function App() {
           <RequireAuth>
             <Page permission="dashboard.charts.print">
               <DashboardPrintPage />
+            </Page>
+          </RequireAuth>
+        }
+      />
+      {/* The labour cost report laid out for printing (no sidebar). */}
+      <Route
+        path="timesheets/labour-cost/print"
+        element={
+          <RequireAuth>
+            <Page permission="timesheets.labour_cost.print">
+              <Page permission="payroll.pay">
+                <LabourCostPrintPage />
+              </Page>
             </Page>
           </RequireAuth>
         }
@@ -145,6 +165,10 @@ export default function App() {
         <Route path="payments" element={<Page permission="payments.page"><PaymentsPage /></Page>} />
         <Route path="checklists/:machineId" element={<Page permission="checklist"><ChecklistPage /></Page>} />
         <Route path="freight" element={<Page anyOf={FREIGHT_KEYS}><FreightPage /></Page>} />
+        <Route path="timesheets" element={<Page anyOf={TIMESHEET_KEYS}><TimesheetsPage /></Page>} />
+        <Route path="timesheets/employee/:id" element={<Page permission="timesheets"><TimesheetWeekPage /></Page>} />
+        <Route path="my-timesheet" element={<Page permission="timesheets.mine"><MyTimesheetPage /></Page>} />
+        <Route path="time-off" element={<Page permission="timesheets.time_off"><TimeOffPage /></Page>} />
         <Route path="freight/breakdowns/new" element={<Page permission="freight.breakdowns" level="edit"><FreightBreakdownPage /></Page>} />
         <Route path="freight/breakdowns/:id" element={<Page permission="freight.breakdowns"><FreightBreakdownPage /></Page>} />
         <Route path="freight/quote" element={<Page permission="freight.quote"><FreightQuotePage /></Page>} />
@@ -188,6 +212,8 @@ export default function App() {
           <Route path="templates" element={<Page permission="admin.templates" level="edit"><TemplatesPage /></Page>} />
           <Route path="ce" element={<Page permission="admin.ce" level="edit"><CeAdminPage /></Page>} />
           <Route path="freight" element={<Page permission="admin.freight" level="edit"><FreightSettingsPage /></Page>} />
+          <Route path="payroll" element={<Page permission="admin.payroll" level="edit"><PayrollSettingsPage /></Page>} />
+          <Route path="timesheets" element={<Page permission="admin.timesheets" level="edit"><TimesheetsAdminPage /></Page>} />
           <Route path="dashboard-charts" element={<Page permission="admin.dashboard_charts" level="edit"><DashboardChartsPage /></Page>} />
           <Route path="email-templates" element={<Page permission="admin.email_templates" level="edit"><EmailTemplatesPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />

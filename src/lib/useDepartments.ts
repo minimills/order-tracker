@@ -11,7 +11,7 @@ export function useDepartments() {
     if (!supabase) return
     const { data } = await supabase
       .from('departments')
-      .select('id, name, sort_order, default_permissions, archived')
+      .select('id, name, sort_order, default_permissions, archived, manager_email')
       .order('sort_order')
       .order('name')
     setDepartments((data as Department[]) ?? [])

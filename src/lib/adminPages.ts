@@ -9,6 +9,8 @@ export const ADMIN_VIEW_ONLY = new Set(['admin.activity', 'admin.email_log'])
 export const ADMIN_PAGES: AdminPage[] = [
   { to: '/admin/users', permission: 'admin.users', icon: 'user' as const, title: 'Users', text: 'Who can sign in, their departments, and what each person can see and do.' },
   { to: '/admin/departments', permission: 'admin.departments', icon: 'factory' as const, title: 'Departments', text: 'Create, rename, reorder and archive departments.' },
+  { to: '/admin/timesheets', permission: 'admin.timesheets', icon: 'timer' as const, title: 'Timesheets', text: 'Employees, people without a login, and import of the old timesheet sheets (Excel or CSV).' },
+  { to: '/admin/payroll', permission: 'admin.payroll', icon: 'money' as const, title: 'Payroll Settings', text: 'Overtime threshold, banked overtime, vacation and sick day rules, statutory holiday pay, PEI minimums.' },
   { to: '/admin/machine-types', permission: 'admin.machine_types', icon: 'cog' as const, title: 'Machine Types', text: 'Names, codes and next serial numbers.' },
   { to: '/admin/dropdowns', permission: 'admin.dropdowns', icon: 'dropdown' as const, title: 'Dropdown Lists', text: 'Voltage, delivery equipment, freight and payment types, notice categories.' },
   { to: '/admin/stages', permission: 'admin.stages', icon: 'tag' as const, title: 'Stage Names', text: 'Rename what people see for each stage, for example “Ready / testing”.' },

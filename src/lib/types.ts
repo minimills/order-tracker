@@ -129,4 +129,6 @@ export type Department = {
   sort_order: number
   default_permissions: Record<string, unknown>
   archived: boolean
+  /** Approves timesheets and time off of the department (0044). */
+  manager_email?: string | null
 }

@@ -92,7 +92,7 @@ export const STATE_DONE: Record<string, string> = {
 
 /** Time off of people in a conversation (from the time-off step, when it is in place). */
 export type TimeOff = { email: string; name: string; kind: string; return_date: string | null }
-export const TIME_OFF_WORDS: Record<string, string> = { vacation: 'vacation', sick: 'sick leave', banked: 'banked time' }
+export const TIME_OFF_WORDS: Record<string, string> = { vacation: 'vacation', sick: 'sick leave', banked: 'banked time', unpaid: 'time off' }
 
 const timeFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit' })
 const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', month: 'short', day: 'numeric' })

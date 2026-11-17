@@ -19,6 +19,9 @@ import { supabase } from '../../lib/supabase'
 import type { Role } from '../../lib/auth'
 import { useDepartments } from '../../lib/useDepartments'
 import { adminUsers } from '../../lib/adminUsers'
+import Can from '../../components/Can'
+import EmployeeDialog from '../../components/timesheets/EmployeeDialog'
+import { useEmployees } from '../../lib/timesheets'
 
 type User = { email: string; name: string | null; role: Role; created_at: string }
 
@@ -38,6 +41,8 @@ export default function UsersPage() {
   const [error, setError] = useState<string | null>(null)
   const [removing, setRemoving] = useState<User | null>(null)
   const [welcoming, setWelcoming] = useState<User | null>(null)
+  const [employeeFor, setEmployeeFor] = useState<User | null>(null)
+  const { employees, reload: reloadEmployees } = useEmployees(true)
   const company = useCompany()
   const { departments, reload: reloadDepartments } = useDepartments()
   const activeDepartments = departments.filter((d) => !d.archived)
@@ -448,6 +453,11 @@ export default function UsersPage() {
             <button type="button" className="text-sm text-blue-700 underline" onClick={() => setWelcoming(u)}>
               Welcome Email
             </button>
+            <Can permission="admin.employees" level="edit">
+              <button type="button" className="text-sm text-blue-700 underline" onClick={() => setEmployeeFor(u)}>
+                {employees.some((e) => e.user_email === u.email) ? 'Employee Setup' : 'Set Up as Employee'}
+              </button>
+            </Can>
             <button type="button" className="text-sm text-blue-700 underline disabled:opacity-50" disabled={busyEmail === u.email} onClick={() => changeEmail(u)}>
               Change Email
             </button>
@@ -458,6 +468,15 @@ export default function UsersPage() {
         ))}
       </div>
 
+      {employeeFor && (
+        <EmployeeDialog
+          employee={employees.find((e) => e.user_email === employeeFor.email) ?? null}
+          userEmail={employeeFor.email}
+          userName={employeeFor.name ?? undefined}
+          onClose={() => setEmployeeFor(null)}
+          onSaved={reloadEmployees}
+        />
+      )}
       {welcoming && <WelcomeEmailDialog user={welcoming} perms={permsByUser[welcoming.email] ?? {}} companyName={company.name} onClose={() => setWelcoming(null)} />}
 
       {editingPerms && (

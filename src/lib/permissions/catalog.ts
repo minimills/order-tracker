@@ -34,6 +34,7 @@ export const GROUPS = [
   'Boards',
   'Notice Board',
   'Service / Training',
+  'Timesheets',
   'Chat',
   'Reports',
   'Agent',
@@ -144,6 +145,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'dashboard.list.latest_shipped', label: 'Latest shipped', levels: V, requires: 'dashboard' },
       { key: 'dashboard.list.next_ship_dates', label: 'Next ship dates', levels: V, requires: 'dashboard' },
       { key: 'dashboard.list.next_payments', label: 'Next payments due', levels: V, requires: 'dashboard', needs: ['payments'] },
+      { key: 'dashboard.whos_off', label: 'Who’s off today (approved time off; the reason only with “Absence Calendar”)', levels: V, requires: 'dashboard', db: true },
       { key: 'dashboard.list.schedule_changes', label: 'Schedule changes: orders whose suggested ship date is later than promised (Accept / Keep)', levels: V, requires: 'dashboard', needs: ['schedule'] },
     ],
   }),
@@ -433,6 +435,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'notices.filters', label: 'Filters (category, priority, for my department) and search', levels: V, requires: 'notices' },
       { key: 'notices.archive', label: 'Archive: expired and archived notices, with search', levels: V, requires: 'notices', db: true },
       { key: 'notices.holidays', label: 'Upcoming holidays and office closures panel', levels: V, requires: 'notices' },
+      { key: 'notices.whos_off', label: 'Who’s off today panel (approved time off; the reason only with “Absence Calendar”)', levels: V, requires: 'notices', db: true },
       { key: 'notices.banner', label: 'Red banner at the top of every page for Urgent notices until they acknowledge them', levels: V, requires: 'notices', needs: ['notices.acknowledge'] },
       { key: 'notices.closures', label: 'Closure and delay alerts: the warning banner on every page (office closed, delayed opening) and their updates (everyone receives them by app, phone and email)', levels: V, db: true },
       { key: 'notices.closures.post', label: 'Post closure and delay alerts, post updates and end them (notifies everyone)', levels: E, requires: 'notices', db: true },
@@ -502,6 +505,35 @@ export const CATALOG: PermissionItem[] = [
       { key: 'service.certificate.pdf', label: 'Download PDF', levels: V, requires: 'service.certificate' },
       { key: 'service.certificate.email', label: 'Email the signed certificate (preview, Send, Resend, sent history)', levels: VE, requires: 'service.certificate', db: true },
       { key: 'service.certificate.correct', label: 'Create a corrected version of a signed certificate', levels: E, requires: 'service.certificate', db: true },
+    ],
+  }),
+
+  ...group('Timesheets', {
+    'Weekly hours': [
+      { key: 'timesheets', label: 'Timesheets page: every employee’s weekly hours, overtime, banked hours and approval status', levels: V, page: true, db: true },
+      { key: 'timesheets.enter', label: 'Enter and change hours (per day or per week), bank hours, mark imported hours as reviewed (employees never enter their own)', levels: E, requires: 'timesheets', db: true },
+      { key: 'timesheets.approve', label: 'Approve and lock weeks of every department (department managers can always approve their own departments)', levels: E, requires: 'timesheets', db: true },
+      { key: 'timesheets.unlock', label: 'Unlock an approved week (with a reason)', levels: E, requires: 'timesheets', db: true },
+      { key: 'timesheets.history', label: 'Week history: who entered, approved, unlocked, and the overtime or regular pay choices', levels: V, requires: 'timesheets' },
+      { key: 'timesheets.adjust', label: 'Change an employee’s vacation and sick day entitlement and correct banked hour balances (with a reason; history kept)', levels: E, db: true },
+    ],
+    'My timesheet': [
+      { key: 'timesheets.mine', label: 'My Timesheet: their own hours, banked hours, vacation and sick days (read only)', levels: V, page: true, db: true },
+    ],
+    'Time off': [
+      { key: 'timesheets.time_off', label: 'Time Off page (their own requests, and requests they decide)', levels: V, page: true },
+      { key: 'timesheets.time_off.request', label: 'Request time off for themselves (vacation, sick, banked time, unpaid)', levels: E, requires: 'timesheets.time_off', db: true },
+      { key: 'timesheets.time_off.manage', label: 'See every request (edit: approve or decline for every department; department managers always decide their own departments)', levels: VE, requires: 'timesheets.time_off', db: true },
+      { key: 'timesheets.absences', label: 'Absence Calendar (managers see their departments; time off managers and approvers see everyone)', levels: V, db: true },
+    ],
+    Reports: [
+      { key: 'timesheets.reports', label: 'Timesheet reports: hours per employee per week or month, overtime, banked hours, leave taken (all years, imported ones too)', levels: V, db: true },
+      { key: 'timesheets.reports.export', label: 'Export reports as CSV for payroll', levels: V, requires: 'timesheets.reports' },
+    ],
+    'Pay and labour cost': [
+      { key: 'payroll.pay', label: 'View pay rates and labour cost (edit: change pay rates). Owners and payroll only.', levels: VE, db: true, hint: 'Pay rates and costs are never shown without this, even to people who enter hours.' },
+      { key: 'timesheets.labour_cost', label: 'Labour cost: cost per hour, day, week, month and year per employee, department totals, years compared, charts', levels: V, needs: ['payroll.pay'] },
+      { key: 'timesheets.labour_cost.print', label: 'Print the labour cost report', levels: V, requires: 'timesheets.labour_cost' },
     ],
   }),
 
@@ -580,7 +612,10 @@ export const CATALOG: PermissionItem[] = [
   ...group('Admin', {
     Pages: [
       { key: 'admin.users', label: 'Users: add, rename, remove, departments (only full admins change permissions or make admins)', levels: E, db: true },
-      { key: 'admin.departments', label: 'Departments', levels: E, db: true },
+      { key: 'admin.departments', label: 'Departments (and each department’s manager, who approves timesheets and time off)', levels: E, db: true },
+      { key: 'admin.employees', label: 'Employee setup: pay type, start date, payroll department, hours per day (pay rates also need “View pay and labour cost”)', levels: E, db: true },
+      { key: 'admin.payroll', label: 'Payroll settings: overtime threshold, banked overtime, vacation and sick day rules, PEI minimums', levels: E, db: true },
+      { key: 'admin.timesheets', label: 'Timesheets: employees without a login, import of old timesheet sheets, import layouts', levels: E, db: true },
       { key: 'admin.machine_types', label: 'Machine types', levels: E, db: true },
       { key: 'admin.dropdowns', label: 'Dropdown lists', levels: E, db: true },
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
@@ -618,5 +653,8 @@ export const CATALOG_BY_KEY = new Map(CATALOG.map((i) => [i.key, i]))
 /** Every Admin page key (the Admin menu shows when any of them is allowed). */
 /** Any of these opens the Freight page (each tab has its own key). */
 export const FREIGHT_KEYS = ['freight.dashboard', 'freight.breakdowns', 'freight.insurance', 'reports.crating', 'freight.quote']
+
+/** Any of these opens the Timesheets page (each tab has its own key). */
+export const TIMESHEET_KEYS = ['timesheets', 'timesheets.absences', 'timesheets.reports', 'timesheets.labour_cost']
 
 export const ADMIN_KEYS = CATALOG.filter((i) => i.group === 'Admin').map((i) => i.key)

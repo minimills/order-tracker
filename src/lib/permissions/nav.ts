@@ -1,5 +1,5 @@
 import type { IconName } from '../../components/Icon'
-import { ADMIN_KEYS, FREIGHT_KEYS, type Level } from './catalog'
+import { ADMIN_KEYS, FREIGHT_KEYS, TIMESHEET_KEYS, type Level } from './catalog'
 
 /** The left menu. Each item shows only when its permission is allowed. */
 export type NavItem = {
@@ -25,6 +25,9 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/chat', label: 'Chat', icon: 'chat', permission: 'chat', badge: 'chat' },
   { to: '/service', label: 'Service / Training', icon: 'cog', permission: 'service' },
   { to: '/service/calendar', label: 'Tech Calendar', icon: 'calendar', permission: 'service.calendar' },
+  { to: '/timesheets', label: 'Timesheets', icon: 'timer', anyOf: TIMESHEET_KEYS },
+  { to: '/my-timesheet', label: 'My Timesheet', icon: 'clock', permission: 'timesheets.mine' },
+  { to: '/time-off', label: 'Time Off', icon: 'calendar', permission: 'timesheets.time_off' },
   { to: '/payments', label: 'Payments', icon: 'money', permission: 'payments.page' },
   { to: '/freight', label: 'Freight', icon: 'truck', anyOf: FREIGHT_KEYS },
   { to: '/reports/department-delays', label: 'Department Delays', icon: 'clock', permission: 'reports.department_delays' },

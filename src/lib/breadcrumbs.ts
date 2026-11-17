@@ -61,12 +61,14 @@ export function crumbsForPath(path: string): Crumb[] {
     notices: { label: 'Notice Board', to: '/notices' },
     settings: { label: 'Settings', to: '/settings' },
     freight: { label: 'Freight', to: '/freight' },
+    timesheets: { label: 'Timesheets', to: '/timesheets' },
   }
   const first = section[parts[0]]
   if (!first) return []
   const rest: Record<string, string> = {
     orders: 'Order',
     checklists: 'Final Check',
+    timesheets: 'Employee',
     boards: 'Board',
     chat: 'Conversation',
     service: parts[1] === 'calls' ? 'Service Call' : parts[1] === 'certificates' ? 'Certificate' : 'Order',
