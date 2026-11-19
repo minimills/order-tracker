@@ -239,6 +239,17 @@ html.glass.dark.glass-lite .widget-frame {
     -webkit-backdrop-filter: none !important;
   }
 }
+/* Printing keeps the colours and icons of the screen (status ticks, badges,
+   chips): browsers otherwise drop background colours, so a white check on a
+   green box would vanish. */
+@media print {
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
 @media print {
   html.glass body {
     background: #fff;
@@ -286,7 +297,7 @@ html.print-preview #root {
   }
 }
 /* Only what is worth printing: no buttons, toolbars, menus or screen-only parts. */
-.print-content :is(button:not(th button), [role='toolbar'], .print\:hidden, [data-print='hide'], [data-print-hidden], nav, dialog) {
+.print-content :is(button:not(th button):not([data-print='keep']):not([aria-pressed='true']):not([role='radio'][aria-checked='true']), [role='toolbar'], .print\:hidden, [data-print='hide'], [data-print-hidden], nav, dialog) {
   display: none !important;
 }
 /* Links drawn as buttons are screen actions too. With the letterhead, the page's own title is already in it. */

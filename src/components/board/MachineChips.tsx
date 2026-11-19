@@ -135,6 +135,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
             <button
               type="button"
               draggable={false}
+              data-print="keep"
               aria-expanded={showSerials ? isOpen : undefined}
               aria-label={summary}
               title={showSerials ? g.fullName : summary}

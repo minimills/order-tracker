@@ -86,6 +86,7 @@ export default function CardTile(p: Props) {
         onKeyDown={stop}
         aria-label={done ? `Mark incomplete: ${card.title}` : `Mark complete: ${card.title}`}
         title={done ? 'Mark Incomplete' : 'Mark Complete'}
+        data-print={done ? 'keep' : undefined}
         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-opacity ${
           done
             ? 'border-green-600 bg-green-600 text-white'
