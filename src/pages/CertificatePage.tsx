@@ -8,6 +8,7 @@ import SignatureInput, { type SignatureInputHandle } from '../components/Signatu
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../components/form'
 import RichText from '../components/RichText'
 import RichTextEditor from '../components/RichTextEditor'
+import SenderLine from '../components/email/SenderLine'
 import SerialNumber from '../components/SerialNumber'
 import { useCompany } from '../lib/company'
 import { confirmAction } from '../lib/confirm'
@@ -260,7 +261,7 @@ export default function CertificatePage() {
 
           {canText ? (
             <Can permission="service.certificate.edit_text" level="edit">
-              <RichTextEditor headings label="Text above the table" value={edit.part1} onChange={(part1) => setEdit({ ...edit, part1 })} />
+              <RichTextEditor label="Text above the table" value={edit.part1} onChange={(part1) => setEdit({ ...edit, part1 })} />
             </Can>
           ) : (
             <RichText value={fillPlaceholders(edit.part1, values)} className="text-sm" />
@@ -335,7 +336,7 @@ export default function CertificatePage() {
 
           {canText ? (
             <Can permission="service.certificate.edit_text" level="edit">
-              <RichTextEditor headings label="Text below the table" value={edit.part2} onChange={(part2) => setEdit({ ...edit, part2 })} />
+              <RichTextEditor label="Text below the table" value={edit.part2} onChange={(part2) => setEdit({ ...edit, part2 })} />
             </Can>
           ) : (
             <RichText value={fillPlaceholders(edit.part2, values)} className="text-sm" />
@@ -467,6 +468,7 @@ export default function CertificatePage() {
               <Field label="Subject" htmlFor="cert-subject">
                 <input id="cert-subject" className={inputClass} maxLength={300} value={rcpt.subject} onChange={(e) => setRcpt({ ...rcpt, subject: e.target.value })} />
               </Field>
+              <SenderLine />
               <p>
                 <span className="text-slate-500">Attachment:</span> {preview.file_name}
               </p>

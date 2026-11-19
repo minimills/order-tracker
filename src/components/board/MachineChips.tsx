@@ -152,9 +152,9 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                 </span>
               )}
               <span className="truncate">{g.name}</span>
-              {showStatus && g.status === 0 && g.percent !== null && <span className="shrink-0 text-[11px] font-normal tabular-nums opacity-80">{g.percent}%</span>}
+              {showStatus && g.status === 0 && g.percent !== null && <span className="shrink-0 text-[0.6875rem] font-normal tabular-nums opacity-80">{g.percent}%</span>}
               {g.machines.length > 1 && (
-                <span className="shrink-0 rounded-full bg-white/80 px-1.5 text-[11px] font-semibold tabular-nums ring-1 ring-current/20">
+                <span className="shrink-0 rounded-full bg-white/80 px-1.5 text-[0.6875rem] font-semibold tabular-nums ring-1 ring-current/20">
                   ×{g.machines.length}
                 </span>
               )}
@@ -195,7 +195,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                             to={`/checklists/${m.id}`}
                             draggable={false}
                             onClick={(e) => e.stopPropagation()}
-                            className="w-full rounded border border-slate-300 px-1.5 py-0.5 text-center text-[11px] font-medium hover:bg-slate-50"
+                            className="w-full rounded border border-slate-300 px-1.5 py-0.5 text-center text-[0.6875rem] font-medium hover:bg-slate-50"
                           >
                             {m.checklist_status === 'signed'
                               ? 'View Final Check'

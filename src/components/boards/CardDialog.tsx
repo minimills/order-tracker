@@ -36,6 +36,8 @@ import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import RichText from '../RichText'
 import RichTextEditor from '../RichTextEditor'
+import PrintButton from '../print/PrintButton'
+import { isEmptyRichText } from '../../lib/richText'
 import { buttonClass, inputClass, narrowInputClass, secondaryButtonClass } from '../form'
 import LinkPicker from './LinkPicker'
 import CardNavigator from './CardNavigator'
@@ -78,6 +80,8 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
   const [title, setTitle] = useState(card?.title ?? '')
   const [desc, setDesc] = useState<string | null>(null) // null = not editing
   const [newComment, setNewComment] = useState('')
+  // Bumped after posting so the comment box starts empty again.
+  const [commentBox, setCommentBox] = useState(0)
   const [editingComment, setEditingComment] = useState<{ id: string; body: string } | null>(null)
   const [newList, setNewList] = useState('')
   const [newItem, setNewItem] = useState<Record<string, string>>({})
@@ -185,8 +189,11 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
 
   async function addComment(e: FormEvent) {
     e.preventDefault()
-    if (!newComment.trim()) return
-    if (await run(() => supabase!.from('board_comments').insert({ card_id: card!.id, body: newComment.trim() }))) setNewComment('')
+    if (isEmptyRichText(newComment)) return
+    if (await run(() => supabase!.from('board_comments').insert({ card_id: card!.id, body: newComment }))) {
+      setNewComment('')
+      setCommentBox((n) => n + 1)
+    }
   }
 
   /** Active time (pauses not counted): "1 h 15 min", or "running for …" / "paused at …" while not finished. */
@@ -206,7 +213,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
   /** Pause history of one timer. */
   const pauseList = (ps: Pause[]) =>
     ps.length > 0 && (
-      <ul className="mt-1 space-y-0.5 text-[11px] text-slate-600">
+      <ul className="mt-1 space-y-0.5 text-[0.6875rem] text-slate-600">
         {ps.map((p) => (
           <li key={p.id}>
             Paused {activityTime.format(new Date(p.paused_at))}
@@ -242,6 +249,11 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
 
   return (
     <Overlay onClose={onClose} title={card.title} colour={board.colour}>
+      <Can permission="boards.card.print">
+        <div className="mb-2 flex justify-end pr-8">
+          <PrintButton scope="dialog" title={card.title} subtitle={board.name} />
+        </div>
+      </Can>
       {/* ---------- Title, stage, move ---------- */}
       <div className="space-y-2">
         <Can permission="boards.card.edit" level="edit" fallback={<h2 className="pr-8 text-xl font-semibold break-words">{card.title}</h2>}>
@@ -605,20 +617,16 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                     </div>
                     {editingComment?.id === c.id ? (
                       <Can permission="boards.card.comments" level="edit">
-                        <textarea
-                          aria-label="Edit comment"
-                          className={`${inputClass} mt-1`}
-                          rows={3}
-                          value={editingComment.body}
-                          onChange={(e) => setEditingComment({ id: c.id, body: e.target.value })}
-                        />
+                        <div className="mt-1">
+                          <RichTextEditor label="Edit comment" minHeight="4rem" value={editingComment.body} onChange={(body) => setEditingComment({ id: c.id, body })} />
+                        </div>
                         <div className="mt-1 flex gap-2">
                           <button
                             type="button"
                             className={small}
                             onClick={async () =>
-                              editingComment.body.trim() &&
-                              (await run(() => supabase!.from('board_comments').update({ body: editingComment.body.trim() }).eq('id', c.id))) &&
+                              !isEmptyRichText(editingComment.body) &&
+                              (await run(() => supabase!.from('board_comments').update({ body: editingComment.body }).eq('id', c.id))) &&
                               setEditingComment(null)
                             }
                           >
@@ -630,7 +638,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                         </div>
                       </Can>
                     ) : (
-                      <p className="mt-0.5 whitespace-pre-wrap break-words">{c.body}</p>
+                      <RichText value={c.body} className="mt-0.5 break-words" />
                     )}
                     {c.author_email === me && editingComment?.id !== c.id && (
                       <Can permission="boards.card.comments" level="edit">
@@ -653,15 +661,8 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
               </ul>
               <Can permission="boards.card.comments" level="edit">
                 <form onSubmit={addComment} className="mt-2 space-y-1.5">
-                  <textarea
-                    aria-label="New comment"
-                    className={inputClass}
-                    rows={2}
-                    placeholder="Write a comment"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                  <button type="submit" className={secondaryButtonClass} disabled={busy || !newComment.trim()}>
+                  <RichTextEditor key={commentBox} label="New comment" minHeight="3.5rem" placeholder="Write a comment" value="" onChange={setNewComment} />
+                  <button type="submit" className={secondaryButtonClass} disabled={busy || isEmptyRichText(newComment)}>
                     Add Comment
                   </button>
                 </form>
@@ -697,7 +698,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
               <ul className="space-y-1">
                 {cardPeople.map((email) => (
                   <li key={email} className="flex items-center gap-2 text-sm">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[10px] font-semibold text-white">{initials(nameOf(email))}</span>
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[0.625rem] font-semibold text-white">{initials(nameOf(email))}</span>
                     <span className="flex-1 truncate">{nameOf(email)}</span>
                     <Can permission="boards.card.assignees" level="edit">
                       {mayEdit && (
@@ -779,7 +780,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                 {timing(card.started_at, card.finished_at, cardPauses) && (
                   <p className="font-medium">
                     <Icon name="timer" /> {timing(card.started_at, card.finished_at, cardPauses)}
-                    {cardPauses.length > 0 && <span className="block text-[11px] font-normal text-slate-500">Active time only: paused time is not counted.</span>}
+                    {cardPauses.length > 0 && <span className="block text-[0.6875rem] font-normal text-slate-500">Active time only: paused time is not counted.</span>}
                   </p>
                 )}
                 {pauseList(cardPauses.filter((p) => card.started_at && p.paused_at >= card.started_at))}

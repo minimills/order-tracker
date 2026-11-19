@@ -51,8 +51,8 @@ const same = (a: string[], b: string[]) => a.length === b.length && a.every((x) 
 
 /** Settings → Daily Summary: a morning "Today's Agenda" and an end-of-day "What I Did Today". */
 export default function DailySummary() {
-  const { can, canAny } = usePermissions()
-  const { session } = useAuth()
+  const { canAny } = usePermissions()
+  const { session, isAdmin } = useAuth()
   const me = session?.user.email?.toLowerCase() ?? ''
   const [s, setS] = useState<Settings | null>(null)
   const [modes, setModes] = useState<Record<string, string>>({})
@@ -179,8 +179,9 @@ export default function DailySummary() {
       <p className="text-slate-600">Sent on working days at the time you choose. Each summary only holds what you are allowed to see.</p>
       {part('morning', 'Today’s Agenda', 'A morning summary of what is ahead.', 'agenda')}
       {part('evening', 'What I Did Today', 'An end-of-day summary of your work.', 'recap')}
-      {can('summary.business') && (
-        <Can permission="summary.business">
+      {/* Administrators only (owner's decision; also enforced by set_my_summary and a trigger, migration 0049). */}
+      {isAdmin && (
+        <Can permission="settings.daily_summary" level="edit">
           <label className="flex items-start gap-2">
             <input type="checkbox" className="mt-1" checked={s.business} onChange={(e) => save({ business: e.target.checked })} />
             <span>

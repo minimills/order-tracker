@@ -8,6 +8,8 @@ import { activityTime, activityWho, describeActivity, type ActivityEntry } from 
 import { addDaysISO, todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import Can from '../../components/Can'
+import PrintButton from '../../components/print/PrintButton'
 
 type Entry = ActivityEntry & { order_id: string | null }
 
@@ -133,7 +135,14 @@ export default function ActivityPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Activity">Every change anyone made, newest first. Times are Halifax time.</AdminPageHeader>
+      <AdminPageHeader
+        title="Activity"
+        print={
+          <Can permission="admin.activity.print">
+            <PrintButton title="Activity" />
+          </Can>
+        }
+      >Every change anyone made, newest first. Times are Halifax time.</AdminPageHeader>
 
       <form
         className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.8fr_1fr_1.2fr_1fr_1fr_auto]"

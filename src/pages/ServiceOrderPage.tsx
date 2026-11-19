@@ -4,6 +4,9 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../components/form'
+import RichText from '../components/RichText'
+import RichTextEditor from '../components/RichTextEditor'
+import { preloadRichTextEditor } from '../lib/richTextEditorLoader'
 import SerialNumber from '../components/SerialNumber'
 import { countryFlag } from '../lib/country'
 import { showDate, todayISO } from '../lib/dates'
@@ -25,6 +28,7 @@ import {
 import { supabase } from '../lib/supabase'
 import ServiceCallHeader from '../components/service/ServiceCallHeader'
 import type { ServiceCallInfo } from '../lib/service'
+import PrintButton from '../components/print/PrintButton'
 
 type Machine = { id: string; serial_number: string | null; archived: boolean; machine_types: { name: string } | null }
 type Tab = 'log' | 'machines' | 'certificate'
@@ -85,6 +89,8 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
   const [entries, setEntries] = useState<SavedEntry[]>([])
   const [certs, setCerts] = useState<Pick<Certificate, 'id' | 'version' | 'status' | 'created_at' | 'locked_at'>[]>([])
   const [form, setForm] = useState<EntryDraft | null>(null)
+  // Loaded now, so the note boxes still work if the signal drops on site.
+  useEffect(() => preloadRichTextEditor(), [])
   const [saving, setSaving] = useState(false)
 
   const load = useCallback(async () => {
@@ -219,7 +225,12 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
             <ServiceCallHeader call={call} onChanged={load} />
           ) : info ? (
             <>
-            <h1 className="mt-1 text-2xl font-semibold">Order {info.order_code}</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+              <h1 className="mt-1 text-2xl font-semibold">Order {info.order_code}</h1>
+              <Can permission="service.print">
+                <PrintButton title={`Service / Training – Order ${info.order_code}`} subtitle={info.customer_company || info.customer_name || undefined} />
+              </Can>
+            </div>
             <p className="text-sm text-slate-700">
               {info.customer_name}
               {info.customer_company ? ` · ${info.customer_company}` : ''}
@@ -301,14 +312,8 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                         </button>
                       ))}
                     </div>
-                    <Field label="General notes" htmlFor="day-notes">
-                      <textarea
-                        id="day-notes"
-                        rows={3}
-                        className={inputClass}
-                        value={form.notes}
-                        onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                      />
+                    <Field label="General notes">
+                      <RichTextEditor key={`day-${form.client_id}`} label="General notes" minHeight="5rem" value={form.notes} onChange={(notes) => setForm((f) => (f ? { ...f, notes } : f))} />
                     </Field>
                     <div>
                       <p className="mb-1 text-sm font-medium text-slate-700">Machines worked on</p>
@@ -336,14 +341,14 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                     {form.machines.map((fm) => {
                       const m = machineById.get(fm.machine_id)
                       return (
-                        <Field key={fm.machine_id} label={`Notes for ${machineName(m)} ${m?.serial_number ?? ''}`} htmlFor={`mn-${fm.machine_id}`}>
-                          <textarea
-                            id={`mn-${fm.machine_id}`}
-                            rows={2}
-                            className={inputClass}
+                        <Field key={fm.machine_id} label={`Notes for ${machineName(m)} ${m?.serial_number ?? ''}`}>
+                          <RichTextEditor
+                            key={`m-${form.client_id}-${fm.machine_id}`}
+                            label={`Notes for ${machineName(m)}`}
+                            minHeight="4rem"
                             value={fm.notes}
-                            onChange={(e) =>
-                              setForm({ ...form, machines: form.machines.map((x) => (x.machine_id === fm.machine_id ? { ...x, notes: e.target.value } : x)) })
+                            onChange={(notes) =>
+                              setForm((f) => (f ? { ...f, machines: f.machines.map((x) => (x.machine_id === fm.machine_id ? { ...x, notes } : x)) } : f))
                             }
                           />
                         </Field>
@@ -420,7 +425,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                         {d.error ? `Could not be saved: ${d.error}` : 'Kept on this device. It is sent automatically when the connection is back.'}
                       </p>
                     )}
-                    {d.draft.notes && <p className="mt-1 whitespace-pre-line text-slate-700">{d.draft.notes}</p>}
+                    {d.draft.notes && <RichText value={d.draft.notes} className="mt-1 text-slate-700" />}
                     {d.draft.machines.length > 0 && (
                       <ul className="mt-2 space-y-1">
                         {d.draft.machines.map((dm) => {
@@ -429,7 +434,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                             <li key={dm.machine_id} className="rounded bg-slate-50 px-2 py-1">
                               <span className="font-medium">{machineName(m)}</span>{' '}
                               {m?.serial_number && <SerialNumber serial={m.serial_number} className="text-xs" />}
-                              {dm.notes && <p className="whitespace-pre-line text-slate-700">{dm.notes}</p>}
+                              {dm.notes && <RichText value={dm.notes} className="text-slate-700" />}
                             </li>
                           )
                         })}
@@ -472,7 +477,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                               <span className="font-medium">{showDate(d.draft.entry_date)}</span>{' '}
                               <span className="text-xs text-slate-500">{KIND_LABEL[d.draft.kind]}</span>
                               {d.waiting && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">Not yet saved</span>}
-                              <p className="whitespace-pre-line text-slate-700">{n.notes || <span className="text-slate-400">Worked on, no notes.</span>}</p>
+                              {n.notes ? <RichText value={n.notes} className="text-slate-700" /> : <p className="text-slate-400">Worked on, no notes.</p>}
                             </li>
                           )
                         })}

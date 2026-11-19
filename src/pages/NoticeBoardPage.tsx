@@ -29,6 +29,7 @@ import {
 import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { useOptionList } from '../lib/useOptionList'
+import PrintButton from '../components/print/PrintButton'
 
 const EMPTY: BoardData = { notices: [], audience: [], reads: [], reactions: [], comments: [] }
 
@@ -167,7 +168,12 @@ export default function NoticeBoardPage() {
       <div className="mx-auto max-w-7xl space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Notice Board</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Notice Board</h1>
+              <Can permission="notices.board.print">
+                <PrintButton title={view === 'mine' ? 'My Notes' : 'Notice Board'} />
+              </Can>
+            </div>
             <p className="mt-1 text-sm text-slate-600">
               {view === 'mine' ? 'Your own notes. Nobody else can see them.' : 'Notices for the team. Urgent and pinned notices stay at the top.'}
             </p>

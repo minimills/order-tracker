@@ -106,7 +106,7 @@ export default function BuildTimesSection() {
                           placeholder="0"
                           onChange={(e) => setDrafts((all) => ({ ...all, [t.id]: { ...d, [s.key]: e.target.value } }))}
                         />
-                        <div className={`mt-0.5 text-[11px] ${used.source === 'average' ? 'text-blue-700' : 'text-slate-500'}`}>
+                        <div className={`mt-0.5 text-[0.6875rem] ${used.source === 'average' ? 'text-blue-700' : 'text-slate-500'}`}>
                           {used.source === 'average' ? `average of ${used.builds}: ${used.days}` : 'default used'}
                         </div>
                       </td>

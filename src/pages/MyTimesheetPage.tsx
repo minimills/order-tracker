@@ -6,6 +6,7 @@ import { narrowInputClass, secondaryButtonClass } from '../components/form'
 import { addDaysISO, showDate, todayISO } from '../lib/dates'
 import { supabase } from '../lib/supabase'
 import { kindLabel, showHours, toWeekRow, type Balances, type WeekRow } from '../lib/timesheets'
+import PrintButton from '../components/print/PrintButton'
 
 type Mine = {
   employee: { id: string; name: string; pay_type: string; start_date: string | null }
@@ -48,7 +49,12 @@ export default function MyTimesheetPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">My Timesheet</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-semibold">My Timesheet</h1>
+            <Can permission="timesheets.mine.print">
+              <PrintButton title={`Timesheet – ${mine.employee.name}`} subtitle={String(year)} />
+            </Can>
+          </div>
           <p className="text-sm text-slate-600">
             {mine.employee.name} · {b.years_of_service} years of service by the end of {year}. Hours are entered by the office; ask your manager if something looks wrong.
           </p>

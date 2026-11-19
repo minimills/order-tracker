@@ -224,7 +224,7 @@ export default function NotificationSettingsPage() {
                               label={`${k.label}: ${c.label}${locked ? ' (always on)' : ''}`}
                             />
                             <span className="text-xs text-slate-600 md:hidden">{c.label}</span>
-                            {locked && <span className="text-[11px] text-slate-500">Always</span>}
+                            {locked && <span className="text-[0.6875rem] text-slate-500">Always</span>}
                           </div>
                         )
                       })}

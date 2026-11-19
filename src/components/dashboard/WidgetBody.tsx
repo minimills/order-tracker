@@ -565,7 +565,7 @@ function Chats({ widget, data }: { widget: Widget; data: DashData }) {
               <span className="block truncate font-medium">{c.name}</span>
               <span className="block truncate text-xs text-slate-500">{c.last_text}</span>
             </span>
-            <span className="shrink-0 rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold text-white">{c.unread}</span>
+            <span className="shrink-0 rounded-full bg-blue-600 px-1.5 text-[0.6875rem] font-semibold text-white">{c.unread}</span>
           </Row>
         </li>
       ))}

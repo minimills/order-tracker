@@ -117,7 +117,7 @@ export default function CardTile(p: Props) {
         {p.labels.length > 0 && (
           <div className="mb-1.5 flex flex-wrap gap-1">
             {p.labels.map((l) => (
-              <span key={l.id} className="rounded px-1.5 py-0.5 text-[11px] font-medium" style={{ backgroundColor: l.colour, color: textOn(l.colour) }}>
+              <span key={l.id} className="rounded px-1.5 py-0.5 text-[0.6875rem] font-medium" style={{ backgroundColor: l.colour, color: textOn(l.colour) }}>
                 {l.name}
               </span>
             ))}
@@ -126,7 +126,7 @@ export default function CardTile(p: Props) {
       </Can>
       {card.card_kind === 'leftover' && (
         <div className="mb-1">
-          <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[11px] font-semibold text-amber-900">Leftover</span>
+          <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[0.6875rem] font-semibold text-amber-900">Leftover</span>
         </div>
       )}
       <div className="flex items-start gap-1.5">
@@ -147,7 +147,7 @@ export default function CardTile(p: Props) {
       <Can permission="boards.card.customer_label">
         {card.customer_label && (
           <div className="mt-1">
-            <span className="inline-flex max-w-full items-center gap-1 rounded bg-violet-100 px-1.5 py-0.5 text-[11px] font-medium text-violet-900">
+            <span className="inline-flex max-w-full items-center gap-1 rounded bg-violet-100 px-1.5 py-0.5 text-[0.6875rem] font-medium text-violet-900">
               <Icon name="user" className="h-3 w-3 shrink-0" />
               <span className="truncate">{card.customer_label}</span>
             </span>
@@ -211,7 +211,7 @@ export default function CardTile(p: Props) {
       </div>
       {card.card_kind === 'machine' && p.stageStep === 'final_check' && p.machine && (
         <Can permission="order.machines.checklist">
-          <div className="mt-2 text-[11px] text-slate-600">
+          <div className="mt-2 text-[0.6875rem] text-slate-600">
             Final check:{' '}
             {p.machine.checklist_status === 'signed'
               ? 'complete'
@@ -249,7 +249,7 @@ export default function CardTile(p: Props) {
       <Can permission="boards.card.checklists">
         {prog.total > 0 && (
           <div className="mt-2" title={`${prog.done} of ${prog.total} tasks completed`}>
-            <div className="flex justify-between text-[11px] text-slate-500">
+            <div className="flex justify-between text-[0.6875rem] text-slate-500">
               <span>
                 {prog.done} of {prog.total} task{prog.total === 1 ? '' : 's'}
               </span>
@@ -268,7 +268,7 @@ export default function CardTile(p: Props) {
               <span
                 key={x.email}
                 title={x.name}
-                className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[10px] font-semibold text-white ring-2 ring-white"
+                className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[0.625rem] font-semibold text-white ring-2 ring-white"
               >
                 {initials(x.name)}
               </span>

@@ -1,6 +1,6 @@
 // @permission-scope timesheets.labour_cost, payroll.pay
 import { useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../Can'
 import ChartView from '../dashboard/ChartView'
@@ -12,6 +12,7 @@ import { formatMoney, friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { showHours, usePayrollSettings } from '../../lib/timesheets'
 import { useDepartments } from '../../lib/useDepartments'
+import PrintButton from '../print/PrintButton'
 
 type CostRow = {
   employee_id: string
@@ -140,7 +141,7 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
 
   const table = (list: Sum[], first: string, total?: Sum) => (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white print:overflow-visible">
-      <table className="w-full min-w-[64rem] text-sm print:min-w-0 print:text-[10px]">
+      <table className="w-full min-w-[64rem] text-sm print:min-w-0 print:text-[0.625rem]">
         <thead className="bg-slate-50 text-xs text-slate-600">
           <tr>
             <th className={th}>{first}</th>
@@ -243,9 +244,7 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
           </Can>
           <Can permission="timesheets.labour_cost.print">
             {!print && (
-              <Link to={`/timesheets/labour-cost/print?${params.toString()}`} className={secondaryButtonClass}>
-                Print
-              </Link>
+              <PrintButton title="Labour Cost" to={`/timesheets/labour-cost/print?${params.toString()}`} className="py-2" />
             )}
           </Can>
         </div>

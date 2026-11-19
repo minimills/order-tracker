@@ -193,7 +193,7 @@ export default function DashboardCanvas({
                     <button type="button" className={btn} aria-label="Move right" onClick={() => nudge(it.i, (x) => ({ x: x.x + 1 }))}>
                       →
                     </button>
-                    <span className="ml-1 text-[11px] text-slate-500">
+                    <span className="ml-1 text-[0.6875rem] text-slate-500">
                       {it.w}×{it.h}
                     </span>
                     <button type="button" className={btn} aria-label="Narrower" onClick={() => nudge(it.i, (x) => ({ w: x.w - 1 }))}>
@@ -216,7 +216,7 @@ export default function DashboardCanvas({
                     />
                   </footer>
                 ) : (
-                  def?.kind !== 'note' && <footer className="px-3 pb-1 text-[11px] text-slate-500">{updatedText(data.loadedAt)}</footer>
+                  def?.kind !== 'note' && <footer className="px-3 pb-1 text-[0.6875rem] text-slate-500">{updatedText(data.loadedAt)}</footer>
                 )}
               </section>
             )

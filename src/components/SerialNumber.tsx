@@ -46,7 +46,7 @@ export default function SerialNumber({ serial, className = '' }: { serial: strin
             e.preventDefault()
             if (await copyText(serial)) setCopied(true)
           }}
-          className={`rounded px-1 font-sans text-[11px] font-normal leading-5 print:hidden ${
+          className={`rounded px-1 font-sans text-[0.6875rem] font-normal leading-5 print:hidden ${
             copied ? 'bg-green-100 text-green-800' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
           }`}
         >

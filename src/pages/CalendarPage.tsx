@@ -19,6 +19,7 @@ import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { CALENDAR_KINDS, type CalendarKind, type CalendarRow } from '../lib/service'
 import { supabase } from '../lib/supabase'
+import PrintButton from '../components/print/PrintButton'
 
 type View = 'day' | 'week' | 'month'
 type Drag = {
@@ -391,7 +392,12 @@ export default function CalendarPage() {
             <Link to="/service" className="text-sm text-slate-600 underline">
               ← Service / Training
             </Link>
-            <h1 className="mt-1 text-2xl font-semibold">Technician Calendar</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
+              <h1 className="mt-1 text-2xl font-semibold">Technician Calendar</h1>
+              <Can permission="service.calendar.print">
+                <PrintButton title="Technician Calendar" />
+              </Can>
+            </div>
             <p className="text-sm text-slate-600">
               Click an empty time or day to add an entry, click an entry to open it, drag it to move it or drag its edge to change its length.
             </p>
@@ -399,7 +405,7 @@ export default function CalendarPage() {
           <div className="flex flex-wrap gap-2">
             <Can anyOf={['service.calendar.sync', 'service.calendar.import']} level="edit">
               <button type="button" className={secondaryButtonClass} aria-expanded={connection} onClick={() => setConnection(!connection)}>
-                <Icon name="phone" className="mr-1 inline h-4 w-4 align-[-3px]" />
+                <Icon name="phone" className="mr-1 inline h-4 w-4 align-[-0.1875em]" />
                 Calendar Connection
               </button>
             </Can>

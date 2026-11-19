@@ -175,6 +175,7 @@ export const CATALOG: PermissionItem[] = [
     Page: [
       { key: 'orders.board', label: 'Orders board page', levels: V, page: true },
       { key: 'orders.board.refresh', label: 'Refresh button', levels: V, requires: 'orders.board' },
+      { key: 'orders.board.print', label: 'Print button: the board as shown (print preview with the letterhead)', levels: V, requires: 'orders.board' },
     ],
     Columns: [
       { key: 'orders.board.column.quote', label: 'Quote column', levels: V, requires: 'orders.board' },
@@ -235,7 +236,10 @@ export const CATALOG: PermissionItem[] = [
   }),
 
   ...group('Orders list', {
-    Page: [{ key: 'orders.list', label: 'Orders list page', levels: V, page: true }],
+    Page: [
+      { key: 'orders.list', label: 'Orders list page', levels: V, page: true },
+      { key: 'orders.list.print', label: 'Print button: the rows and columns shown (print preview with the letterhead)', levels: V, requires: 'orders.list' },
+    ],
     Columns: ORDER_COLUMNS.map(([k, label, needs]) => ({
       key: `orders.list.column.${k}`,
       label,
@@ -258,7 +262,10 @@ export const CATALOG: PermissionItem[] = [
   }),
 
   ...group('Order page', {
-    Page: [{ key: 'order.page', label: 'Open an order (order page; also makes orders clickable elsewhere)', levels: V, page: true }],
+    Page: [
+      { key: 'order.page', label: 'Open an order (order page; also makes orders clickable elsewhere)', levels: V, page: true },
+      { key: 'order.print', label: 'Print button on the order page (print preview with the letterhead; choose the sections to include)', levels: V, requires: 'order.page' },
+    ],
     Header: [
       { key: 'order.header.customer', label: 'Customer name, company and country', levels: V, requires: 'order.page' },
       { key: 'serial.copy', label: 'Copy button next to serial numbers (everywhere in the app)', levels: V },
@@ -288,6 +295,7 @@ export const CATALOG: PermissionItem[] = [
     'Machine page': [
       { key: 'machines', label: 'Machine page: search by serial number, owners and the whole history (built, owners, service, training, final check, crating, shipping)', levels: V, page: true, db: true },
       { key: 'machines.search', label: 'Find a machine by serial number', levels: V, requires: 'machines' },
+      { key: 'machines.print', label: 'Print button on the machine pages (search results, details and history)', levels: V, requires: 'machines' },
       { key: 'machines.transfer', label: '“Transfer / Resold”: give a machine a new owner (date, notes, optional order)', levels: E, requires: 'machines', db: true },
     ],
     'Shipping section': [
@@ -365,6 +373,7 @@ export const CATALOG: PermissionItem[] = [
     Page: [
       { key: 'payments.page', label: 'Payments page', levels: V, needs: ['payments'], page: true },
       { key: 'payments.page.refresh', label: 'Refresh button on the Payments page', levels: V, requires: 'payments.page' },
+      { key: 'payments.print', label: 'Print button on the Payments page', levels: V, requires: 'payments.page' },
     ],
     Actions: [
       { key: 'payments.action.add', label: 'Add a payment', levels: E, needs: ['payments'] },
@@ -381,6 +390,7 @@ export const CATALOG: PermissionItem[] = [
     Dashboard: [
       { key: 'freight.dashboard', label: 'Freight dashboard: plywood sheets, crates made and crating hours (today, week, month, year) and the charts by month', levels: V, needs: ['crating'] },
       { key: 'freight.dashboard.filters', label: 'Year and custom date filter', levels: V, requires: 'freight.dashboard' },
+      { key: 'freight.print', label: 'Print button on the Freight page (dashboard, cost breakdowns list, insurance summary, crating tables)', levels: V },
     ],
     'Shipment cost breakdowns': [
       { key: 'freight.breakdowns', label: 'Shipment cost breakdowns: the list and each breakdown (Edit: create and change)', levels: VE, db: true, hint: 'Shows invoice totals, cargo values and margins.' },
@@ -411,6 +421,7 @@ export const CATALOG: PermissionItem[] = [
   ...group('Boards', {
     Pages: [
       { key: 'boards', label: 'Boards page (boards you own or that are shared with you)', levels: V, page: true, db: true, hint: 'Sharing gives access to a board; the items below decide what can be seen and done on it.' },
+      { key: 'boards.print', label: 'Print button on the Boards page and on a board (the stages and cards shown)', levels: V, requires: 'boards' },
       { key: 'boards.create', label: 'Make your own boards (from scratch or a template)', levels: E, requires: 'boards', db: true },
       { key: 'boards.show_archived', label: '“Show archived” boards', levels: V, requires: 'boards' },
     ],
@@ -425,6 +436,7 @@ export const CATALOG: PermissionItem[] = [
     Cards: [
       { key: 'boards.card.create', label: 'Add cards', levels: E, requires: 'boards', db: true },
       { key: 'boards.card.open', label: 'Open a card (its full details)', levels: V, requires: 'boards' },
+      { key: 'boards.card.print', label: 'Print a card (its details, checklists and comments)', levels: V, requires: 'boards.card.open' },
       { key: 'boards.card.navigate', label: 'Previous / Next card in the same stage, and “Go to” any order or board, inside a card', levels: V, requires: 'boards.card.open' },
       { key: 'boards.card.complete', label: 'Round “Mark Complete” circle before the card title (one click)', levels: E, requires: 'boards', db: true },
       { key: 'boards.card.customer_label', label: 'Customer label (“Company – State, Country”; edit: pick from the customer list or type it)', levels: VE, requires: 'boards', db: true },
@@ -453,6 +465,7 @@ export const CATALOG: PermissionItem[] = [
   ...group('Notice Board', {
     Page: [
       { key: 'notices', label: 'Notice Board page (notices posted for them; unread dot and “New notices” count; can be their start page)', levels: V, page: true, db: true },
+      { key: 'notices.board.print', label: 'Print button on the Notice Board (the notices shown)', levels: V, requires: 'notices' },
       { key: 'notices.filters', label: 'Filters (category, priority, for my department) and search', levels: V, requires: 'notices' },
       { key: 'notices.archive', label: 'Archive: expired and archived notices, with search', levels: V, requires: 'notices', db: true },
       { key: 'notices.holidays', label: 'Upcoming holidays and office closures panel', levels: V, requires: 'notices' },
@@ -490,6 +503,7 @@ export const CATALOG: PermissionItem[] = [
   ...group('Service / Training', {
     Page: [
       { key: 'service', label: 'Service / Training page (on-site training, commissioning and service calls)', levels: V, page: true, db: true },
+      { key: 'service.print', label: 'Print button on the Service / Training pages (lists, day log, by machine)', levels: V, requires: 'service' },
       { key: 'service.filters', label: 'Search and “Only mine”', levels: V, requires: 'service' },
       { key: 'service.list.in_progress', label: 'List: in progress', levels: V, requires: 'service' },
       { key: 'service.list.upcoming', label: 'List: upcoming', levels: V, requires: 'service' },
@@ -508,6 +522,7 @@ export const CATALOG: PermissionItem[] = [
     ],
     Calendar: [
       { key: 'service.calendar', label: 'Technician calendar page (their own calendar)', levels: V, page: true, db: true },
+      { key: 'service.calendar.print', label: 'Print the calendar (the day, week or month shown)', levels: V, requires: 'service.calendar' },
       { key: 'service.calendar.navigate', label: 'Month and week view, earlier and later dates', levels: V, requires: 'service.calendar' },
       { key: 'service.calendar.all', label: 'See every technician’s calendar (choose one or all)', levels: V, requires: 'service.calendar', db: true },
       { key: 'service.calendar.add', label: 'Add and change their own calendar entries', levels: E, requires: 'service.calendar', db: true },
@@ -532,6 +547,7 @@ export const CATALOG: PermissionItem[] = [
   ...group('Timesheets', {
     'Weekly hours': [
       { key: 'timesheets', label: 'Timesheets page: every employee’s weekly hours, overtime, banked hours and approval status', levels: V, page: true, db: true },
+      { key: 'timesheets.print', label: 'Print button on the Timesheets pages (weekly hours, absence calendar, reports, one employee’s week)', levels: V, requires: 'timesheets' },
       { key: 'timesheets.enter', label: 'Enter and change hours (per day or per week), bank hours, mark imported hours as reviewed (employees never enter their own)', levels: E, requires: 'timesheets', db: true },
       { key: 'timesheets.approve', label: 'Approve and lock weeks of every department (department managers can always approve their own departments)', levels: E, requires: 'timesheets', db: true },
       { key: 'timesheets.unlock', label: 'Unlock an approved week (with a reason)', levels: E, requires: 'timesheets', db: true },
@@ -540,9 +556,11 @@ export const CATALOG: PermissionItem[] = [
     ],
     'My timesheet': [
       { key: 'timesheets.mine', label: 'My Timesheet: their own hours, banked hours, vacation and sick days (read only)', levels: V, page: true, db: true },
+      { key: 'timesheets.mine.print', label: 'Print their own timesheet', levels: V, requires: 'timesheets.mine' },
     ],
     'Time off': [
       { key: 'timesheets.time_off', label: 'Time Off page (their own requests, and requests they decide)', levels: V, page: true },
+      { key: 'timesheets.time_off.print', label: 'Print button on the Time Off page', levels: V, requires: 'timesheets.time_off' },
       { key: 'timesheets.time_off.request', label: 'Request time off for themselves (vacation, sick, banked time, unpaid)', levels: E, requires: 'timesheets.time_off', db: true },
       { key: 'timesheets.time_off.manage', label: 'See every request (edit: approve or decline for every department; department managers always decide their own departments)', levels: VE, requires: 'timesheets.time_off', db: true },
       { key: 'timesheets.absences', label: 'Absence Calendar (managers see their departments; time off managers and approvers see everyone)', levels: V, db: true },
@@ -579,12 +597,14 @@ export const CATALOG: PermissionItem[] = [
   ...group('Reports', {
     'Department delays': [
       { key: 'reports.department_delays', label: 'Department delays report (on-time %, days late per department)', levels: V, page: true, db: true },
+      { key: 'reports.department_delays.print', label: 'Print the department delays report', levels: V, requires: 'reports.department_delays' },
       { key: 'reports.department_delays.summary', label: 'Summary boxes: on time %, average days early, average days late, worst department this month', levels: V, requires: 'reports.department_delays' },
       { key: 'reports.department_delays.by_month', label: 'Table: by month', levels: V, requires: 'reports.department_delays' },
       { key: 'reports.department_delays.period', label: 'Choose the period (last 3 / 6 / 12 months, all time)', levels: V, requires: 'reports.department_delays' },
     ],
     'Build times': [
       { key: 'reports.build_times', label: 'Build times report (average time per machine type and step)', levels: V, page: true, db: true },
+      { key: 'reports.build_times.print', label: 'Print the build times report', levels: V, requires: 'reports.build_times' },
       { key: 'reports.build_times.tasks', label: 'Table: time per build checklist task', levels: V, requires: 'reports.build_times', db: true },
       { key: 'reports.build_times.filters', label: 'Machine type and period filters', levels: V, requires: 'reports.build_times' },
       { key: 'reports.build_times.trend', label: 'Table: trend by month', levels: V, requires: 'reports.build_times' },
@@ -619,7 +639,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'settings.chat_status', label: 'Hide their online / away status in chat', levels: E, requires: 'settings', db: true },
       { key: 'settings.chat_swipe', label: 'Choose what swiping a conversation left or right does in chat', levels: E, requires: 'settings', needs: ['chat.list_actions'], db: true },
       { key: 'settings.daily_summary', label: 'Daily summary: “Today’s Agenda” and “What I Did Today” (turn on, time, what is included, how it is sent)', levels: E, requires: 'settings', db: true, hint: 'A summary only ever holds what that person is allowed to see.' },
-      { key: 'summary.business', label: 'Daily summary: add the business summary (orders, money received and outstanding, shipments, delays)', levels: V, db: true },
+      { key: 'settings.mailbox', label: 'Email: connect their own sending mailbox (emails they send come from their own address; password stored encrypted)', levels: VE, requires: 'settings', db: true, hint: 'Without one, their emails come from the office address with their name and Reply-To set to their email.' },
       { key: 'settings.change_email', label: 'Change their own sign-in email (confirmed at the old and the new address; admins are told)', levels: E, requires: 'settings', db: true },
       { key: 'settings.signature', label: 'My signature: upload a scanned signature and sign with it (“Use my saved signature”); only they can see or use it (edit: upload, replace, remove)', levels: VE, requires: 'settings', db: true },
     ],
@@ -653,6 +673,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.order_defaults', label: 'Order defaults (currency, voltage, crate, payment due days)', levels: E, db: true },
       { key: 'admin.email', label: 'Email setup (mailbox check, test email, automatic sending, daily summary time)', levels: E, db: true },
       { key: 'admin.email_log', label: 'Email log (edit: Resend)', levels: VE, db: true },
+      { key: 'admin.email_log.print', label: 'Print the email log', levels: V, requires: 'admin.email_log' },
       { key: 'admin.groups', label: 'Groups of people (for example Procurement, Techs) for sharing and notifications', levels: E, db: true },
       { key: 'admin.board_templates', label: 'Board templates (save a board as a template, edit, archive)', levels: E, db: true },
       { key: 'admin.scheduling', label: 'Scheduling (working days, buffer, machines one after another)', levels: E, db: true },
@@ -666,6 +687,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.archive', label: 'Archive: bring back, delete for good', levels: E, db: true },
       { key: 'admin.status', label: 'System status: health of the database, email, push, scheduled jobs and calendar sync; storage used, active users, recent errors', levels: E, db: true },
       { key: 'admin.activity', label: 'Activity: every change, who and when', levels: V, db: true },
+      { key: 'admin.activity.print', label: 'Print the activity list', levels: V, requires: 'admin.activity' },
     ],
   }),
 ]

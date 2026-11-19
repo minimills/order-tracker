@@ -31,6 +31,16 @@
 //   ce_send     – email them with the PDFs made by the app attached
 //                 ({ declaration_ids, to, cc, bcc, subject, message, combined,
 //                    attachments: [{ file_name, pdf_base64 }] })            (ce.email)
+//   sender_info – which address the caller's emails go out from (shown in every email preview)
+//   mailbox_test – send a test email through the caller's own mailbox (Settings → Email) (settings.mailbox)
+//
+// Who an email comes from: emails a person sends (reminders, certificates,
+// service reports, CE declarations, freight quotes, welcome emails) go out
+// from that person's own mailbox when they connected one in Settings → Email
+// (password in Supabase Vault, read with mailbox_for_sending; copy saved in
+// their own Sent folder). Otherwise they go from the office mailbox with the
+// person's name as the sender name and Reply-To = their email. Automatic
+// notifications and digests always come from the office mailbox.
 //
 // Channels: CHANNEL_SENDERS below has one sender per channel ("email", "push").
 // A later SMS channel = a row in notification_channels + one more sender here.
@@ -42,21 +52,29 @@ import nodemailer from 'npm:nodemailer@6.9.16'
 import MailComposer from 'npm:nodemailer@6.9.16/lib/mail-composer/index.js'
 import { ImapFlow } from 'npm:imapflow@1.0.171'
 import webpush from 'npm:web-push@3.6.7'
+import sanitizeHtml from 'npm:sanitize-html@2.13.1'
 
 type Json = Record<string, unknown>
 // deno-lint-ignore no-explicit-any
 type Any = any
 type Env = (key: string) => string | undefined
 export type Mail = { from: string; replyTo?: string; to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; attachments?: Json[] }
+/** A person's own sending mailbox (Settings → Email). Without one, the office mailbox (secrets) is used. */
+export type Account = {
+  host: string; port: number; secure: boolean; user: string; pass: string; envelopeFrom: string
+  saveSent: boolean; imapHost: string; imapPort: number
+}
+/** Who an email comes from (see senderFor). */
+export type Sender = { email: string | null; via: 'own' | 'office'; name: string; address: string; from: string; replyTo?: string; account?: Account; savesSent?: boolean }
 export type Deps = {
   env: Env
   makeClient: (url: string, key: string, options?: Json) => Any
-  /** Sends the message; returns the raw message (for the Sent copy). */
-  sendMail: (mail: Mail) => Promise<{ raw: Uint8Array | string }>
-  /** Saves the raw message in the mailbox's Sent folder. */
-  saveSent: (raw: Uint8Array | string) => Promise<void>
+  /** Sends the message (through `account`, else the office mailbox); returns the raw message (for the Sent copy). */
+  sendMail: (mail: Mail, account?: Account) => Promise<{ raw: Uint8Array | string }>
+  /** Saves the raw message in that mailbox's Sent folder. */
+  saveSent: (raw: Uint8Array | string, account?: Account) => Promise<void>
   /** Checks the mailbox login. */
-  verifyMail: () => Promise<void>
+  verifyMail: (account?: Account) => Promise<void>
   /** Sends one push message; throws { statusCode } on failure. */
   sendPush: (sub: { endpoint: string; p256dh: string; auth: string }, payload: string) => Promise<void>
   now?: () => Date
@@ -84,6 +102,55 @@ const esc = (s: unknown) =>
 const halifax = (iso: string) =>
   new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', dateStyle: 'medium', timeStyle: 'short' }).format(new Date(iso))
 
+/**
+ * A message typed in the app's editor (HTML: formatting, lists, links) or an
+ * older plain-text one, as safe email HTML plus the plain-text part.
+ */
+const MESSAGE_TAGS = ['h2', 'h3', 'p', 'br', 'strong', 'em', 'b', 'i', 'u', 's', 'a', 'ul', 'ol', 'li', 'label', 'input', 'div', 'span']
+export function isHtmlMessage(text: string) {
+  return /^\s*<(p|ul|ol|div|h2|h3)[\s>]/i.test(text)
+}
+export function messageParts(message: string): { html: string; text: string } {
+  const body = String(message ?? '').trimEnd()
+  if (!isHtmlMessage(body)) return { html: esc(body).replace(/\n/g, '<br>'), text: body }
+  const clean = sanitizeHtml(body, {
+    allowedTags: MESSAGE_TAGS,
+    allowedAttributes: { a: ['href'], input: ['type', 'checked'], li: ['data-type', 'data-checked'], ul: ['data-type'] },
+    allowedSchemes: ['http', 'https', 'mailto', 'tel'],
+    allowedSchemesAppliedToAttributes: ['href'],
+    transformTags: { a: sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'noopener noreferrer' }) },
+    exclusiveFilter: (frame: Any) => frame.tag === 'input' && frame.attribs?.type !== 'checkbox',
+  })
+  // Email programs: checkbox lists as [x] / [ ], paragraphs with small gaps, link colour.
+  const html = clean
+    .replace(/<li data-type="taskItem" data-checked="true">/g, '<li style="list-style:none">&#9745; ')
+    .replace(/<li data-type="taskItem"( data-checked="false")?>/g, '<li style="list-style:none">&#9744; ')
+    .replace(/<label>\s*<input[^>]*>\s*<span><\/span>\s*<\/label>/g, '')
+    .replace(/<p>/g, '<p style="margin:0 0 8px">')
+    .replace(/<h2>/g, '<h2 style="font-size:16px;margin:12px 0 6px;color:#0f172a">')
+    .replace(/<h3>/g, '<h3 style="font-size:14px;margin:10px 0 4px;color:#0f172a">')
+    .replace(/<a /g, '<a style="color:#1d4ed8" ')
+  return { html, text: htmlToText(clean) }
+}
+/** Plain text of an email message (lines, "- " for list items, link addresses after the text). */
+export function htmlToText(html: string) {
+  return html
+    .replace(/<a [^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, (_m, href: string, label: string) => {
+      const t = label.replace(/<[^>]+>/g, '')
+      const h = href.replace(/^mailto:/, '')
+      return h && h !== t ? `${t} (${h})` : t
+    })
+    .replace(/<\/p>\s*<\/li>/gi, '</li>')
+    .replace(/<li[^>]*data-checked="true"[^>]*>/gi, '[x] ')
+    .replace(/<li[^>]*data-type="taskItem"[^>]*>/gi, '[ ] ')
+    .replace(/<li[^>]*>/gi, '- ')
+    .replace(/<(br|\/p|\/li|\/h[1-6]|\/div)[^>]*>/gi, '\n')
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/g, ' ').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
 export function buttonLabel(link: string | null) {
   if (!link) return 'Open the Order Tracker'
   if (link.includes('card=')) return 'Open the Card'
@@ -93,7 +160,9 @@ export function buttonLabel(link: string | null) {
   return 'Open the Order Tracker'
 }
 
-export function layout(o: { company: Company; appUrl: string; heading: string; intro?: string; notes: Note[]; link: string | null; footerNote: string; button?: boolean }) {
+export function layout(o: { company: Company; appUrl: string; heading: string; intro?: string; message?: string; notes: Note[]; link: string | null; footerNote: string; button?: boolean }) {
+  // `message` = a letter typed in the app (formatted or plain); `intro` = one plain sentence.
+  const msg = o.message != null ? messageParts(o.message) : null
   const button = o.button ?? true
   const c = o.company
   const name = c.name || 'Belfast Mini Mills'
@@ -117,6 +186,7 @@ export function layout(o: { company: Company; appUrl: string; heading: string; i
     <tr><td style="padding:20px 24px">
       <h1 style="font-size:18px;margin:0 0 8px;color:#0f172a">${esc(o.heading)}</h1>
       ${o.intro ? `<p style="margin:0 0 8px;color:#334155">${esc(o.intro).replace(/\n/g, '<br>')}</p>` : ''}
+      ${msg ? `<div style="color:#334155">${msg.html}</div>` : ''}
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0">${items}</table>
       ${button ? '' : '<!--'}<p style="margin:20px 0 4px"><a href="${esc(url)}" style="display:inline-block;background:#0f172a;color:#ffffff;text-decoration:none;padding:10px 18px;border-radius:6px;font-weight:600">${esc(buttonLabel(o.link))}</a></p>${button ? '' : '-->'}
     </td></tr>
@@ -128,6 +198,7 @@ export function layout(o: { company: Company; appUrl: string; heading: string; i
     '',
     o.heading,
     o.intro ?? '',
+    msg?.text ?? '',
     '',
     ...o.notes.flatMap((n) => [`- ${n.title}${n.body ? `: ${n.body}` : ''} (${halifax(n.created_at)})`]),
     '',
@@ -210,30 +281,67 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
     return { digest_hour: 7, ...((data?.value as Json) ?? {}) } as { digest_hour: number }
   }
 
+  /**
+   * Who an email sent by `email` comes from: their own mailbox (Settings →
+   * Email), else the office mailbox with their name and Reply-To = their email.
+   */
+  const senderFor = async (email: string | null): Promise<Sender> => {
+    const { data: tplRow } = await db.from('app_settings').select('value').eq('key', 'email_templates').maybeSingle()
+    const tpl = (tplRow?.value as Json) ?? {}
+    const officeAddress = EMAIL.test(String(tpl.from_address ?? '').trim()) ? String(tpl.from_address).trim() : smtpUser
+    const clean = (n: string) => n.replace(/["<>\r\n]/g, '').trim()
+    if (!email) return { email: null, via: 'office', name: fromName, address: officeAddress, from: `"${clean(fromName)}" <${officeAddress}>` }
+    const { data: own } = await db.rpc('mailbox_for_sending', { p_email: email })
+    if (own && own.password) {
+      const address = String(own.from_address)
+      const name = clean(String(own.from_name || address))
+      return {
+        email, via: 'own', name, address, from: `"${name}" <${address}>`, savesSent: own.save_sent !== false,
+        account: {
+          host: String(own.smtp_host), port: Number(own.smtp_port || 465), secure: own.smtp_security !== 'starttls',
+          user: String(own.smtp_username), pass: String(own.password), envelopeFrom: address,
+          saveSent: own.save_sent !== false, imapHost: String(own.imap_host || own.smtp_host), imapPort: Number(own.imap_port || 993),
+        },
+      }
+    }
+    const { data: person } = await db.from('allowed_users').select('name').eq('email', email).maybeSingle()
+    const name = clean(String(person?.name || '').trim() || email)
+    return { email, via: 'office', name, address: officeAddress, from: `"${name}" <${officeAddress}>`, replyTo: email, savesSent: saveCopy }
+  }
+
   /** Sends one email, saves the Sent copy, writes the email log. */
-  const deliver = async (o: { from?: string; replyTo?: string; to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; kind: string; notificationIds?: string[]; resendOf?: string; company: Company; attachments?: Json[] }) => {
+  const deliver = async (o: { from?: string; replyTo?: string; to: string; cc?: string; bcc?: string; subject: string; html: string; text: string; kind: string; notificationIds?: string[]; resendOf?: string; company: Company; attachments?: Json[]; sender?: Sender }) => {
     let status: 'sent' | 'failed' = 'sent'
     let error: string | null = null
     let saved: boolean | null = null
+    const account = o.sender?.account
     try {
-      if (!mailReady) throw new Error('The mailbox settings (SMTP_HOST, SMTP_USER, SMTP_PASSWORD) are not set in Supabase.')
-      const { raw } = await deps.sendMail({ from: o.from || from, replyTo: o.replyTo || undefined, to: o.to, cc: o.cc || undefined, bcc: o.bcc || undefined, subject: o.subject, html: o.html, text: o.text, attachments: [...logoAttachment(o.company), ...(o.attachments ?? [])] })
-      if (saveCopy) {
+      if (!account && !mailReady) throw new Error('The mailbox settings (SMTP_HOST, SMTP_USER, SMTP_PASSWORD) are not set in Supabase.')
+      const { raw } = await deps.sendMail(
+        { from: o.sender?.from || o.from || from, replyTo: o.sender?.replyTo || o.replyTo || undefined, to: o.to, cc: o.cc || undefined, bcc: o.bcc || undefined, subject: o.subject, html: o.html, text: o.text, attachments: [...logoAttachment(o.company), ...(o.attachments ?? [])] },
+        account,
+      )
+      if (account ? account.saveSent : saveCopy) {
         try {
-          await deps.saveSent(raw)
+          await deps.saveSent(raw, account)
           saved = true
         } catch {
           saved = false // the email went out; only the Sent copy failed
         }
       }
+      if (account) await db.rpc('set_mailbox_status', { p_email: o.sender!.email, p_ok: true, p_error: null })
     } catch (e) {
       status = 'failed'
       error = (e as Error).message ?? String(e)
+      if (account) {
+        await db.rpc('set_mailbox_status', { p_email: o.sender!.email, p_ok: false, p_error: error })
+        error = `Your own mailbox (${account.envelopeFrom}) could not send it: ${error}. Check Settings → Email, or disconnect your mailbox to send from the office address.`
+      }
     }
     const { data: log } = await db
       .from('email_log')
       .insert({
-        to_email: o.to, subject: o.subject, html: o.html, body_text: o.text, kind: o.kind, status, error,
+        to_email: o.to, from_email: o.sender?.address ?? (smtpUser || null), subject: o.subject, html: o.html, body_text: o.text, kind: o.kind, status, error,
         saved_to_sent: saved, notification_ids: o.notificationIds ?? [], resend_of: o.resendOf ?? null,
         created_by: callerEmail ?? 'automatic',
       })
@@ -492,7 +600,7 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       const pdf = String(body.pdf_base64 ?? '')
       if (!pdf.startsWith('JVBER') || pdf.length > 7_000_000) return reply(400, { error: 'The PDF could not be attached. Download it to check it, then try again.' })
       const r = await deliver({
-        to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'certificate', company,
+        to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'certificate', company, sender: await senderFor(callerEmail),
         attachments: [{ filename: fileName, content: pdf, encoding: 'base64', contentType: 'application/pdf' }],
       })
       await db.from('certificate_sends').insert({
@@ -541,7 +649,10 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
           to: customerEmails,
           cc: EMAIL.test(office) ? [office] : [],
           subject: fill(String(settings.email_subject || '{title} – Belfast Mini Mills – {customer_company} – {machines}')),
-          message: fill(String(settings.email_message || 'Please find attached the {title} for {machines_long}.')),
+          // A formatted message (Admin → Declaration of Conformity) gets its values escaped.
+          message: ((t: string) => (isHtmlMessage(t) ? t.replace(/\{(\w+)\}/g, (m, k) => (k in values ? esc(values[k]) : m)) : fill(t)))(
+            String(settings.email_message || 'Please find attached the {title} for {machines_long}.'),
+          ),
           warnings: [
             !customerEmails.length ? 'The customer on this order has no email address. Add the recipients below.' : '',
             !EMAIL.test(office) ? 'No office email: add it in Admin → Company Details.' : '',
@@ -558,19 +669,19 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       if (!to.length) return reply(400, { error: 'Enter at least one email address in To.' })
       const subject = String(body.subject ?? '').trim().slice(0, 300)
       if (!subject) return reply(400, { error: 'Enter a subject.' })
-      const message = String(body.message ?? '').slice(0, 8000)
+      const message = String(body.message ?? '').slice(0, 40000)
       const files = (Array.isArray(body.attachments) ? body.attachments : []) as { file_name?: string; pdf_base64?: string }[]
       if (!files.length || files.some((f) => !String(f.pdf_base64 ?? '').startsWith('JVBER'))) {
         return reply(400, { error: 'The PDFs could not be attached. Download them to check them, then try again.' })
       }
       if (files.reduce((n, f) => n + String(f.pdf_base64).length, 0) > 14_000_000) return reply(400, { error: 'The attachments are too large for one email. Send fewer machines at a time.' })
       const { html, text } = layout({
-        company, appUrl, heading: values.title, button: false, intro: message,
+        company, appUrl, heading: values.title, button: false, message,
         notes: decls.map((d: Any) => ({ id: d.id, kind: 'ce', title: d.number, body: `${d.data.machine.product}, model ${d.data.machine.model}, serial number ${d.data.machine.serial}`, link: null, created_at: now().toISOString() })),
         link: null, footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.${company.email ? ` Questions: ${company.email}` : ''}`,
       })
       const r = await deliver({
-        to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'ce_declaration', company,
+        to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'ce_declaration', company, sender: await senderFor(callerEmail),
         attachments: files.map((f) => ({ filename: String(f.file_name || 'Declaration of Conformity.pdf').replace(/[\\/:*?"<>|]+/g, '-'), content: String(f.pdf_base64), encoding: 'base64', contentType: 'application/pdf' })),
       })
       await db.from('ce_declaration_sends').insert({
@@ -598,16 +709,17 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       if (bad.length) return reply(400, { error: `Check these email addresses: ${bad.join(', ')}` })
       if (!to.length) return reply(400, { error: 'Enter at least one email address in To.' })
       const subject = String(body.subject ?? '').trim().slice(0, 300)
-      const message = String(body.body ?? '').slice(0, 8000)
+      const message = String(body.body ?? '').slice(0, 40000)
       if (!subject || !message.trim()) return reply(400, { error: 'The email needs a subject and a message.' })
       const orderId = body.order_id ? String(body.order_id) : null
       const company = await loadCompany()
+      const sender = await senderFor(callerEmail)
       // A plain letter: the message exactly as previewed in the app, on the letterhead.
       const { html, text } = layout({
-        company, appUrl, heading: subject, button: false, intro: message.trimEnd(), notes: [], link: null,
-        footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.${company.email ? ` Reply to ${company.email}` : ''}`,
+        company, appUrl, heading: subject, button: false, message, notes: [], link: null,
+        footerNote: `Sent by ${sender.name}, ${company.name || 'Belfast Mini Mills'}. Reply to ${sender.replyTo || sender.address}`,
       })
-      const r = await deliver({ to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'freight_quote', company })
+      const r = await deliver({ to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'freight_quote', company, sender })
       await db.from('freight_quote_requests').insert({
         order_id: orderId, agent_id: body.agent_id ? String(body.agent_id) : null, agent_name: body.agent_name ? String(body.agent_name).slice(0, 80) : null,
         to_emails: to, cc_emails: cc, bcc_emails: bcc, subject, body: message, status: r.status, error: r.error, email_log_id: r.logId, sent_by: callerEmail,
@@ -635,25 +747,20 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       if (bad.length) return reply(400, { error: `Check these email addresses: ${bad.join(', ')}` })
       if (!to.length) return reply(400, { error: 'Enter at least one email address in To.' })
       const subject = String(body.subject ?? '').trim().slice(0, 300)
-      const message = String(body.body ?? '').slice(0, 8000)
+      const message = String(body.body ?? '').slice(0, 40000)
       if (!subject || !message.trim()) return reply(400, { error: 'The email needs a subject and a message.' })
       const orderId = String(body.order_id ?? '')
       const { data: order } = await db.from('orders').select('id, order_code').eq('id', orderId).maybeSingle()
       if (!order) return reply(404, { error: 'That order could not be found.' })
       const company = await loadCompany()
-      const { data: tplRow } = await db.from('app_settings').select('value').eq('key', 'email_templates').maybeSingle()
-      const tpl = (tplRow?.value as Json) ?? {}
-      // From name / address and Reply-to from Admin → Email Templates (the mailbox itself always sends).
-      const fromNameSet = String(tpl.from_name ?? '').trim().replace(/["<>]/g, '')
-      const fromAddress = String(tpl.from_address ?? '').trim()
-      const customFrom = fromNameSet || EMAIL.test(fromAddress) ? `"${fromNameSet || fromName.replace(/"/g, '')}" <${EMAIL.test(fromAddress) ? fromAddress : smtpUser}>` : undefined
-      const replyTo = EMAIL.test(String(tpl.reply_to ?? '').trim()) ? String(tpl.reply_to).trim() : undefined
+      // From the person's own mailbox, else the office mailbox with their name and Reply-To (senderFor).
+      const sender = await senderFor(callerEmail)
       const { data: me } = await db.from('allowed_users').select('name').eq('email', callerEmail).maybeSingle()
       const { html, text } = layout({
-        company, appUrl, heading: subject, button: false, intro: message.trimEnd(), notes: [], link: null,
-        footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.${replyTo || company.email ? ` Questions: ${replyTo || company.email}` : ''}`,
+        company, appUrl, heading: subject, button: false, message, notes: [], link: null,
+        footerNote: `Sent by ${sender.name}, ${company.name || 'Belfast Mini Mills'}. Questions: ${sender.replyTo || sender.address}`,
       })
-      const r = await deliver({ from: customFrom, replyTo, to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'reminder', company })
+      const r = await deliver({ sender, to: to.join(', '), cc: cc.join(', '), bcc: bcc.join(', '), subject, html, text, kind: 'reminder', company })
       await db.from('order_reminders').insert({
         order_id: order.id, payment_id: body.payment_id ? String(body.payment_id) : null, template: String(body.template ?? 'custom').slice(0, 60),
         to_emails: to, cc_emails: cc, bcc_emails: bcc, subject, body: message, status: r.status, error: r.error, email_log_id: r.logId,
@@ -674,15 +781,44 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
       const { data: person } = await db.from('allowed_users').select('email, name').eq('email', to).maybeSingle()
       if (!person) return reply(404, { error: `${to || 'That email'} is not on the users list.` })
       const subject = String(body.subject ?? '').trim().slice(0, 300)
-      const message = String(body.body ?? '').slice(0, 8000)
+      const message = String(body.body ?? '').slice(0, 40000)
       if (!subject || !message.trim()) return reply(400, { error: 'The email needs a subject and a message.' })
       const company = await loadCompany()
       const { html, text } = layout({
-        company, appUrl, heading: subject, button: true, intro: message.trimEnd(), notes: [], link: '/',
+        company, appUrl, heading: subject, button: true, message, notes: [], link: '/',
         footerNote: `Sent by ${company.name || 'Belfast Mini Mills'}.`,
       })
-      const r = await deliver({ to, subject, html, text, kind: 'welcome', company })
+      const r = await deliver({ to, subject, html, text, kind: 'welcome', company, sender: await senderFor(callerEmail) })
       return r.status === 'sent' ? reply(200, { ok: true, message: `Welcome email sent to ${to}.` }) : reply(502, { error: `The welcome email could not be sent: ${r.error}` })
+    }
+    case 'sender_info': {
+      // Shown in every email preview: which address the caller's emails go out from.
+      if (!(await callerCan('is_allowed_user', {}))) return reply(403, { error: 'Please sign in again.' })
+      const sd = await senderFor(callerEmail)
+      return reply(200, {
+        ok: true, via: sd.via, name: sd.name, address: sd.address, reply_to: sd.replyTo ?? null,
+        saves_sent: sd.via === 'own' ? sd.account!.saveSent : saveCopy && mailReady,
+        ready: sd.via === 'own' || mailReady,
+      })
+    }
+    case 'mailbox_test': {
+      // Settings → Email → Send Test Email: through the caller's own mailbox only.
+      if (!(await callerCan('has_perm', { p_key: 'settings.mailbox', p_level: 'edit' }))) return reply(403, { error: 'You do not have permission to connect a mailbox.' })
+      const sd = await senderFor(callerEmail)
+      if (sd.via !== 'own') return reply(409, { error: 'Connect your mailbox first (save the settings above), then send the test email.' })
+      const to = String(body.to ?? callerEmail ?? '').trim().toLowerCase()
+      if (!EMAIL.test(to)) return reply(400, { error: 'Enter a full email address.' })
+      const company = await loadCompany()
+      const { html, text } = layout({
+        company, appUrl, heading: 'Test email', button: false,
+        intro: 'This is a test email from the Order Tracker. Your mailbox is connected: emails you send from the app (reminders, certificates, quotes and so on) now come from this address.',
+        notes: [{ id: 'test', kind: 'test', title: `Sent through ${sd.account!.host} as ${sd.address}`, body: null, link: null, created_at: now().toISOString() }],
+        link: null, footerNote: 'Sent from Settings → Email in the Order Tracker.',
+      })
+      const r = await deliver({ to, subject: 'Test email from the Order Tracker', html, text, kind: 'test', company, sender: sd })
+      return r.status === 'sent'
+        ? reply(200, { ok: true, message: `Test email sent to ${to} from ${sd.address}.${r.saved === false ? ' The copy could not be saved in your Sent folder: check the incoming mail server settings.' : r.saved ? ' A copy was saved in your Sent folder.' : ''}` })
+        : reply(502, { error: `The test email could not be sent. ${r.error}` })
     }
     case 'push_key': {
       if (!(await callerCan('is_allowed_user', {}))) return reply(403, { error: 'Please sign in again.' })
@@ -716,30 +852,33 @@ export async function handle(req: Request, deps: Deps): Promise<Response> {
 // ---------------------------------------------------------------------------
 /** The real mail, Sent folder and push senders (also used by the tests with a local test mailbox). */
 export function realSenders(env: Env): Omit<Deps, 'env' | 'makeClient' | 'now'> {
-  const smtp = () =>
-    nodemailer.createTransport({
-      host: env('SMTP_HOST'),
-      port: Number(env('SMTP_PORT') || 465),
-      secure: true,
-      auth: { user: env('SMTP_USER'), pass: env('SMTP_PASSWORD') },
-    })
+  // The office mailbox (secrets), or a person's own mailbox (Settings → Email).
+  const smtp = (a?: Account) =>
+    a
+      ? nodemailer.createTransport({ host: a.host, port: a.port, secure: a.secure, requireTLS: !a.secure, auth: { user: a.user, pass: a.pass }, connectionTimeout: 20_000 })
+      : nodemailer.createTransport({
+          host: env('SMTP_HOST'),
+          port: Number(env('SMTP_PORT') || 465),
+          secure: true,
+          auth: { user: env('SMTP_USER'), pass: env('SMTP_PASSWORD') },
+        })
   return {
-    sendMail: async (mail) => {
+    sendMail: async (mail, account) => {
       const raw = await new MailComposer(mail).compile().build()
       // Every recipient is in the envelope; the Bcc addresses are not written into the message itself.
       const all = [mail.to, mail.cc, mail.bcc].filter(Boolean).join(', ')
-      await smtp().sendMail({ envelope: { from: env('SMTP_USER'), to: all }, raw })
+      await smtp(account).sendMail({ envelope: { from: account ? account.envelopeFrom : env('SMTP_USER'), to: all }, raw })
       return { raw }
     },
-    verifyMail: async () => {
-      await smtp().verify()
+    verifyMail: async (account) => {
+      await smtp(account).verify()
     },
-    saveSent: async (raw) => {
+    saveSent: async (raw, account) => {
       const client = new ImapFlow({
-        host: env('IMAP_HOST') || env('SMTP_HOST'),
-        port: Number(env('IMAP_PORT') || 993),
+        host: account ? account.imapHost : env('IMAP_HOST') || env('SMTP_HOST'),
+        port: account ? account.imapPort : Number(env('IMAP_PORT') || 993),
         secure: true,
-        auth: { user: env('SMTP_USER'), pass: env('SMTP_PASSWORD') },
+        auth: account ? { user: account.user, pass: account.pass } : { user: env('SMTP_USER'), pass: env('SMTP_PASSWORD') },
         logger: false,
       })
       await client.connect()

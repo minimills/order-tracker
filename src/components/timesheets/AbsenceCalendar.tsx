@@ -79,7 +79,7 @@ export default function AbsenceCalendar() {
                 <th key={d} className={`w-7 px-0.5 py-1 text-center font-normal ${[6, 7].includes(isoDow(d)) ? 'bg-slate-50 text-slate-400' : ''} ${d === today ? 'font-bold text-blue-700' : ''}`} title={holidayOn.get(d)}>
                   <div>{showDate(d, 'EEEEE')}</div>
                   <div>{Number(d.slice(8))}</div>
-                  {holidayOn.has(d) && <div className="text-[10px] text-red-700">Hol</div>}
+                  {holidayOn.has(d) && <div className="text-[0.625rem] text-red-700">Hol</div>}
                 </th>
               ))}
             </tr>

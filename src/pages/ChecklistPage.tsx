@@ -25,6 +25,7 @@ import RichTextEditor from '../components/RichTextEditor'
 import SerialNumber from '../components/SerialNumber'
 import { askText } from '../lib/confirm'
 import Icon from '../components/Icon'
+import PrintButton from '../components/print/PrintButton'
 
 type OrderInfo = { id: string; order_code: string; customer_name: string; customer_company: string | null; stage: string }
 
@@ -33,7 +34,7 @@ const NEW_SECTION = '__new'
 /* @layout-helper */
 function PhotoSpot({ label }: { label: string }) {
   return (
-    <div className="mt-1 inline-flex items-center gap-1 rounded border border-dashed border-slate-300 px-2 py-0.5 text-[11px] text-slate-400">
+    <div className="mt-1 inline-flex items-center gap-1 rounded border border-dashed border-slate-300 px-2 py-0.5 text-[0.6875rem] text-slate-400">
       <Icon name="camera" className="h-3 w-3" /> {label} – available in a future update
     </div>
   )
@@ -86,7 +87,7 @@ function NoteBox({
         onBlur={() => flush()}
       />
       {state !== 'idle' && (
-        <span className="absolute right-2 bottom-1 text-[10px] text-slate-400">{state === 'saving' ? 'Saving…' : 'Saved'}</span>
+        <span className="absolute right-2 bottom-1 text-[0.625rem] text-slate-400">{state === 'saving' ? 'Saving…' : 'Saved'}</span>
       )}
     </div>
   )
@@ -516,7 +517,7 @@ export default function ChecklistPage() {
                             <div className={item.status === 'na' ? 'text-slate-500 line-through' : ''}>
                               {item.item_text}
                               {item.is_one_off && (
-                                <span className="ml-2 rounded bg-purple-100 px-1.5 py-0.5 text-[11px] text-purple-800 no-underline">
+                                <span className="ml-2 rounded bg-purple-100 px-1.5 py-0.5 text-[0.6875rem] text-purple-800 no-underline">
                                   added for this machine{item.added_by_name ? ` by ${item.added_by_name}` : ''}
                                 </span>
                               )}
@@ -652,9 +653,7 @@ export default function ChecklistPage() {
                   {sigUrl && <img src={sigUrl} alt={`Signature of ${checklist.signed_name}`} className="max-h-32 rounded border border-slate-200 bg-white" />}
                   <div className="flex flex-wrap gap-2">
                     <Can permission="checklist.print">
-                      <Link to={`/checklists/${machineId}/print`} target="_blank" className={secondaryButtonClass}>
-                        Print or Save as PDF
-                      </Link>
+                      <PrintButton title="Final Check" to={`/checklists/${machineId}/print`} label="Print or Save as PDF" className="py-2" />
                     </Can>
                     <Can permission="checklist.unlock" level="edit">
                       <button type="button" className="text-sm text-red-700 underline" disabled={busy} onClick={unlock}>

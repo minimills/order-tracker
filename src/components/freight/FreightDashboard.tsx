@@ -115,15 +115,15 @@ export default function FreightDashboard() {
             <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
               <div>
                 <dd className="text-xl font-semibold tabular-nums">{show(b.t.sheets)}</dd>
-                <dt className="text-[11px] text-slate-600">Plywood sheets</dt>
+                <dt className="text-[0.6875rem] text-slate-600">Plywood sheets</dt>
               </div>
               <div>
                 <dd className="text-xl font-semibold tabular-nums">{show(b.t.crates)}</dd>
-                <dt className="text-[11px] text-slate-600">Crates made</dt>
+                <dt className="text-[0.6875rem] text-slate-600">Crates made</dt>
               </div>
               <div>
                 <dd className="text-xl font-semibold tabular-nums">{show(b.t.hours)}</dd>
-                <dt className="text-[11px] text-slate-600">Crating hours</dt>
+                <dt className="text-[0.6875rem] text-slate-600">Crating hours</dt>
               </div>
             </dl>
           </section>

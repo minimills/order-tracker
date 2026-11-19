@@ -37,6 +37,7 @@ import ReminderDialog from '../components/reminders/ReminderDialog'
 import OrderServiceSection from '../components/service/OrderServiceSection'
 import CeIssueDialog from '../components/ce/CeIssueDialog'
 import CeRegister from '../components/ce/CeRegister'
+import PrintButton from '../components/print/PrintButton'
 
 type Machine = {
   id: string
@@ -287,7 +288,12 @@ export default function OrderPage() {
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-2xl font-semibold">Order {order.order_code}</h1>
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <h1 className="text-2xl font-semibold">Order {order.order_code}</h1>
+                  <Can permission="order.print">
+                    <PrintButton title={`Order ${order.order_code}`} subtitle={[order.customer_company || order.customer_name, label(order.stage)].filter(Boolean).join(' · ')} />
+                  </Can>
+                </div>
                 <span className={`rounded px-2 py-0.5 text-sm font-medium ${stageTone[order.stage]}`}>{label(order.stage)}</span>
                 {order.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-sm">Archived</span>}
               </div>

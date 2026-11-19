@@ -9,6 +9,7 @@ import { friendlyError } from '../lib/format'
 import { addDays, STEP_LABEL, STEPS, type StepKey } from '../lib/schedule'
 import { supabase } from '../lib/supabase'
 import { BOARD_STAGES, type OrderSummaryRow } from '../lib/types'
+import PrintButton from '../components/print/PrintButton'
 
 type Dept = StepKey | 'shipping'
 const DEPTS: Dept[] = [...STEPS.map((s) => s.key), 'shipping']
@@ -94,7 +95,12 @@ export default function DepartmentDelaysPage() {
       <div className="mx-auto max-w-5xl space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Department Delays</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Department Delays</h1>
+              <Can permission="reports.department_delays.print">
+                <PrintButton title="Department Delays" />
+              </Can>
+            </div>
             <p className="text-sm text-slate-600">
               How often each department finishes by its deadline. A step counts when it is marked complete on the Order page;
               Shipping compares the actual ship date with the expected one.
