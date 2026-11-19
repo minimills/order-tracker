@@ -25,6 +25,12 @@ export type Board = {
   due_soon_days: number
   archived: boolean
   created_at: string
+  /** 0050: every board has a number ("Board 12"). */
+  board_number?: number
+  /** 0050: closed boards leave the Boards page and can only be viewed until reopened. */
+  closed_at?: string | null
+  closed_by_name?: string | null
+  close_reason?: 'shipped' | 'manual' | null
 }
 /** What a production stage means (deadline, build checklist, step times). */
 export type ProductionStep = 'fabrication' | 'pickup' | 'sandblasting' | 'powder_coating' | 'assembly' | 'final_check' | 'crating' | 'shipping' | 'other'
@@ -68,6 +74,10 @@ export type ChecklistItem = {
   template_item_id?: string | null
   /** 0038: a sub-task of this item (one level only). */
   parent_id?: string | null
+  /** 0050: who does it and by when (assigned_auto = from Admin → Production Assignments). */
+  assignee_email?: string | null
+  due_date?: string | null
+  assigned_auto?: boolean
 }
 /** One pause of a card's timer (item_id empty) or a task's (0038). */
 export type Pause = {
@@ -262,9 +272,31 @@ export function eventText(e: CardEvent) {
     case 'leftover_split': return `${d.count} unfinished item${Number(d.count) === 1 ? '' : 's'} moved to a leftover card in ${d.stage}`
     case 'leftover_created': return `Leftover card created for ${d.machine} (${d.stage})`
     case 'leftover_merged': return `${d.count} leftover item${Number(d.count) === 1 ? '' : 's'} merged back as completed (${d.reason})`
+    case 'task_renamed': return `Task renamed from “${d.old}” to “${d.new}”`
+    case 'task_due': return d.new ? `“${d.task}” due ${d.new}${d.old ? ` (was ${d.old})` : ''}` : `Due date of “${d.task}” removed`
+    case 'task_assigned':
+      return d.name
+        ? `“${d.task}” assigned to ${d.name}${d.old ? ` (was ${d.old})` : ''}${d.auto ? ' automatically' : ''}${d.running ? '; its timer keeps running' : ''}`
+        : `Nobody assigned to “${d.task}” any more${d.old ? ` (was ${d.old})` : ''}`
+    case 'copied_from': return `Copied from “${d.title}” on ${d.board}`
+    case 'copied_to': return `Copied to ${d.board} (${d.stage})`
+    case 'moved_board': return `Moved from the board ${d.from} to ${d.to} (${d.stage})`
     case 'stage_time': return `Left ${d.stage}${d.auto_started || d.auto_finished ? ' (times filled in automatically)' : ''}`
     default: return e.kind
   }
+}
+
+/** "Board 12". */
+export const boardNumberText = (b: Pick<Board, 'board_number'>) => (b.board_number ? `Board ${b.board_number}` : '')
+
+/** The boards a person can put cards on (open, not archived), production boards first. */
+export type BoardChoice = { id: string; name: string; purpose: string; board_number: number }
+export async function loadBoardChoices(): Promise<BoardChoice[]> {
+  if (!supabase) return []
+  const { data } = await supabase.from('boards').select('id, name, purpose, board_number').eq('archived', false).is('closed_at', null)
+  return ((data as BoardChoice[]) ?? []).sort(
+    (a, b) => Number(b.purpose === 'production') - Number(a.purpose === 'production') || a.name.localeCompare(b.name, undefined, { numeric: true }),
+  )
 }
 
 /** Everything the board page shows (one load). */

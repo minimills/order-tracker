@@ -20,7 +20,8 @@ import ReceivePaymentDialog from '../components/payments/ReceivePaymentDialog'
 import { useAlerts } from '../lib/alerts'
 import { countryFlag } from '../lib/country'
 import { checklistStatusText, type ChecklistStatusRow } from '../lib/checklists'
-import { CRATING_STAGES, loadCrates, type CrateMachine, type NumberedCrate } from '../lib/crates'
+import { CRATING_STAGES, loadCrates, loadOrderCrating, type CrateMachine, type NumberedCrate } from '../lib/crates'
+import OrderCrating from '../components/order/OrderCrating'
 import { showDate } from '../lib/dates'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
@@ -112,6 +113,8 @@ export default function OrderPage() {
   const [progress, setProgress] = useState<Map<string, MachineProgress>>(new Map())
   const [payments, setPayments] = useState<PaymentRow[]>([])
   const [crates, setCrates] = useState<NumberedCrate[]>([])
+  // "Will this order be crated?" (0050)
+  const [crating, setCrating] = useState(true)
   const [checks, setChecks] = useState<Map<string, ChecklistStatusRow>>(new Map())
   // Production board of this order and its machine cards (machine id → card id).
   const [production, setProduction] = useState<{ board: string; cards: Record<string, string> } | null>(null)
@@ -175,6 +178,7 @@ export default function OrderPage() {
     )
     setPayments((p.data as PaymentRow[]) ?? [])
     setCrates(cr.byOrder.get(id) ?? [])
+    setCrating((await loadOrderCrating([id])).get(id) ?? true)
     setChecks(new Map(((ck.data as ChecklistStatusRow[] | null) ?? []).map((r) => [r.machine_id, r])))
     // Production stage and % of each machine (0038).
     if (can('order.machines.progress')) {
@@ -268,7 +272,8 @@ export default function OrderPage() {
   const canTickBuilt = can('order.machines.built', 'edit')
 
   // Crating: shown on Ready to ship and Shipped orders (and on any order that already has crates).
-  const showCrating = seesCrating && (CRATING_STAGES.includes(order.stage) || crates.length > 0)
+  // Not at all when the order is not crated (0050).
+  const showCrating = seesCrating && crating && (CRATING_STAGES.includes(order.stage) || crates.length > 0)
   const crateMachines: CrateMachine[] = machines.map((m) => ({
     id: m.id,
     label: `${m.machine_types?.name ?? 'Machine'}${m.serial_number ? ` ${m.serial_number}` : ''}`,
@@ -434,6 +439,7 @@ export default function OrderPage() {
                   }`}
                   aside={
                     <div className="flex flex-wrap items-center gap-2">
+                      <OrderCrating orderId={order.id} crating={crating} onChanged={load} />
                       <Can permission="order.production_link">
                         {production ? (
                           <Link to={`/boards/${production.board}`} className={secondaryButtonClass}>
@@ -586,7 +592,8 @@ export default function OrderPage() {
               <Can permission="schedule">
                 <OrderSchedule
                   order={order}
-                  machines={machines.map((m) => ({ id: m.id, serial_number: m.serial_number, name: m.machine_types?.name ?? 'Machine', needs_crate: m.needs_crate !== false }))}
+                  machines={machines.map((m) => ({ id: m.id, serial_number: m.serial_number, name: m.machine_types?.name ?? 'Machine', needs_crate: crating && m.needs_crate !== false }))}
+                  crating={crating}
                   onChanged={load}
                 />
               </Can>

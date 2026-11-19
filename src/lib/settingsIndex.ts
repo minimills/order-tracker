@@ -83,6 +83,7 @@ const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/company', 'Office email for certificates', 'co-office', 'commissioning'),
   inner('/admin/company', 'Company logo', 'co-logo', 'letterhead picture'),
   inner('/admin/production', 'Office department for production boards', 'prod-office', ''),
+  { label: 'Production assignments: default people per stage', where: 'Admin → Production Assignments', keywords: 'assign assignee default people stage machine type department automatic cards tasks', to: '/admin/production-assignments', permission: 'admin.production_assignments' },
   inner('/admin/production', 'Production board sharing level', 'prod-level', 'share'),
   inner('/admin/serials', 'Re-sequence serial numbers', 'st-type', 'renumber'),
   inner('/admin/templates', 'Commissioning certificate text', 'tpl-title', 'service report'),

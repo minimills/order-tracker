@@ -40,7 +40,7 @@ import PrintButton from '../print/PrintButton'
 import { isEmptyRichText } from '../../lib/richText'
 import { buttonClass, inputClass, narrowInputClass, secondaryButtonClass } from '../form'
 import LinkPicker from './LinkPicker'
-import CardNavigator from './CardNavigator'
+import MoveCopyDialog from './MoveCopyDialog'
 import ColourPicker from './ColourPicker'
 import CustomerLabelPicker from './CustomerLabelPicker'
 import ProductionPanel from './ProductionPanel'
@@ -89,6 +89,9 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
   const [labelName, setLabelName] = useState('')
   const [labelColour, setLabelColour] = useState(LABEL_COLOURS[5])
   const [subFor, setSubFor] = useState<string | null>(null)
+  // 0050: move / copy the card, and editing a task (text, who, due date).
+  const [moveCopy, setMoveCopy] = useState<'move' | 'copy' | null>(null)
+  const [editItem, setEditItem] = useState<{ id: string; text: string; assignee: string; due: string } | null>(null)
   const [subText, setSubText] = useState('')
 
   const thisCard = data.cards.find((c) => c.id === cardId)
@@ -299,7 +302,37 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
             {card.created_by_name && ` by ${card.created_by_name}`}
           </span>
         </div>
-        <Can permission="boards.card.navigate">{onOpenCard && <CardNavigator card={card} data={data} onOpenCard={onOpenCard} />}</Can>
+        <Can anyOf={['boards.card.move', 'boards.card.copy']} level="edit">
+          <div className="flex flex-wrap gap-2">
+            {mayEdit && (
+              <Can permission="boards.card.move" level="edit">
+                <button type="button" className={small} onClick={() => setMoveCopy('move')}>
+                  Move to Another Board or Stage…
+                </button>
+              </Can>
+            )}
+            <Can permission="boards.card.copy" level="edit">
+              <button type="button" className={small} onClick={() => setMoveCopy('copy')}>
+                Copy…
+              </button>
+            </Can>
+          </div>
+        </Can>
+        {moveCopy && (
+          <Can anyOf={['boards.card.move', 'boards.card.copy']} level="edit">
+            <MoveCopyDialog
+              boardId={card.board_id}
+              card={card}
+              initialMode={moveCopy}
+              onClose={() => setMoveCopy(null)}
+              onDone={(target) => {
+                setMoveCopy(null)
+                onChanged()
+                if (moveCopy === 'move' && target !== card.board_id) onClose()
+              }}
+            />
+          </Can>
+        )}
       </div>
 
       <div className="mt-4 grid gap-5 md:grid-cols-[1fr_15rem]">
@@ -474,7 +507,66 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                                   onChange={(e) => updateItem(it, { finished_at: e.target.checked ? new Date().toISOString() : null })}
                                 />
                               </Can>
-                              <span className={`flex-1 ${it.finished_at ? 'text-slate-500 line-through' : ''}`}>{it.item_text}</span>
+                              {editItem?.id === it.id ? (
+                                <Can permission="boards.card.checklists" level="edit">
+                                  <span className="flex w-full flex-wrap items-end gap-2 rounded-md bg-slate-50 p-2 sm:order-none">
+                                    <input
+                                      aria-label="Task"
+                                      className={`${inputClass} min-w-0 flex-[1_1_12rem] py-1`}
+                                      value={editItem.text}
+                                      onChange={(e) => setEditItem({ ...editItem, text: e.target.value })}
+                                    />
+                                    <Can permission="boards.task.assign" level="edit">
+                                      <select aria-label="Who does it" className={`${narrowInputClass} py-1`} value={editItem.assignee} onChange={(e) => setEditItem({ ...editItem, assignee: e.target.value })}>
+                                        <option value="">Nobody yet</option>
+                                        {data.people.map((p) => (
+                                          <option key={p.email} value={p.email}>
+                                            {p.name}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </Can>
+                                    <Can permission="boards.task.due" level="edit">
+                                      <input type="date" aria-label="Task due date" className={`${narrowInputClass} py-1`} value={editItem.due} onChange={(e) => setEditItem({ ...editItem, due: e.target.value })} />
+                                    </Can>
+                                    <button
+                                      type="button"
+                                      className={small}
+                                      disabled={busy || !editItem.text.trim()}
+                                      onClick={async () => {
+                                        const patch: Partial<ChecklistItem> = {}
+                                        if (editItem.text.trim() !== it.item_text) patch.item_text = editItem.text.trim()
+                                        if (can('boards.task.assign', 'edit') && (editItem.assignee || null) !== (it.assignee_email ?? null)) patch.assignee_email = editItem.assignee || null
+                                        if (can('boards.task.due', 'edit') && (editItem.due || null) !== (it.due_date ?? null)) patch.due_date = editItem.due || null
+                                        if (Object.keys(patch).length === 0 || (await updateItem(it, patch))) setEditItem(null)
+                                      }}
+                                    >
+                                      Save Changes
+                                    </button>
+                                    <button type="button" className="text-xs text-slate-600 underline" onClick={() => setEditItem(null)}>
+                                      Cancel
+                                    </button>
+                                  </span>
+                                </Can>
+                              ) : (
+                                <span className={`min-w-0 flex-1 ${it.finished_at ? 'text-slate-500 line-through' : ''}`}>
+                                  {it.item_text}
+                                  <Can permission="boards.task.assign">
+                                    {it.assignee_email && (
+                                      <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700 no-underline" title={it.assigned_auto ? 'Assigned automatically (Admin → Production Assignments)' : undefined}>
+                                        {data.people.find((p) => p.email === it.assignee_email)?.name ?? it.assignee_email}
+                                      </span>
+                                    )}
+                                  </Can>
+                                  <Can permission="boards.task.due">
+                                    {it.due_date && (
+                                      <span className={`ml-1 rounded px-1.5 py-0.5 text-xs ring-1 ${DUE_TONE[dueState(it.due_date, todayISO(), board.due_soon_days, Boolean(it.finished_at))!]}`}>
+                                        {showDate(it.due_date)}
+                                      </span>
+                                    )}
+                                  </Can>
+                                </span>
+                              )}
                               <Can permission="boards.card.timing">
                                 <span className="text-xs text-slate-500" title={[it.started_by_name && `Started by ${it.started_by_name}`, it.finished_by_name && `finished by ${it.finished_by_name}`].filter(Boolean).join(', ')}>
                                   {took && <><Icon name="timer" className="h-3.5 w-3.5" /> {took}</>}
@@ -506,6 +598,15 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                                 </Can>
                               </Can>
                               <Can permission="boards.card.checklists" level="edit">
+                                {mayEdit && editItem?.id !== it.id && (
+                                  <button
+                                    type="button"
+                                    className="text-xs text-slate-600 underline"
+                                    onClick={() => setEditItem({ id: it.id, text: it.item_text, assignee: it.assignee_email ?? '', due: it.due_date ?? '' })}
+                                  >
+                                    Edit
+                                  </button>
+                                )}
                                 {mayEdit && !sub && (
                                   <button type="button" className="text-xs text-slate-600 underline" onClick={() => { setSubFor(subFor === it.id ? null : it.id); setSubText('') }}>
                                     Add Sub-task

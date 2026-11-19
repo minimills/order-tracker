@@ -25,6 +25,8 @@ import Timeline from './Timeline'
 type Props = {
   order: { id: string; expected_ship_date: string | null; actual_ship_date: string | null }
   machines: { id: string; serial_number: string | null; name: string; needs_crate: boolean }[]
+  /** False when the order is not crated: no "Crate" boxes (0050). */
+  crating?: boolean
   /** Called after anything here is saved (the page reloads). */
   onChanged: () => void
 }
@@ -35,7 +37,7 @@ type Props = {
  * machine, and suggested new dates with Accept / Keep. Promised dates never
  * change by themselves.
  */
-export default function OrderSchedule({ order, machines, onChanged }: Props) {
+export default function OrderSchedule({ order, machines, onChanged, crating = true }: Props) {
   const s = useSchedule(true, order.id)
   const [busy, setBusy] = useState(false)
   if (s.loading) return null
@@ -145,12 +147,14 @@ export default function OrderSchedule({ order, machines, onChanged }: Props) {
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <span className="font-medium">{m.name}</span>
                   {m.serial_number && <SerialNumber serial={m.serial_number} />}
-                  <Can permission="order.machines.crate_flag" level="edit">
-                    <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600" title="Only crated machines get a crating deadline">
-                      <input type="checkbox" className="h-4 w-4" checked={m.needs_crate} disabled={busy} onChange={(e) => run(() => setCrate(m.id, e.target.checked))} />
-                      Crate
-                    </label>
-                  </Can>
+                  {crating && (
+                    <Can permission="order.machines.crate_flag" level="edit">
+                      <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600" title="Only crated machines get a crating deadline">
+                        <input type="checkbox" className="h-4 w-4" checked={m.needs_crate} disabled={busy} onChange={(e) => run(() => setCrate(m.id, e.target.checked))} />
+                        Crate
+                      </label>
+                    </Can>
+                  )}
                 </div>
                 {steps.length > 0 && (
                   <div className="mt-1 flex flex-wrap gap-1.5">
