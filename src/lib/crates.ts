@@ -114,3 +114,17 @@ export function freightSummary(
   if (notCrated.length) lines.push(`Not crated yet: ${notCrated.join(', ')}`)
   return lines.join('\n')
 }
+
+/**
+ * "Will this order be crated?" (0050) for some orders: id → true / false.
+ * Orders that are not crated show no crating boxes, columns or checkboxes.
+ */
+export async function loadOrderCrating(ids: string[]): Promise<Map<string, boolean>> {
+  const map = new Map<string, boolean>()
+  if (!supabase || ids.length === 0) return map
+  for (let i = 0; i < ids.length; i += 200) {
+    const { data } = await supabase.from('orders').select('id, crating').in('id', ids.slice(i, i + 200))
+    for (const r of (data ?? []) as { id: string; crating: boolean }[]) map.set(r.id, r.crating !== false)
+  }
+  return map
+}

@@ -144,7 +144,7 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
                   </tbody>
                 </table>
               </div>
-              <p className="mt-1 text-[11px] text-slate-500">
+              <p className="mt-1 text-[0.6875rem] text-slate-500">
                 Start and Finish are filled in automatically from when the card arrived and left if nobody pressed the buttons.
               </p>
             </div>

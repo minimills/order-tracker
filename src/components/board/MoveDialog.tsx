@@ -10,6 +10,7 @@ import type { OrderSummaryRow, Stage } from '../../lib/types'
 import Can from '../Can'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../form'
 import Icon from '../Icon'
+import { loadOrderCrating } from '../../lib/crates'
 
 /** What the user asked for: a new stage and/or a new place on the board. */
 export type MoveRequest = {
@@ -94,13 +95,16 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
   useEffect(() => {
     if (!supabase || !toShipped || !warnCrating) return
     let cancelled = false
+    // Orders that are not crated (0050) need no crating warning.
     supabase
       .from('machine_crating')
       .select('machine_id', { count: 'exact', head: true })
       .eq('order_id', request.order.id)
       .eq('crate_count', 0)
-      .then(({ count }) => {
-        if (!cancelled) setNotCrated(count ?? 0)
+      .then(async ({ count }) => {
+        if (cancelled) return
+        const crated = (await loadOrderCrating([request.order.id])).get(request.order.id) !== false
+        if (!cancelled) setNotCrated(crated ? (count ?? 0) : 0)
       })
     return () => {
       cancelled = true

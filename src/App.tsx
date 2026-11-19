@@ -10,6 +10,7 @@ import ArchivePage from './pages/admin/ArchivePage'
 import ChecklistTemplatesPage from './pages/admin/ChecklistTemplatesPage'
 import BuildChecklistsPage from './pages/admin/BuildChecklistsPage'
 import ProductionPage from './pages/admin/ProductionPage'
+import ProductionAssignmentsPage from './pages/admin/ProductionAssignmentsPage'
 import BuildTimesPage from './pages/BuildTimesPage'
 import ServicePage from './pages/ServicePage'
 import ChatPage from './pages/ChatPage'
@@ -220,6 +221,7 @@ export default function App() {
           <Route path="email-templates" element={<Page permission="admin.email_templates" level="edit"><EmailTemplatesPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />
           <Route path="production" element={<Page permission="admin.production" level="edit"><ProductionPage /></Page>} />
+          <Route path="production-assignments" element={<Page permission="admin.production_assignments"><ProductionAssignmentsPage /></Page>} />
           <Route path="records" element={<Page permission="admin.records" level="edit"><RecordsPage /></Page>} />
           <Route path="serials" element={<Page permission="admin.serials" level="edit"><SerialsPage /></Page>} />
           <Route path="board" element={<Page permission="admin.board" level="edit"><BoardAdminPage /></Page>} />

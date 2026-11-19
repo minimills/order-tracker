@@ -4,11 +4,13 @@ import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
 import NewBoardDialog from '../components/boards/NewBoardDialog'
-import { buttonClass } from '../components/form'
+import ClosedBoardsDialog from '../components/boards/ClosedBoardsDialog'
+import { buttonClass, secondaryButtonClass } from '../components/form'
 import { useAuth } from '../lib/auth'
-import type { Board } from '../lib/boards'
+import { boardNumberText, type Board } from '../lib/boards'
 import { friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
+import PrintButton from '../components/print/PrintButton'
 
 type Row = Board & { board_shares: { id: string }[] }
 
@@ -20,6 +22,7 @@ export default function BoardsPage() {
   const [loading, setLoading] = useState(true)
   const [showArchived, setShowArchived] = useState(false)
   const [creating, setCreating] = useState(false)
+  const [closedOpen, setClosedOpen] = useState(false)
 
   const load = useCallback(async () => {
     if (!supabase) return
@@ -33,7 +36,8 @@ export default function BoardsPage() {
     load()
   }, [load])
 
-  const shown = boards.filter((b) => showArchived || !b.archived)
+  // Closed boards (0050) are only under “Closed Boards”.
+  const shown = boards.filter((b) => (showArchived || !b.archived) && !b.closed_at)
   const production = shown.filter((b) => b.purpose === 'production')
   const mine = shown.filter((b) => b.purpose !== 'production' && b.owner_email === me)
   const others = shown.filter((b) => b.purpose !== 'production' && b.owner_email !== me)
@@ -48,6 +52,7 @@ export default function BoardsPage() {
         <div className="font-semibold">{b.name}</div>
         {b.description && <div className="mt-0.5 line-clamp-2 text-sm text-slate-600">{b.description}</div>}
         <div className="mt-2 text-xs text-slate-500">
+          {boardNumberText(b) && `${boardNumberText(b)} · `}
           {b.purpose === 'production' ? 'Production' : b.owner_email === me ? 'Yours' : `Owner: ${b.owner_email ?? 'none'}`}
           {b.board_shares.length > 0 && ' · shared'}
           {b.archived && ' · archived'}
@@ -61,7 +66,12 @@ export default function BoardsPage() {
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Boards</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Boards</h1>
+              <Can permission="boards.print">
+                <PrintButton title="Boards" />
+              </Can>
+            </div>
             <p className="text-sm text-slate-600">Your own boards and boards shared with you, with cards organised in stages.</p>
           </div>
           <div className="flex items-center gap-4">
@@ -70,6 +80,11 @@ export default function BoardsPage() {
                 <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
                 Show archived
               </label>
+            </Can>
+            <Can permission="boards.closed">
+              <button type="button" className={secondaryButtonClass} onClick={() => setClosedOpen(true)}>
+                Closed Boards{boards.some((b) => b.closed_at) ? ` (${boards.filter((b) => b.closed_at).length})` : ''}
+              </button>
             </Can>
             <Can permission="boards.create" level="edit">
               <button type="button" className={buttonClass} onClick={() => setCreating(true)}>
@@ -111,6 +126,11 @@ export default function BoardsPage() {
         {creating && (
           <Can permission="boards.create" level="edit">
             <NewBoardDialog onClose={() => setCreating(false)} />
+          </Can>
+        )}
+        {closedOpen && (
+          <Can permission="boards.closed">
+            <ClosedBoardsDialog onClose={() => setClosedOpen(false)} onChanged={load} />
           </Can>
         )}
       </div>

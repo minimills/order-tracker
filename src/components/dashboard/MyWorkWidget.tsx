@@ -26,7 +26,19 @@ type WorkCard = {
   started_at: string | null
   finished_at: string | null
 }
-type WorkItem = { id: string; checklist_id: string; item_text: string; sort_order: number; started_at: string | null; finished_at: string | null; parent_id: string | null }
+type WorkItem = {
+  id: string
+  checklist_id: string
+  item_text: string
+  sort_order: number
+  started_at: string | null
+  finished_at: string | null
+  parent_id: string | null
+  /** 0050: who does the task and by when. */
+  assignee_email: string | null
+  due_date: string | null
+}
+const ITEM_COLS = 'id, checklist_id, item_text, sort_order, started_at, finished_at, parent_id, assignee_email, due_date'
 type Work = {
   cards: WorkCard[]
   /** Open tasks per card (production cards: only the current stage's). */
@@ -36,6 +48,8 @@ type Work = {
   stages: Map<string, string>
   /** Boards where the person may press the buttons (edit level). */
   editable: Set<string>
+  /** Cards assigned to me (the others are here only for tasks of mine). */
+  assigned?: Set<string>
 }
 
 const now = () => new Date().toISOString()
@@ -43,49 +57,73 @@ const now = () => new Date().toISOString()
 /** Tables whose changes refresh this widget at once (row security decides what reaches each person). */
 const LIVE = ['board_cards', 'board_checklist_items', 'board_time_pauses', 'board_card_assignees']
 
+/**
+ * My work: cards assigned to me (with their open tasks; production machine
+ * cards only the current stage's) and cards with open tasks assigned to me
+ * (only those tasks). Closed and archived boards are left out.
+ */
 async function loadWork(email: string, data: DashData): Promise<Work> {
   const db = supabase!
-  const a = await db.from('board_card_assignees').select('card_id').eq('user_email', email)
-  if (a.error) throw a.error
-  const ids = ((a.data as { card_id: string }[] | null) ?? []).map((r) => r.card_id).slice(0, 300)
   const empty: Work = { cards: [], items: new Map(), pauses: [], boards: new Map(), stages: new Map(), editable: new Set() }
+  const [a, mine] = await Promise.all([
+    db.from('board_card_assignees').select('card_id').eq('user_email', email),
+    db.from('board_checklist_items').select(ITEM_COLS).eq('assignee_email', email).is('finished_at', null).order('sort_order').limit(300),
+  ])
+  if (a.error) throw a.error
+  const assigned = new Set(((a.data as { card_id: string }[] | null) ?? []).map((r) => r.card_id))
+  const myItems = (mine.data as WorkItem[] | null) ?? []
+  const myLists = myItems.length
+    ? (((await db.from('board_checklists').select('id, card_id').in('id', [...new Set(myItems.map((i) => i.checklist_id))])).data as { id: string; card_id: string }[] | null) ?? [])
+    : []
+  const listOfMine = new Map(myLists.map((l) => [l.id, l.card_id]))
+  const ids = [...new Set([...assigned, ...listOfMine.values()])].slice(0, 300)
   if (!ids.length) return empty
   const [c, boards] = await Promise.all([
-    db.from('board_cards').select('id, title, due_date, board_id, stage_id, card_kind, started_at, finished_at').in('id', ids).eq('archived', false).is('finished_at', null),
+    db.from('board_cards').select('id, title, due_date, board_id, stage_id, card_kind, started_at, finished_at').in('id', ids).eq('archived', false),
     data.boards(),
   ])
   if (c.error) throw c.error
   const names = new Map(boards.map((b) => [b.id, b.name]))
-  const cards = ((c.data as WorkCard[] | null) ?? []).filter((x) => names.has(x.board_id)).sort((x, y) => (x.due_date ?? '9999').localeCompare(y.due_date ?? '9999') || x.title.localeCompare(y.title))
+  // Closed boards (0050) can be opened but not worked on: leave them out.
+  const cardRows = ((c.data as WorkCard[] | null) ?? []).filter((x) => names.has(x.board_id))
+  const closed = cardRows.length
+    ? new Set(((((await db.from('boards').select('id, closed_at').in('id', [...new Set(cardRows.map((x) => x.board_id))])).data as { id: string; closed_at: string | null }[] | null) ?? []).filter((b) => b.closed_at)).map((b) => b.id))
+    : new Set<string>()
+  const items = new Map<string, WorkItem[]>()
+  const add = (card: string, it: WorkItem) => {
+    const l = items.get(card) ?? []
+    if (!l.some((x) => x.id === it.id)) items.set(card, [...l, it])
+  }
+  for (const it of myItems) {
+    const card = listOfMine.get(it.checklist_id)
+    if (card) add(card, it)
+  }
+  // A card counts when it is assigned to me and not finished, or when it holds open tasks of mine.
+  const cards = cardRows
+    .filter((x) => !closed.has(x.board_id) && ((assigned.has(x.id) && !x.finished_at) || items.has(x.id)))
+    .sort((x, y) => (x.due_date ?? '9999').localeCompare(y.due_date ?? '9999') || x.title.localeCompare(y.title))
   if (!cards.length) return empty
   const cardIds = cards.map((x) => x.id)
   const boardIds = [...new Set(cards.map((x) => x.board_id))]
+  const mineCards = cards.filter((x) => assigned.has(x.id))
   const [lists, pauses, stages, levels] = await Promise.all([
-    db.from('board_checklists').select('id, card_id, stage_id').in('card_id', cardIds),
+    mineCards.length ? db.from('board_checklists').select('id, card_id, stage_id').in('card_id', mineCards.map((x) => x.id)) : Promise.resolve({ data: [] }),
     db.from('board_time_pauses').select('*').in('card_id', cardIds).order('paused_at'),
     db.from('board_stages').select('id, name').in('id', [...new Set(cards.map((x) => x.stage_id))]),
     Promise.all(boardIds.map(async (b) => [b, ((await db.rpc('board_level', { p_board: b })).data as number | null) ?? 0] as const)),
   ])
   const byCard = new Map(cards.map((x) => [x.id, x]))
-  // Production machine cards: only the checklists of the stage the card is in.
+  // Cards assigned to me: every open task (production machine cards: only the stage the card is in).
   const current = ((lists.data as { id: string; card_id: string; stage_id: string | null }[] | null) ?? []).filter((l) => {
     const card = byCard.get(l.card_id)
     return card && (card.card_kind !== 'machine' || l.stage_id === card.stage_id)
   })
   const listCard = new Map(current.map((l) => [l.id, l.card_id]))
-  const items = new Map<string, WorkItem[]>()
   if (current.length) {
-    const it = await db
-      .from('board_checklist_items')
-      .select('id, checklist_id, item_text, sort_order, started_at, finished_at, parent_id')
-      .in('checklist_id', current.map((l) => l.id))
-      .is('finished_at', null)
-      .order('sort_order')
-    for (const row of (it.data as WorkItem[] | null) ?? []) {
-      const card = listCard.get(row.checklist_id)!
-      items.set(card, [...(items.get(card) ?? []), row])
-    }
+    const it = await db.from('board_checklist_items').select(ITEM_COLS).in('checklist_id', current.map((l) => l.id)).is('finished_at', null).order('sort_order')
+    for (const row of (it.data as WorkItem[] | null) ?? []) add(listCard.get(row.checklist_id)!, row)
   }
+  for (const [k, l] of items) items.set(k, [...l].sort((x, y) => x.sort_order - y.sort_order))
   return {
     cards,
     items,
@@ -93,6 +131,7 @@ async function loadWork(email: string, data: DashData): Promise<Work> {
     boards: names,
     stages: new Map(((stages.data as { id: string; name: string }[] | null) ?? []).map((s) => [s.id, s.name])),
     editable: new Set(levels.filter(([, l]) => l >= 2).map(([b]) => b)),
+    assigned,
   }
 }
 
@@ -146,7 +185,7 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
   if (!work) return <p className="py-3 text-sm text-slate-500">Loading…</p>
   const board = widget.filters?.board
   const cards = work.cards.filter((c) => !board || c.board_id === board).slice(0, widget.limit ?? 8)
-  if (!cards.length) return <p className="py-3 text-sm text-slate-500">No open cards are assigned to you.</p>
+  if (!cards.length) return <p className="py-3 text-sm text-slate-500">No open cards or tasks are assigned to you.</p>
   const today = todayISO()
 
   async function run(key: string, fn: () => PromiseLike<{ error: unknown }>, ok?: string) {
@@ -244,7 +283,7 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
               <span className={`shrink-0 text-xs ${late ? 'font-semibold text-red-700' : 'text-slate-600'}`}>{c.due_date ? `Due ${showDate(c.due_date, 'MMM d')}` : 'No due date'}</span>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              {timerControls(c, null)}
+              {work.assigned?.has(c.id) && !c.finished_at ? timerControls(c, null) : <span className="text-xs text-slate-500">Tasks assigned to you on this card</span>}
               {open && !print && (
                 <Link to={`/boards/${c.board_id}?card=${c.id}`} className="text-xs text-blue-700 underline">
                   Open Card
@@ -256,7 +295,16 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
                 <ul className="mt-1.5 space-y-1 border-l-2 border-slate-200 pl-2">
                   {tasks.slice(0, 6).map((it) => (
                     <li key={it.id} className={`flex flex-wrap items-center gap-x-2 gap-y-1 ${it.parent_id ? 'pl-4' : ''}`}>
-                      <span className="min-w-[8rem] flex-1 text-slate-800 [overflow-wrap:anywhere]">{it.item_text}</span>
+                      <span className="min-w-[8rem] flex-1 text-slate-800 [overflow-wrap:anywhere]">
+                        {it.item_text}
+                        {(it.assignee_email === me || it.due_date) && (
+                          <span className="block text-xs text-slate-500">
+                            {it.assignee_email === me && 'Assigned to you'}
+                            {it.assignee_email === me && it.due_date && ' · '}
+                            {it.due_date && <span className={it.due_date < today ? 'font-semibold text-red-700' : ''}>Due {showDate(it.due_date, 'MMM d')}</span>}
+                          </span>
+                        )}
+                      </span>
                       {timerControls(c, it)}
                     </li>
                   ))}

@@ -9,6 +9,7 @@ import { confirmAction } from '../../lib/confirm'
 import { callFunction } from '../../lib/edgeFunction'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import PrintButton from '../../components/print/PrintButton'
 
 type LogRow = {
   id: string
@@ -62,7 +63,14 @@ export default function EmailLogPage() {
 
   return (
     <div className="space-y-4">
-      <AdminPageHeader title="Email Log">Every email the Order Tracker has sent, newest first.</AdminPageHeader>
+      <AdminPageHeader
+        title="Email Log"
+        print={
+          <Can permission="admin.email_log.print">
+            <PrintButton title="Email Log" />
+          </Can>
+        }
+      >Every email the Order Tracker has sent, newest first.</AdminPageHeader>
       <div className="flex flex-wrap gap-2">
         <input aria-label="Search" className={`${narrowInputClass} w-72`} placeholder="Search by recipient or subject" value={q} onChange={(e) => setQ(e.target.value)} />
         <select aria-label="Status" className={`${narrowInputClass} w-40`} value={status} onChange={(e) => setStatus(e.target.value)}>

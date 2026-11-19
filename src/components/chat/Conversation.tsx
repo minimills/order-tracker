@@ -302,7 +302,7 @@ export default function Conversation({
               const header = newDay || !prev || prev.author_email !== m.author_email || Date.parse(m.created_at) - Date.parse(prev.created_at) > 5 * 60_000
               return (
                 <div key={m.id}>
-                  {newDay && <div className="my-2 text-center text-[11px] font-medium text-slate-500">{dayLabel(m.created_at)}</div>}
+                  {newDay && <div className="my-2 text-center text-[0.6875rem] font-medium text-slate-500">{dayLabel(m.created_at)}</div>}
                   <MessageItem
                     m={m}
                     me={me}
@@ -355,7 +355,7 @@ export default function Conversation({
                 </div>
               )
             })}
-            {seen && <p className="px-3 text-right text-[11px] text-slate-500">Seen</p>}
+            {seen && <p className="px-3 text-right text-[0.6875rem] text-slate-500">Seen</p>}
             <div ref={bottom} />
           </div>
 
@@ -458,7 +458,7 @@ export default function Conversation({
                     </Can>
                   </div>
                 </div>
-                <p className="mt-1 hidden text-[11px] text-slate-400 md:block">
+                <p className="mt-1 hidden text-[0.6875rem] text-slate-400 md:block">
                   Ctrl+Enter (or Cmd+Enter) sends. Type @ to mention someone; #86 links an order; serial numbers and card names become links.
                 </p>
               </div>

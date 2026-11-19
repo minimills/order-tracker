@@ -36,9 +36,11 @@ import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import RichText from '../RichText'
 import RichTextEditor from '../RichTextEditor'
+import PrintButton from '../print/PrintButton'
+import { isEmptyRichText } from '../../lib/richText'
 import { buttonClass, inputClass, narrowInputClass, secondaryButtonClass } from '../form'
 import LinkPicker from './LinkPicker'
-import CardNavigator from './CardNavigator'
+import MoveCopyDialog from './MoveCopyDialog'
 import ColourPicker from './ColourPicker'
 import CustomerLabelPicker from './CustomerLabelPicker'
 import ProductionPanel from './ProductionPanel'
@@ -78,6 +80,8 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
   const [title, setTitle] = useState(card?.title ?? '')
   const [desc, setDesc] = useState<string | null>(null) // null = not editing
   const [newComment, setNewComment] = useState('')
+  // Bumped after posting so the comment box starts empty again.
+  const [commentBox, setCommentBox] = useState(0)
   const [editingComment, setEditingComment] = useState<{ id: string; body: string } | null>(null)
   const [newList, setNewList] = useState('')
   const [newItem, setNewItem] = useState<Record<string, string>>({})
@@ -85,6 +89,9 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
   const [labelName, setLabelName] = useState('')
   const [labelColour, setLabelColour] = useState(LABEL_COLOURS[5])
   const [subFor, setSubFor] = useState<string | null>(null)
+  // 0050: move / copy the card, and editing a task (text, who, due date).
+  const [moveCopy, setMoveCopy] = useState<'move' | 'copy' | null>(null)
+  const [editItem, setEditItem] = useState<{ id: string; text: string; assignee: string; due: string } | null>(null)
   const [subText, setSubText] = useState('')
 
   const thisCard = data.cards.find((c) => c.id === cardId)
@@ -185,8 +192,11 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
 
   async function addComment(e: FormEvent) {
     e.preventDefault()
-    if (!newComment.trim()) return
-    if (await run(() => supabase!.from('board_comments').insert({ card_id: card!.id, body: newComment.trim() }))) setNewComment('')
+    if (isEmptyRichText(newComment)) return
+    if (await run(() => supabase!.from('board_comments').insert({ card_id: card!.id, body: newComment }))) {
+      setNewComment('')
+      setCommentBox((n) => n + 1)
+    }
   }
 
   /** Active time (pauses not counted): "1 h 15 min", or "running for …" / "paused at …" while not finished. */
@@ -206,7 +216,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
   /** Pause history of one timer. */
   const pauseList = (ps: Pause[]) =>
     ps.length > 0 && (
-      <ul className="mt-1 space-y-0.5 text-[11px] text-slate-600">
+      <ul className="mt-1 space-y-0.5 text-[0.6875rem] text-slate-600">
         {ps.map((p) => (
           <li key={p.id}>
             Paused {activityTime.format(new Date(p.paused_at))}
@@ -242,6 +252,11 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
 
   return (
     <Overlay onClose={onClose} title={card.title} colour={board.colour}>
+      <Can permission="boards.card.print">
+        <div className="mb-2 flex justify-end pr-8">
+          <PrintButton scope="dialog" title={card.title} subtitle={board.name} />
+        </div>
+      </Can>
       {/* ---------- Title, stage, move ---------- */}
       <div className="space-y-2">
         <Can permission="boards.card.edit" level="edit" fallback={<h2 className="pr-8 text-xl font-semibold break-words">{card.title}</h2>}>
@@ -287,7 +302,37 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
             {card.created_by_name && ` by ${card.created_by_name}`}
           </span>
         </div>
-        <Can permission="boards.card.navigate">{onOpenCard && <CardNavigator card={card} data={data} onOpenCard={onOpenCard} />}</Can>
+        <Can anyOf={['boards.card.move', 'boards.card.copy']} level="edit">
+          <div className="flex flex-wrap gap-2">
+            {mayEdit && (
+              <Can permission="boards.card.move" level="edit">
+                <button type="button" className={small} onClick={() => setMoveCopy('move')}>
+                  Move to Another Board or Stage…
+                </button>
+              </Can>
+            )}
+            <Can permission="boards.card.copy" level="edit">
+              <button type="button" className={small} onClick={() => setMoveCopy('copy')}>
+                Copy…
+              </button>
+            </Can>
+          </div>
+        </Can>
+        {moveCopy && (
+          <Can anyOf={['boards.card.move', 'boards.card.copy']} level="edit">
+            <MoveCopyDialog
+              boardId={card.board_id}
+              card={card}
+              initialMode={moveCopy}
+              onClose={() => setMoveCopy(null)}
+              onDone={(target) => {
+                setMoveCopy(null)
+                onChanged()
+                if (moveCopy === 'move' && target !== card.board_id) onClose()
+              }}
+            />
+          </Can>
+        )}
       </div>
 
       <div className="mt-4 grid gap-5 md:grid-cols-[1fr_15rem]">
@@ -462,7 +507,66 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                                   onChange={(e) => updateItem(it, { finished_at: e.target.checked ? new Date().toISOString() : null })}
                                 />
                               </Can>
-                              <span className={`flex-1 ${it.finished_at ? 'text-slate-500 line-through' : ''}`}>{it.item_text}</span>
+                              {editItem?.id === it.id ? (
+                                <Can permission="boards.card.checklists" level="edit">
+                                  <span className="flex w-full flex-wrap items-end gap-2 rounded-md bg-slate-50 p-2 sm:order-none">
+                                    <input
+                                      aria-label="Task"
+                                      className={`${inputClass} min-w-0 flex-[1_1_12rem] py-1`}
+                                      value={editItem.text}
+                                      onChange={(e) => setEditItem({ ...editItem, text: e.target.value })}
+                                    />
+                                    <Can permission="boards.task.assign" level="edit">
+                                      <select aria-label="Who does it" className={`${narrowInputClass} py-1`} value={editItem.assignee} onChange={(e) => setEditItem({ ...editItem, assignee: e.target.value })}>
+                                        <option value="">Nobody yet</option>
+                                        {data.people.map((p) => (
+                                          <option key={p.email} value={p.email}>
+                                            {p.name}
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </Can>
+                                    <Can permission="boards.task.due" level="edit">
+                                      <input type="date" aria-label="Task due date" className={`${narrowInputClass} py-1`} value={editItem.due} onChange={(e) => setEditItem({ ...editItem, due: e.target.value })} />
+                                    </Can>
+                                    <button
+                                      type="button"
+                                      className={small}
+                                      disabled={busy || !editItem.text.trim()}
+                                      onClick={async () => {
+                                        const patch: Partial<ChecklistItem> = {}
+                                        if (editItem.text.trim() !== it.item_text) patch.item_text = editItem.text.trim()
+                                        if (can('boards.task.assign', 'edit') && (editItem.assignee || null) !== (it.assignee_email ?? null)) patch.assignee_email = editItem.assignee || null
+                                        if (can('boards.task.due', 'edit') && (editItem.due || null) !== (it.due_date ?? null)) patch.due_date = editItem.due || null
+                                        if (Object.keys(patch).length === 0 || (await updateItem(it, patch))) setEditItem(null)
+                                      }}
+                                    >
+                                      Save Changes
+                                    </button>
+                                    <button type="button" className="text-xs text-slate-600 underline" onClick={() => setEditItem(null)}>
+                                      Cancel
+                                    </button>
+                                  </span>
+                                </Can>
+                              ) : (
+                                <span className={`min-w-0 flex-1 ${it.finished_at ? 'text-slate-500 line-through' : ''}`}>
+                                  {it.item_text}
+                                  <Can permission="boards.task.assign">
+                                    {it.assignee_email && (
+                                      <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700 no-underline" title={it.assigned_auto ? 'Assigned automatically (Admin → Production Assignments)' : undefined}>
+                                        {data.people.find((p) => p.email === it.assignee_email)?.name ?? it.assignee_email}
+                                      </span>
+                                    )}
+                                  </Can>
+                                  <Can permission="boards.task.due">
+                                    {it.due_date && (
+                                      <span className={`ml-1 rounded px-1.5 py-0.5 text-xs ring-1 ${DUE_TONE[dueState(it.due_date, todayISO(), board.due_soon_days, Boolean(it.finished_at))!]}`}>
+                                        {showDate(it.due_date)}
+                                      </span>
+                                    )}
+                                  </Can>
+                                </span>
+                              )}
                               <Can permission="boards.card.timing">
                                 <span className="text-xs text-slate-500" title={[it.started_by_name && `Started by ${it.started_by_name}`, it.finished_by_name && `finished by ${it.finished_by_name}`].filter(Boolean).join(', ')}>
                                   {took && <><Icon name="timer" className="h-3.5 w-3.5" /> {took}</>}
@@ -494,6 +598,15 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                                 </Can>
                               </Can>
                               <Can permission="boards.card.checklists" level="edit">
+                                {mayEdit && editItem?.id !== it.id && (
+                                  <button
+                                    type="button"
+                                    className="text-xs text-slate-600 underline"
+                                    onClick={() => setEditItem({ id: it.id, text: it.item_text, assignee: it.assignee_email ?? '', due: it.due_date ?? '' })}
+                                  >
+                                    Edit
+                                  </button>
+                                )}
                                 {mayEdit && !sub && (
                                   <button type="button" className="text-xs text-slate-600 underline" onClick={() => { setSubFor(subFor === it.id ? null : it.id); setSubText('') }}>
                                     Add Sub-task
@@ -605,20 +718,16 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                     </div>
                     {editingComment?.id === c.id ? (
                       <Can permission="boards.card.comments" level="edit">
-                        <textarea
-                          aria-label="Edit comment"
-                          className={`${inputClass} mt-1`}
-                          rows={3}
-                          value={editingComment.body}
-                          onChange={(e) => setEditingComment({ id: c.id, body: e.target.value })}
-                        />
+                        <div className="mt-1">
+                          <RichTextEditor label="Edit comment" minHeight="4rem" value={editingComment.body} onChange={(body) => setEditingComment({ id: c.id, body })} />
+                        </div>
                         <div className="mt-1 flex gap-2">
                           <button
                             type="button"
                             className={small}
                             onClick={async () =>
-                              editingComment.body.trim() &&
-                              (await run(() => supabase!.from('board_comments').update({ body: editingComment.body.trim() }).eq('id', c.id))) &&
+                              !isEmptyRichText(editingComment.body) &&
+                              (await run(() => supabase!.from('board_comments').update({ body: editingComment.body }).eq('id', c.id))) &&
                               setEditingComment(null)
                             }
                           >
@@ -630,7 +739,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                         </div>
                       </Can>
                     ) : (
-                      <p className="mt-0.5 whitespace-pre-wrap break-words">{c.body}</p>
+                      <RichText value={c.body} className="mt-0.5 break-words" />
                     )}
                     {c.author_email === me && editingComment?.id !== c.id && (
                       <Can permission="boards.card.comments" level="edit">
@@ -653,15 +762,8 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
               </ul>
               <Can permission="boards.card.comments" level="edit">
                 <form onSubmit={addComment} className="mt-2 space-y-1.5">
-                  <textarea
-                    aria-label="New comment"
-                    className={inputClass}
-                    rows={2}
-                    placeholder="Write a comment"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                  />
-                  <button type="submit" className={secondaryButtonClass} disabled={busy || !newComment.trim()}>
+                  <RichTextEditor key={commentBox} label="New comment" minHeight="3.5rem" placeholder="Write a comment" value="" onChange={setNewComment} />
+                  <button type="submit" className={secondaryButtonClass} disabled={busy || isEmptyRichText(newComment)}>
                     Add Comment
                   </button>
                 </form>
@@ -697,7 +799,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
               <ul className="space-y-1">
                 {cardPeople.map((email) => (
                   <li key={email} className="flex items-center gap-2 text-sm">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[10px] font-semibold text-white">{initials(nameOf(email))}</span>
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-700 text-[0.625rem] font-semibold text-white">{initials(nameOf(email))}</span>
                     <span className="flex-1 truncate">{nameOf(email)}</span>
                     <Can permission="boards.card.assignees" level="edit">
                       {mayEdit && (
@@ -779,7 +881,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                 {timing(card.started_at, card.finished_at, cardPauses) && (
                   <p className="font-medium">
                     <Icon name="timer" /> {timing(card.started_at, card.finished_at, cardPauses)}
-                    {cardPauses.length > 0 && <span className="block text-[11px] font-normal text-slate-500">Active time only: paused time is not counted.</span>}
+                    {cardPauses.length > 0 && <span className="block text-[0.6875rem] font-normal text-slate-500">Active time only: paused time is not counted.</span>}
                   </p>
                 )}
                 {pauseList(cardPauses.filter((p) => card.started_at && p.paused_at >= card.started_at))}

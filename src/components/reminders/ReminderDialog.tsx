@@ -4,12 +4,15 @@ import { toast } from 'sonner'
 import { useCompany } from '../../lib/company'
 import { showDate } from '../../lib/dates'
 import { callFunction } from '../../lib/edgeFunction'
-import { fillTemplate, loadEmailTemplates, REMINDER_KEYS, splitEmails, type EmailTemplates } from '../../lib/emailTemplates'
+import { fillTemplate, fillTemplateHtml, loadEmailTemplates, REMINDER_KEYS, splitEmails, type EmailTemplates } from '../../lib/emailTemplates'
 import { formatMoney, friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
 import Can from '../Can'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
+import RichTextEditor from '../RichTextEditor'
+import SenderLine from '../email/SenderLine'
+import { isEmptyRichText } from '../../lib/richText'
 
 type Data = {
   order_id: string
@@ -57,6 +60,8 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
   const [bcc, setBcc] = useState('')
   const [subject, setSubject] = useState('')
   const [body, setBody] = useState('')
+  // Bumped when the template writes the message again (the editor starts from the new text).
+  const [bodyVersion, setBodyVersion] = useState(0)
   const [sent, setSent] = useState<Sent[]>([])
   const [problem, setProblem] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -116,12 +121,14 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
     // oxlint-disable-next-line react/set-state-in-effect
     setSubject(fillTemplate(t.subject, values))
     // oxlint-disable-next-line react/set-state-in-effect
-    setBody(fillTemplate(t.body, values))
+    setBody(fillTemplateHtml(t.body, values))
+    // oxlint-disable-next-line react/set-state-in-effect
+    setBodyVersion((n) => n + 1)
   }, [tpl, template, data, values])
 
   async function send() {
     if (!splitEmails(to).length) return toast.error('Enter at least one email address in To.')
-    if (!subject.trim() || !body.trim()) return toast.error('The email needs a subject and a message.')
+    if (!subject.trim() || isEmptyRichText(body)) return toast.error('The email needs a subject and a message.')
     setBusy(true)
     const r = await callFunction<{ message?: string }>('send-email', {
       action: 'reminder_send', order_id: orderId, payment_id: data?.payment_id ?? null, template,
@@ -132,8 +139,6 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
     toast.success(r.message || 'Reminder sent.')
     onClose()
   }
-
-  const from = tpl ? [tpl.from_name, tpl.from_address].filter(Boolean).join(' ') : ''
 
   return (
     <Modal
@@ -196,13 +201,10 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
           <Field label="Subject" htmlFor="rm-subject">
             <input id="rm-subject" className={inputClass} maxLength={300} value={subject} onChange={(e) => setSubject(e.target.value)} />
           </Field>
-          <Field label="Message" htmlFor="rm-body" hint="This is what the customer receives, on the company letterhead. Change anything before sending.">
-            <textarea id="rm-body" rows={12} className={inputClass} value={body} onChange={(e) => setBody(e.target.value)} />
+          <Field label="Message" hint="This is what the customer receives, on the company letterhead. Change anything before sending.">
+            <RichTextEditor key={bodyVersion} label="Message" minHeight="12rem" value={body} onChange={setBody} />
           </Field>
-          <p className="text-xs text-slate-500">
-            {from ? `From: ${from}. ` : ''}
-            {tpl.reply_to ? `Replies go to ${tpl.reply_to}.` : 'Replies go to the mailbox that sends the email.'} Set in Admin → Email Templates.
-          </p>
+          <SenderLine />
           {sent.length > 0 && (
             <Can permission="reminders">
               <div className="rounded border border-slate-200 p-2">

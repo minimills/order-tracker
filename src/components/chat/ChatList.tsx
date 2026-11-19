@@ -502,10 +502,10 @@ function ConversationItem({
             </span>
           </span>
           <span className="flex flex-col items-end gap-1">
-            <span className="text-[11px] text-slate-400">{chatTime(r.last_message_at)}</span>
+            <span className="text-[0.6875rem] text-slate-400">{chatTime(r.last_message_at)}</span>
             {r.unread > 0 && (
               <span
-                className={`min-w-5 rounded-full px-1.5 text-center text-[11px] font-semibold text-white ${r.mentions ? 'bg-red-600' : r.notify === 'mute' ? 'bg-slate-400' : 'bg-blue-600'}`}
+                className={`min-w-5 rounded-full px-1.5 text-center text-[0.6875rem] font-semibold text-white ${r.mentions ? 'bg-red-600' : r.notify === 'mute' ? 'bg-slate-400' : 'bg-blue-600'}`}
                 aria-label={`${r.unread} unread${r.mentions ? `, ${r.mentions} mentioning you` : ''}`}
               >
                 {r.mentions ? '@' : ''}

@@ -17,6 +17,7 @@ import { usePermissions } from '../lib/permissions'
 import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { BOARD_STAGES, type OrderSummaryRow, type Stage } from '../lib/types'
+import PrintButton from '../components/print/PrintButton'
 
 type Column = { stage: Stage; title: string; hint?: string; permission: string }
 
@@ -201,7 +202,12 @@ export default function OrdersBoardPage() {
       <div className="-m-4 flex h-[calc(100%+2rem)] flex-col p-4 md:-m-8 md:h-[calc(100%+4rem)] md:p-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Orders Board</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Orders Board</h1>
+              <Can permission="orders.board.print">
+                <PrintButton title="Orders Board" />
+              </Can>
+            </div>
             {canDrag && (
               <p className="text-sm text-slate-600">
                 Drag a card to {canChangeStage ? 'change its stage or ' : ''}its place in the queue.
@@ -237,7 +243,7 @@ export default function OrdersBoardPage() {
         ) : columns.length === 0 ? (
           <p className="text-center text-slate-500">No columns of the board are enabled for your account.</p>
         ) : (
-          <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2">
+          <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2" data-print-layout="wrap">
             {columns.map((column) => {
               const isTarget = dropTarget?.stage === column.stage
               return (

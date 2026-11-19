@@ -419,14 +419,14 @@ export default function PermissionEditor(props: Props) {
                                   <div className="min-w-0">
                                     <span>{i.label}</span>
                                     {!reviewed.has(i.key) && (
-                                      <span className="ml-2 rounded bg-blue-600 px-1.5 py-0.5 text-[10px] font-semibold text-white">New</span>
+                                      <span className="ml-2 rounded bg-blue-600 px-1.5 py-0.5 text-[0.625rem] font-semibold text-white">New</span>
                                     )}
                                     {i.db && (
                                       <span className="ml-2 text-xs text-slate-400" title="Also enforced by the database">
                                         <Icon name="lock" className="h-3.5 w-3.5" />
                                       </span>
                                     )}
-                                    <div className="font-mono text-[11px] text-slate-400">{i.key}</div>
+                                    <div className="font-mono text-[0.6875rem] text-slate-400">{i.key}</div>
                                     {i.hint && <div className="text-xs text-slate-500">{i.hint}</div>}
                                     {on && missing.length > 0 && (
                                       <div className="text-xs text-amber-700">Not visible until you also allow: {missing.map(label).join(', ')}</div>

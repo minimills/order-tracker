@@ -178,7 +178,7 @@ export default function DashboardCanvas({
                 >
                   <h2 className="min-w-[6rem] flex-1 truncate text-sm font-semibold">{widgetTitle(w)}</h2>
                   {state !== 'neutral' && (
-                    <span className={`shrink-0 rounded-full px-2 text-[11px] font-semibold text-white ${state === 'bad' ? 'bg-red-700' : 'bg-green-700'}`}>
+                    <span className={`shrink-0 rounded-full px-2 text-[0.6875rem] font-semibold text-white ${state === 'bad' ? 'bg-red-700' : 'bg-green-700'}`}>
                       {state === 'bad' ? 'Needs attention' : 'Good'}
                     </span>
                   )}
@@ -212,7 +212,7 @@ export default function DashboardCanvas({
                     <button type="button" className={btn} aria-label="Move right" onClick={() => nudge(it.i, (x) => ({ x: x.x + 1 }))}>
                       →
                     </button>
-                    <span className="ml-1 text-[11px] text-slate-500">
+                    <span className="ml-1 text-[0.6875rem] text-slate-500">
                       {it.w}×{it.h}
                     </span>
                     <button type="button" className={btn} aria-label="Narrower" onClick={() => nudge(it.i, (x) => ({ w: x.w - 1 }))}>
@@ -235,7 +235,7 @@ export default function DashboardCanvas({
                     />
                   </footer>
                 ) : (
-                  def?.kind !== 'note' && <footer className="px-3 pb-1 text-[11px] text-slate-500">{updatedText(data.loadedAt)}</footer>
+                  def?.kind !== 'note' && <footer className="px-3 pb-1 text-[0.6875rem] text-slate-500">{updatedText(data.loadedAt)}</footer>
                 )}
               </section>
             )

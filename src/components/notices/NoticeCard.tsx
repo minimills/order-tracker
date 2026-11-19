@@ -146,7 +146,7 @@ export default function NoticeCard(props: Props) {
           <span aria-hidden="true" className="absolute -top-3 left-1/2 h-6 w-20 -translate-x-1/2 -rotate-2 bg-white/60 shadow-[0_1px_2px_rgba(0,0,0,0.12)] backdrop-blur-[1px]" />
         ))}
 
-      <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide">
+      <div className="flex flex-wrap items-center gap-1.5 text-[0.6875rem] font-semibold uppercase tracking-wide">
         {n.priority !== 'normal' && <span className={`rounded px-1.5 py-0.5 ${PRIORITY[n.priority].badge}`}>{PRIORITY[n.priority].label}</span>}
         {n.category && <span className="rounded bg-black/5 px-1.5 py-0.5 text-slate-700">{n.category}</span>}
         {n.pinned && (

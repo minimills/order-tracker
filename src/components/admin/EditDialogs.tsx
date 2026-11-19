@@ -9,6 +9,7 @@ import { stageLabel } from '../../lib/stages'
 import { useOptionList } from '../../lib/useOptionList'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
 import { emailPattern, parseEmails } from '../order/customer'
+import RichTextEditor from '../RichTextEditor'
 
 type DialogProps = { onClose: () => void; onDone: (message: string) => void }
 
@@ -191,8 +192,8 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
             ))}
           </select>
         </Field>
-        <Field label="Notes" htmlFor="ao-notes" className="sm:col-span-2">
-          <textarea id="ao-notes" rows={3} className={inputClass} value={f.notes} onChange={set('notes')} />
+        <Field label="Notes" className="sm:col-span-2">
+          <RichTextEditor label="Order notes" value={f.notes} onChange={(notes) => setF((x) => ({ ...x, notes }))} />
         </Field>
       </div>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
@@ -262,8 +263,8 @@ export function AdminCustomerDialog({ customer, onClose, onDone }: DialogProps &
         <Field label="State / province" htmlFor="ac-state">
           <input id="ac-state" className={inputClass} value={f.state_province} onChange={set('state_province')} />
         </Field>
-        <Field label="Notes" htmlFor="ac-notes" className="sm:col-span-2">
-          <textarea id="ac-notes" rows={3} className={inputClass} value={f.notes} onChange={set('notes')} />
+        <Field label="Notes" className="sm:col-span-2">
+          <RichTextEditor label="Customer notes" value={f.notes} onChange={(notes) => setF((x) => ({ ...x, notes }))} />
         </Field>
       </div>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}

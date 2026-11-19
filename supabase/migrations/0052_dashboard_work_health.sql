@@ -1,4 +1,4 @@
--- 0049 Dashboard: "My Work" widget and good / bad colours
+-- 0052 Dashboard: "My Work" widget and good / bad colours
 --
 -- 1. Good and bad colours: app_settings.dashboard_charts gains `health`
 --    {widget key: {direction low | high | none, good, bad}} (Admin → Dashboard
@@ -103,3 +103,13 @@ revoke execute on function public.pay_rate_on(uuid, date), public.ts_managers_of
   public.ts_week_id(uuid, date), public.ts_log(uuid, text, jsonb, text) from authenticated;
 -- Dashboards internals: only inside the functions above.
 revoke execute on function public.dashboard_template_people(uuid), public.dashboard_copy_template(uuid, text) from authenticated;
+-- Sending mailboxes: the password is only ever read by the send-email Edge Function.
+revoke execute on function public.mailbox_for_sending(text), public.set_mailbox_status(text, boolean, text) from authenticated;
+grant execute on function public.mailbox_for_sending(text), public.set_mailbox_status(text, boolean, text) to service_role;
+revoke execute on function public.summary_business_admin_only(), public.allowed_users_summary_business(),
+  public.notifications_plain_text() from authenticated;
+
+-- Boards upgrade 2 internals: only inside the functions above.
+revoke execute on function public.board_label_for(uuid, text, text), public.board_place_card(uuid, uuid, integer),
+  public.board_target_check(uuid, uuid), public.production_assign_defaults(uuid),
+  public.orders_production_close(), public.orders_crating_changed(), public.order_machines_crating() from authenticated;

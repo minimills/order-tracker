@@ -145,7 +145,7 @@ export const WIDGETS: WidgetDef[] = [
     range: !c.now,
     filters: c.filters,
   })),
-  { key: 'work:mine', kind: 'work', title: 'My Work', group: 'Boards', description: 'Cards assigned to you and their open tasks, with Start, Pause and Finish right here. Updates live.', permission: 'dashboard.widget.my_work', w: 6, h: 6, filters: ['board'], limit: 8 },
+  { key: 'work:mine', kind: 'work', title: 'My Work', group: 'Boards', description: 'Cards and tasks assigned to you, with Start, Pause and Finish right here. Updates live.', permission: 'dashboard.widget.my_work', w: 6, h: 6, filters: ['board'], limit: 8 },
   { key: 'list:my_tasks', kind: 'list', title: 'My Tasks', group: 'Lists', description: 'Open cards assigned to you, the soonest due first.', permission: 'dashboard.widget.my_tasks', w: 6, h: 5, filters: ['board'], limit: 8 },
   { key: 'list:overdue', kind: 'list', title: 'Overdue', group: 'Lists', description: 'Your overdue cards, overdue payments and passed ship dates.', permission: 'dashboard.widget.overdue', w: 6, h: 5, limit: 10 },
   { key: 'list:next_ship_dates', kind: 'list', title: 'Next Ship Dates', group: 'Lists', description: 'Orders in the queue by expected ship date.', permission: 'dashboard.list.next_ship_dates', w: 6, h: 6, filters: ['country', 'machineType'], limit: 10 },

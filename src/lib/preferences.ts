@@ -28,6 +28,8 @@ type Prefs = {
   desktopNotifications: boolean
   /** Shop board: across (rows), list or cards. */
   shopBoardView: ShopBoardView
+  /** Shop board: order numbers lowest first (asc) or highest first (desc) (0051). */
+  shopBoardSort: 'asc' | 'desc'
   /** True once the database has answered. */
   loaded: boolean
 }
@@ -73,6 +75,7 @@ async function load(email: string) {
     sidebarCollapsed: (p.data?.sidebar_collapsed as boolean | undefined) ?? current.sidebarCollapsed,
     desktopNotifications: (p.data?.desktop_notifications as boolean | undefined) ?? current.desktopNotifications,
     shopBoardView: (p.data?.shop_board_view as ShopBoardView | undefined) ?? current.shopBoardView,
+    shopBoardSort: (p.data?.shop_board_sort as 'asc' | 'desc' | undefined) ?? current.shopBoardSort,
     loaded: true,
   }
   byEmail.set(email, next)
@@ -97,6 +100,7 @@ function localPrefs(): Prefs {
     sidebarCollapsed: readLocal('bmm.sidebar') === 'collapsed',
     desktopNotifications: readLocal('bmm.desktop') !== 'off',
     shopBoardView: (readLocal('bmm.shopview') as ShopBoardView | null) ?? 'rows',
+    shopBoardSort: readLocal('bmm.shopsort') === 'desc' ? 'desc' : 'asc',
     loaded: false,
   }
 }
@@ -106,6 +110,7 @@ function rememberLook(p: Prefs) {
   writeLocal('bmm.sidebar', p.sidebarCollapsed ? 'collapsed' : 'open')
   writeLocal('bmm.desktop', p.desktopNotifications ? 'on' : 'off')
   writeLocal('bmm.shopview', p.shopBoardView)
+  writeLocal('bmm.shopsort', p.shopBoardSort)
   applyTheme(p.theme, p.glassBase)
 }
 
@@ -140,7 +145,7 @@ export function usePreferences() {
   }
 
   /** Saves theme / sidebar / desktop choices for me (shown straight away, then saved). */
-  async function setLook(patch: Partial<Pick<Prefs, 'theme' | 'glassBase' | 'sidebarCollapsed' | 'desktopNotifications' | 'shopBoardView'>>) {
+  async function setLook(patch: Partial<Pick<Prefs, 'theme' | 'glassBase' | 'sidebarCollapsed' | 'desktopNotifications' | 'shopBoardView' | 'shopBoardSort'>>) {
     const next = { ...prefs, ...patch }
     if (email) byEmail.set(email, next)
     else Object.assign(fallback, patch)
@@ -153,6 +158,7 @@ export function usePreferences() {
     if (patch.sidebarCollapsed !== undefined) p.sidebar_collapsed = patch.sidebarCollapsed
     if (patch.desktopNotifications !== undefined) p.desktop_notifications = patch.desktopNotifications
     if (patch.shopBoardView) p.shop_board_view = patch.shopBoardView
+    if (patch.shopBoardSort) p.shop_board_sort = patch.shopBoardSort
     const { error } = await supabase.rpc('set_my_preferences', { p })
     if (error) toast.error(`Could not remember your choice: ${friendlyError(error)}`)
   }
@@ -164,6 +170,7 @@ export function usePreferences() {
     sidebarCollapsed: prefs.sidebarCollapsed,
     desktopNotifications: prefs.desktopNotifications,
     shopBoardView: prefs.shopBoardView,
+    shopBoardSort: prefs.shopBoardSort,
     setLook,
     myName: prefs.name ?? email,
     startPage: prefs.startPage,

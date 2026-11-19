@@ -6,6 +6,7 @@ import FreightDashboard from '../components/freight/FreightDashboard'
 import InsuranceSummary from '../components/freight/InsuranceSummary'
 import { usePermissions } from '../lib/permissions'
 import CratingReportPage from './CratingReportPage'
+import PrintButton from '../components/print/PrintButton'
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', permission: 'freight.dashboard' },
@@ -26,7 +27,12 @@ export default function FreightPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold">Freight</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Freight</h1>
+              <Can permission="freight.print">
+                <PrintButton title="Freight" />
+              </Can>
+            </div>
             <p className="text-sm text-slate-600">Crating, shipment cost breakdowns, freight quote requests and the insurance summary.</p>
           </div>
           <Can permission="freight.quote">
