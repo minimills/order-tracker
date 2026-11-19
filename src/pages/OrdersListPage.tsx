@@ -222,6 +222,15 @@ type Filters = {
   sort: string
   dir: 'asc' | 'desc'
   archived: boolean
+  /** Expected and actual ship date from / to (yyyy-mm-dd), delay days lowest / highest, currency, training yes / no. */
+  shipFrom: string
+  shipTo: string
+  actFrom: string
+  actTo: string
+  delayMin: string
+  delayMax: string
+  currency: string
+  training: string
 }
 
 /** Optional columns: hidden until chosen with "Columns". */
@@ -237,7 +246,20 @@ function readHidden(): string[] {
 }
 const list = (v: string | null) => (v ? v.split('|').filter(Boolean) : [])
 
-const defaultFilters: Filters = { q: '', stage: 'open', voltage: '', payment: '', sort: 'order', dir: 'asc', archived: false }
+const RANGE_KEYS = ['shipFrom', 'shipTo', 'actFrom', 'actTo', 'delayMin', 'delayMax', 'currency', 'training'] as const
+const defaultFilters: Filters = {
+  q: '', stage: 'open', voltage: '', payment: '', sort: 'order', dir: 'asc', archived: false,
+  shipFrom: '', shipTo: '', actFrom: '', actTo: '', delayMin: '', delayMax: '', currency: '', training: '',
+}
+// Rows hidden with "Hide" (remembered in this browser).
+const ROWS_KEY = 'bmm.orders.hiddenRows'
+function readHiddenRows(): string[] {
+  try {
+    return JSON.parse(localStorage.getItem(ROWS_KEY) ?? '[]') as string[]
+  } catch {
+    return []
+  }
+}
 
 function readFilters(p: URLSearchParams): Filters {
   return {
@@ -248,6 +270,7 @@ function readFilters(p: URLSearchParams): Filters {
     sort: p.get('sort') ?? defaultFilters.sort,
     dir: p.get('dir') === 'desc' ? 'desc' : 'asc',
     archived: p.get('archived') === '1',
+    ...(Object.fromEntries(RANGE_KEYS.map((k) => [k, p.get(k) ?? ''])) as Pick<Filters, (typeof RANGE_KEYS)[number]>),
   }
 }
 
@@ -293,8 +316,21 @@ export default function OrdersListPage() {
   const [params, setParams] = useSearchParams()
   const [loaded, setOrders] = useState<Row[]>([])
   const serviceInfo = useServiceInfo(
-    ['orders.list.column.training', 'orders.list.column.technician', 'orders.list.column.service_dates', 'orders.list.column.service_days'].some((k) => can(k)),
+    ['orders.list.column.training', 'orders.list.column.technician', 'orders.list.column.service_dates', 'orders.list.column.service_days', 'orders.list.filter.training'].some((k) => can(k)),
   )
+  // Rows hidden by hand, and whether they are shown again for now.
+  const [hiddenRows, setHiddenRows] = useState<string[]>(readHiddenRows)
+  const [showHiddenRows, setShowHiddenRows] = useState(false)
+  const toggleRow = (id: string) => {
+    const next = hiddenRows.includes(id) ? hiddenRows.filter((x) => x !== id) : [...hiddenRows, id]
+    setHiddenRows(next)
+    try {
+      localStorage.setItem(ROWS_KEY, JSON.stringify(next))
+    } catch {
+      // storage blocked: the choice lasts until the page is closed
+    }
+  }
+  const mayHideRows = can('orders.list.rows')
   const orders = useMemo(() => (serviceInfo.size ? loaded.map((o) => ({ ...o, service: serviceInfo.get(o.id) })) : loaded), [loaded, serviceInfo])
   const [loading, setLoading] = useState(true)
   const voltageList = useOptionList('voltage')
@@ -314,7 +350,8 @@ export default function OrdersListPage() {
     else next.delete(key)
     setParams(next, { replace: true })
   }
-  const { q, stage, voltage, payment, sort: sortKey, dir: sortDir, archived: showArchived } = filters
+  const { q, stage, voltage, payment, sort: sortKey, dir: sortDir, archived: showArchived, shipFrom, shipTo, actFrom, actTo, delayMin, delayMax, currency, training } = filters
+  const rangeCount = RANGE_KEYS.filter((k) => filters[k]).length
   useEffect(() => {
     const next = writeFilters(filters)
     for (const k of ['stages', 'voltages', 'types']) {
@@ -356,6 +393,19 @@ export default function OrdersListPage() {
       if (stages.length && !stages.includes(o.stage)) return false
       if (voltages.length && !voltages.includes(o.voltage)) return false
       if (types.length && !types.some((t) => (o.machines_list ?? '').includes(`× ${t}`))) return false
+      // Ship dates, delay, currency and training: an empty value never matches a filter that is set.
+      const exp = o.expected_ship_date ?? ''
+      if (shipFrom && (!exp || exp < shipFrom)) return false
+      if (shipTo && (!exp || exp > shipTo)) return false
+      const act = o.actual_ship_date ?? ''
+      if (actFrom && (!act || act < actFrom)) return false
+      if (actTo && (!act || act > actTo)) return false
+      if (delayMin !== '' && (o.delay_days === null || o.delay_days < Number(delayMin))) return false
+      if (delayMax !== '' && (o.delay_days === null || o.delay_days > Number(delayMax))) return false
+      if (currency && o.currency !== currency) return false
+      if (training === 'yes' && !o.service?.training_needed) return false
+      if (training === 'no' && o.service?.training_needed) return false
+      if (mayHideRows && !showHiddenRows && hiddenRows.includes(o.id)) return false
       if (words.length) {
         const text = [o.order_code, o.customer_name, o.customer_company, o.customer_country, o.customer_state_province, o.serials, o.machines_list]
           .join(' ')
@@ -375,7 +425,7 @@ export default function OrdersListPage() {
     })
     return sorted
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders, q, stage, voltage, payment, sortKey, sortDir, can, params])
+  }, [orders, q, stage, voltage, payment, sortKey, sortDir, can, params, shipFrom, shipTo, actFrom, actTo, delayMin, delayMax, currency, training, hiddenRows, showHiddenRows, mayHideRows])
 
   const outstandingByCurrency = useMemo(() => {
     const sums: Record<string, number> = {}
@@ -391,13 +441,16 @@ export default function OrdersListPage() {
   function exportCsv() {
     downloadCsv(
       `orders-${todayISO()}.csv`,
-      // Exactly what the list shows: the filtered rows and the chosen columns.
+      // Exactly what the list shows: the filtered rows (hidden rows left out) and the chosen columns.
       chosenColumns.map((c) => c.label),
-      rows.map((o) => chosenColumns.map((c) => (c.key === 'order' ? o.order_code : c.value(o)))),
+      rows.filter((o) => !(mayHideRows && hiddenRows.includes(o.id))).map((o) => chosenColumns.map((c) => (c.key === 'order' ? o.order_code : c.value(o)))),
     )
   }
 
-  const filtersOn = q || stage !== 'open' || voltage || payment || stages.length || voltages.length || types.length
+  const filtersOn = q || stage !== 'open' || voltage || payment || stages.length || voltages.length || types.length || rangeCount
+  const hiddenCount = mayHideRows ? orders.filter((o) => hiddenRows.includes(o.id)).length : 0
+  const currencies = [...new Set(orders.map((o) => o.currency))].sort()
+  const MORE_KEYS = ['orders.list.filter.checkboxes', 'orders.list.filter.ship_dates', 'orders.list.filter.delay', 'orders.list.filter.currency', 'orders.list.filter.training']
   const typeNames = [
     ...new Set(
       orders.flatMap((o) =>
@@ -411,7 +464,7 @@ export default function OrdersListPage() {
 
   return (
     <Can permission="orders.list">
-      <div className="-m-4 flex h-[calc(100%+2rem)] flex-col p-4 md:-m-8 md:h-[calc(100%+4rem)] md:p-8">
+      <div className="-m-4 flex flex-col p-4 md:-m-8 md:h-[calc(100%+4rem)] md:p-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
             <h1 className="text-2xl font-semibold">Orders List</h1>
@@ -495,9 +548,9 @@ export default function OrdersListPage() {
               ))}
             </select>
           </Can>
-          <Can permission="orders.list.filter.checkboxes">
+          <Can anyOf={MORE_KEYS}>
             <button type="button" className={`${secondaryButtonClass} whitespace-nowrap`} onClick={() => setMore(!more)} aria-expanded={more}>
-              More Filters{stages.length + voltages.length + types.length ? ` (${stages.length + voltages.length + types.length})` : ''}
+              More Filters{stages.length + voltages.length + types.length + rangeCount ? ` (${stages.length + voltages.length + types.length + rangeCount})` : ''}
             </button>
           </Can>
           <Can permission="orders.list.filter.archived">
@@ -508,8 +561,58 @@ export default function OrdersListPage() {
           </Can>
         </div>
         {more && (
-          <Can permission="orders.list.filter.checkboxes">
-            <div className="mb-3 grid gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm [grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))]">
+          <Can anyOf={MORE_KEYS}>
+            <div className="mb-3 grid gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm [grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))]">
+              <Can permission="orders.list.filter.ship_dates">
+                <fieldset>
+                  <legend className="mb-1 font-medium">Expected ship date</legend>
+                  <div className="grid gap-1">
+                    <input type="date" aria-label="Expected ship date from" className={inputClass} value={shipFrom} onChange={(e) => setFilter('shipFrom', e.target.value)} />
+                    <input type="date" aria-label="Expected ship date to" className={inputClass} value={shipTo} onChange={(e) => setFilter('shipTo', e.target.value)} />
+                  </div>
+                </fieldset>
+                <fieldset>
+                  <legend className="mb-1 font-medium">Actual ship date</legend>
+                  <div className="grid gap-1">
+                    <input type="date" aria-label="Actual ship date from" className={inputClass} value={actFrom} onChange={(e) => setFilter('actFrom', e.target.value)} />
+                    <input type="date" aria-label="Actual ship date to" className={inputClass} value={actTo} onChange={(e) => setFilter('actTo', e.target.value)} />
+                  </div>
+                </fieldset>
+              </Can>
+              <Can permission="orders.list.filter.delay">
+                <fieldset>
+                  <legend className="mb-1 font-medium">Delay (days)</legend>
+                  <div className="grid grid-cols-2 gap-1">
+                    <input inputMode="numeric" aria-label="Delay at least" placeholder="Lowest" className={inputClass} value={delayMin} onChange={(e) => setFilter('delayMin', e.target.value.replace(/[^0-9-]/g, ''))} />
+                    <input inputMode="numeric" aria-label="Delay at most" placeholder="Highest" className={inputClass} value={delayMax} onChange={(e) => setFilter('delayMax', e.target.value.replace(/[^0-9-]/g, ''))} />
+                  </div>
+                  <p className="mt-1 text-xs text-slate-500">Negative = shipped early. Only shipped orders have a delay.</p>
+                </fieldset>
+              </Can>
+              <Can permission="orders.list.filter.currency">
+                <fieldset>
+                  <legend className="mb-1 font-medium">Currency</legend>
+                  <select aria-label="Currency" className={inputClass} value={currency} onChange={(e) => setFilter('currency', e.target.value)}>
+                    <option value="">Any currency</option>
+                    {currencies.map((c) => (
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
+                    ))}
+                  </select>
+                </fieldset>
+              </Can>
+              <Can permission="orders.list.filter.training">
+                <fieldset>
+                  <legend className="mb-1 font-medium">On-site training</legend>
+                  <select aria-label="On-site training" className={inputClass} value={training} onChange={(e) => setFilter('training', e.target.value)}>
+                    <option value="">Any</option>
+                    <option value="yes">Training needed</option>
+                    <option value="no">No training</option>
+                  </select>
+                </fieldset>
+              </Can>
+              <Can permission="orders.list.filter.checkboxes">
               {(
                 [
                   ['stages', 'Stages', STAGES.map((x) => [x, stageLabel(x)])],
@@ -529,11 +632,12 @@ export default function OrdersListPage() {
                   </div>
                 </fieldset>
               ))}
+              </Can>
             </div>
           </Can>
         )}
 
-        <div className="min-h-0 flex-1 overflow-auto rounded-md border border-slate-300 bg-white">
+        <div className="max-h-[40rem] min-h-64 flex-1 overflow-auto rounded-md border border-slate-300 bg-white md:max-h-none">
           <table className="min-w-full border-collapse text-sm">
             <thead className="sticky top-0 z-10 bg-slate-100">
               <tr>
@@ -554,6 +658,13 @@ export default function OrdersListPage() {
                     </th>
                   </Can>
                 ))}
+                {mayHideRows && (
+                  <Can permission="orders.list.rows">
+                    <th className="border-b border-slate-300 px-2 py-1.5 text-left font-semibold text-slate-700" data-print="hide">
+                      <span className="sr-only">Hide row</span>
+                    </th>
+                  </Can>
+                )}
               </tr>
             </thead>
             <tbody>
@@ -575,7 +686,7 @@ export default function OrdersListPage() {
                 <tr
                   key={o.id}
                   onClick={opensOrders ? () => navigate(`/orders/${o.id}`) : undefined}
-                  className={`odd:bg-white even:bg-slate-50 ${opensOrders ? 'cursor-pointer hover:bg-blue-50' : ''} ${o.archived ? 'text-slate-400' : ''}`}
+                  className={`odd:bg-white even:bg-slate-50 ${opensOrders ? 'cursor-pointer hover:bg-blue-50' : ''} ${o.archived || hiddenRows.includes(o.id) ? 'text-slate-400' : ''}`}
                 >
                   {visibleColumns.map((c) => (
                     <Can key={c.key} permission={c.permission}>
@@ -584,6 +695,23 @@ export default function OrdersListPage() {
                       </td>
                     </Can>
                   ))}
+                  {mayHideRows && (
+                    <Can permission="orders.list.rows">
+                      <td className="border-b border-slate-200 px-2 py-1 whitespace-nowrap" data-print="hide">
+                        <button
+                          type="button"
+                          className="text-xs text-slate-600 underline"
+                          aria-label={`${hiddenRows.includes(o.id) ? 'Show' : 'Hide'} order ${o.order_code}`}
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            toggleRow(o.id)
+                          }}
+                        >
+                          {hiddenRows.includes(o.id) ? 'Show' : 'Hide'}
+                        </button>
+                      </td>
+                    </Can>
+                  )}
                 </tr>
               ))}
             </tbody>
@@ -593,8 +721,15 @@ export default function OrdersListPage() {
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
           <span>
             {rows.length} of {orders.length} order{orders.length === 1 ? '' : 's'}
+            {hiddenCount > 0 && (
+              <Can permission="orders.list.rows">
+                <button type="button" className="ml-3 underline" onClick={() => setShowHiddenRows(!showHiddenRows)}>
+                  {showHiddenRows ? `Leave Out Hidden Rows (${hiddenCount})` : `Show Hidden Rows (${hiddenCount})`}
+                </button>
+              </Can>
+            )}
             {filtersOn && (
-              <Can anyOf={['orders.list.filter.search', 'orders.list.filter.stage', 'orders.list.filter.voltage', 'orders.list.filter.payment']}>
+              <Can anyOf={['orders.list.filter.search', 'orders.list.filter.stage', 'orders.list.filter.voltage', 'orders.list.filter.payment', ...MORE_KEYS]}>
                 <button
                   type="button"
                   className="ml-3 underline"

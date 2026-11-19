@@ -70,6 +70,21 @@ function paint() {
   if (current === 'glass' && !root.classList.contains('glass-lite')) measureOnce()
 }
 media?.addEventListener('change', () => paint())
+
+// Paper always gets the light colours: the dark and glass looks are switched
+// off while the browser prints (Ctrl+P, Print buttons, print pages) and come back after.
+if (typeof window !== 'undefined') {
+  let printing: string[] = []
+  window.addEventListener('beforeprint', () => {
+    const root = document.documentElement
+    printing = ['dark', 'glass', 'glass-lite'].filter((c) => root.classList.contains(c))
+    root.classList.remove(...printing)
+  })
+  window.addEventListener('afterprint', () => {
+    document.documentElement.classList.add(...printing)
+    printing = []
+  })
+}
 for (const m of lessGlass) m?.addEventListener('change', () => paint())
 
 /** Puts the theme on the page (classes "dark", "glass" and "glass-lite" on <html>; see src/dark.css and src/index.css). */

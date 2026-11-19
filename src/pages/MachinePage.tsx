@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
 import Icon, { type IconName } from '../components/Icon'
@@ -12,6 +12,7 @@ import { friendlyError } from '../lib/format'
 import { richTextInline } from '../lib/richText'
 import { supabase } from '../lib/supabase'
 import { ACTION } from '../lib/wording'
+import { useStageLabels } from '../lib/stages'
 import CeIssueDialog from '../components/ce/CeIssueDialog'
 import CeRegister from '../components/ce/CeRegister'
 import PrintButton from '../components/print/PrintButton'
@@ -41,7 +42,21 @@ type Details = {
   owners: Owner[]
   timeline: Event[]
 }
-type Found = { machine_id: string; serial: string | null; machine: string; order_code: string; owner: string | null }
+/** One row of machine_list() (0051). */
+type ListRow = {
+  machine_id: string
+  serial: string | null
+  model: string
+  code: string | null
+  customer: string | null
+  country: string | null
+  order_id: string
+  order_code: string
+  order_number: number | null
+  stage: string
+  built: boolean
+  check_signed: boolean
+}
 
 const KIND: Record<string, { icon: IconName; tone: string }> = {
   order: { icon: 'receipt', tone: 'bg-slate-500' },
@@ -61,8 +76,16 @@ const ownerName = (o: { name: string; company: string | null }) => o.company || 
 export default function MachinePage() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const [q, setQ] = useState('')
-  const [found, setFound] = useState<Found[] | null>(null)
+  // The search box narrows the list as people type; kept in the address (?q=).
+  const [params, setParams] = useSearchParams()
+  const q = params.get('q') ?? ''
+  const setQ = (v: string) => setParams((p) => {
+    if (v) p.set('q', v)
+    else p.delete('q')
+    return p
+  }, { replace: true })
+  const [all, setAll] = useState<ListRow[] | null>(null)
+  const label = useStageLabels()
   const [m, setM] = useState<Details | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [transfer, setTransfer] = useState(false)
@@ -80,16 +103,32 @@ export default function MachinePage() {
     // oxlint-disable-next-line react/set-state-in-effect
     load()
   }, [load])
+  // Every machine, once, for the list (only on /machines).
+  useEffect(() => {
+    if (!supabase || id) return
+    supabase.rpc('machine_list').then(({ data, error: e }) => {
+      if (e) return void toast.error(friendlyError(e))
+      setAll((data as ListRow[]) ?? [])
+    })
+  }, [id])
+  const statusOf = (r: ListRow) =>
+    r.stage === 'Shipped' ? label('Shipped') : r.stage === 'Cancelled' ? label('Cancelled') : r.check_signed ? 'Final check complete' : r.built ? 'Built' : `Not built · ${label(r.stage)}`
+  const shown = useMemo(() => {
+    const words = q.toLowerCase().split(/\s+/).filter(Boolean)
+    if (!all || words.length === 0) return all ?? []
+    return all.filter((r) => {
+      const text = [r.serial, r.model, r.code, r.customer, r.country, r.order_code].join(' ').toLowerCase()
+      return words.every((w) => text.includes(w))
+    })
+  }, [all, q])
   useBreadcrumbs(id ? m && [{ label: 'Machines', to: '/machines' }, { label: [m.machine_type, m.serial].filter(Boolean).join(' ') }] : [{ label: 'Machines' }])
 
-  async function search(e?: React.FormEvent) {
-    e?.preventDefault()
-    if (!supabase || q.trim().length < 2) return
-    const { data, error: err } = await supabase.rpc('find_machines', { p_query: q.trim() })
-    if (err) return toast.error(friendlyError(err))
-    const list = (data as Found[]) ?? []
-    setFound(list)
-    if (list.length === 1 && list[0].serial?.toLowerCase() === q.trim().toLowerCase()) navigate(`/machines/${list[0].machine_id}`)
+  function search(e: React.FormEvent) {
+    e.preventDefault()
+    // On a machine's page: back to the list, narrowed. On the list: one exact serial opens it.
+    if (id) return navigate(`/machines${q.trim() ? `?q=${encodeURIComponent(q.trim())}` : ''}`)
+    const exact = shown.filter((r) => r.serial?.toLowerCase() === q.trim().toLowerCase())
+    if (exact.length === 1) navigate(`/machines/${exact[0].machine_id}`)
   }
 
   return (
@@ -115,48 +154,75 @@ export default function MachinePage() {
                 </span>
               </div>
             ) : (
-              <p className="mt-1 text-sm text-slate-600">Find a machine by its serial number to see its owners and its whole history.</p>
+              <p className="mt-1 text-sm text-slate-600">Every machine. Type to narrow the list; open a machine to see its owners and its whole history.</p>
             )}
           </div>
           <Can permission="machines.search">
             <form onSubmit={search} className="flex w-full gap-2 sm:w-auto" role="search">
               <input
-                aria-label="Serial number"
-                className={`${inputClass} sm:w-56`}
-                placeholder="Serial number, for example LCR-2073"
+                type="search"
+                aria-label="Search machines"
+                className={`${inputClass} sm:w-72`}
+                placeholder="Serial, model, customer, country or order #"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
-              <button type="submit" className={buttonClass}>
-                Find
-              </button>
+              {id && (
+                <button type="submit" className={buttonClass}>
+                  Find
+                </button>
+              )}
             </form>
           </Can>
         </div>
 
-        {found && (
-          <section className="rounded-lg border border-slate-200 bg-white text-sm" aria-label="Search results">
-            {found.length === 0 ? (
-              <p className="p-4 text-slate-500">No machine matches “{q}”.</p>
+        {!id && (
+          <section className="min-w-0 rounded-lg border border-slate-200 bg-white text-sm" aria-label="Machines" data-print-section="Machines">
+            {all === null ? (
+              <p className="p-4 text-slate-500">Loading…</p>
+            ) : shown.length === 0 ? (
+              <p className="p-4 text-slate-500">{all.length === 0 ? 'No machines have been entered yet.' : `No machine matches “${q}”.`}</p>
             ) : (
-              <ul className="divide-y divide-slate-100">
-                {found.map((f) => (
-                  <li key={f.machine_id}>
-                    <Link
-                      to={`/machines/${f.machine_id}`}
-                      onClick={() => setFound(null)}
-                      className="flex flex-wrap items-center gap-x-3 gap-y-0.5 px-4 py-2 hover:bg-slate-50"
-                    >
-                      <span className="font-mono font-semibold">{f.serial ?? 'No serial'}</span>
-                      <span>{f.machine}</span>
-                      <span className="text-slate-500">
-                        order {f.order_code}
-                        {f.owner && ` · owner ${f.owner}`}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[40rem] border-collapse text-left">
+                  <thead className="bg-slate-50 text-xs text-slate-600">
+                    <tr>
+                      <th className="px-3 py-2 font-semibold">Serial number</th>
+                      <th className="px-3 py-2 font-semibold">Model</th>
+                      <th className="px-3 py-2 font-semibold">Customer</th>
+                      <th className="px-3 py-2 font-semibold">Order</th>
+                      <th className="px-3 py-2 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {shown.map((r) => (
+                      <tr key={r.machine_id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate(`/machines/${r.machine_id}`)}>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          {r.serial ? <SerialNumber serial={r.serial} className="font-semibold" /> : <span className="text-slate-500">No serial yet</span>}
+                        </td>
+                        <td className="px-3 py-2">
+                          <Link to={`/machines/${r.machine_id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
+                            {r.model}
+                          </Link>
+                        </td>
+                        <td className="px-3 py-2">
+                          {r.customer ?? '—'}
+                          {r.country && <span className="text-slate-500"> · {countryFlag(r.country)} {r.country}</span>}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">{r.order_code}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <span className={r.stage === 'Shipped' || r.check_signed || r.built ? 'text-green-700' : r.stage === 'Cancelled' ? 'text-slate-500' : 'text-slate-700'}>
+                            {statusOf(r)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
+                  {shown.length === all.length ? `${all.length} machines` : `${shown.length} of ${all.length} machines`}
+                </p>
+              </div>
             )}
           </section>
         )}
