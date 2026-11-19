@@ -48,7 +48,7 @@ export default function ChatSettings({
         <Can permission="settings.chat_swipe" level="edit">
           <div className="space-y-2">
             <h2 className="text-base font-semibold">Chat Swipe Actions</h2>
-            <p className="text-slate-600">On a phone, swipe a conversation in the list to do this. On a computer the same actions appear when you point at a conversation.</p>
+            <p className="text-slate-600">Swipe a conversation in the list: with a finger on a phone, or on a computer by dragging it with the mouse or swiping two fingers on the trackpad. A short swipe shows this action, a longer one shows more actions, and a long full swipe does this action straight away (with Undo for a few seconds). On a computer the actions also appear when you point at a conversation.</p>
             {(
               [
                 ['swipe_left', 'Swipe left', 'sw-left'],

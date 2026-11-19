@@ -8,7 +8,7 @@ import type { Layouts } from './gridLayout'
  * database as well).
  */
 
-export type WidgetKind = 'kpi' | 'chart' | 'list' | 'board' | 'calendar' | 'events' | 'holidays' | 'whos_off' | 'notices' | 'chats' | 'freight' | 'labour' | 'note' | 'schedule'
+export type WidgetKind = 'kpi' | 'chart' | 'list' | 'board' | 'calendar' | 'events' | 'holidays' | 'whos_off' | 'notices' | 'chats' | 'freight' | 'labour' | 'note' | 'schedule' | 'work'
 
 export type WidgetDef = {
   key: string
@@ -47,6 +47,53 @@ export type Widget = {
   limit?: number
   /** Personal note text. */
   text?: string
+  /** Good / bad colours for this widget only (else the company setting, else the built-in default). */
+  health?: Health
+}
+
+/**
+ * Good and bad colours of a widget's number: whether a higher number is better
+ * or worse, and the limits. Lower is better: green below `good`, red above
+ * `bad`. Higher is better: green above `good`, red below `bad`. Between the two
+ * (or direction none) the widget keeps its normal colour; when both apply, red wins.
+ */
+export type Health = { direction: 'low' | 'high' | 'none'; good: number; bad: number }
+export type HealthState = 'good' | 'bad' | 'neutral'
+export const HEALTH_DIRECTIONS: { value: Health['direction']; label: string }[] = [
+  { value: 'high', label: 'Higher is better' },
+  { value: 'low', label: 'Lower is better' },
+  { value: 'none', label: 'Neutral (no colours)' },
+]
+const NONE: Health = { direction: 'none', good: 0, bad: 0 }
+/** Built-in defaults (Admin → Dashboard Charts can change them for every dashboard). */
+export const HEALTH_DEFAULTS: Record<string, Health> = {
+  'kpi:payments_overdue': { direction: 'low', good: 1, bad: 0 },
+  'kpi:average_delay': { direction: 'low', good: 0, bad: 0 },
+  'list:overdue': { direction: 'low', good: 1, bad: 0 },
+  'chart:delay_by_month': { direction: 'low', good: 0, bad: 0 },
+  'chart:delay_by_year': { direction: 'low', good: 0, bad: 0 },
+  'chart:department_delays': { direction: 'low', good: 0, bad: 0 },
+  'chart:on_time': { direction: 'high', good: 89, bad: 75 },
+  'chart:payments_on_time': { direction: 'high', good: 89, bad: 75 },
+}
+/** Widgets that show one number the colours can judge (for charts: the headline number). */
+export const healthWidgets = () => WIDGETS.filter((w) => (w.kind === 'kpi' && w.key !== 'kpi:money_owed') || w.key === 'list:overdue' || (w.kind === 'chart' && w.key !== 'chart:outstanding'))
+/** The number each widget's colours judge, in words. */
+export const healthValueText = (key: string) =>
+  key === 'list:overdue' ? 'number of overdue items' : key.startsWith('kpi:') ? (key === 'kpi:average_delay' ? 'average days late' : 'the number shown') : 'the headline number'
+/** The colours in force for one widget. */
+export function healthFor(w: Pick<Widget, 'key' | 'health'>, company?: Record<string, Health>): Health {
+  return w.health ?? company?.[w.key] ?? HEALTH_DEFAULTS[w.key] ?? NONE
+}
+export function healthState(value: number | null | undefined, h: Health): HealthState {
+  if (value == null || Number.isNaN(value) || h.direction === 'none') return 'neutral'
+  if (h.direction === 'low') return value > h.bad ? 'bad' : value < h.good ? 'good' : 'neutral'
+  return value < h.bad ? 'bad' : value > h.good ? 'good' : 'neutral'
+}
+/** "Green below 0, red above 0." */
+export function healthWords(h: Health) {
+  if (h.direction === 'none') return 'No colours.'
+  return h.direction === 'low' ? `Green below ${h.good}, red above ${h.bad}.` : `Green above ${h.good}, red below ${h.bad}.`
 }
 
 export type Dashboard = {
@@ -98,6 +145,7 @@ export const WIDGETS: WidgetDef[] = [
     range: !c.now,
     filters: c.filters,
   })),
+  { key: 'work:mine', kind: 'work', title: 'My Work', group: 'Boards', description: 'Cards assigned to you and their open tasks, with Start, Pause and Finish right here. Updates live.', permission: 'dashboard.widget.my_work', w: 6, h: 6, filters: ['board'], limit: 8 },
   { key: 'list:my_tasks', kind: 'list', title: 'My Tasks', group: 'Lists', description: 'Open cards assigned to you, the soonest due first.', permission: 'dashboard.widget.my_tasks', w: 6, h: 5, filters: ['board'], limit: 8 },
   { key: 'list:overdue', kind: 'list', title: 'Overdue', group: 'Lists', description: 'Your overdue cards, overdue payments and passed ship dates.', permission: 'dashboard.widget.overdue', w: 6, h: 5, limit: 10 },
   { key: 'list:next_ship_dates', kind: 'list', title: 'Next Ship Dates', group: 'Lists', description: 'Orders in the queue by expected ship date.', permission: 'dashboard.list.next_ship_dates', w: 6, h: 6, filters: ['country', 'machineType'], limit: 10 },

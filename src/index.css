@@ -186,6 +186,21 @@ html.glass.dark .widget-frame {
   background: rgb(30 41 59 / 0.5) !important;
   border-color: rgb(255 255 255 / 0.1) !important;
 }
+/* good / bad colours of a widget stay visible on glass */
+html.glass .widget-frame.widget-bad {
+  border-color: rgb(220 38 38) !important;
+  background: rgb(254 226 226 / 0.7) !important;
+}
+html.glass .widget-frame.widget-good {
+  border-color: rgb(22 163 74) !important;
+  background: rgb(220 252 231 / 0.7) !important;
+}
+html.glass.dark .widget-frame.widget-bad {
+  background: rgb(127 29 29 / 0.55) !important;
+}
+html.glass.dark .widget-frame.widget-good {
+  background: rgb(20 83 45 / 0.55) !important;
+}
 /* the content of a widget stays solid */
 html.glass .widget-frame > header {
   border-bottom-color: transparent;
