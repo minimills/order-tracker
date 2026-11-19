@@ -10,6 +10,7 @@ import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
 import { addDays } from '../lib/schedule'
 import { supabase } from '../lib/supabase'
+import PrintButton from '../components/print/PrintButton'
 
 type StepRow = {
   id: string
@@ -168,7 +169,12 @@ export default function BuildTimesPage() {
       <div className="mx-auto max-w-6xl space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Build Times</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Build Times</h1>
+              <Can permission="reports.build_times.print">
+                <PrintButton title="Build Times" />
+              </Can>
+            </div>
             <p className="text-sm text-slate-600">
               How long each step really takes, from the production boards. A step starts when Start Stage is pressed (or when the card arrives in the stage) and
               ends when Finish Stage is pressed (or when the card moves on).

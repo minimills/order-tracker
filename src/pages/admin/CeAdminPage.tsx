@@ -172,8 +172,8 @@ export default function CeAdminPage() {
           <Field label="Email subject" htmlFor="ce-subject-default" className="sm:col-span-2">
             <input id="ce-subject-default" className={inputClass} value={s.email_subject} onChange={set('email_subject')} />
           </Field>
-          <Field label="Email message" htmlFor="ce-message-default" className="sm:col-span-2" hint={`Placeholders: ${PLACEHOLDER_HINT}`}>
-            <textarea id="ce-message-default" rows={7} className={inputClass} value={s.email_message} onChange={set('email_message')} />
+          <Field label="Email message" className="sm:col-span-2" hint={`Placeholders: ${PLACEHOLDER_HINT}`}>
+            <RichTextEditor key={`msg-${version}`} label="Email message" minHeight="8rem" value={s.email_message} onChange={(email_message) => setS((x) => (x ? { ...x, email_message } : x))} />
           </Field>
         </div>
         <Can permission="admin.ce" level="edit">

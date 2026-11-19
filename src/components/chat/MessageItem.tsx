@@ -100,7 +100,7 @@ export default function MessageItem({
       {showHeader && (
         <div className="flex items-baseline gap-2 pt-1">
           <span className="text-sm font-semibold">{m.author_name ?? 'Someone'}</span>
-          <span className="text-[11px] text-slate-400">{clockTime(m.created_at)}</span>
+          <span className="text-[0.6875rem] text-slate-400">{clockTime(m.created_at)}</span>
         </div>
       )}
       {m.reply_to && (
@@ -131,7 +131,7 @@ export default function MessageItem({
         <Can permission="chat.unsend" level="edit">
           <button
             type="button"
-            className="mt-0.5 rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+            className="mt-0.5 rounded border border-slate-300 bg-white px-2 py-0.5 text-[0.6875rem] font-medium text-slate-700 hover:bg-slate-50"
             onClick={(e) => {
               e.stopPropagation()
               onUnsend()
@@ -141,7 +141,7 @@ export default function MessageItem({
           </button>
         </Can>
       )}
-      <div className="flex flex-wrap items-center gap-x-2 text-[11px] text-slate-400">
+      <div className="flex flex-wrap items-center gap-x-2 text-[0.6875rem] text-slate-400">
         {!showHeader && <span className="opacity-0 group-hover:opacity-100">{clockTime(m.created_at)}</span>}
         {m.edited_at && !m.deleted_at && <span>(edited)</span>}
         {m.pinned_at && <span className="text-amber-700">Pinned{m.pinned_by ? ` by ${m.pinned_by}` : ''}</span>}

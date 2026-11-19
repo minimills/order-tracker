@@ -8,6 +8,7 @@ import ChangeEmail from '../components/settings/ChangeEmail'
 import ChatSettings from '../components/settings/ChatSettings'
 import DailySummary from '../components/settings/DailySummary'
 import MySignature from '../components/settings/MySignature'
+import MyMailbox from '../components/settings/MyMailbox'
 import { useAuth } from '../lib/auth'
 import { usePermissions } from '../lib/permissions'
 import { ADMIN_KEYS } from '../lib/permissions/catalog'
@@ -61,6 +62,15 @@ export default function SettingsPage() {
             <section className={card} data-setting="change-email">
               <h2 className="mb-2 font-semibold">Change Sign-in Email</h2>
               <ChangeEmail />
+            </section>
+          </Can>
+
+          <Can permission="settings.mailbox">
+            <section className={`${card} [grid-column:1/-1] lg:[grid-column:auto]`} data-setting="my-email">
+              <h2 className="mb-2 flex items-center gap-2 font-semibold">
+                <Icon name="mail" /> Email
+              </h2>
+              <MyMailbox />
             </section>
           </Can>
 

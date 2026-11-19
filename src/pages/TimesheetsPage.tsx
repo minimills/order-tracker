@@ -7,6 +7,7 @@ import TimesheetReports from '../components/timesheets/TimesheetReports'
 import WeeksOverview from '../components/timesheets/WeeksOverview'
 import { usePermissions } from '../lib/permissions'
 import { TIMESHEET_KEYS } from '../lib/permissions/catalog'
+import PrintButton from '../components/print/PrintButton'
 
 const TABS = [
   { key: 'weeks', label: 'Weekly Hours', permission: 'timesheets' },
@@ -27,7 +28,12 @@ export default function TimesheetsPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold">Timesheets</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Timesheets</h1>
+              <Can permission="timesheets.print">
+                <PrintButton title="Timesheets" />
+              </Can>
+            </div>
             <p className="text-sm text-slate-600">Hours, overtime, banked hours, time off and payroll reports.</p>
           </div>
           <Can permission="timesheets.time_off">

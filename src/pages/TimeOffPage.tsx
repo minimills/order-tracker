@@ -11,6 +11,7 @@ import { friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import { isoDow, showHours, STATUS_WORDS, TIME_OFF_KINDS, timeOffLabel, useTsPeople, type Balances } from '../lib/timesheets'
 import { ACTION } from '../lib/wording'
+import PrintButton from '../components/print/PrintButton'
 
 type Request = {
   id: string
@@ -123,7 +124,12 @@ export default function TimeOffPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">Time Off</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-semibold">Time Off</h1>
+            <Can permission="timesheets.time_off.print">
+              <PrintButton title="Time Off" />
+            </Can>
+          </div>
           <p className="text-sm text-slate-600">Requests go to the department manager, who approves or declines them. Approved days are added to the timesheet.</p>
         </div>
         <Can permission="timesheets.time_off.request" level="edit">

@@ -9,6 +9,7 @@ import { useAuth } from '../lib/auth'
 import type { Board } from '../lib/boards'
 import { friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
+import PrintButton from '../components/print/PrintButton'
 
 type Row = Board & { board_shares: { id: string }[] }
 
@@ -61,7 +62,12 @@ export default function BoardsPage() {
       <div className="mx-auto max-w-6xl space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Boards</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Boards</h1>
+              <Can permission="boards.print">
+                <PrintButton title="Boards" />
+              </Can>
+            </div>
             <p className="text-sm text-slate-600">Your own boards and boards shared with you, with cards organised in stages.</p>
           </div>
           <div className="flex items-center gap-4">

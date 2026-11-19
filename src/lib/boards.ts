@@ -7,6 +7,7 @@ import type { ServiceCallInfo } from './service'
  */
 import { addDays, differenceInCalendarDays, parseISO } from 'date-fns'
 import { supabase } from './supabase'
+import { richTextInline } from './richText'
 
 export type ChecklistPreset = { title: string; items: string[] }
 
@@ -257,7 +258,7 @@ export function eventText(e: CardEvent) {
     case 'task_reopened': return `Marked “${d.task}” incomplete`
     case 'paused': return `Paused${d.task ? ` “${d.task}”` : ' the timer'}${d.note ? `: ${d.note}` : ''}`
     case 'resumed': return `Resumed${d.task ? ` “${d.task}”` : ' the timer'}${d.seconds != null ? ` after ${formatDuration(Number(d.seconds))}` : ''}`
-    case 'comment': return `Added a comment: “${d.excerpt}”`
+    case 'comment': return `Added a comment: “${richTextInline(String(d.excerpt ?? ''))}”`
     case 'leftover_split': return `${d.count} unfinished item${Number(d.count) === 1 ? '' : 's'} moved to a leftover card in ${d.stage}`
     case 'leftover_created': return `Leftover card created for ${d.machine} (${d.stage})`
     case 'leftover_merged': return `${d.count} leftover item${Number(d.count) === 1 ? '' : 's'} merged back as completed (${d.reason})`

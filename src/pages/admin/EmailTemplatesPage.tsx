@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import AdminPageHeader from '../../components/admin/AdminPageHeader'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../../components/form'
+import RichTextEditor from '../../components/RichTextEditor'
 import { EMAIL_TEMPLATE_DEFAULTS, loadEmailTemplates, REMINDER_KEYS, REMINDER_PLACEHOLDERS, WELCOME_PLACEHOLDERS, type EmailTemplates } from '../../lib/emailTemplates'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
@@ -46,7 +47,8 @@ export default function EmailTemplatesPage() {
 
   if (!t) return <p className="text-sm text-slate-500">Loading…</p>
   const dirty = JSON.stringify(t) !== saved
-  const setReminder = (k: string, patch: Partial<{ name: string; subject: string; body: string }>) => setT({ ...t, reminders: { ...t.reminders, [k]: { ...t.reminders[k], ...patch } } })
+  const setReminder = (k: string, patch: Partial<{ name: string; subject: string; body: string }>) =>
+    setT((x) => (x ? { ...x, reminders: { ...x.reminders, [k]: { ...x.reminders[k], ...patch } } } : x))
 
   return (
     <div className="space-y-4">
@@ -56,19 +58,14 @@ export default function EmailTemplatesPage() {
       <div className="max-w-3xl space-y-4">
         <section className={card} data-setting="et-sender">
           <div>
-            <h2 className="text-base font-semibold">Sender of Customer Reminders</h2>
-            <p className="text-slate-600">Who a reminder comes from and where the customer’s reply goes. Leave a box empty to use the mailbox that sends the app’s emails.</p>
+            <h2 className="text-base font-semibold">Office Sending Address</h2>
+            <p className="text-slate-600">
+              Emails a person sends (reminders, certificates, quotes and so on) come from their own mailbox when they connected one in Settings → Email. Otherwise they come from
+              this office address with that person’s name as the sender, and replies go to that person’s email. Leave it empty to use the mailbox that sends the app’s emails.
+            </p>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="From name" htmlFor="et-from-name" hint="For example Belfast Mini Mills Accounts.">
-              <input id="et-from-name" className={inputClass} maxLength={80} value={t.from_name} onChange={(e) => setT({ ...t, from_name: e.target.value })} />
-            </Field>
-            <Field label="From address" htmlFor="et-from-address" hint="Only an address your mailbox is allowed to send as; otherwise the email may be refused or land in spam.">
-              <input id="et-from-address" type="email" className={inputClass} value={t.from_address} onChange={(e) => setT({ ...t, from_address: e.target.value })} />
-            </Field>
-          </div>
-          <Field label="Reply-to address" htmlFor="et-reply-to" hint="Customer replies go here, for example the accounts mailbox.">
-            <input id="et-reply-to" type="email" className={inputClass} value={t.reply_to} onChange={(e) => setT({ ...t, reply_to: e.target.value })} />
+          <Field label="Office from address" htmlFor="et-from-address" hint="Only an address your mailbox is allowed to send as; otherwise the email may be refused or land in spam.">
+            <input id="et-from-address" type="email" className={inputClass} value={t.from_address} onChange={(e) => setT({ ...t, from_address: e.target.value })} />
           </Field>
         </section>
 
@@ -95,8 +92,8 @@ export default function EmailTemplatesPage() {
                   <Field label="Subject" htmlFor={`et-r-${k}-subject`}>
                     <input id={`et-r-${k}-subject`} className={inputClass} maxLength={300} value={t.reminders[k].subject} onChange={(e) => setReminder(k, { subject: e.target.value })} />
                   </Field>
-                  <Field label="Message" htmlFor={`et-r-${k}-body`}>
-                    <textarea id={`et-r-${k}-body`} rows={10} maxLength={8000} className={inputClass} value={t.reminders[k].body} onChange={(e) => setReminder(k, { body: e.target.value })} />
+                  <Field label="Message">
+                    <RichTextEditor label={`${t.reminders[k].name} message`} minHeight="10rem" value={t.reminders[k].body} onChange={(body) => setReminder(k, { body })} />
                   </Field>
                 </div>
               )}
@@ -115,8 +112,8 @@ export default function EmailTemplatesPage() {
           <Field label="Subject" htmlFor="et-welcome-subject">
             <input id="et-welcome-subject" className={inputClass} maxLength={300} value={t.welcome.subject} onChange={(e) => setT({ ...t, welcome: { ...t.welcome, subject: e.target.value } })} />
           </Field>
-          <Field label="Message" htmlFor="et-welcome-body">
-            <textarea id="et-welcome-body" rows={16} maxLength={8000} className={inputClass} value={t.welcome.body} onChange={(e) => setT({ ...t, welcome: { ...t.welcome, body: e.target.value } })} />
+          <Field label="Message">
+            <RichTextEditor label="Welcome message" minHeight="14rem" value={t.welcome.body} onChange={(body) => setT((x) => (x ? { ...x, welcome: { ...x.welcome, body } } : x))} />
           </Field>
         </section>
 

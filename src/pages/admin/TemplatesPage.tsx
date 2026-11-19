@@ -114,12 +114,12 @@ export default function TemplatesPage() {
         </Field>
         <div>
           <p className="mb-1 text-sm font-medium text-slate-700">Part 1 (above the machine table)</p>
-          <RichTextEditor key={`p1-${version}`} headings label="Part 1" value={t.part1} onChange={(part1) => setT({ ...t, part1 })} />
+          <RichTextEditor key={`p1-${version}`} label="Part 1" value={t.part1} onChange={(part1) => setT({ ...t, part1 })} />
         </div>
         <p className="rounded bg-slate-50 p-2 text-center text-sm text-slate-500">The table of machines and serial numbers from the order goes here.</p>
         <div>
           <p className="mb-1 text-sm font-medium text-slate-700">Part 2 (below the table, above the signatures)</p>
-          <RichTextEditor key={`p2-${version}`} headings label="Part 2" value={t.part2} onChange={(part2) => setT({ ...t, part2 })} />
+          <RichTextEditor key={`p2-${version}`} label="Part 2" value={t.part2} onChange={(part2) => setT({ ...t, part2 })} />
         </div>
         <div className="flex flex-wrap items-center justify-end gap-3">
           {dirty && <span className="text-sm text-amber-800">Changes not saved yet.</span>}

@@ -13,6 +13,7 @@ import { fetchAll } from '../lib/fetchAll'
 import { formatMoney, friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import type { PaymentRow } from '../lib/types'
+import PrintButton from '../components/print/PrintButton'
 
 type GroupKey = 'overdue' | 'week' | 'later'
 
@@ -81,7 +82,12 @@ export default function PaymentsPage() {
     <div className="mx-auto max-w-6xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Payments</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-semibold">Payments</h1>
+            <Can permission="payments.print">
+              <PrintButton title="Payments" />
+            </Can>
+          </div>
           <p className="text-sm text-slate-600">
             Every outstanding payment, soonest first. Cancelled and archived orders are not included.
           </p>

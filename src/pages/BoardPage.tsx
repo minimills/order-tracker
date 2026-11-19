@@ -19,6 +19,7 @@ import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { confirmAction } from '../lib/confirm'
 import Icon from '../components/Icon'
+import PrintButton from '../components/print/PrintButton'
 
 type Drop = { stageId: string; cardId: string | null; place: 'before' | 'after' }
 type Dialog = 'share' | 'notify' | 'settings' | 'template' | null
@@ -219,6 +220,9 @@ export default function BoardPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
+            <Can permission="boards.print">
+              <PrintButton title={board.name} subtitle={board.description ?? undefined} className="py-2" />
+            </Can>
             {level >= 3 && (
               <>
                 <Can permission="boards.share" level="edit">
@@ -287,7 +291,7 @@ export default function BoardPage() {
           </p>
         )}
 
-        <div className="-mx-4 flex flex-1 gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0">
+        <div className="-mx-4 flex flex-1 gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0" data-print-layout="wrap">
           {stages.map((stage) => {
             const cards = visibleCards.filter((c) => c.stage_id === stage.id)
             return (
@@ -309,7 +313,7 @@ export default function BoardPage() {
                   <span>
                     {stage.name}
                     {stage.department_id && (
-                      <span className="block text-[11px] font-normal text-slate-500">{departments.find((d) => d.id === stage.department_id)?.name}</span>
+                      <span className="block text-[0.6875rem] font-normal text-slate-500">{departments.find((d) => d.id === stage.department_id)?.name}</span>
                     )}
                   </span>
                   <span className="rounded-full bg-white px-2 text-xs font-normal text-slate-600">{cards.length}</span>

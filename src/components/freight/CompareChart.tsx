@@ -77,7 +77,7 @@ export default function CompareChart({ title, points, nameA, nameB, unit }: { ti
         </div>
       ) : (
         <div className="relative mt-3" role="img" aria-label={`${title} by month: ${nameA} compared with ${nameB}`}>
-          <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-between text-[10px] text-slate-400">
+          <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-between text-[0.625rem] text-slate-400">
             <span>{show(max)}</span>
           </div>
           <div className="flex items-end gap-1 border-b border-slate-300 pt-4" style={{ height: HEIGHT + 16 }}>
@@ -97,7 +97,7 @@ export default function CompareChart({ title, points, nameA, nameB, unit }: { ti
               </button>
             ))}
           </div>
-          <div className="flex gap-1 text-center text-[10px] text-slate-500">
+          <div className="flex gap-1 text-center text-[0.625rem] text-slate-500">
             {points.map((p) => (
               <span key={p.key} className="min-w-0 flex-1 truncate">
                 {p.label}

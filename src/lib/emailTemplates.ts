@@ -1,3 +1,4 @@
+import { cleanRichText, escapeHtml } from './richText'
 import { supabase } from './supabase'
 
 // Email templates (Admin → Email Templates): certificate emails, customer
@@ -43,6 +44,15 @@ export async function loadEmailTemplates(): Promise<EmailTemplates> {
 /** Puts the values in place of {placeholders}; unknown ones are left as written. */
 export function fillTemplate(text: string, values: Record<string, string>) {
   return text.replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? values[k] : m))
+}
+
+/**
+ * The same for a message written in the shared editor (or an older plain-text
+ * one): the result is safe HTML, and the values are escaped so a customer
+ * name can never add formatting or links.
+ */
+export function fillTemplateHtml(text: string, values: Record<string, string>) {
+  return cleanRichText(text).replace(/\{(\w+)\}/g, (m, k: string) => (k in values ? escapeHtml(values[k]).replace(/\n/g, '<br>') : m))
 }
 
 export const splitEmails = (s: string) => s.split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean)

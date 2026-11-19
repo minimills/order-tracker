@@ -9,6 +9,9 @@ import { ACTION, confirmText } from '../../lib/wording'
 import Can from '../Can'
 import Icon from '../Icon'
 import { buttonClass, Field, inputClass, Modal, narrowInputClass, secondaryButtonClass } from '../form'
+import RichText from '../RichText'
+import RichTextEditor from '../RichTextEditor'
+import { isEmptyRichText } from '../../lib/richText'
 
 const NOTE_WIDTH = 240 // px
 const COLUMNS = 'id, title, body, colour, checklist, pos_x, pos_y, z, remind_at, reminded_at, updated_at, archived, archived_at'
@@ -16,9 +19,9 @@ const newId = () => Math.random().toString(36).slice(2, 10)
 
 /** Wide screens get the board you can arrange; phones get a simple list. */
 function useWide() {
-  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 768px)').matches)
+  const [wide, setWide] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 48rem)').matches)
   useEffect(() => {
-    const m = window.matchMedia('(min-width: 768px)')
+    const m = window.matchMedia('(min-width: 48rem)')
     const on = () => setWide(m.matches)
     m.addEventListener('change', on)
     return () => m.removeEventListener('change', on)
@@ -278,7 +281,7 @@ function NoteCard({
         </span>
       </div>
       <div className="space-y-2 px-3 py-2">
-        {n.body && <p className="whitespace-pre-line">{n.body}</p>}
+        {n.body && <RichText value={n.body} />}
         {n.checklist.length > 0 && (
           <div>
             <div className="text-xs text-slate-500">
@@ -341,12 +344,12 @@ function NoteDialog({
 
   async function save() {
     if (!supabase) return
-    if (!title.trim() && !body.trim() && items.length === 0) return setError('Write something on the note first.')
+    if (!title.trim() && isEmptyRichText(body) && items.length === 0) return setError('Write something on the note first.')
     const remindAt = remind ? new Date(remind) : null
     if (remindAt && Number.isNaN(remindAt.getTime())) return setError('Enter the reminder date and time.')
     setBusy(true)
     setError(null)
-    const row = { title: title.trim(), body: body.trim(), colour, checklist: newItem.trim() ? [...items, { id: newId(), text: newItem.trim(), done: false }] : items, remind_at: remindAt?.toISOString() ?? null }
+    const row = { title: title.trim(), body: isEmptyRichText(body) ? '' : body, colour, checklist: newItem.trim() ? [...items, { id: newId(), text: newItem.trim(), done: false }] : items, remind_at: remindAt?.toISOString() ?? null }
     const { error: e } = note ? await supabase.from('personal_notes').update(row).eq('id', note.id) : await supabase.from('personal_notes').insert({ ...row, ...nextSpot() })
     setBusy(false)
     if (e) return setError(friendlyError(e))
@@ -376,8 +379,8 @@ function NoteDialog({
         <Field label="Title (optional)" htmlFor="pn-title">
           <input id="pn-title" className={inputClass} maxLength={120} value={title} onChange={(e) => setTitle(e.target.value)} />
         </Field>
-        <Field label="Note" htmlFor="pn-body">
-          <textarea id="pn-body" rows={4} className={inputClass} maxLength={5000} value={body} onChange={(e) => setBody(e.target.value)} />
+        <Field label="Note">
+          <RichTextEditor label="Note" minHeight="5rem" value={body} onChange={setBody} />
         </Field>
         <fieldset>
           <legend className="mb-1 block text-sm font-medium text-slate-700">Colour</legend>

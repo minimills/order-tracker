@@ -13,6 +13,7 @@ import { fetchAll } from '../lib/fetchAll'
 import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { buttonClass, secondaryButtonClass } from '../components/form'
+import PrintButton from '../components/print/PrintButton'
 
 const LISTS: { state: ServiceState; title: string; permission: string; empty: string }[] = [
   { state: 'in_progress', title: 'In Progress', permission: 'service.list.in_progress', empty: 'No training is in progress.' },
@@ -95,7 +96,12 @@ export default function ServicePage() {
       <div className="mx-auto max-w-5xl space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Service / Training</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Service / Training</h1>
+              <Can permission="service.print">
+                <PrintButton title="Service / Training" />
+              </Can>
+            </div>
             <p className="text-sm text-slate-600">On-site training and commissioning. Open an order to log the days and create the certificate.</p>
           </div>
           <Can permission="service.filters">

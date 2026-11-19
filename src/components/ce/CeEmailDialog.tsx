@@ -6,6 +6,8 @@ import { toBase64 } from '../../lib/certificatePdf'
 import { useCompany } from '../../lib/company'
 import { callFunction } from '../../lib/edgeFunction'
 import { Field, Modal, buttonClass, inputClass, secondaryButtonClass } from '../form'
+import RichTextEditor from '../RichTextEditor'
+import SenderLine from '../email/SenderLine'
 
 type Preview = { to: string[]; cc: string[]; subject: string; message: string; warnings: string[] }
 const split = (s: string) => s.split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean)
@@ -98,9 +100,10 @@ export default function CeEmailDialog({ declarations, onClose, onSent }: { decla
         <Field label="Subject" htmlFor="ce-subject">
           <input id="ce-subject" className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)} />
         </Field>
-        <Field label="Message" htmlFor="ce-message">
-          <textarea id="ce-message" rows={7} className={inputClass} value={message} onChange={(e) => setMessage(e.target.value)} />
+        <Field label="Message">
+          {loading ? <p className="text-slate-500">Loading…</p> : <RichTextEditor label="Message" minHeight="8rem" value={message} onChange={setMessage} />}
         </Field>
+        <SenderLine />
         {declarations.length > 1 && (
           <fieldset className="space-y-1">
             <legend className="font-medium">Attachments</legend>

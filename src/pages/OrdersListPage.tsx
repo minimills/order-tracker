@@ -16,6 +16,7 @@ import { PAYMENT_STATUSES, STAGES, type OrderSummaryRow } from '../lib/types'
 import { serviceDates, useServiceInfo, type ServiceInfo } from '../lib/service'
 import { useOptionList } from '../lib/useOptionList'
 import SerialNumber from '../components/SerialNumber'
+import PrintButton from '../components/print/PrintButton'
 
 type Value = string | number | null
 /** An order, with its on-site training plan when a service column is shown. */
@@ -412,7 +413,12 @@ export default function OrdersListPage() {
     <Can permission="orders.list">
       <div className="-m-4 flex h-[calc(100%+2rem)] flex-col p-4 md:-m-8 md:h-[calc(100%+4rem)] md:p-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">Orders List</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-semibold">Orders List</h1>
+            <Can permission="orders.list.print">
+              <PrintButton title="Orders List" />
+            </Can>
+          </div>
           <div className="flex gap-2">
             <Can permission="orders.list.columns">
               <div className="relative">

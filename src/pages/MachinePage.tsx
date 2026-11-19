@@ -9,10 +9,12 @@ import { useBreadcrumbs } from '../lib/breadcrumbs'
 import { countryFlag } from '../lib/country'
 import { showDate, todayISO } from '../lib/dates'
 import { friendlyError } from '../lib/format'
+import { richTextInline } from '../lib/richText'
 import { supabase } from '../lib/supabase'
 import { ACTION } from '../lib/wording'
 import CeIssueDialog from '../components/ce/CeIssueDialog'
 import CeRegister from '../components/ce/CeRegister'
+import PrintButton from '../components/print/PrintButton'
 
 type Owner = {
   customer_id: string
@@ -95,7 +97,12 @@ export default function MachinePage() {
       <div className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold">{m && id ? `${m.machine_type}` : 'Machines'}</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">{m && id ? `${m.machine_type}` : 'Machines'}</h1>
+              <Can permission="machines.print">
+                <PrintButton title={m && id ? `${m.machine_type}${m.serial ? ` ${m.serial}` : ''}` : 'Machines'} />
+              </Can>
+            </div>
             {m && id ? (
               <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
                 {m.serial ? <SerialNumber serial={m.serial} /> : <span>No serial yet</span>}
@@ -215,7 +222,7 @@ export default function MachinePage() {
                             t.title
                           )}
                         </div>
-                        {t.detail && <div className="break-words text-slate-600">{t.detail}</div>}
+                        {t.detail && <div className="break-words text-slate-600">{richTextInline(t.detail)}</div>}
                       </li>
                     )
                   })}

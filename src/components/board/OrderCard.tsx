@@ -84,7 +84,7 @@ export default function OrderCard(props: Props) {
       <Can permission="orders.board.card.voltage">
         {o.voltage && (
           <span
-            className="mb-1.5 inline-block rounded px-1.5 py-0.5 text-[11px] font-bold text-white"
+            className="mb-1.5 inline-block rounded px-1.5 py-0.5 text-[0.6875rem] font-bold text-white"
             style={{ backgroundColor: props.voltageColour ?? '#64748b' }}
             title={`Voltage: ${o.voltage}`}
           >

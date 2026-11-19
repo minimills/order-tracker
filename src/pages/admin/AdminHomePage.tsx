@@ -21,7 +21,7 @@ export default function AdminHomePage() {
           <Can key={s.to} permission={s.permission} level={ADMIN_VIEW_ONLY.has(s.permission) ? 'view' : 'edit'}>
             <Link to={s.to} className="block rounded-lg border border-slate-200 bg-white p-4 hover:border-slate-400 hover:shadow-sm">
               <div className="font-medium">
-                <Icon name={s.icon} className="mr-2 h-4 w-4 align-[-2px] text-slate-500" />
+                <Icon name={s.icon} className="mr-2 h-4 w-4 align-[-0.125em] text-slate-500" />
                 {s.title}
               </div>
               <div className="mt-1 text-sm text-slate-600">{s.text}</div>

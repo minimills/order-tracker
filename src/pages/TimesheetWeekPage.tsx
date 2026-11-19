@@ -26,6 +26,7 @@ import {
   type WeekRow,
 } from '../lib/timesheets'
 import { ACTION } from '../lib/wording'
+import PrintButton from '../components/print/PrintButton'
 
 type Draft = {
   key: string
@@ -227,7 +228,12 @@ export default function TimesheetWeekPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">{emp.name}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-semibold">{emp.name}</h1>
+            <Can permission="timesheets.print">
+              <PrintButton title={`Timesheet – ${emp.name}`} subtitle={`Week of ${showDate(ws, 'MMMM d, yyyy')}`} />
+            </Can>
+          </div>
           <p className="text-sm text-slate-600">
             {emp.pay_type === 'hourly' ? 'Hourly' : 'Salaried'} · week of {showDate(ws, 'EEE MMM d')} to {showDate(addDaysISO(ws, 6), 'EEE MMM d, yyyy')}
             {locked && ` · Approved by ${week?.approved_by_name ?? '—'}`}

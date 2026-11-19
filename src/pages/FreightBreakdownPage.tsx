@@ -28,6 +28,7 @@ import {
 import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { ACTION } from '../lib/wording'
+import PrintButton from '../components/print/PrintButton'
 
 type Form = {
   order_id: string
@@ -324,9 +325,7 @@ export default function FreightBreakdownPage() {
           {saved && (
             <>
               <Can permission="freight.breakdowns.print">
-                <Link to={`/freight/breakdowns/${saved.id}/print`} className={secondaryButtonClass}>
-                  Print
-                </Link>
+                <PrintButton title="Shipment Cost Breakdown" to={`/freight/breakdowns/${saved.id}/print`} className="py-2" />
               </Can>
               <Can permission="freight.breakdowns.archive" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={archive}>
