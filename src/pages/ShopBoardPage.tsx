@@ -8,7 +8,7 @@ import RichText from '../components/RichText'
 import MachineCrating from '../components/crating/MachineCrating'
 import { useCompany } from '../lib/company'
 import { countryFlag } from '../lib/country'
-import { CRATING_STAGES, loadCrates, type NumberedCrate } from '../lib/crates'
+import { CRATING_STAGES, loadCrates, loadOrderCrating, type NumberedCrate } from '../lib/crates'
 import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
@@ -34,6 +34,8 @@ type Machine = {
  */
 export default function ShopBoardPage() {
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
+  // "Will this order be crated?" per order (0050): not crated = no crating boxes.
+  const [notCratedOrders, setNotCratedOrders] = useState<Map<string, boolean>>(new Map())
   const [machines, setMachines] = useState<Machine[]>([])
   const [crates, setCrates] = useState<Map<string, NumberedCrate[]>>(new Map())
   const [reloadKey, setReloadKey] = useState(0)
@@ -81,8 +83,10 @@ export default function ShopBoardPage() {
           )
         : { data: [], error: null }
       // Crating is only asked for on orders that are ready to ship.
-      const c = await loadCrates(seesCrating ? o.data.filter((x) => CRATING_STAGES.includes(x.stage)).map((x) => x.id) : [])
+      const crateIds = seesCrating ? o.data.filter((x) => CRATING_STAGES.includes(x.stage)).map((x) => x.id) : []
+      const [c, cratingMap] = await Promise.all([loadCrates(crateIds), loadOrderCrating(crateIds)])
       if (cancelled) return
+      setNotCratedOrders(cratingMap)
       const e = o.error ?? m.error ?? c.error
       if (e) setError(friendlyError(e))
       setOrders(o.data)
@@ -324,7 +328,7 @@ export default function ShopBoardPage() {
             {shown.map((o) => {
               const list = machinesByOrder.get(o.id) ?? []
               const badges = orderBadges(o).filter((b) => b.kind !== 'payment')
-              const crating = seesCrating && CRATING_STAGES.includes(o.stage)
+              const crating = seesCrating && notCratedOrders.get(o.id) !== false && CRATING_STAGES.includes(o.stage)
               const orderCrates = crates.get(o.id) ?? []
               const crateMachines = list.map((m) => ({
                 id: m.id,
