@@ -1,14 +1,16 @@
 // @permission-scope dashboard
 /* Every widget drawn here was checked with widgetAllowed() (its own catalog key); edit controls only show with dashboard.charts.customize. */
-import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import Can from '../Can'
 import { secondaryButtonClass } from '../form'
 import type { DashData } from '../../lib/dashboardData'
 import { breakpointFor, COLS, GAP, layoutFor, place, ROW_HEIGHT, type Breakpoint, type Item, type Layouts } from '../../lib/gridLayout'
 import { usePermissions } from '../../lib/permissions'
-import { colourHex, newWidgetId, widgetAllowed, widgetDef, widgetTitle, type Widget } from '../../lib/widgets'
+import { colourHex, healthFor, healthState, newWidgetId, widgetAllowed, widgetDef, widgetTitle, type Health, type Widget } from '../../lib/widgets'
+import { loadChartSettings } from '../../lib/dashboardCharts'
 import { WidgetLibraryDialog, WidgetSettingsDialog } from './DashboardDialogs'
 import WidgetBody from './WidgetBody'
+import { HealthColour } from '../../lib/healthColour'
 import { updatedText } from '../../lib/dashboardData'
 
 type Drag = { id: string; mode: 'move' | 'resize'; startX: number; startY: number; orig: Item; base: Item[] }
@@ -47,6 +49,13 @@ export default function DashboardCanvas({
   const [preview, setPreview] = useState<Item[] | null>(null)
   const [settingsFor, setSettingsFor] = useState<Widget | null>(null)
   const [library, setLibrary] = useState(false)
+  // Good / bad colours: the number each widget reports, judged by its setting.
+  const [companyHealth, setCompanyHealth] = useState<Record<string, Health>>({})
+  const [values, setValues] = useState<Record<string, number | null>>({})
+  useEffect(() => {
+    loadChartSettings().then((s) => setCompanyHealth(s.health ?? {}))
+  }, [])
+  const report = useCallback((id: string, v: number | null) => setValues((m) => (m[id] === v ? m : { ...m, [id]: v })), [])
 
   useLayoutEffect(() => {
     const el = box.current
@@ -152,19 +161,27 @@ export default function DashboardCanvas({
             if (!w) return null
             const def = widgetDef(w.key)
             const dragging = drag?.id === it.i
+            const state = healthState(values[w.id], healthFor(w, companyHealth))
+            const tone =
+              state === 'bad' ? 'widget-bad border-2 border-red-600 bg-red-50' : state === 'good' ? 'widget-good border-2 border-green-600 bg-green-50' : 'border border-slate-200 bg-white'
             return (
               <section
                 key={it.i}
                 aria-label={widgetTitle(w)}
-                className={`widget-frame absolute flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm ${dragging ? 'z-20 opacity-90 shadow-lg ring-2 ring-blue-400' : 'transition-[left,top,width,height] duration-150'}`}
+                className={`widget-frame absolute flex flex-col overflow-hidden rounded-xl shadow-sm ${tone} ${dragging ? 'z-20 opacity-90 shadow-lg ring-2 ring-blue-400' : 'transition-[left,top,width,height] duration-150'}`}
                 style={{ left: it.x * stepX, top: it.y * stepY, width: it.w * cellW + (it.w - 1) * GAP, height: it.h * ROW_HEIGHT + (it.h - 1) * GAP }}
               >
                 <header
-                  className={`flex items-center gap-2 border-b border-slate-100 px-3 py-1.5 ${editing ? 'cursor-move touch-none select-none' : ''}`}
+                  className={`flex flex-wrap items-center gap-x-2 gap-y-0.5 border-b border-slate-100 px-3 py-1.5 ${editing ? 'cursor-move touch-none select-none' : ''}`}
                   style={{ borderTop: `3px solid ${colourHex(w.colour)}` }}
                   onPointerDown={(e) => (e.target as HTMLElement).closest('button') === null && start(e, it.i, 'move')}
                 >
-                  <h2 className="min-w-0 flex-1 truncate text-sm font-semibold">{widgetTitle(w)}</h2>
+                  <h2 className="min-w-[6rem] flex-1 truncate text-sm font-semibold">{widgetTitle(w)}</h2>
+                  {state !== 'neutral' && (
+                    <span className={`shrink-0 rounded-full px-2 text-[0.6875rem] font-semibold text-white ${state === 'bad' ? 'bg-red-700' : 'bg-green-700'}`}>
+                      {state === 'bad' ? 'Needs attention' : 'Good'}
+                    </span>
+                  )}
                   {editing && (
                     <span className="flex shrink-0 items-center gap-1">
                       <button type="button" className={btn} aria-label={`Settings of ${widgetTitle(w)}`} onClick={() => setSettingsFor(w)}>
@@ -176,8 +193,10 @@ export default function DashboardCanvas({
                     </span>
                   )}
                 </header>
-                <div className="widget-body min-h-0 flex-1 overflow-auto bg-white px-3 py-2">
-                  <WidgetBody widget={w} data={data} onNote={(text) => onNote?.(w.id, text)} canEditNote={canEditNote && !editing} />
+                <div className={`widget-body min-h-0 flex-1 overflow-auto px-3 py-2 ${state === 'bad' ? 'bg-red-50' : state === 'good' ? 'bg-green-50' : 'bg-white'}`}>
+                  <HealthColour.Provider value={state === 'bad' ? '#b91c1c' : state === 'good' ? '#15803d' : null}>
+                    <WidgetBody widget={w} data={data} onNote={(text) => onNote?.(w.id, text)} canEditNote={canEditNote && !editing} onValue={(v) => report(w.id, v)} />
+                  </HealthColour.Provider>
                 </div>
                 {editing ? (
                   <footer className="flex flex-wrap items-center gap-1 border-t border-slate-100 bg-slate-50 px-2 py-1">

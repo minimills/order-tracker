@@ -127,9 +127,11 @@ export const CATALOG: PermissionItem[] = [
       { key: 'dashboard.charts.dates', label: 'Widget setting: date range (today, this week, month, quarter, year, last year, custom; compare with last year)', levels: V, requires: 'dashboard.charts.customize' },
       { key: 'dashboard.widget.filters', label: 'Widget setting: filters (department, machine type, customer country, board)', levels: V, requires: 'dashboard.charts.customize' },
       { key: 'dashboard.widget.colour', label: 'Widget setting: colour', levels: V, requires: 'dashboard.charts.customize' },
+      { key: 'dashboard.widget.health', label: 'Widget setting: good and bad colours for this widget (whether higher is better or worse, and the limits)', levels: V, requires: 'dashboard.charts.customize' },
       { key: 'dashboard.charts.print', label: 'Print the dashboard or chosen widgets (with the letterhead)', levels: V, requires: 'dashboard' },
     ],
     Widgets: [
+      { key: 'dashboard.widget.my_work', label: 'My work: cards and tasks assigned to them, with Start, Pause and Finish on the dashboard (only boards they can open; the buttons also need the board timing permission)', levels: V, requires: 'dashboard', needs: ['boards'] },
       { key: 'dashboard.widget.my_tasks', label: 'My tasks (open cards assigned to them on boards they can open)', levels: V, requires: 'dashboard', needs: ['boards'] },
       { key: 'dashboard.widget.overdue', label: 'Overdue items (their overdue cards; overdue payments and passed ship dates where allowed)', levels: V, requires: 'dashboard' },
       { key: 'dashboard.widget.new_orders', label: 'New orders (the last 14 days)', levels: V, requires: 'dashboard' },

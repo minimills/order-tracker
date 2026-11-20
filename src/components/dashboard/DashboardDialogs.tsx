@@ -10,7 +10,8 @@ import type { Item } from '../../lib/gridLayout'
 import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
 import { useDepartments } from '../../lib/useDepartments'
-import { WIDGET_COLOURS, WIDGETS, widgetAllowed, widgetDef, widgetTitle, type Widget } from '../../lib/widgets'
+import { CHART_SETTINGS_DEFAULT, loadChartSettings } from '../../lib/dashboardCharts'
+import { HEALTH_DIRECTIONS, healthFor, healthValueText, healthWidgets, healthWords, WIDGET_COLOURS, WIDGETS, widgetAllowed, widgetDef, widgetTitle, type Health, type Widget } from '../../lib/widgets'
 import { ACTION } from '../../lib/wording'
 
 /** Add Widget: only the widgets this person is allowed to see (the template editor offers all). */
@@ -87,6 +88,12 @@ export function WidgetSettingsDialog({
   const [w, setW] = useState<Widget>(widget)
   const [sz, setSz] = useState({ w: size?.w ?? def?.w ?? 4, h: size?.h ?? def?.h ?? 3 })
   const { departments } = useDepartments()
+  const [company, setCompany] = useState<Record<string, Health>>(CHART_SETTINGS_DEFAULT.health)
+  useEffect(() => {
+    loadChartSettings().then((v) => setCompany(v.health ?? {}))
+  }, [])
+  const judged = healthWidgets().some((h) => h.key === widget.key)
+  const shared = healthFor({ key: widget.key }, company)
   const [opts, setOpts] = useState<{ types: string[]; countries: string[]; boards: { id: string; name: string }[] }>({ types: [], countries: [], boards: [] })
   useEffect(() => {
     Promise.all([data.machineTypes(), data.summary(), data.boards()]).then(([t, o, b]) =>
@@ -232,6 +239,41 @@ export function WidgetSettingsDialog({
             </div>
           </fieldset>
         </Can>
+        {judged && (
+          <Can permission="dashboard.widget.health">
+            <fieldset className="space-y-2" data-setting="widget-health">
+              <legend className="font-medium">Good and Bad Colours</legend>
+              <p className="text-xs text-slate-500">
+                The widget turns green or red by {healthValueText(widget.key)}. Company setting: {HEALTH_DIRECTIONS.find((d) => d.value === shared.direction)?.label.toLowerCase()}. {healthWords(shared)}
+              </p>
+              <select
+                aria-label="Good and bad colours"
+                className={inputClass}
+                value={w.health ? w.health.direction : ''}
+                onChange={(e) => setW({ ...w, health: e.target.value ? { ...(w.health ?? shared), direction: e.target.value as Health['direction'] } : undefined })}
+              >
+                <option value="">Use the company setting</option>
+                {HEALTH_DIRECTIONS.map((d) => (
+                  <option key={d.value} value={d.value}>
+                    {d.label}
+                  </option>
+                ))}
+              </select>
+              {w.health && w.health.direction !== 'none' && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <label className="flex items-center gap-1">
+                    Green {w.health.direction === 'low' ? 'below' : 'above'}
+                    <input type="number" step="any" className={`${narrowInputClass} w-24`} value={w.health.good} onChange={(e) => setW({ ...w, health: { ...w.health!, good: Number(e.target.value) || 0 } })} />
+                  </label>
+                  <label className="flex items-center gap-1">
+                    Red {w.health.direction === 'low' ? 'above' : 'below'}
+                    <input type="number" step="any" className={`${narrowInputClass} w-24`} value={w.health.bad} onChange={(e) => setW({ ...w, health: { ...w.health!, bad: Number(e.target.value) || 0 } })} />
+                  </label>
+                </div>
+              )}
+            </fieldset>
+          </Can>
+        )}
         {size && (
           <fieldset>
             <legend className="mb-1 font-medium">Size on this screen</legend>

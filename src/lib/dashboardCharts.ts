@@ -62,8 +62,9 @@ export type ChartResult = {
 }
 
 export type Target = { good: 'low' | 'high'; green: number; amber: number; max: number }
-export type ChartSettings = { targets: Record<string, Target>; defaults: string[] }
-export const CHART_SETTINGS_DEFAULT: ChartSettings = { targets: {}, defaults: ['delay_by_month', 'on_time', 'top_machines', 'by_country'] }
+/** health: good / bad colours per widget key (see Health in widgets.ts; 0049). */
+export type ChartSettings = { targets: Record<string, Target>; defaults: string[]; health: Record<string, { direction: 'low' | 'high' | 'none'; good: number; bad: number }> }
+export const CHART_SETTINGS_DEFAULT: ChartSettings = { targets: {}, health: {}, defaults: ['delay_by_month', 'on_time', 'top_machines', 'by_country'] }
 
 export function rangeDates(c: Pick<ChartConfig, 'range' | 'from' | 'to'>): { from: string; to: string } {
   const today = todayISO()

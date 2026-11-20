@@ -6,6 +6,7 @@ import { buttonClass, inputClass } from '../../components/form'
 import { CHARTS, loadChartSettings, type ChartSettings, type Target } from '../../lib/dashboardCharts'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { HEALTH_DEFAULTS, HEALTH_DIRECTIONS, healthFor, healthValueText, healthWidgets, healthWords, type Health } from '../../lib/widgets'
 import { ACTION } from '../../lib/wording'
 
 const GAUGES = CHARTS.filter((c) => c.types.includes('gauge_targets'))
@@ -25,6 +26,12 @@ export default function DashboardChartsPage() {
   }, [])
   if (!s) return <p className="text-sm text-slate-500">Loading…</p>
 
+  const setHealth = (key: string, h: Health | null) => {
+    const health = { ...s.health }
+    if (h === null) delete health[key]
+    else health[key] = h
+    setS({ ...s, health })
+  }
   const set = (key: string, patch: Partial<Target> | null) => {
     const targets = { ...s.targets }
     if (patch === null) delete targets[key]
@@ -48,7 +55,7 @@ export default function DashboardChartsPage() {
   return (
     <div className="space-y-4">
       <AdminPageHeader title="Dashboard Charts">
-        Targets for the “Gauge With Targets” form of a chart: green is on target, amber is close to the limit, red is off target. Who sees which chart is set in Admin → Users →
+        Good and bad colours of the dashboard numbers, and targets for the “Gauge With Targets” form of a chart: green is on target, amber is close to the limit, red is off target. Who sees which chart is set in Admin → Users →
         Permissions.
       </AdminPageHeader>
 
@@ -109,6 +116,72 @@ export default function DashboardChartsPage() {
         </p>
       </section>
 
+      <section className="rounded-lg border border-slate-200 bg-white" data-setting="dc-health">
+        <h2 className="border-b border-slate-200 p-4 text-base font-semibold">Good and Bad Colours</h2>
+        <p className="px-4 pt-3 text-sm text-slate-600">
+          Whether a higher number is better or worse for each widget, and the limits. A bad number shows the whole widget in red with “Needs attention”, a good number in green with
+          “Good”; numbers between the limits keep the normal colour. This applies to every dashboard; a widget can have its own setting in its Widget Settings.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-slate-50 text-left text-xs text-slate-600">
+              <tr>
+                <th className="px-3 py-2 font-semibold">Widget (the number judged)</th>
+                <th className="px-3 py-2 font-semibold">Direction</th>
+                <th className="px-3 py-2 font-semibold">Green limit</th>
+                <th className="px-3 py-2 font-semibold">Red limit</th>
+                <th className="px-3 py-2 font-semibold">Now</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {healthWidgets().map((w) => {
+                const h = healthFor({ key: w.key }, s.health)
+                const own = !!s.health[w.key]
+                return (
+                  <tr key={w.key}>
+                    <td className="px-3 py-2">
+                      {w.title}
+                      <span className="block text-xs text-slate-500">{healthValueText(w.key)}</span>
+                    </td>
+                    <td className="px-3 py-2">
+                      <select aria-label={`Direction for ${w.title}`} className={`${inputClass} min-w-44`} value={h.direction} onChange={(e) => setHealth(w.key, { ...h, direction: e.target.value as Health['direction'] })}>
+                        {HEALTH_DIRECTIONS.map((d) => (
+                          <option key={d.value} value={d.value}>
+                            {d.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    {(['good', 'bad'] as const).map((k) => (
+                      <td key={k} className="px-3 py-2">
+                        {h.direction !== 'none' && (
+                          <label className="flex items-center gap-1 whitespace-nowrap text-xs text-slate-600">
+                            {k === 'good' ? 'Green' : 'Red'} {(k === 'good') === (h.direction === 'low') ? 'below' : 'above'}
+                            <input aria-label={`${k === 'good' ? 'Green' : 'Red'} limit for ${w.title}`} inputMode="decimal" className={`${inputClass} min-w-20`} value={h[k]} onChange={(e) => setHealth(w.key, { ...h, [k]: n(e.target.value) })} />
+                          </label>
+                        )}
+                      </td>
+                    ))}
+                    <td className="px-3 py-2 text-xs text-slate-600">
+                      {healthWords(h)}
+                      {own && (
+                        <button type="button" className="ml-2 underline" onClick={() => setHealth(w.key, null)}>
+                          {HEALTH_DEFAULTS[w.key] ? 'Use the Built-in Setting' : 'Clear'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="border-t border-slate-100 p-4 text-xs text-slate-500">
+          Lower is better: green below the green limit, red above the red limit (for example average delay: green below 0, red above 0). Higher is better: green above the green limit,
+          red below the red limit (for example % on time). When both apply, red wins.
+        </p>
+      </section>
+
       <section className="max-w-3xl rounded-lg border border-slate-200 bg-white p-4 text-sm" data-setting="dc-defaults">
         <h2 className="text-base font-semibold">Charts a New Dashboard Starts With</h2>
         <p className="mb-2 text-slate-600">Shown to people who have not arranged their own charts yet (only the charts they are allowed to see).</p>
@@ -123,7 +196,7 @@ export default function DashboardChartsPage() {
       </section>
 
       <button type="button" className={buttonClass} onClick={save} disabled={busy || JSON.stringify(s) === saved}>
-        {busy ? 'Saving…' : ACTION.save}
+        {busy ? ACTION.saving : ACTION.save}
       </button>
     </div>
   )

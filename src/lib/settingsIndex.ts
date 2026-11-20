@@ -88,6 +88,7 @@ const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/serials', 'Re-sequence serial numbers', 'st-type', 'renumber'),
   inner('/admin/templates', 'Commissioning certificate text', 'tpl-title', 'service report'),
   inner('/admin/dashboard-charts', 'Gauge targets (green, amber, red) for dashboard charts', 'dc-targets', 'threshold kpi chart'),
+  inner('/admin/dashboard-charts', 'Good and bad colours of dashboard widgets (higher or lower is better, red and green limits)', 'dc-health', 'red green bad good threshold direction kpi colour color'),
   inner('/admin/dashboard-charts', 'Charts a new dashboard starts with', 'dc-defaults', 'default charts'),
   inner('/admin/email-templates', 'Office sending address (used when a person has not connected their own mailbox)', 'et-sender', 'sender from reply accounts office address'),
   inner('/admin/email-templates', 'Customer reminder emails (down payment, balance, overdue, ship date)', 'et-reminders', 'reminder template payment'),
