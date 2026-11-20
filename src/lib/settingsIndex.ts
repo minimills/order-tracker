@@ -49,6 +49,7 @@ const inner = (page: string, label: string, find: string, keywords = ''): Settin
 const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/users', 'Add a user', 'new-email', 'invite login new person staff'),
   inner('/admin/dashboard-templates', 'Dashboard templates for people or departments', 'dt-name', 'dashboard template starting layout lock department'),
+  inner('/admin/payroll', 'Weekday fill hours (Fill Weekdays start, end and break)', 'pr-fill', 'timesheet fill 8 4:30 break auto'),
   inner('/admin/payroll', 'Overtime threshold (hours per week)', 'pr-overtime', 'overtime 44 hours week pei'),
   inner('/admin/payroll', 'Banked overtime: 1× or 1.5× the hours', 'pr-bank', 'bank banked time in lieu overtime'),
   inner('/admin/payroll', 'Vacation days by years of service', 'pr-vacation', 'vacation holidays weeks entitlement'),
@@ -95,6 +96,7 @@ const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/email-templates', 'Customer reminder emails (down payment, balance, overdue, ship date)', 'et-reminders', 'reminder template payment'),
   inner('/admin/email-templates', 'Welcome email for new users', 'et-welcome', 'onboarding invite'),
   inner('/admin/freight', 'Standard broker fee, hourly and plywood rates', 'fr-broker', 'freight handling margin exchange rate cost breakdown'),
+  inner('/admin/freight', 'Person who arranges shipping (told when crating is entered)', 'fr-shipping-contact', 'shipping quote crating notify freight contact'),
   inner('/admin/freight', 'Insurance rule for freight', 'fr-insurance', 'uplift minimum ocean air inland livingston'),
   inner('/admin/freight', 'Pick-up locations for freight quote requests', 'fr-locations', 'address belfast murray river'),
   inner('/admin/freight', 'Shipping agents and carriers', 'fr-agents', 'livingston fedex ups purolator dhl contact email'),

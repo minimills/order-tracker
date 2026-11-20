@@ -18,6 +18,7 @@ import {
   loadWeekRows,
   previewWeek,
   showHours,
+  clockText,
   usePayrollSettings,
   weekDays,
   weekStartOf,
@@ -154,7 +155,7 @@ export default function TimesheetWeekPage() {
       ...list,
       ...days
         .filter((d) => [1, 2, 3, 4, 5].includes(new Date(`${d}T12:00:00Z`).getUTCDay()) && !list.some((r) => r.work_date === d))
-        .map((d) => ({ key: newKey(), work_date: d, kind: 'work', start_time: '07:00', end_time: '15:30', break_minutes: '30', hours: '', notes: '' })),
+        .map((d) => ({ key: newKey(), work_date: d, kind: 'work', start_time: settings.fill_start ?? '08:00', end_time: settings.fill_end ?? '16:30', break_minutes: String(settings.fill_break_minutes ?? 30), hours: '', notes: '' })),
     ])
 
   function askChoice(total: number, worked: number, bankedUsed: number, extra: number) {
@@ -272,7 +273,7 @@ export default function TimesheetWeekPage() {
               <Can permission="timesheets.enter" level="edit">
                 {editable && (
                   <button type="button" className={secondaryButtonClass} onClick={fillWeek}>
-                    Fill Weekdays (7:00–3:30)
+                    Fill Weekdays ({clockText(settings.fill_start ?? '08:00')} to {clockText(settings.fill_end ?? '16:30')})
                   </button>
                 )}
               </Can>

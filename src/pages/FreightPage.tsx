@@ -4,13 +4,18 @@ import { secondaryButtonClass } from '../components/form'
 import BreakdownList from '../components/freight/BreakdownList'
 import FreightDashboard from '../components/freight/FreightDashboard'
 import InsuranceSummary from '../components/freight/InsuranceSummary'
+import IncomingShipments from '../components/freight/IncomingShipments'
+import ProfitLoss from '../components/freight/ProfitLoss'
 import { usePermissions } from '../lib/permissions'
+import { FREIGHT_KEYS } from '../lib/permissions/catalog'
 import CratingReportPage from './CratingReportPage'
 import PrintButton from '../components/print/PrintButton'
 
 const TABS = [
   { key: 'dashboard', label: 'Dashboard', permission: 'freight.dashboard' },
   { key: 'breakdowns', label: 'Cost Breakdowns', permission: 'freight.breakdowns' },
+  { key: 'profit', label: 'Profit and Loss', permission: 'freight.profit' },
+  { key: 'incoming', label: 'Incoming', permission: 'freight.incoming' },
   { key: 'insurance', label: 'Insurance Summary', permission: 'freight.insurance' },
   { key: 'crating', label: 'Crating Tables', permission: 'reports.crating' },
 ] as const
@@ -23,7 +28,7 @@ export default function FreightPage() {
   const tab = allowed.find((t) => t.key === params.get('tab'))?.key ?? allowed[0]?.key
 
   return (
-    <Can anyOf={['freight.dashboard', 'freight.breakdowns', 'freight.insurance', 'reports.crating', 'freight.quote']}>
+    <Can anyOf={FREIGHT_KEYS}>
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
@@ -33,7 +38,7 @@ export default function FreightPage() {
                 <PrintButton title="Freight" />
               </Can>
             </div>
-            <p className="text-sm text-slate-600">Crating, shipment cost breakdowns, freight quote requests and the insurance summary.</p>
+            <p className="text-sm text-slate-600">Crating, shipment cost breakdowns, profit and loss, incoming freight, freight quote requests and the insurance summary.</p>
           </div>
           <Can permission="freight.quote">
             <Link to="/freight/quote" className={secondaryButtonClass}>
@@ -68,6 +73,16 @@ export default function FreightPage() {
         {tab === 'breakdowns' && (
           <Can permission="freight.breakdowns">
             <BreakdownList />
+          </Can>
+        )}
+        {tab === 'profit' && (
+          <Can permission="freight.profit">
+            <ProfitLoss />
+          </Can>
+        )}
+        {tab === 'incoming' && (
+          <Can permission="freight.incoming">
+            <IncomingShipments />
           </Can>
         )}
         {tab === 'insurance' && (

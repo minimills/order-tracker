@@ -19,6 +19,10 @@ export default function FreightSettingsPage() {
   const [agents, setAgents] = useState<FreightAgent[]>([])
   const [newAgent, setNewAgent] = useState('')
   const [busy, setBusy] = useState(false)
+  const [contacts, setContacts] = useState<{ email: string; name: string }[]>([])
+  useEffect(() => {
+    supabase?.rpc('shipping_contact_choices').then(({ data }) => setContacts((data as { email: string; name: string }[] | null) ?? []))
+  }, [])
 
   useEffect(() => {
     loadFreightSettings().then((v) => {
@@ -126,6 +130,25 @@ export default function FreightSettingsPage() {
             </div>
             <p className="mt-1 text-xs text-slate-500">The others are inland in the insurance summary.</p>
           </fieldset>
+        </section>
+
+        <section className={card} data-setting="fr-shipping-contact">
+          <h2 className="text-base font-semibold">Person Who Arranges Shipping</h2>
+          <p className="text-slate-600">
+            Told in the app, by phone push and by email when every crate of an order has its plywood sheets, time, size and weight, with a button to the
+            freight quote request for that order. Only people allowed the freight quote request are listed.
+          </p>
+          <Field label="Person" htmlFor="fr-contact">
+            <select id="fr-contact" className={inputClass} value={s.shipping_contact ?? ''} onChange={(e) => setS({ ...s, shipping_contact: e.target.value || null })}>
+              <option value="">Nobody (no message is sent)</option>
+              {s.shipping_contact && !contacts.some((c) => c.email === s.shipping_contact) && <option value={s.shipping_contact}>{s.shipping_contact}</option>}
+              {contacts.map((c) => (
+                <option key={c.email} value={c.email}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </Field>
         </section>
 
         <section className={card} data-setting="fr-locations">
