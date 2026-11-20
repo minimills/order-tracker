@@ -37,6 +37,7 @@ const MY: SettingEntry[] = [
   { label: 'Phone notifications on this device', where: 'Settings → Notifications', keywords: 'push iphone android enable test', to: '/settings/notifications', find: 'phone', permission: 'settings.push', level: 'edit' },
   { label: 'Desktop notifications', where: 'Settings → Notifications', keywords: 'computer browser pop-ups turn off', to: '/settings/notifications', find: 'desktop', permission: 'settings.notifications' },
   { label: 'Email: each time or daily summary', where: 'Settings → Notifications', keywords: 'digest once a day', to: '/settings/notifications', find: 'email-mode', permission: 'settings.notification_channels', level: 'edit' },
+  { label: 'My automations (When … If … Then …)', where: 'Automations', keywords: 'automation rule trigger workflow automatic when then', to: '/automations', permission: 'automations' },
 ]
 
 const A = (page: string) => ADMIN_PAGES.find((p) => p.to === page)!
@@ -47,6 +48,9 @@ const inner = (page: string, label: string, find: string, keywords = ''): Settin
 
 const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/users', 'Add a user', 'new-email', 'invite login new person staff'),
+  inner('/admin/automations', 'Automation limits (rules per person, runs per minute)', 'au-limits', 'automation rules limit runs per minute loop'),
+  inner('/admin/automations', 'Automations of people who were removed', 'au-removed', 'automation owner removed paused reassign'),
+  inner('/admin/automations', 'Automation templates', 'au-templates', 'automation example template'),
   inner('/admin/dashboard-templates', 'Dashboard templates for people or departments', 'dt-name', 'dashboard template starting layout lock department'),
   inner('/admin/payroll', 'Overtime threshold (hours per week)', 'pr-overtime', 'overtime 44 hours week pei'),
   inner('/admin/payroll', 'Banked overtime: 1× or 1.5× the hours', 'pr-bank', 'bank banked time in lieu overtime'),

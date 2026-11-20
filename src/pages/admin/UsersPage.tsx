@@ -14,7 +14,7 @@ import { useCompany } from '../../lib/company'
 import { askText } from '../../lib/confirm'
 import { allowedBy, type Perms } from '../../lib/permissions'
 import { startPageChoices } from '../../lib/permissions/nav'
-import { CATALOG } from '../../lib/permissions/catalog'
+import { CATALOG, DEFAULT_PERMS } from '../../lib/permissions/catalog'
 import { supabase } from '../../lib/supabase'
 import type { Role } from '../../lib/auth'
 import { useDepartments } from '../../lib/useDepartments'
@@ -140,13 +140,13 @@ export default function UsersPage() {
       role,
       departments: newDepts,
       start_page: newStartPage || null,
-      perms: start?.perms ?? null,
+      perms: start ? { ...DEFAULT_PERMS, ...start.perms } : null,
       perms_source: start?.source ?? null,
     })
     setAdding(false)
     if (!result.ok) return setError(result.message)
     // The welcome email (Admin → Email Templates), with the features their permissions give.
-    const welcome = await composeWelcome({ email: address, name: name.trim() || null, role }, (start?.perms as Perms | undefined) ?? {}, company.name)
+    const welcome = await composeWelcome({ email: address, name: name.trim() || null, role }, { ...DEFAULT_PERMS, ...((start?.perms as Perms | undefined) ?? {}) }, company.name)
     const sentWelcome = await sendWelcome(address, welcome.subject, welcome.body)
     if (!sentWelcome.ok) toast.warning(`The welcome email could not be sent: ${sentWelcome.message} Use “Welcome Email” next to their name to try again.`, { duration: 12000 })
     if (result.emailed === false) toast.warning(result.message, { duration: 12000 })

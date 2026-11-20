@@ -36,6 +36,7 @@ export const GROUPS = [
   'Service / Training',
   'Timesheets',
   'Chat',
+  'Automations',
   'Reports',
   'Agent',
   'Settings',
@@ -56,6 +57,8 @@ export type PermissionItem = {
   hint?: string
   /** A page switch. Buttons and inputs need their own item, not the page's. */
   page?: boolean
+  /** Allowed for everyone by default (new people start with it; an admin can still revoke it). */
+  defaultOn?: boolean
 }
 
 const V: Level[] = ['view']
@@ -600,6 +603,20 @@ export const CATALOG: PermissionItem[] = [
     ],
   }),
 
+  ...group('Automations', {
+    Automations: [
+      {
+        key: 'automations',
+        label: 'Use automations: create rules (When … If … Then …) for the things they have access to; view: see automations shared with them and board automations',
+        levels: VE,
+        db: true,
+        defaultOn: true,
+        hint: 'On for everyone by default. An automation always runs with its owner’s permissions, checked on every run.',
+      },
+      { key: 'automations.share', label: 'Share their automations with people, groups or departments (view only or allowed to edit)', levels: E, requires: 'automations', db: true },
+    ],
+  }),
+
   ...group('Agent', {
     Page: [{ key: 'agent', label: 'Agent page (available in a future update)', levels: V, page: true }],
   }),
@@ -643,6 +660,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.chat', label: 'Chat channels (department, group and other channels; never private chats)', levels: E, db: true },
       { key: 'admin.templates', label: 'Templates (commissioning certificate and service report text)', levels: E, db: true },
       { key: 'admin.email_templates', label: 'Email templates (default subject and CC of the commissioning certificate and service report emails)', levels: E, db: true },
+      { key: 'admin.automations', label: 'Manage all automations: see, pause and edit everyone’s automations, limits, templates, automations of removed people', levels: E, db: true },
       { key: 'admin.dashboards', label: 'Dashboard templates: build templates, give them to people or departments as their starting dashboards, lock them', levels: E, db: true },
       { key: 'admin.dashboard_charts', label: 'Dashboard charts: green / amber / red targets of the gauges and the charts a new dashboard starts with', levels: E, db: true },
       { key: 'admin.freight', label: 'Freight settings (broker fee, hourly and plywood rates, insurance rule, margin buttons, pick-up locations, shipping agents)', levels: E, db: true },
@@ -671,6 +689,11 @@ export const CATALOG: PermissionItem[] = [
 ]
 
 export const CATALOG_BY_KEY = new Map(CATALOG.map((i) => [i.key, i]))
+
+/** Permissions everyone starts with (added to the starting permissions of new people). */
+export const DEFAULT_PERMS: Record<string, Level> = Object.fromEntries(
+  CATALOG.filter((i) => i.defaultOn).map((i) => [i.key, i.levels.includes('edit') ? 'edit' : 'view']),
+)
 
 /** Every Admin page key (the Admin menu shows when any of them is allowed). */
 /** Any of these opens the Freight page (each tab has its own key). */
