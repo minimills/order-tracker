@@ -8,6 +8,7 @@ import { friendlyError } from '../../lib/format'
 import { usePermissions } from '../../lib/permissions'
 import { serviceDates, type ServiceInfo } from '../../lib/service'
 import { supabase } from '../../lib/supabase'
+import TrainingDoneButton from './TrainingDoneButton'
 
 const FIELD_KEYS = ['order.field.training_needed', 'order.field.training_days', 'order.field.travel_days', 'order.field.technician', 'order.field.service_dates']
 
@@ -52,6 +53,11 @@ export default function OrderServiceSection({ orderId }: { orderId: string }) {
               Open Service Log
             </Link>
           </Can>
+          {(info.training_needed || info.technician_email || info.service_start) && (
+            <Can permission="service.training.done" level="edit">
+              <TrainingDoneButton info={info} onChanged={load} />
+            </Can>
+          )}
           {canAny(FIELD_KEYS, 'edit') && (
             <button type="button" className={secondaryButtonClass} onClick={() => setEditing(true)}>
               Edit Service

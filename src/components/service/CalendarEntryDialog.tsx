@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import Can from '../Can'
-import { buttonClass, Field, inputClass, Modal, secondaryButtonClass, Switch } from '../form'
+import { buttonClass, Field, inputClass, Modal, narrowInputClass, secondaryButtonClass, Switch } from '../form'
 import { useAuth } from '../../lib/auth'
 import { hfxParts, hfxToIso, inputToMinutes, minutesToInput } from '../../lib/calendarTime'
 import { confirmAction } from '../../lib/confirm'
@@ -11,10 +11,12 @@ import { friendlyError } from '../../lib/format'
 import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
 
+export type EntryKind = 'onsite' | 'travel' | 'training' | 'other'
+export type Share = { type: 'user' | 'group' | 'department'; target: string; name?: string }
 export type ManualEntry = {
   id: string
   tech_email: string
-  kind: 'onsite' | 'travel'
+  kind: EntryKind
   customer_id: string | null
   customer_text: string | null
   start_date: string
@@ -24,12 +26,25 @@ export type ManualEntry = {
   all_day: boolean
   starts_at: string | null
   ends_at: string | null
+  /** 0053 */
+  visibility?: 'private' | 'shared'
+  order_id?: string | null
+  order_code?: string | null
+  done_at?: string | null
+  done_by_name?: string | null
+  owner_name?: string
+  editable?: boolean
+  shares?: Share[]
 }
+
+type Choices = { people: { email: string; name: string }[]; groups: { id: string; name: string }[]; departments: { id: string; name: string }[] }
+const SERVICE_KINDS: EntryKind[] = ['onsite', 'travel', 'training']
+const KIND_LABEL: Record<EntryKind, string> = { other: 'Appointment', onsite: 'On site', travel: 'Travel', training: 'Training' }
 
 /** What a click on the calendar fills in for a new entry. */
 export type EntryPreset = { start_date: string; end_date: string; all_day: boolean; start_min?: number; end_min?: number }
 
-/** A technician's own calendar entry: title, customer, all day or a start and end time, on site or travel, notes. */
+/** A calendar entry: kind, title, customer, all day or a start and end time, notes, private or shared (people, groups, departments), and for service entries an order. */
 export default function CalendarEntryDialog({
   entry,
   preset,
@@ -49,9 +64,12 @@ export default function CalendarEntryDialog({
   const { session } = useAuth()
   const me = session?.user.email?.toLowerCase() ?? ''
   const manage = can('service.calendar.manage', 'edit')
+  const service = can('service')
   const [f, setF] = useState({
     tech_email: entry?.tech_email ?? (manage ? defaultTech || me : me),
-    kind: entry?.kind ?? ('onsite' as 'onsite' | 'travel'),
+    kind: entry?.kind ?? ('other' as EntryKind),
+    visibility: entry?.visibility ?? ('private' as 'private' | 'shared'),
+    order_id: entry?.order_id ?? '',
     title: entry?.title ?? '',
     customer_text: entry?.customer_text ?? '',
     all_day: entry ? entry.all_day !== false : (preset?.all_day ?? true),
@@ -63,7 +81,54 @@ export default function CalendarEntryDialog({
   })
   const [customers, setCustomers] = useState<{ id: string; name: string }[]>([])
   const [saving, setSaving] = useState(false)
-  const mayEdit = manage || (f.tech_email === me && can('service.calendar.add', 'edit'))
+  const [shares, setShares] = useState<Share[]>(entry?.shares ?? [])
+  // A new service or training entry starts shared with the Service / Training team.
+  const [team, setTeam] = useState<Share[]>([])
+  const [choices, setChoices] = useState<Choices>({ people: [], groups: [], departments: [] })
+  const [orders, setOrders] = useState<{ order_id: string; order_code: string; customer_name: string | null }[]>([])
+  const [adding, setAdding] = useState<{ type: Share['type']; target: string }>({ type: 'user', target: '' })
+  const mayEdit = entry ? entry.editable !== false : true
+  const mayShare = can('service.calendar.share', 'edit')
+  const nameOf = (x: Share) =>
+    x.name ??
+    (x.type === 'user'
+      ? choices.people.find((p) => p.email === x.target)?.name
+      : x.type === 'group'
+        ? `Group: ${choices.groups.find((g) => g.id === x.target)?.name ?? ''}`
+        : `Department: ${choices.departments.find((d) => d.id === x.target)?.name ?? ''}`) ??
+    x.target
+
+  useEffect(() => {
+    if (!supabase) return
+    supabase.rpc('calendar_share_choices').then(({ data }) => data && setChoices(data as Choices))
+    supabase.rpc('calendar_settings').then(({ data }) => {
+      const t = (((data as { service_team?: { type: Share['type']; target: string }[] } | null)?.service_team) ?? []).map((x) => ({ type: x.type, target: x.target }))
+      setTeam(t)
+    })
+    if (service)
+      supabase
+        .from('order_service_info')
+        .select('order_id, order_code, customer_name, training_needed, technician_email, service_start, archived, stage')
+        .eq('archived', false)
+        .neq('stage', 'Cancelled')
+        .order('order_number', { ascending: false })
+        .limit(300)
+        .then(({ data }) =>
+          setOrders(
+            ((data as { order_id: string; order_code: string; customer_name: string | null; training_needed: boolean; technician_email: string | null; service_start: string | null }[] | null) ?? []).filter(
+              (o) => o.training_needed || o.technician_email || o.service_start,
+            ),
+          ),
+        )
+  }, [service])
+
+  /** Changing the kind of a new entry: service kinds are shared with the team, others start private. */
+  function setKind(k: EntryKind) {
+    if (!entry && SERVICE_KINDS.includes(k) && f.kind === 'other' && team.length) {
+      setF({ ...f, kind: k, visibility: 'shared' })
+      if (!shares.length) setShares(team)
+    } else setF({ ...f, kind: k })
+  }
 
   useEffect(() => {
     supabase
@@ -82,8 +147,13 @@ export default function CalendarEntryDialog({
     const startsAt = f.all_day ? null : hfxToIso(f.start_date, inputToMinutes(f.start_time))
     const endsAt = f.all_day ? null : hfxToIso(f.end_date, inputToMinutes(f.end_time))
     if (startsAt && endsAt && endsAt <= startsAt) return toast.error('The end time must be after the start time.')
+    if (f.visibility === 'shared' && !shares.length) return toast.error('Choose who the entry is shared with, or make it private.')
     const match = customers.find((c) => c.name.toLowerCase() === f.customer_text.trim().toLowerCase())
     const row = {
+      ...(entry ? { id: entry.id } : {}),
+      visibility: f.visibility,
+      shares: f.visibility === 'shared' ? shares.map((x) => ({ type: x.type, target: x.target })) : [],
+      order_id: f.kind !== 'other' && f.order_id ? f.order_id : null,
       tech_email: f.tech_email,
       kind: f.kind,
       title: f.title.trim() || null,
@@ -97,7 +167,7 @@ export default function CalendarEntryDialog({
       notes: f.notes.trim() || null,
     }
     setSaving(true)
-    const { error } = entry ? await supabase.from('tech_calendar_entries').update(row).eq('id', entry.id) : await supabase.from('tech_calendar_entries').insert(row)
+    const { error } = await supabase.rpc('save_calendar_entry', { p: row })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
     toast.success('Calendar entry saved.')
@@ -107,7 +177,7 @@ export default function CalendarEntryDialog({
   async function archive() {
     if (!supabase || !entry) return
     if (!(await confirmAction('Archive this calendar entry? It disappears from the calendar and the phone calendar.', { confirmLabel: 'Archive', danger: true }))) return
-    const { error } = await supabase.from('tech_calendar_entries').update({ archived: true }).eq('id', entry.id)
+    const { error } = await supabase.rpc('archive_calendar_entry', { p_entry: entry.id })
     if (error) return toast.error(friendlyError(error))
     onSaved()
   }
@@ -137,8 +207,14 @@ export default function CalendarEntryDialog({
     >
       <div className="space-y-3">
         <Can permission="service.calendar.manage" level="edit">
-          <Field label="Technician" htmlFor="ce-tech">
-            <select id="ce-tech" className={inputClass} value={f.tech_email} disabled={!mayEdit} onChange={(e) => setF({ ...f, tech_email: e.target.value })}>
+          <Field label="Whose calendar" htmlFor="ce-tech">
+            <select
+              id="ce-tech"
+              className={inputClass}
+              value={f.tech_email}
+              disabled={!mayEdit || (!!entry && entry.tech_email !== me)}
+              onChange={(e) => setF({ ...f, tech_email: e.target.value, visibility: e.target.value !== me ? 'shared' : f.visibility })}
+            >
               {!people.some((p) => p.email === f.tech_email) && <option value={f.tech_email}>{f.tech_email}</option>}
               {people.map((p) => (
                 <option key={p.email} value={p.email}>
@@ -148,22 +224,34 @@ export default function CalendarEntryDialog({
             </select>
           </Field>
         </Can>
-        <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Kind of day">
-          {(['onsite', 'travel'] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={f.kind === k}
-              disabled={!mayEdit}
-              className={`rounded-md border px-3 py-2 text-sm font-medium ${f.kind === k ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white'}`}
-              onClick={() => setF({ ...f, kind: k })}
-            >
-              {k === 'onsite' ? 'On site' : 'Travel'}
-            </button>
-          ))}
-        </div>
-        <Field label="Title" htmlFor="ce-title" hint="Optional. Without a title the entry shows “On site” or “Travel” and the customer.">
+        {entry?.owner_name && entry.tech_email !== me && (
+          <p className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            On {entry.owner_name}’s calendar{mayEdit ? '' : ', shared with you. Only its owner can change it.'}
+          </p>
+        )}
+        {entry?.done_at && (
+          <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-900">
+            Done{entry.done_by_name ? ` (${entry.done_by_name})` : ''}: the training of this order was marked as done.
+          </p>
+        )}
+        {(service || f.kind !== 'other') && (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Kind of entry">
+            {(['other', ...SERVICE_KINDS] as EntryKind[]).map((k) => (
+              <button
+                key={k}
+                type="button"
+                role="radio"
+                aria-checked={f.kind === k}
+                disabled={!mayEdit || (k !== 'other' && !service)}
+                className={`rounded-md border px-3 py-2 text-sm font-medium ${f.kind === k ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white'}`}
+                onClick={() => setKind(k)}
+              >
+                {KIND_LABEL[k]}
+              </button>
+            ))}
+          </div>
+        )}
+        <Field label="Title" htmlFor="ce-title" hint="Optional. Without a title the entry shows its kind and the customer.">
           <input id="ce-title" className={inputClass} maxLength={200} value={f.title} disabled={!mayEdit} onChange={(e) => setF({ ...f, title: e.target.value })} />
         </Field>
         <Field label="Customer" htmlFor="ce-customer" hint="Pick from the list or type any name.">
@@ -227,6 +315,121 @@ export default function CalendarEntryDialog({
           )}
         </div>
         {!f.all_day && <p className="text-xs text-slate-500">Times are Halifax time.</p>}
+        {f.kind !== 'other' && service && (
+          <Field label="Order" htmlFor="ce-order" hint="Optional. “Mark Training as Done” on the order also completes its linked entries.">
+            <select id="ce-order" className={inputClass} value={f.order_id ?? ''} disabled={!mayEdit} onChange={(e) => setF({ ...f, order_id: e.target.value })}>
+              <option value="">No order</option>
+              {entry?.order_id && !orders.some((o) => o.order_id === entry.order_id) && <option value={entry.order_id}>Order {entry.order_code ?? ''}</option>}
+              {orders.map((o) => (
+                <option key={o.order_id} value={o.order_id}>
+                  Order {o.order_code}
+                  {o.customer_name ? ` – ${o.customer_name}` : ''}
+                </option>
+              ))}
+            </select>
+          </Field>
+        )}
+        <fieldset className="space-y-2" data-setting="calendar-visibility">
+          <legend className="text-sm font-medium">Who Sees It</legend>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Who sees it">
+            {(['private', 'shared'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                role="radio"
+                aria-checked={f.visibility === v}
+                disabled={!mayEdit || (v === 'private' && f.tech_email !== me)}
+                className={`rounded-md border px-3 py-2 text-left text-sm ${f.visibility === v ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white'}`}
+                onClick={() => {
+                  setF({ ...f, visibility: v })
+                  if (v === 'shared' && !shares.length && SERVICE_KINDS.includes(f.kind)) setShares(team)
+                }}
+              >
+                <span className="block font-medium">{v === 'private' ? 'Private' : 'Shared'}</span>
+                <span className={`block text-xs ${f.visibility === v ? 'text-slate-200' : 'text-slate-500'}`}>
+                  {v === 'private' ? 'Only you. Nobody else, admins included.' : 'Also on the calendars of the people chosen.'}
+                </span>
+              </button>
+            ))}
+          </div>
+          {f.visibility === 'shared' && (
+            <div className="space-y-2">
+              {shares.length === 0 ? (
+                <p className="text-xs text-slate-500">Not shared with anyone yet.</p>
+              ) : (
+                <ul className="flex flex-wrap gap-1.5">
+                  {shares.map((x) => (
+                    <li key={`${x.type}:${x.target}`} className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
+                      {nameOf(x)}
+                      {mayEdit && (
+                        <button type="button" aria-label={`Remove ${nameOf(x)}`} className="text-slate-500 hover:text-red-700" onClick={() => setShares(shares.filter((y) => y !== x))}>
+                          ✕
+                        </button>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {mayEdit && (
+                <Can
+                  permission="service.calendar.share"
+                  level="edit"
+                  fallback={
+                    <p className="text-xs text-slate-500">
+                      {SERVICE_KINDS.includes(f.kind) ? 'Service and training entries are shared with the Service / Training team.' : 'Ask an admin to allow sharing with other people.'}
+                    </p>
+                  }
+                >
+                  <div className="flex flex-wrap gap-2">
+                    <select
+                      aria-label="Share with"
+                      className={`${narrowInputClass} w-36`}
+                      value={adding.type}
+                      onChange={(e) => setAdding({ type: e.target.value as Share['type'], target: '' })}
+                    >
+                      <option value="user">A person</option>
+                      <option value="group">A group</option>
+                      <option value="department">A department</option>
+                    </select>
+                    <select aria-label="Which" className={`${narrowInputClass} min-w-40 flex-1`} value={adding.target} onChange={(e) => setAdding({ ...adding, target: e.target.value })}>
+                      <option value="">Select…</option>
+                      {(adding.type === 'user'
+                        ? choices.people.filter((p) => p.email !== f.tech_email).map((p) => ({ id: p.email, name: p.name }))
+                        : adding.type === 'group'
+                          ? choices.groups
+                          : choices.departments
+                      ).map((x) => (
+                        <option key={x.id} value={x.id}>
+                          {x.name}
+                        </option>
+                      ))}
+                    </select>
+                    <button
+                      type="button"
+                      className={secondaryButtonClass}
+                      disabled={!adding.target || !mayShare}
+                      onClick={() => {
+                        if (!shares.some((x) => x.type === adding.type && x.target === adding.target)) setShares([...shares, { type: adding.type, target: adding.target }])
+                        setAdding({ ...adding, target: '' })
+                      }}
+                    >
+                      Add
+                    </button>
+                    {team.length > 0 && (
+                      <button
+                        type="button"
+                        className="text-xs text-blue-700 underline"
+                        onClick={() => setShares([...shares, ...team.filter((t) => !shares.some((x) => x.type === t.type && x.target === t.target))])}
+                      >
+                        Add the Service / Training Team
+                      </button>
+                    )}
+                  </div>
+                </Can>
+              )}
+            </div>
+          )}
+        </fieldset>
         <Field label="Notes" htmlFor="ce-notes">
           <textarea id="ce-notes" rows={3} className={inputClass} value={f.notes} disabled={!mayEdit} onChange={(e) => setF({ ...f, notes: e.target.value })} />
         </Field>

@@ -22,7 +22,7 @@ type App = 'apple' | 'google'
 const when = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', dateStyle: 'medium', timeStyle: 'short' })
 
 /**
- * Technician Calendar → Calendar Connection → "From your phone to the app":
+ * Calendar → Calendar Connection → "From your phone to the app":
  * link a work calendar from the phone so its entries show in the app.
  * `version` reloads it (after Refresh Now on the page); `onSynced` tells the page.
  */

@@ -1,5 +1,5 @@
 // @permission-scope service.calendar, service.calendar.navigate
-// The views of the Technician Calendar (only reachable from CalendarPage, which
+// The views of the Calendar (only reachable from CalendarPage, which
 // decides who may create, open, move and resize entries).
 import { addDays, addMonths, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
@@ -21,6 +21,8 @@ const initials = (name: string | null) =>
 export type ViewProps = {
   rows: CalendarRow[]
   showTech: boolean
+  /** The signed-in person (entries of others shared with them get a mark). */
+  me: string
   /** Entry being dragged (drawn see-through, the pointer passes through it). */
   draggingKey: string | null
   canDrag: (r: CalendarRow) => boolean
@@ -34,7 +36,8 @@ export type ViewProps = {
 function label(r: CalendarRow) {
   const k = CALENDAR_KINDS[r.kind as CalendarKind] ?? CALENDAR_KINDS.onsite
   const time = r.start_at ? `${minutesLabel(hfxParts(r.start_at).minutes)} – ${minutesLabel(hfxParts(endOf(r)).minutes)} ` : ''
-  return `${r.from_phone ? 'From phone · ' : ''}${k.label}: ${time}${r.title}${r.tech_name ? ` (${r.tech_name})` : ''}${r.notes ? ` – ${r.notes}` : ''}`
+  const state = [r.from_phone && 'From phone', r.visibility === 'private' && 'Private', r.done && 'Done'].filter(Boolean).join(' · ')
+  return `${state ? `${state} · ` : ''}${k.label}: ${time}${r.title}${r.tech_name ? ` (${r.tech_name})` : ''}${r.notes ? ` – ${r.notes}` : ''}`
 }
 
 /** One entry. Click opens it; dragging moves it; the handle changes its length. */
@@ -82,8 +85,10 @@ function Chip({
         }
       }}
     >
-      <span className="block truncate">
+      <span className={`block truncate ${r.done ? 'line-through opacity-70' : ''}`}>
         {r.from_phone && <Icon name="phone" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label="From phone" />}
+        {r.source === 'manual' && r.visibility === 'private' && <Icon name="lock" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label="Private" />}
+        {r.source === 'manual' && r.tech_email !== p.me && <Icon name="users" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label={`Shared by ${r.tech_name ?? 'someone else'}`} />}
         {p.showTech && r.tech_name ? `${initials(r.tech_name)} · ` : ''}
         {timeText && <span className="font-medium">{timeText} </span>}
         {r.title}

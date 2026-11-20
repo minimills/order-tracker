@@ -26,6 +26,7 @@ import {
   type ServiceInfo,
 } from '../lib/service'
 import { supabase } from '../lib/supabase'
+import TrainingDoneButton from '../components/service/TrainingDoneButton'
 import ServiceCallHeader from '../components/service/ServiceCallHeader'
 import type { ServiceCallInfo } from '../lib/service'
 import PrintButton from '../components/print/PrintButton'
@@ -246,6 +247,11 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
               <Link to={`/orders/${orderId}`} className="text-sm text-blue-700 underline">
                 Open the Order
               </Link>
+            </Can>
+            <Can permission="service.training.done" level="edit">
+              <div className="mt-2">
+                <TrainingDoneButton info={info} onChanged={load} />
+              </div>
             </Can>
             </>
           ) : null}

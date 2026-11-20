@@ -14,6 +14,7 @@ import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { buttonClass, secondaryButtonClass } from '../components/form'
 import PrintButton from '../components/print/PrintButton'
+import ServiceSummary from '../components/service/ServiceSummary'
 
 const LISTS: { state: ServiceState; title: string; permission: string; empty: string }[] = [
   { state: 'in_progress', title: 'In Progress', permission: 'service.list.in_progress', empty: 'No training is in progress.' },
@@ -117,8 +118,8 @@ export default function ServicePage() {
 
         <div className="flex flex-wrap gap-2">
           <Can permission="service.calendar">
-            <Link to="/service/calendar" className={secondaryButtonClass}>
-              Technician Calendar
+            <Link to="/calendar" className={secondaryButtonClass}>
+              Calendar
             </Link>
           </Can>
           {board && (
@@ -136,6 +137,10 @@ export default function ServicePage() {
               {waiting.length} day {waiting.length === 1 ? 'entry is' : 'entries are'} not yet saved. They are kept on this device and are sent automatically when the connection is back.
             </p>
           )}
+        </Can>
+
+        <Can permission="service.summary">
+          <ServiceSummary />
         </Can>
 
         {loading && <p className="text-center text-slate-500">Loading…</p>}

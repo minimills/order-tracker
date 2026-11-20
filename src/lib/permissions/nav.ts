@@ -24,7 +24,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/notices', label: 'Notice Board', icon: 'pin', permission: 'notices', badge: 'notices' },
   { to: '/chat', label: 'Chat', icon: 'chat', permission: 'chat', badge: 'chat' },
   { to: '/service', label: 'Service / Training', icon: 'cog', permission: 'service' },
-  { to: '/service/calendar', label: 'Tech Calendar', icon: 'calendar', permission: 'service.calendar' },
+  { to: '/calendar', label: 'Calendar', icon: 'calendar', permission: 'service.calendar' },
   { to: '/timesheets', label: 'Timesheets', icon: 'timer', anyOf: TIMESHEET_KEYS },
   { to: '/my-timesheet', label: 'My Timesheet', icon: 'clock', permission: 'timesheets.mine' },
   { to: '/time-off', label: 'Time Off', icon: 'calendar', permission: 'timesheets.time_off' },
