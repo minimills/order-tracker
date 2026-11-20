@@ -1,7 +1,7 @@
 import { format } from 'date-fns'
 import type { CalendarRow } from './service'
 
-// Shared helpers of the Technician Calendar views.
+// Shared helpers of the Calendar views.
 export const iso = (d: Date) => format(d, 'yyyy-MM-dd')
 export const WEEKDAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
 /** Height of one hour in the day and week views. */

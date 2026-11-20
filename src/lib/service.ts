@@ -27,6 +27,9 @@ export type ServiceInfo = {
   entries: number
   hours: number
   certificate_status: 'draft' | 'signed' | 'superseded' | null
+  /** 0053: "Mark Training as Done". */
+  training_done_at?: string | null
+  training_done_by_name?: string | null
 }
 
 export async function loadServiceInfo() {
@@ -56,7 +59,7 @@ export type ServiceState = 'upcoming' | 'in_progress' | 'completed'
 
 /** Which Service list an order belongs to. */
 export function serviceState(s: ServiceInfo, today: string): ServiceState {
-  if (s.certificate_status === 'signed') return 'completed'
+  if (s.certificate_status === 'signed' || s.training_done_at) return 'completed'
   if (s.service_end && s.service_end < today) return 'completed'
   if ((s.service_start && s.service_start <= today) || s.entries > 0) return 'in_progress'
   return 'upcoming'
@@ -318,7 +321,7 @@ export type ServiceCallInfo = {
 }
 
 // ---------------------------------------------------------------------------
-// Technician calendar
+// Calendar
 // ---------------------------------------------------------------------------
 export type CalendarKind = 'training' | 'service' | 'travel' | 'onsite' | 'other' | 'event'
 export type CalendarRow = {
@@ -341,6 +344,10 @@ export type CalendarRow = {
   location: string | null
   /** End time of a timed entry (may be empty on old phone entries: shown as one hour). */
   end_at: string | null
+  /** 0053: training marked done, entry done, service call in Done, travel logged. */
+  done?: boolean
+  /** 0053: own calendar entries are private (only the owner) or shared. */
+  visibility?: 'private' | 'shared'
 }
 /** Colours (light background, dark text, solid dot) per kind, readable for colour-blind people (also labelled). */
 export const CALENDAR_KINDS: Record<CalendarKind, { label: string; chip: string; dot: string }> = {
@@ -348,7 +355,7 @@ export const CALENDAR_KINDS: Record<CalendarKind, { label: string; chip: string;
   service: { label: 'Service call', chip: 'bg-violet-100 text-violet-900 ring-violet-300', dot: 'bg-violet-600' },
   travel: { label: 'Travel day', chip: 'bg-amber-100 text-amber-900 ring-amber-300', dot: 'bg-amber-500' },
   onsite: { label: 'Other on-site day', chip: 'bg-emerald-100 text-emerald-900 ring-emerald-300', dot: 'bg-emerald-600' },
-  other: { label: 'Other', chip: 'bg-slate-100 text-slate-800 ring-slate-300', dot: 'bg-slate-500' },
+  other: { label: 'Appointment or other', chip: 'bg-slate-100 text-slate-800 ring-slate-300', dot: 'bg-slate-500' },
   event: { label: 'Company event', chip: 'bg-rose-50 text-rose-900 ring-rose-300', dot: 'bg-rose-500' },
 }
 

@@ -45,7 +45,6 @@ export function crumbsForPath(path: string): Crumb[] {
     '/orders': [{ label: 'Orders' }],
     '/orders/new': [{ label: 'Orders', to: '/orders' }, { label: 'New Order' }],
     '/settings/notifications': [{ label: 'Settings', to: '/settings' }, { label: 'Notifications' }],
-    '/service/calendar': [{ label: 'Service / Training', to: '/service' }, { label: 'Tech Calendar' }],
     '/reports/department-delays': [{ label: 'Reports' }, { label: 'Department Delays' }],
     '/reports/build-times': [{ label: 'Reports' }, { label: 'Build Times' }],
   }

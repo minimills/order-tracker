@@ -34,6 +34,7 @@ export const GROUPS = [
   'Boards',
   'Notice Board',
   'Service / Training',
+  'Calendar',
   'Timesheets',
   'Chat',
   'Reports',
@@ -136,7 +137,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'dashboard.widget.overdue', label: 'Overdue items (their overdue cards; overdue payments and passed ship dates where allowed)', levels: V, requires: 'dashboard' },
       { key: 'dashboard.widget.new_orders', label: 'New orders (the last 14 days)', levels: V, requires: 'dashboard' },
       { key: 'dashboard.widget.board_snapshot', label: 'Board snapshot: cards per stage of a chosen board (only boards they can open)', levels: V, requires: 'dashboard', needs: ['boards'] },
-      { key: 'dashboard.widget.calendar', label: 'Today’s calendar (their technician calendar)', levels: V, requires: 'dashboard', needs: ['service.calendar'] },
+      { key: 'dashboard.widget.calendar', label: 'Today’s calendar (their own calendar)', levels: V, requires: 'dashboard', needs: ['service.calendar'] },
       { key: 'dashboard.widget.events', label: 'Upcoming company events', levels: V, requires: 'dashboard', needs: ['notices.events'] },
       { key: 'dashboard.widget.holidays', label: 'Upcoming holidays and closures', levels: V, requires: 'dashboard' },
       { key: 'dashboard.widget.notices', label: 'Latest notices (only notices meant for them)', levels: V, requires: 'dashboard', needs: ['notices'] },
@@ -510,7 +511,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'notices.print', label: 'Print a notice on one page with the company letterhead', levels: V, requires: 'notices' },
     ],
     Events: [
-      { key: 'notices.events', label: 'Upcoming events panel: events meant for them, with the countdown (also in the Tech Calendar for people who can open it)', levels: V, requires: 'notices', db: true },
+      { key: 'notices.events', label: 'Upcoming events panel: events meant for them, with the countdown (also in the Calendar for people who can open it)', levels: V, requires: 'notices', db: true },
       { key: 'notices.events.post', label: 'Post events (add, edit and archive their own events; choose who they are for; see who answered)', levels: E, requires: 'notices.events', db: true },
       { key: 'notices.events.rsvp', label: 'Answer events: Going, Not going or Maybe', levels: E, requires: 'notices.events', db: true },
       { key: 'notices.events.calendar', label: 'Add to My Calendar (Apple, Google or Outlook)', levels: V, requires: 'notices.events' },
@@ -528,6 +529,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'service.list.in_progress', label: 'List: in progress', levels: V, requires: 'service' },
       { key: 'service.list.upcoming', label: 'List: upcoming', levels: V, requires: 'service' },
       { key: 'service.list.completed', label: 'List: completed', levels: V, requires: 'service' },
+      { key: 'service.summary', label: 'Summary boxes: travel, on-site training and service call days so far and scheduled, with dates', levels: V, requires: 'service', db: true },
+      { key: 'service.training.done', label: 'Mark Training as Done on training orders (also completes the chosen board cards and the order’s calendar entries)', levels: E, requires: 'service', db: true },
     ],
     'Service log': [
       { key: 'service.log', label: 'Day log and timeline (edit: add and change days, machines worked on, notes)', levels: VE, requires: 'service', db: true },
@@ -539,17 +542,6 @@ export const CATALOG: PermissionItem[] = [
       { key: 'service.calls', label: 'Service calls (list on the Service page, call pages, details on the Service Calls board)', levels: V, requires: 'service', db: true, hint: 'Moving cards on the board also needs the Boards permissions (the “Technician” preset has them).' },
       { key: 'service.calls.create', label: 'Create a service call', levels: E, requires: 'service.calls', db: true },
       { key: 'service.calls.edit', label: 'Change a call’s customer, machines, technician and planned dates', levels: E, requires: 'service.calls', db: true },
-    ],
-    Calendar: [
-      { key: 'service.calendar', label: 'Technician calendar page (their own calendar)', levels: V, page: true, db: true },
-      { key: 'service.calendar.print', label: 'Print the calendar (the day, week or month shown)', levels: V, requires: 'service.calendar' },
-      { key: 'service.calendar.navigate', label: 'Month and week view, earlier and later dates', levels: V, requires: 'service.calendar' },
-      { key: 'service.calendar.all', label: 'See every technician’s calendar (choose one or all)', levels: V, requires: 'service.calendar', db: true },
-      { key: 'service.calendar.add', label: 'Add and change their own calendar entries', levels: E, requires: 'service.calendar', db: true },
-      { key: 'service.calendar.manage', label: 'Add and change calendar entries for any technician', levels: E, requires: 'service.calendar', db: true },
-      { key: 'service.calendar.import', label: 'Link their own phone calendar (Settings → Calendar: paste, replace, remove the link, Sync Now)', levels: E, requires: 'service.calendar', db: true },
-      { key: 'service.calendar.classify', label: 'Set the type of entries from phones and link them to a customer or order', levels: E, requires: 'service.calendar', db: true },
-      { key: 'service.calendar.sync', label: 'Phone calendar link (show, copy, make a new one)', levels: E, requires: 'service.calendar', db: true },
     ],
     'Commissioning certificate and service report': [
       { key: 'service.certificate', label: 'See certificates and service reports', levels: V, requires: 'service', db: true },
@@ -564,6 +556,19 @@ export const CATALOG: PermissionItem[] = [
     ],
   }),
 
+  ...group('Calendar', {
+    Calendar: [
+      { key: 'service.calendar', label: 'Calendar page and their own entries (add, change, archive; private or shared with the Service / Training team)', levels: V, db: true, hint: 'Separate from Service / Training: without that page people only see their own entries, entries shared with them and company events.' },
+      { key: 'service.calendar.print', label: 'Print the calendar (the day, week or month shown)', levels: V, requires: 'service.calendar' },
+      { key: 'service.calendar.navigate', label: 'Month and week view, earlier and later dates', levels: V, requires: 'service.calendar' },
+      { key: 'service.calendar.share', label: 'Share their entries with chosen people, groups and departments', levels: E, requires: 'service.calendar', db: true },
+      { key: 'service.calendar.all', label: 'See other people’s calendars (choose one or everyone; private entries are never shown)', levels: V, requires: 'service.calendar', db: true },
+      { key: 'service.calendar.manage', label: 'Add entries to other people’s calendars and change shared entries they can see (never private ones)', levels: E, requires: 'service.calendar', db: true },
+      { key: 'service.calendar.import', label: 'Link their own phone calendar (Calendar Connection: paste, replace, remove the link, Refresh Now)', levels: E, requires: 'service.calendar', db: true },
+      { key: 'service.calendar.classify', label: 'Set the type of entries from phones and link them to a customer or order', levels: E, requires: 'service.calendar', db: true },
+      { key: 'service.calendar.sync', label: 'Phone calendar link (show, copy, make a new one)', levels: E, requires: 'service.calendar', db: true },
+    ],
+  }),
   ...group('Timesheets', {
     'Weekly hours': [
       { key: 'timesheets', label: 'Timesheets page: every employee’s weekly hours, overtime, banked hours and approval status', levels: V, page: true, db: true },
@@ -682,6 +687,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
       { key: 'admin.chat', label: 'Chat channels (department, group and other channels; never private chats)', levels: E, db: true },
       { key: 'admin.templates', label: 'Templates (commissioning certificate and service report text)', levels: E, db: true },
+      { key: 'admin.calendar', label: 'Calendar: the Service / Training team that service and training entries are shared with', levels: E, db: true },
       { key: 'admin.email_templates', label: 'Email templates (default subject and CC of the commissioning certificate and service report emails)', levels: E, db: true },
       { key: 'admin.dashboards', label: 'Dashboard templates: build templates, give them to people or departments as their starting dashboards, lock them', levels: E, db: true },
       { key: 'admin.dashboard_charts', label: 'Dashboard charts: green / amber / red targets of the gauges and the charts a new dashboard starts with', levels: E, db: true },

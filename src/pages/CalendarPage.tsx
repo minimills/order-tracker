@@ -1,6 +1,6 @@
 import { addDays, addMonths, addWeeks, differenceInCalendarDays, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import Can from '../components/Can'
 import { buttonClass, narrowInputClass, secondaryButtonClass } from '../components/form'
@@ -67,16 +67,17 @@ function moved(r: CalendarRow, d: Drag): Change {
   return { start_date: addDaysISO(r.start_date, d.dDays), end_date: addDaysISO(r.end_date, d.dDays), start_at: null, end_at: null }
 }
 
-/** Technician calendar: day, week and month views like a phone calendar; training visits, service calls, travel days and own entries. */
+/** Calendar: day, week and month views like a phone calendar; own entries (private or shared), entries shared with me, and (with Service / Training) training visits, service calls and travel days. */
 export default function CalendarPage() {
   const [params, setParams] = useSearchParams()
   const navigate = useNavigate()
-  const { can, canAny } = usePermissions()
+  const { can } = usePermissions()
   const { session } = useAuth()
   const me = session?.user.email?.toLowerCase() ?? ''
   const seesAll = can('service.calendar.all')
   const manage = can('service.calendar.manage', 'edit')
-  const canAdd = canAny(['service.calendar.add', 'service.calendar.manage'], 'edit')
+  // Everyone with the Calendar page keeps their own entries.
+  const canAdd = can('service.calendar')
   // Phones open on one day; the choice is kept in the address.
   const narrow = typeof window !== 'undefined' && window.innerWidth < 640
   const v = params.get('view')
@@ -168,7 +169,8 @@ export default function CalendarPage() {
   // ---------- Who may change what ----------
   const canDrag = useCallback(
     (r: CalendarRow) => {
-      if (r.source === 'manual') return manage || (r.tech_email === me && can('service.calendar.add', 'edit'))
+      // Own entries, or (manage) shared entries; private ones belong to their owner only.
+      if (r.source === 'manual') return r.tech_email === me || (manage && r.visibility === 'shared')
       if (r.source === 'service_call') return can('service.calls.edit', 'edit')
       if (r.source === 'training') return can('order.field.service_dates', 'edit')
       return false
@@ -180,7 +182,7 @@ export default function CalendarPage() {
     if (!supabase) return
     if (r.source === 'phone') return setPhoneEntry(r)
     if (r.source === 'manual') {
-      const { data, error } = await supabase.from('tech_calendar_entries').select('*').eq('id', r.source_id).maybeSingle()
+      const { data, error } = await supabase.rpc('calendar_entry_details', { p_entry: r.source_id })
       if (error || !data) return toast.error(error ? friendlyError(error) : 'That entry could not be found.')
       return setEditing({ entry: data as ManualEntry, preset: null })
     }
@@ -194,7 +196,7 @@ export default function CalendarPage() {
     let error: { message: string } | null = null
     if (r.source === 'manual') {
       const patch = c.start_at ? { starts_at: c.start_at, ends_at: c.end_at } : { start_date: c.start_date, end_date: c.end_date }
-      ;({ error } = await supabase.from('tech_calendar_entries').update(patch).eq('id', r.source_id))
+      ;({ error } = await supabase.rpc('save_calendar_entry', { p: { id: r.source_id, ...patch } }))
     } else if (r.source === 'service_call') {
       ;({ error } = await supabase.rpc('update_service_call', { p_card: r.source_id, p: { planned_start: c.start_date, planned_end: c.end_date } }))
     } else if (r.source === 'training') {
@@ -310,6 +312,7 @@ export default function CalendarPage() {
   const viewProps: ViewProps = {
     rows: rows.map((r) => (drag && drag.row && drag.moved && rowKey(r) === drag.key ? { ...r, ...moved(r, drag) } : r)),
     showTech: !tech,
+    me,
     draggingKey: drag?.moved && drag.row ? drag.key : null,
     canDrag,
     canCreate: canAdd,
@@ -377,9 +380,18 @@ export default function CalendarPage() {
         </li>
       ))}
       <li className="flex items-center gap-1.5 text-slate-600">
-        <Icon name="phone" className="h-3.5 w-3.5" /> From the technician’s phone calendar
+        <Icon name="phone" className="h-3.5 w-3.5" /> From a linked phone calendar
       </li>
-      {!tech && <li className="text-slate-500">Initials = technician</li>}
+      <li className="flex items-center gap-1.5 text-slate-600">
+        <Icon name="lock" className="h-3.5 w-3.5" /> Private entry (only you see it)
+      </li>
+      <li className="flex items-center gap-1.5 text-slate-600">
+        <Icon name="users" className="h-3.5 w-3.5" /> Shared with you by someone else
+      </li>
+      <li className="text-slate-600">
+        <span className="line-through">Struck through</span> = done
+      </li>
+      {!tech && <li className="text-slate-500">Initials = whose calendar</li>}
     </ul>
     </Can>
   )
@@ -389,17 +401,15 @@ export default function CalendarPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <Link to="/service" className="text-sm text-slate-600 underline">
-              ← Service / Training
-            </Link>
-            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-              <h1 className="mt-1 text-2xl font-semibold">Technician Calendar</h1>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h1 className="text-2xl font-semibold">Calendar</h1>
               <Can permission="service.calendar.print">
-                <PrintButton title="Technician Calendar" />
+                <PrintButton title="Calendar" />
               </Can>
             </div>
             <p className="text-sm text-slate-600">
-              Click an empty time or day to add an entry, click an entry to open it, drag it to move it or drag its edge to change its length.
+              Click an empty time or day to add an entry, click an entry to open it, drag it to move it or drag its edge to change its length. Private entries are seen by you
+              only; shared entries also show on the calendars of the people they are shared with.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -409,7 +419,7 @@ export default function CalendarPage() {
                 Calendar Connection
               </button>
             </Can>
-            <Can anyOf={['service.calendar.add', 'service.calendar.manage']} level="edit">
+            <Can permission="service.calendar">
               <button type="button" className={buttonClass} onClick={() => setEditing({ entry: null, preset: { start_date: anchorISO, end_date: anchorISO, all_day: true } })}>
                 Add Entry
               </button>
@@ -551,8 +561,8 @@ export default function CalendarPage() {
             </div>
           </Can>
           <Can permission="service.calendar.all" fallback={<span className="text-sm text-slate-600">Your calendar</span>}>
-            <select aria-label="Technician" className={`${narrowInputClass} w-full sm:w-56`} value={tech} onChange={(e) => set({ tech: e.target.value })}>
-              <option value="">All technicians</option>
+            <select aria-label="Whose calendar" className={`${narrowInputClass} w-full sm:w-56`} value={tech} onChange={(e) => set({ tech: e.target.value })}>
+              <option value="">Everyone</option>
               {people.map((pp) => (
                 <option key={pp.email} value={pp.email}>
                   {pp.name}

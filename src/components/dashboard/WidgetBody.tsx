@@ -509,7 +509,9 @@ function BoardSnapshot({ widget, data }: { widget: Widget; data: DashData }) {
 }
 
 function CalendarToday({ data }: { data: DashData }) {
-  const s = useLoad(() => data.calendarToday(), [data])
+  const { session } = useAuth()
+  const me = session?.user.email?.toLowerCase() ?? ''
+  const s = useLoad(() => data.calendarToday(me), [data, me])
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
   const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' }) : 'All day')

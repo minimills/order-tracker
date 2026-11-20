@@ -36,7 +36,7 @@ export type Row = {
   link: string | null
 }
 
-const KIND_WORD: Record<string, string> = { training: 'Training visit', service: 'Service call', travel: 'Travel day', onsite: 'On site' }
+const KIND_WORD: Record<string, string> = { training: 'Training visit', service: 'Service call', travel: 'Travel day', onsite: 'On site', other: 'Appointment' }
 
 /** Text value escaping (RFC 5545 3.3.11). */
 export const icsText = (s: string) => s.replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n')

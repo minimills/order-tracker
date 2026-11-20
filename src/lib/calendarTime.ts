@@ -1,4 +1,4 @@
-// Times on the Technician Calendar are always shown and entered in Halifax time.
+// Times on the Calendar are always shown and entered in Halifax time.
 
 const parts = new Intl.DateTimeFormat('en-CA', {
   timeZone: 'America/Halifax',

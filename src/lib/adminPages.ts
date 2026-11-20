@@ -26,6 +26,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   { to: '/admin/dashboard-charts', permission: 'admin.dashboard_charts', icon: 'pulse' as const, title: 'Dashboard Charts', text: 'Green, amber and red targets for the gauges, and the charts a new dashboard starts with.' },
   { to: '/admin/dashboard-templates', permission: 'admin.dashboards', icon: 'home' as const, title: 'Dashboard Templates', text: 'Starting dashboards for people or departments, and locked dashboards.' },
   { to: '/admin/freight', permission: 'admin.freight', icon: 'truck' as const, title: 'Freight Settings', text: 'Broker fee, handling rates, insurance rule, margin buttons, pick-up locations and shipping agents.' },
+  { to: '/admin/calendar', permission: 'admin.calendar', icon: 'calendar' as const, title: 'Calendar', text: 'The Service / Training team that service and training calendar entries are shared with.' },
   { to: '/admin/email-templates', permission: 'admin.email_templates', icon: 'template' as const, title: 'Email Templates', text: 'Default subject and CC of the commissioning certificate and service report emails.' },
   { to: '/admin/email-log', permission: 'admin.email_log', icon: 'list' as const, title: 'Email Log', text: 'Every email sent, with Resend.' },
   { to: '/admin/groups', permission: 'admin.groups', icon: 'users' as const, title: 'Groups', text: 'Groups of people (for example Procurement, Techs) for sharing boards and notifications.' },
