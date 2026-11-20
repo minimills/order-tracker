@@ -1,5 +1,5 @@
 // @permission-scope timesheets
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
 import { narrowInputClass, secondaryButtonClass } from '../form'
@@ -11,6 +11,8 @@ import { useDepartments } from '../../lib/useDepartments'
 import { useAuth } from '../../lib/auth'
 import { usePermissions } from '../../lib/permissions'
 import { confirmAction } from '../../lib/confirm'
+import Can from '../Can'
+import FillEveryoneDialog from './FillEveryoneDialog'
 
 const th = 'px-2 py-1.5 text-left font-medium'
 const td = 'px-2 py-1.5'
@@ -29,6 +31,7 @@ export default function WeeksOverview() {
   const [dept, setDept] = useState(params.get('dept') ?? '')
   const [q, setQ] = useState('')
   const [version, setVersion] = useState(0)
+  const [filling, setFilling] = useState(false)
 
   useEffect(() => {
     loadWeekRows(ws, ws)
@@ -42,6 +45,8 @@ export default function WeeksOverview() {
   const go = (d: string) => setParams({ ...Object.fromEntries(params), week: d }, { replace: true })
   const canApprove = (deptId: string | null) => can('timesheets.approve', 'edit') || (deptId != null && managed.has(deptId))
   const openRows = shown.map((e) => byEmp.get(e.id)).filter((r): r is WeekRow => !!r && r.status === 'open' && r.entries > 0 && !r.needs_review && canApprove(r.department_id) && r.user_email !== me)
+
+  const closeFill = useCallback(() => setFilling(false), [])
 
   async function approveAll() {
     if (!supabase || !openRows.length) return
@@ -80,6 +85,11 @@ export default function WeeksOverview() {
             ))}
         </select>
         <input aria-label="Search employees" placeholder="Search" className={`${narrowInputClass} w-40`} value={q} onChange={(e) => setQ(e.target.value)} />
+        <Can permission="timesheets.fill_all" level="edit">
+          <button type="button" className={secondaryButtonClass} onClick={() => setFilling(true)}>
+            Fill Weekday Hours for Everyone
+          </button>
+        </Can>
         {openRows.length > 0 && (
           <button type="button" className={secondaryButtonClass} onClick={approveAll}>
             Approve All ({openRows.length})
@@ -152,6 +162,18 @@ export default function WeeksOverview() {
       <p className="text-xs text-slate-500">
         Overtime: hours over {showHours(settings.overtime_weekly_hours)} a week (hours worked + banked hours used). Banked: hours put in the bank this week (not paid now).
       </p>
+      {filling && (
+        <Can permission="timesheets.fill_all" level="edit">
+          <FillEveryoneDialog
+            weekStart={ws}
+            onClose={closeFill}
+            onDone={() => {
+              setFilling(false)
+              setVersion((v) => v + 1)
+            }}
+          />
+        </Can>
+      )}
     </div>
   )
 }

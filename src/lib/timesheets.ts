@@ -16,6 +16,10 @@ export type PayrollSettings = {
   stat_min_days_employed: number
   paid_holiday_kinds: string[]
   employer_cost_pct: number
+  /** 0054: Fill Weekdays (and Fill Weekday Hours for Everyone): "08:00" to "16:30" with a 30-minute unpaid break. */
+  fill_start: string
+  fill_end: string
+  fill_break_minutes: number
   pei_minimum: { overtime_weekly_hours: number; vacation_tiers: Tier[]; sick_tiers: Tier[] }
 }
 
@@ -25,6 +29,9 @@ export const DEFAULT_PAYROLL: PayrollSettings = {
   overtime_rate: 1.5,
   banked_overtime_credit: 1.5,
   hours_per_day: 8,
+  fill_start: '08:00',
+  fill_end: '16:30',
+  fill_break_minutes: 30,
   vacation_tiers: [
     { after_years: 1, days: 10 },
     { after_years: 5, days: 15 },
@@ -286,3 +293,17 @@ export function monthsBetween(from: string, to: string) {
 }
 
 export const STATUS_WORDS: Record<string, string> = { pending: 'Waiting for a decision', approved: 'Approved', declined: 'Declined', cancelled: 'Cancelled' }
+
+/** "8:00 a.m." from "08:00". */
+export function clockText(hhmm: string) {
+  const [h, m] = hhmm.split(':').map(Number)
+  const am = h < 12
+  const h12 = h % 12 === 0 ? 12 : h % 12
+  return `${h12}:${String(m).padStart(2, '0')} ${am ? 'a.m.' : 'p.m.'}`
+}
+
+/** Paid hours of the weekday fill (8:00 to 4:30 with a 30-minute break = 8). */
+export function fillHours(s: Pick<PayrollSettings, 'fill_start' | 'fill_end' | 'fill_break_minutes'>) {
+  const mins = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5))
+  return Math.round(((mins(s.fill_end) - mins(s.fill_start) - Number(s.fill_break_minutes)) / 60) * 100) / 100
+}

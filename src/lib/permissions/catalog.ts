@@ -411,6 +411,11 @@ export const CATALOG: PermissionItem[] = [
       { key: 'freight.breakdowns.archive', label: 'Archive and restore a breakdown', levels: E, requires: 'freight.breakdowns', db: true },
       { key: 'freight.breakdowns.import', label: 'Import old Freight Multitool data (CSV)', levels: E, requires: 'freight.breakdowns', db: true },
       { key: 'freight.agents.add', label: '“Add new” in the shipping agent list', levels: E, db: true },
+      { key: 'freight.profit', label: 'Profit and loss tab: invoice amounts against breakdown costs (summary, chart by day / week / month / quarter / year, compare with last year)', levels: V, needs: ['freight.breakdowns'] },
+    ],
+    'Incoming freight': [
+      { key: 'freight.incoming', label: 'Incoming freight tab: shipments received from suppliers with their costs (Edit: add, change, archive)', levels: VE, db: true },
+      { key: 'freight.incoming.export', label: 'Incoming freight: Export CSV', levels: V, requires: 'freight.incoming' },
     ],
     'Quote requests and insurance': [
       { key: 'freight.quote', label: 'Freight quote request email (View: write and copy; Edit: send it from the app)', levels: VE, db: true, hint: 'Uses the customer’s contact details only with “Customer contact details”.' },
@@ -426,6 +431,8 @@ export const CATALOG: PermissionItem[] = [
       { key: 'crating.summary.copy', label: 'Copy button (freight quote text)', levels: V, requires: 'crating.summary' },
       { key: 'crating.ship_warning', label: 'Warning when marking shipped with machines not crated', levels: V, needs: ['crating'] },
       { key: 'crating.units', label: 'Imperial / Metric switch', levels: V },
+      { key: 'crating.handoff', label: 'Crating hand-off: who crates the order, what is still missing, and whether the shipping quote information was sent', levels: V, needs: ['crating'], db: true },
+      { key: 'crating.assign', label: 'Choose who crates an order (they are told in the app)', levels: E, requires: 'crating.handoff', db: true },
     ],
   }),
 
@@ -573,6 +580,7 @@ export const CATALOG: PermissionItem[] = [
     'Weekly hours': [
       { key: 'timesheets', label: 'Timesheets page: every employee’s weekly hours, overtime, banked hours and approval status', levels: V, page: true, db: true },
       { key: 'timesheets.print', label: 'Print button on the Timesheets pages (weekly hours, absence calendar, reports, one employee’s week)', levels: V, requires: 'timesheets' },
+      { key: 'timesheets.fill_all', label: 'Fill Weekday Hours for Everyone (the chosen week; skips time off, days off, approved weeks and days that already have hours)', levels: E, requires: 'timesheets.enter', db: true },
       { key: 'timesheets.enter', label: 'Enter and change hours (per day or per week), bank hours, mark imported hours as reviewed (employees never enter their own)', levels: E, requires: 'timesheets', db: true },
       { key: 'timesheets.approve', label: 'Approve and lock weeks of every department (department managers can always approve their own departments)', levels: E, requires: 'timesheets', db: true },
       { key: 'timesheets.unlock', label: 'Unlock an approved week (with a reason)', levels: E, requires: 'timesheets', db: true },
@@ -723,7 +731,7 @@ export const CATALOG_BY_KEY = new Map(CATALOG.map((i) => [i.key, i]))
 
 /** Every Admin page key (the Admin menu shows when any of them is allowed). */
 /** Any of these opens the Freight page (each tab has its own key). */
-export const FREIGHT_KEYS = ['freight.dashboard', 'freight.breakdowns', 'freight.insurance', 'reports.crating', 'freight.quote']
+export const FREIGHT_KEYS = ['freight.dashboard', 'freight.breakdowns', 'freight.insurance', 'reports.crating', 'freight.quote', 'freight.incoming']
 
 /** Any of these opens the Timesheets page (each tab has its own key). */
 export const TIMESHEET_KEYS = ['timesheets', 'timesheets.absences', 'timesheets.reports', 'timesheets.labour_cost']

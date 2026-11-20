@@ -10,6 +10,7 @@ import Can from '../components/Can'
 import { buttonClass, secondaryButtonClass, Section } from '../components/form'
 import ActivityList from '../components/order/ActivityList'
 import CratingSummary from '../components/crating/CratingSummary'
+import CratingHandoff from '../components/crating/CratingHandoff'
 import MachineCrating from '../components/crating/MachineCrating'
 import OrderSchedule from '../components/schedule/OrderSchedule'
 import ChangeMachinesDialog from '../components/order/ChangeMachinesDialog'
@@ -601,6 +602,12 @@ export default function OrderPage() {
               {showCrating && (
                 <Can permission="crating.summary">
                   <CratingSummary order={order} crates={crates} notCrated={notCrated} />
+                </Can>
+              )}
+
+              {showCrating && (
+                <Can permission="crating.handoff">
+                  <CratingHandoff orderId={order.id} version={JSON.stringify(crates)} />
                 </Can>
               )}
 

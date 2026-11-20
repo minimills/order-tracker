@@ -15,6 +15,8 @@ export type FreightSettings = {
   exchange_rate: number
   pickup_locations: { name: string; address: string }[]
   ocean_air_types: string[]
+  /** 0054: the person who arranges shipping (told when an order's crates are all entered). */
+  shipping_contact?: string | null
 }
 
 export const FREIGHT_DEFAULTS: FreightSettings = {
