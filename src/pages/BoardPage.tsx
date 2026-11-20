@@ -338,6 +338,11 @@ export default function BoardPage() {
                 </Can>
               </>
             )}
+            <Can permission="automations">
+              <Link to={`/automations?tab=board&board=${board.id}`} className={secondaryButtonClass}>
+                <Icon name="bolt" /> Automations
+              </Link>
+            </Can>
             <Can permission="admin.board_templates" level="edit">
               <button type="button" className={secondaryButtonClass} onClick={() => setDialog('template')}>
                 Save as Template

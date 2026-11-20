@@ -44,6 +44,9 @@ import AgentPage from './pages/AgentPage'
 import AlertSettingsPage from './pages/AlertSettingsPage'
 import ChecklistPage from './pages/ChecklistPage'
 import ChecklistPrintPage from './pages/ChecklistPrintPage'
+import AutomationEditorPage from './pages/AutomationEditorPage'
+import AutomationsPage from './pages/AutomationsPage'
+import AutomationsAdminPage from './pages/admin/AutomationsAdminPage'
 import BoardPage from './pages/BoardPage'
 import BoardsPage from './pages/BoardsPage'
 import DepartmentDelaysPage from './pages/DepartmentDelaysPage'
@@ -194,6 +197,9 @@ export default function App() {
         <Route path="service/calls/:callId" element={<Page permission="service.calls"><ServiceOrderPage kind="call" /></Page>} />
         <Route path="service/:orderId" element={<Page permission="service"><ServiceOrderPage /></Page>} />
         <Route path="boards/:id" element={<Page permission="boards"><BoardPage /></Page>} />
+        <Route path="automations" element={<Page permission="automations"><AutomationsPage /></Page>} />
+        <Route path="automations/new" element={<Page permission="automations" level="edit"><AutomationEditorPage /></Page>} />
+        <Route path="automations/:id" element={<Page permission="automations"><AutomationEditorPage /></Page>} />
         <Route path="reports/department-delays" element={<Page permission="reports.department_delays"><DepartmentDelaysPage /></Page>} />
         <Route path="reports/build-times" element={<Page permission="reports.build_times"><BuildTimesPage /></Page>} />
         <Route path="agent" element={<Page permission="agent"><AgentPage /></Page>} />
@@ -226,6 +232,7 @@ export default function App() {
           <Route path="timesheets" element={<Page permission="admin.timesheets" level="edit"><TimesheetsAdminPage /></Page>} />
           <Route path="dashboard-charts" element={<Page permission="admin.dashboard_charts" level="edit"><DashboardChartsPage /></Page>} />
           <Route path="dashboard-templates" element={<Page permission="admin.dashboards" level="edit"><DashboardTemplatesPage /></Page>} />
+          <Route path="automations" element={<Page permission="admin.automations" level="edit"><AutomationsAdminPage /></Page>} />
           <Route path="calendar" element={<Page permission="admin.calendar" level="edit"><CalendarSettingsPage /></Page>} />
           <Route path="email-templates" element={<Page permission="admin.email_templates" level="edit"><EmailTemplatesPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />

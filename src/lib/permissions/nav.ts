@@ -28,6 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/timesheets', label: 'Timesheets', icon: 'timer', anyOf: TIMESHEET_KEYS },
   { to: '/my-timesheet', label: 'My Timesheet', icon: 'clock', permission: 'timesheets.mine' },
   { to: '/time-off', label: 'Time Off', icon: 'calendar', permission: 'timesheets.time_off' },
+  { to: '/automations', label: 'Automations', icon: 'bolt', permission: 'automations' },
   { to: '/payments', label: 'Payments', icon: 'money', permission: 'payments.page' },
   { to: '/freight', label: 'Freight', icon: 'truck', anyOf: FREIGHT_KEYS },
   { to: '/reports/department-delays', label: 'Department Delays', icon: 'clock', permission: 'reports.department_delays' },

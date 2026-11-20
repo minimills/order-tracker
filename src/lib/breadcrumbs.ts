@@ -61,6 +61,7 @@ export function crumbsForPath(path: string): Crumb[] {
     settings: { label: 'Settings', to: '/settings' },
     freight: { label: 'Freight', to: '/freight' },
     timesheets: { label: 'Timesheets', to: '/timesheets' },
+    automations: { label: 'Automations', to: '/automations' },
   }
   const first = section[parts[0]]
   if (!first) return []
@@ -68,6 +69,7 @@ export function crumbsForPath(path: string): Crumb[] {
     orders: 'Order',
     checklists: 'Final Check',
     timesheets: 'Employee',
+    automations: 'Automation',
     boards: 'Board',
     chat: 'Conversation',
     service: parts[1] === 'calls' ? 'Service Call' : parts[1] === 'certificates' ? 'Certificate' : 'Order',
