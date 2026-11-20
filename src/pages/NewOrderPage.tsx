@@ -75,6 +75,8 @@ export default function NewOrderPage() {
   const [stage, setStage] = useState<Stage>('Confirmed')
   // Machines are added with the search box (empty to start).
   const [rows, setRows] = useState<MachineRow[]>([])
+  // "Will this order be crated?" (0050): must be answered; No = no Crating stage and no crating boxes.
+  const [crated, setCrated] = useState<boolean | null>(null)
   // Defaults (Admin → Order defaults) and calculated dates fill these until
   // they are changed by hand (null = use the default / calculated value).
   const schedule = useSchedule()
@@ -319,6 +321,8 @@ export default function NewOrderPage() {
       e.down = 'The down payment cannot be more than the order total.'
     if (!fullPayment && downDue && balanceDue && balanceDue < downDue) e.balanceDue = 'The balance would be due before the down payment.'
 
+    if (can('orders.new.crating', 'edit') && crated === null) e.crated = 'Answer whether this order will be crated.'
+
     return e
   }
 
@@ -358,11 +362,12 @@ export default function NewOrderPage() {
       delivery_equipment: may.delivery ? deliveryEquipment : undefined,
       freight_type: may.freight ? freightType || undefined : undefined,
       notes: may.notes ? notes || undefined : undefined,
+      crating: crated ?? undefined,
       machines: rows.flatMap((row) =>
         row.manual.map((m) => ({
           machine_type_id: row.machineTypeId,
           serial_number: m !== null && m.trim() ? cleanSerial(m) : undefined,
-          needs_crate: row.needsCrate,
+          needs_crate: crated === false ? false : row.needsCrate,
         })),
       ),
       down_payment_amount: may.payments && !fullPayment ? (downAmount ?? undefined) : undefined,
@@ -529,7 +534,43 @@ export default function NewOrderPage() {
         </Section>
 
         <Section title="Machines">
+          <Can permission="orders.new.crating" level="edit">
+            <fieldset className="mb-4" data-setting="new-order-crating">
+              <legend className="mb-1 text-sm font-medium text-slate-700">Will this order be crated?</legend>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="order-crated"
+                    className="h-4 w-4"
+                    checked={crated === true}
+                    onChange={() => {
+                      setCrated(true)
+                      setRows((rs) => rs.map((r) => ({ ...r, needsCrate: true })))
+                    }}
+                  />
+                  Yes, crated
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    name="order-crated"
+                    className="h-4 w-4"
+                    checked={crated === false}
+                    onChange={() => {
+                      setCrated(false)
+                      setRows((rs) => rs.map((r) => ({ ...r, needsCrate: false })))
+                    }}
+                  />
+                  No, not crated
+                </label>
+              </div>
+              <p className="mt-1 text-xs text-slate-500">Not crated: the production board has no Crating stage and the order shows no crating boxes. It can be changed later on the order.</p>
+              {triedToSave && errors.crated && <p className="mt-1 text-sm font-medium text-red-600">{errors.crated}</p>}
+            </fieldset>
+          </Can>
           <MachinesSection
+            crating={crated !== false}
             rows={rows}
             onChange={setRows}
             machineTypes={machineTypes}

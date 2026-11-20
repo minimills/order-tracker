@@ -47,6 +47,7 @@ export type Choices = {
   my_departments: string[]
   can_post_everyone: boolean
   can_calendar_others: boolean
+  can_service: boolean
   can_board_rules: boolean
 }
 
@@ -79,7 +80,7 @@ export type Action = {
   tech?: string
   when?: 'subject' | 'days'
   length?: number | string
-  kind?: 'onsite' | 'travel'
+  kind?: 'other' | 'onsite' | 'travel' | 'training'
   notes?: string
 }
 
@@ -434,7 +435,7 @@ export function actionText(a: Action, cat: Catalog, choices: Choices | null) {
     case 'post_notice':
       return `post the notice “${a.title ?? ''}”`
     case 'add_calendar_entry':
-      return `add “${a.title ?? ''}” to the Tech Calendar`
+      return `add “${a.title ?? ''}” to the Calendar`
     default:
       return def.label.charAt(0).toLowerCase() + def.label.slice(1)
   }

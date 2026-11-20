@@ -1,5 +1,5 @@
 import { callFunction } from './edgeFunction'
-import { fillTemplate, loadEmailTemplates } from './emailTemplates'
+import { fillTemplate, fillTemplateHtml, loadEmailTemplates } from './emailTemplates'
 import { allowedBy, type Perms } from './permissions'
 import { NAV_ITEMS } from './permissions/nav'
 import { supabase } from './supabase'
@@ -30,7 +30,7 @@ export async function composeWelcome(user: WelcomeUser, perms: Perms, companyNam
     sender_name: typeof sender === 'string' ? sender : '',
     company_name: companyName || 'Belfast Mini Mills',
   }
-  return { subject: fillTemplate(tpl.welcome.subject, values), body: fillTemplate(tpl.welcome.body, values) }
+  return { subject: fillTemplate(tpl.welcome.subject, values), body: fillTemplateHtml(tpl.welcome.body, values) }
 }
 
 export async function sendWelcome(email: string, subject: string, body: string) {

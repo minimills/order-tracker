@@ -123,7 +123,7 @@ export default function Layout() {
                   (collapsed ? (
                     <span className={`absolute right-1 top-1 h-2.5 w-2.5 rounded-full ${item.badge === 'chat' ? 'bg-blue-500' : 'bg-red-500'}`} aria-hidden="true" />
                   ) : item.badge === 'chat' ? (
-                    <span className="ml-auto rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold text-white" aria-label={`${count} unread`}>
+                    <span className="ml-auto rounded-full bg-blue-600 px-1.5 text-[0.6875rem] font-semibold text-white" aria-label={`${count} unread`}>
                       {count}
                     </span>
                   ) : (

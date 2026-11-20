@@ -223,7 +223,7 @@ function Cropper({ source, crop, onCrop }: { source: HTMLCanvasElement; crop: Cr
 /* @layout-helper */
 function SampleDocument({ image }: { image: string }) {
   return (
-    <div className="keep-light mt-1 max-w-md rounded border border-slate-300 bg-white p-4 font-serif text-[11px] text-slate-800 shadow-sm">
+    <div className="keep-light mt-1 max-w-md rounded border border-slate-300 bg-white p-4 font-serif text-[0.6875rem] text-slate-800 shadow-sm">
       <div className="text-center text-sm font-bold">Sample Document</div>
       <div className="mt-2 space-y-1">
         <div className="h-1.5 w-full rounded bg-slate-200" />

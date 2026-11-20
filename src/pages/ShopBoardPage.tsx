@@ -8,12 +8,13 @@ import RichText from '../components/RichText'
 import MachineCrating from '../components/crating/MachineCrating'
 import { useCompany } from '../lib/company'
 import { countryFlag } from '../lib/country'
-import { CRATING_STAGES, loadCrates, type NumberedCrate } from '../lib/crates'
+import { CRATING_STAGES, loadCrates, loadOrderCrating, type NumberedCrate } from '../lib/crates'
 import { showDate, todayISO } from '../lib/dates'
 import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { useStageLabels } from '../lib/stages'
+import { BOARD_STAGES } from '../lib/types'
 import { supabase } from '../lib/supabase'
 import type { OrderSummaryRow } from '../lib/types'
 import SerialNumber from '../components/SerialNumber'
@@ -34,6 +35,8 @@ type Machine = {
  */
 export default function ShopBoardPage() {
   const [orders, setOrders] = useState<OrderSummaryRow[]>([])
+  // "Will this order be crated?" per order (0050): not crated = no crating boxes.
+  const [notCratedOrders, setNotCratedOrders] = useState<Map<string, boolean>>(new Map())
   const [machines, setMachines] = useState<Machine[]>([])
   const [crates, setCrates] = useState<Map<string, NumberedCrate[]>>(new Map())
   const [reloadKey, setReloadKey] = useState(0)
@@ -43,7 +46,7 @@ export default function ShopBoardPage() {
   const { can } = usePermissions()
   const seesCrating = can('crating')
   const label = useStageLabels()
-  const { shopBoardView: view, setLook } = usePreferences()
+  const { shopBoardView: view, shopBoardSort: sortDir, setLook } = usePreferences()
   // Filters (in the address, so printing and sharing use them).
   const [params, setParams] = useSearchParams()
   const setFilter = (k: string, v: string) => {
@@ -61,6 +64,8 @@ export default function ShopBoardPage() {
   const fType = params.get('type') ?? ''
   const fPassed = params.get('passed') === '1'
   const fPassedDays = params.get('passedby') ?? ''
+  const fStage = params.get('stage') ?? ''
+  const fQ = params.get('q') ?? ''
 
   useEffect(() => {
     if (!supabase) return
@@ -81,8 +86,10 @@ export default function ShopBoardPage() {
           )
         : { data: [], error: null }
       // Crating is only asked for on orders that are ready to ship.
-      const c = await loadCrates(seesCrating ? o.data.filter((x) => CRATING_STAGES.includes(x.stage)).map((x) => x.id) : [])
+      const crateIds = seesCrating ? o.data.filter((x) => CRATING_STAGES.includes(x.stage)).map((x) => x.id) : []
+      const [c, cratingMap] = await Promise.all([loadCrates(crateIds), loadOrderCrating(crateIds)])
       if (cancelled) return
+      setNotCratedOrders(cratingMap)
       const e = o.error ?? m.error ?? c.error
       if (e) setError(friendlyError(e))
       setOrders(o.data)
@@ -110,7 +117,16 @@ export default function ShopBoardPage() {
   const today = todayISO()
   const daysPast = (d: string | null) => (d ? Math.round((Date.parse(`${today}T12:00:00Z`) - Date.parse(`${d}T12:00:00Z`)) / 86_400_000) : -1)
   const typeNames = [...new Set(machines.map((m) => m.machine_types?.name).filter((x): x is string => !!x))].sort()
+  const words = fQ.toLowerCase().split(/\s+/).filter(Boolean)
   const shown = orders.filter((o) => {
+    if (fStage && o.stage !== fStage) return false
+    if (words.length) {
+      // Customer name or company, country, or a serial number of one of its machines.
+      const text = [o.customer_name, o.customer_company, o.customer_country, ...(machinesByOrder.get(o.id) ?? []).map((m) => m.serial_number ?? '')]
+        .join(' ')
+        .toLowerCase()
+      if (!words.every((w) => text.includes(w))) return false
+    }
     if (fOrders.length && !fOrders.includes(o.order_code) && !fOrders.includes(String(o.order_number))) return false
     if (fAfter && (!o.expected_ship_date || o.expected_ship_date < fAfter)) return false
     if (fBefore && (!o.expected_ship_date || o.expected_ship_date > fBefore)) return false
@@ -119,8 +135,15 @@ export default function ShopBoardPage() {
     if (fPassedDays && daysPast(o.expected_ship_date) <= Number(fPassedDays)) return false
     return true
   })
-  const filtering = fOrders.length > 0 || !!(fAfter || fBefore || fType || fPassed || fPassedDays)
+  // Order number lowest first (default) or highest first, remembered for each person.
+  shown.sort((a, b) => {
+    const r = (a.order_number ?? 0) - (b.order_number ?? 0) || String(a.order_code).localeCompare(String(b.order_code), undefined, { numeric: true })
+    return sortDir === 'desc' ? -r : r
+  })
+  const filtering = fOrders.length > 0 || !!(fAfter || fBefore || fType || fPassed || fPassedDays || fStage || fQ)
   const filterText = [
+    fStage && label(fStage),
+    fQ && `“${fQ}”`,
     fOrders.length && `orders ${fOrders.join(', ')}`,
     fAfter && `ship date after ${showDate(fAfter)}`,
     fBefore && `ship date before ${showDate(fBefore)}`,
@@ -182,6 +205,27 @@ export default function ShopBoardPage() {
         <div className="mb-4 flex flex-wrap items-end gap-3 print:hidden">
           <Can permission="shop_board.filters">
             <label className="text-xs text-slate-600">
+              Search
+              <input
+                type="search"
+                className={`${field} block w-56`}
+                placeholder="Customer, country or serial"
+                value={fQ}
+                onChange={(e) => setFilter('q', e.target.value)}
+              />
+            </label>
+            <label className="text-xs text-slate-600">
+              Stage
+              <select className={`${field} block`} value={fStage} onChange={(e) => setFilter('stage', e.target.value)}>
+                <option value="">All stages in the queue</option>
+                {BOARD_STAGES.map((st) => (
+                  <option key={st} value={st}>
+                    {label(st)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-xs text-slate-600">
               Orders
               <input
                 className={`${field} block w-36`}
@@ -226,8 +270,29 @@ export default function ShopBoardPage() {
               </button>
             )}
           </Can>
+          <Can permission="shop_board.sort">
+            <div className="ml-auto flex rounded-md border border-slate-300 p-0.5 text-sm" role="radiogroup" aria-label="Order">
+              {(
+                [
+                  ['asc', 'Order # Ascending'],
+                  ['desc', 'Order # Descending'],
+                ] as const
+              ).map(([v, l]) => (
+                <button
+                  key={v}
+                  type="button"
+                  role="radio"
+                  aria-checked={sortDir === v}
+                  onClick={() => setLook({ shopBoardSort: v })}
+                  className={`rounded px-3 py-1 ${sortDir === v ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
+                >
+                  {l}
+                </button>
+              ))}
+            </div>
+          </Can>
           <Can permission="shop_board.views">
-            <div className="ml-auto flex rounded-md border border-slate-300 p-0.5 text-sm" role="radiogroup" aria-label="View">
+            <div className="flex rounded-md border border-slate-300 p-0.5 text-sm" role="radiogroup" aria-label="View">
               {VIEWS.map((x) => (
                 <button
                   key={x.v}
@@ -324,7 +389,7 @@ export default function ShopBoardPage() {
             {shown.map((o) => {
               const list = machinesByOrder.get(o.id) ?? []
               const badges = orderBadges(o).filter((b) => b.kind !== 'payment')
-              const crating = seesCrating && CRATING_STAGES.includes(o.stage)
+              const crating = seesCrating && notCratedOrders.get(o.id) !== false && CRATING_STAGES.includes(o.stage)
               const orderCrates = crates.get(o.id) ?? []
               const crateMachines = list.map((m) => ({
                 id: m.id,

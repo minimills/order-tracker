@@ -676,9 +676,11 @@ export function ActionRow({
           {(action.when ?? 'days') === 'days' && days('Number of days', 'length', '1')}
           {field(
             'Kind',
-            <select id={`${id}-kind`} className={`${narrowInputClass} w-36`} value={action.kind ?? 'onsite'} onChange={(e) => set({ kind: e.target.value as Action['kind'] })} disabled={disabled}>
-              <option value="onsite">On-site day</option>
-              <option value="travel">Travel day</option>
+            <select id={`${id}-kind`} className={`${narrowInputClass} w-44`} value={action.kind ?? 'other'} onChange={(e) => set({ kind: e.target.value as Action['kind'] })} disabled={disabled}>
+              <option value="other">Appointment</option>
+              {choices.can_service && <option value="onsite">On-site day</option>}
+              {choices.can_service && <option value="travel">Travel day</option>}
+              {choices.can_service && <option value="training">Training</option>}
             </select>,
             'kind',
           )}

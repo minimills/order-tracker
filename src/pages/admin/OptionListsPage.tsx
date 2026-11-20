@@ -15,6 +15,7 @@ const LISTS: { name: OptionListName; title: string }[] = [
   { name: 'payment_type', title: 'Payment types' },
   { name: 'notice_category', title: 'Notice categories' },
   { name: 'ce_directive', title: 'CE directives (for declarations of conformity)' },
+  { name: 'incoming_delivery_type', title: 'Incoming freight: type of delivery' },
 ]
 
 const small = 'rounded border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40'

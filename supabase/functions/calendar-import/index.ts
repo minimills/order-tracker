@@ -2,13 +2,13 @@
 // calendar link (iCal / ICS, for example an Apple iCloud public calendar or a
 // Google Calendar "Secret address in iCal format") and hands the entries to the
 // database (apply_phone_events), which adds, updates or removes them in the
-// app's technician calendar as "From phone".
+// app's Calendar as "From phone".
 //
 // Actions (POST JSON { action }):
 //   sync_all  – every linked calendar; called every 5 minutes by the database
 //               scheduler with the x-dispatch-key header (Admin → Email →
 //               Turn On Automatic Sending also starts this job)
-//   sync_mine – the signed-in technician's own link ("Refresh Now" on the Technician Calendar)
+//   sync_mine – the signed-in technician's own link ("Refresh Now" on the Calendar)
 //
 // "Verify JWT" must be OFF: the scheduler has no login (the function checks
 // every caller itself). SUPABASE_URL, SUPABASE_ANON_KEY and

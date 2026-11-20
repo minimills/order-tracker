@@ -19,9 +19,16 @@ import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { confirmAction } from '../lib/confirm'
 import Icon from '../components/Icon'
+import PrintButton from '../components/print/PrintButton'
+import BoardNavigator from '../components/boards/BoardNavigator'
+import MoveCopyDialog from '../components/boards/MoveCopyDialog'
+import ReopenBoardDialog from '../components/boards/ReopenBoardDialog'
+import { boardNumberText, type Stage } from '../lib/boards'
+import { showDate } from '../lib/dates'
 
 type Drop = { stageId: string; cardId: string | null; place: 'before' | 'after' }
-type Dialog = 'share' | 'notify' | 'settings' | 'template' | null
+type Dialog = 'share' | 'notify' | 'settings' | 'template' | 'reopen' | null
+type StageAction = { stage: Stage; mode: 'move' | 'copy' } | null
 
 /** /boards/:id – the board: stages side by side, cards in them. ?card=<id> opens a card. */
 export default function BoardPage() {
@@ -44,6 +51,10 @@ export default function BoardPage() {
   const [q, setQ] = useState('')
   const [labelFilter, setLabelFilter] = useState('')
   const [personFilter, setPersonFilter] = useState('')
+  // Stages this person collapsed (0050, remembered per person) and the open stage menu.
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const [stageMenu, setStageMenu] = useState<string | null>(null)
+  const [stageAction, setStageAction] = useState<StageAction>(null)
   const seesComments = can('boards.card.comments')
   const seesLinks = can('boards.card.link')
   const seesTiming = can('boards.card.timing')
@@ -83,6 +94,43 @@ export default function BoardPage() {
     load()
   }, [load])
 
+  const seesCollapse = can('boards.stage.collapse')
+  useEffect(() => {
+    if (!supabase || !seesCollapse || !id) return
+    supabase
+      .from('board_collapsed_stages')
+      .select('stage_id, board_stages!inner(board_id)')
+      .eq('board_stages.board_id', id)
+      .then(({ data: rows }) => setCollapsed(new Set(((rows ?? []) as { stage_id: string }[]).map((r) => r.stage_id))))
+  }, [id, seesCollapse])
+  // The stage menu closes on Escape or a click elsewhere.
+  useEffect(() => {
+    if (!stageMenu) return
+    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setStageMenu(null)
+    const onDown = (e: MouseEvent) => !(e.target as HTMLElement).closest('[data-stage-menu]') && setStageMenu(null)
+    window.addEventListener('keydown', onKey)
+    window.addEventListener('mousedown', onDown)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('mousedown', onDown)
+    }
+  }, [stageMenu])
+  async function toggleCollapsed(stageId: string) {
+    if (!supabase) return
+    const was = collapsed.has(stageId)
+    setCollapsed((c) => {
+      const n = new Set(c)
+      if (was) n.delete(stageId)
+      else n.add(stageId)
+      return n
+    })
+    setStageMenu(null)
+    const { error: err } = was
+      ? await supabase.from('board_collapsed_stages').delete().eq('stage_id', stageId).eq('user_email', me)
+      : await supabase.from('board_collapsed_stages').insert({ user_email: me, stage_id: stageId })
+    if (err) toast.error(friendlyError(err))
+  }
+
   const stages = useMemo(() => (data?.stages ?? []).filter((s) => !s.archived), [data])
   const level = data?.level ?? 0
   const openCard = params.get('card')
@@ -96,7 +144,7 @@ export default function BoardPage() {
       { replace: !cardId },
     )
 
-  const visibleCards = useMemo(() => {
+  const visibleCards = ((): Card[] => {
     if (!data) return []
     const words = q.toLowerCase().split(/\s+/).filter(Boolean)
     return data.cards.filter((c) => {
@@ -106,7 +154,7 @@ export default function BoardPage() {
       if (who && !data.assignees.some((a) => a.card_id === c.id && a.user_email === who)) return false
       return true
     })
-  }, [data, q, labelFilter, personFilter, me])
+  })()
 
   if (error)
     return (
@@ -126,7 +174,8 @@ export default function BoardPage() {
       </Can>
     )
   const board = data.board
-  const canMove = level >= 2 && can('boards.card.move', 'edit')
+  const closed = !!board.closed_at
+  const canMove = !closed && level >= 2 && can('boards.card.move', 'edit')
 
   // ---------- Drag and drop ----------
   function onDragOverCard(e: DragEvent, stageId: string, card: Card) {
@@ -195,6 +244,33 @@ export default function BoardPage() {
     load()
   }
 
+  async function closeBoard() {
+    if (!supabase) return
+    if (
+      !(await confirmAction(
+        `Close the board “${board.name}”? Everything on it is kept as it is. It leaves the Boards page, can still be opened from “Closed Boards”, and cannot be changed until it is reopened.`,
+        { confirmLabel: 'Close Board' },
+      ))
+    )
+      return
+    const { error: err } = await supabase.rpc('close_board', { p_board: board.id })
+    if (err) return toast.error(friendlyError(err))
+    toast.success('Board closed.')
+    load()
+  }
+
+  async function archiveAll(stage: Stage) {
+    if (!supabase) return
+    setStageMenu(null)
+    const n = data!.cards.filter((c) => c.stage_id === stage.id).length
+    if (!(await confirmAction(`Archive all ${n} card${n === 1 ? '' : 's'} in “${stage.name}”? Machine cards stay (they follow their machine). Archived cards can be restored from the card.`, { confirmLabel: 'Archive All Cards', danger: true }))) return
+    const { data: res, error: err } = await supabase.rpc('archive_stage_cards', { p_stage: stage.id })
+    if (err) return toast.error(friendlyError(err))
+    const r = (res ?? { done: 0, skipped: 0 }) as { done: number; skipped: number }
+    toast.success(`${r.done} card${r.done === 1 ? '' : 's'} archived.${r.skipped ? ` ${r.skipped} machine card${r.skipped === 1 ? '' : 's'} stayed.` : ''}`)
+    load()
+  }
+
   const peopleByEmail = new Map(data.people.map((p) => [p.email, p]))
   return (
     <Can permission="boards">
@@ -208,7 +284,9 @@ export default function BoardPage() {
               <span className="inline-block h-4 w-4 shrink-0 rounded" style={{ backgroundColor: board.colour }} aria-hidden />
               {board.name}
               {board.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">Archived</span>}
+              {closed && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">Closed</span>}
             </h1>
+            {board.board_number ? <p className="text-xs text-slate-500">{boardNumberText(board)}</p> : null}
             {board.description && <p className="text-sm text-slate-600">{board.description}</p>}
             {board.purpose === 'production' && board.order_id && (
               <Can permission="order.page">
@@ -219,6 +297,23 @@ export default function BoardPage() {
             )}
           </div>
           <div className="flex flex-wrap gap-2">
+            <Can permission="boards.print">
+              <PrintButton title={board.name} subtitle={board.description ?? undefined} className="py-2" />
+            </Can>
+            {level >= 3 && !closed && (
+              <Can permission="boards.close" level="edit">
+                <button type="button" className={secondaryButtonClass} onClick={closeBoard}>
+                  Close Board
+                </button>
+              </Can>
+            )}
+            {closed && (
+              <Can permission="boards.reopen" level="edit">
+                <button type="button" className={secondaryButtonClass} onClick={() => setDialog('reopen')}>
+                  Reopen Board
+                </button>
+              </Can>
+            )}
             {level >= 3 && (
               <>
                 <Can permission="boards.share" level="edit">
@@ -256,6 +351,18 @@ export default function BoardPage() {
           </div>
         </div>
 
+        <Can permission="boards.card.navigate">
+          <BoardNavigator boardId={board.id} production={board.purpose === 'production'} />
+        </Can>
+
+        {closed && (
+          <p className="rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            This board was closed{board.closed_at ? ` on ${showDate(board.closed_at.slice(0, 10))}` : ''}
+            {board.close_reason === 'shipped' ? ' when its order was shipped' : board.closed_by_name ? ` by ${board.closed_by_name}` : ''}. Everything is kept as it was; it can be
+            viewed but not changed until it is reopened.
+          </p>
+        )}
+
         <Can permission="boards.filter">
           <div className="flex flex-wrap gap-2">
             <input aria-label="Search cards" className={`${inputClass} max-w-xs`} placeholder="Search cards" value={q} onChange={(e) => setQ(e.target.value)} />
@@ -292,9 +399,25 @@ export default function BoardPage() {
           </p>
         )}
 
-        <div className="-mx-4 flex flex-1 gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0">
+        <div className="-mx-4 flex flex-1 gap-3 overflow-x-auto px-4 pb-4 md:mx-0 md:px-0" data-print-layout="wrap">
           {stages.map((stage) => {
             const cards = visibleCards.filter((c) => c.stage_id === stage.id)
+            if (seesCollapse && collapsed.has(stage.id))
+              return (
+                <Can key={stage.id} permission="boards.stage.collapse">
+                  <button
+                    type="button"
+                    className="flex w-11 shrink-0 flex-col items-center gap-2 rounded-lg bg-slate-100 py-3 text-sm font-semibold hover:bg-slate-200"
+                    onClick={() => toggleCollapsed(stage.id)}
+                    aria-label={`Expand ${stage.name} (${cards.length} cards)`}
+                    title={`Expand ${stage.name}`}
+                  >
+                    <span className="rounded-full bg-white px-2 text-xs font-normal text-slate-600">{cards.length}</span>
+                    <span className="[writing-mode:vertical-rl]">{stage.name}</span>
+                  </button>
+                </Can>
+              )
+            const mayStageEdit = !closed && level >= 2
             return (
               <section
                 key={stage.id}
@@ -314,10 +437,56 @@ export default function BoardPage() {
                   <span>
                     {stage.name}
                     {stage.department_id && (
-                      <span className="block text-[11px] font-normal text-slate-500">{departments.find((d) => d.id === stage.department_id)?.name}</span>
+                      <span className="block text-[0.6875rem] font-normal text-slate-500">{departments.find((d) => d.id === stage.department_id)?.name}</span>
                     )}
                   </span>
-                  <span className="rounded-full bg-white px-2 text-xs font-normal text-slate-600">{cards.length}</span>
+                  <span className="flex items-center gap-1">
+                    <span className="rounded-full bg-white px-2 text-xs font-normal text-slate-600">{cards.length}</span>
+                    <Can anyOf={['boards.stage.collapse', 'boards.stage.move_all', 'boards.stage.archive_all']}>
+                      <span className="relative" data-stage-menu>
+                        <button
+                          type="button"
+                          className="rounded px-1.5 text-base leading-none text-slate-600 hover:bg-slate-200"
+                          aria-label={`Stage menu for ${stage.name}`}
+                          aria-expanded={stageMenu === stage.id}
+                          onClick={() => setStageMenu(stageMenu === stage.id ? null : stage.id)}
+                          data-print="hide"
+                        >
+                          ⋯
+                        </button>
+                        {stageMenu === stage.id && (
+                          <span role="menu" className="absolute right-0 z-20 mt-1 flex w-60 flex-col rounded-md border border-slate-200 bg-white py-1 text-left text-sm font-normal shadow-lg">
+                            <Can permission="boards.stage.collapse">
+                              <button type="button" role="menuitem" className="px-3 py-1.5 text-left hover:bg-slate-50" onClick={() => toggleCollapsed(stage.id)}>
+                                Collapse Stage
+                              </button>
+                            </Can>
+                            {mayStageEdit && (
+                              <Can permission="boards.stage.move_all" level="edit">
+                                <button type="button" role="menuitem" className="px-3 py-1.5 text-left hover:bg-slate-50 disabled:text-slate-400" disabled={cards.length === 0} onClick={() => { setStageMenu(null); setStageAction({ stage, mode: 'move' }) }}>
+                                  Move All Cards To…
+                                </button>
+                              </Can>
+                            )}
+                            {level >= 1 && (
+                              <Can permission="boards.stage.move_all" level="edit">
+                                <button type="button" role="menuitem" className="px-3 py-1.5 text-left hover:bg-slate-50 disabled:text-slate-400" disabled={cards.length === 0} onClick={() => { setStageMenu(null); setStageAction({ stage, mode: 'copy' }) }}>
+                                  Copy All Cards To…
+                                </button>
+                              </Can>
+                            )}
+                            {mayStageEdit && (
+                              <Can permission="boards.stage.archive_all" level="edit">
+                                <button type="button" role="menuitem" className="px-3 py-1.5 text-left text-red-700 hover:bg-red-50 disabled:text-slate-400" disabled={cards.length === 0} onClick={() => archiveAll(stage)}>
+                                  Archive All Cards in This Stage
+                                </button>
+                              </Can>
+                            )}
+                          </span>
+                        )}
+                      </span>
+                    </Can>
+                  </span>
                 </h2>
                 <div className="flex min-h-16 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-2">
                   {cards.map((card) => (
@@ -354,7 +523,7 @@ export default function BoardPage() {
                     />
                   ))}
                 </div>
-                {level >= 2 && (
+                {level >= 2 && !closed && (
                   <Can permission="boards.card.create" level="edit">
                     <div className="px-2 pb-2">
                       {adding === stage.id ? (
@@ -422,6 +591,32 @@ export default function BoardPage() {
         {dialog === 'settings' && (
           <Can permission="boards.manage" level="edit">
             <BoardSettingsDialog data={data} onClose={() => setDialog(null)} onChanged={load} />
+          </Can>
+        )}
+        {stageAction && (
+          <Can permission="boards.stage.move_all" level="edit">
+            <MoveCopyDialog
+              boardId={board.id}
+              stage={{ id: stageAction.stage.id, name: stageAction.stage.name, count: data.cards.filter((c) => c.stage_id === stageAction.stage.id).length }}
+              initialMode={stageAction.mode}
+              onClose={() => setStageAction(null)}
+              onDone={() => {
+                setStageAction(null)
+                load()
+              }}
+            />
+          </Can>
+        )}
+        {dialog === 'reopen' && (
+          <Can permission="boards.reopen" level="edit">
+            <ReopenBoardDialog
+              board={board}
+              onClose={() => setDialog(null)}
+              onDone={() => {
+                setDialog(null)
+                load()
+              }}
+            />
           </Can>
         )}
         {dialog === 'template' && (

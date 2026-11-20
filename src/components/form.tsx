@@ -44,7 +44,7 @@ export function Field({
 /** A white box with a heading, used to group parts of a form. */
 export function Section({ title, children, aside }: { title: string; children: ReactNode; aside?: ReactNode }) {
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-6">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 md:p-6" data-print-section={title}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <h2 className="text-base font-semibold">{title}</h2>
         {aside}

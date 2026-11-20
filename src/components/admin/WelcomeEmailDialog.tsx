@@ -5,6 +5,9 @@ import type { Perms } from '../../lib/permissions'
 import { composeWelcome, sendWelcome, type WelcomeUser } from '../../lib/welcome'
 import { ACTION } from '../../lib/wording'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
+import RichTextEditor from '../RichTextEditor'
+import SenderLine from '../email/SenderLine'
+import { isEmptyRichText } from '../../lib/richText'
 
 /** Admin → Users → Welcome Email: preview, change and send (or send again) the welcome email. */
 export default function WelcomeEmailDialog({ user, perms, companyName, onClose }: { user: WelcomeUser; perms: Perms; companyName: string; onClose: () => void }) {
@@ -22,7 +25,7 @@ export default function WelcomeEmailDialog({ user, perms, companyName, onClose }
   }, [user, perms, companyName])
 
   async function send() {
-    if (!subject.trim() || !body.trim()) return toast.error('The email needs a subject and a message.')
+    if (!subject.trim() || isEmptyRichText(body)) return toast.error('The email needs a subject and a message.')
     setBusy(true)
     const r = await sendWelcome(user.email, subject.trim(), body)
     setBusy(false)
@@ -59,8 +62,9 @@ export default function WelcomeEmailDialog({ user, perms, companyName, onClose }
           <Field label="Subject" htmlFor="we-subject">
             <input id="we-subject" className={inputClass} maxLength={300} value={subject} onChange={(e) => setSubject(e.target.value)} />
           </Field>
-          <Field label="Message" htmlFor="we-body">
-            <textarea id="we-body" rows={18} className={inputClass} value={body} onChange={(e) => setBody(e.target.value)} />
+          <SenderLine />
+          <Field label="Message">
+            <RichTextEditor label="Message" minHeight="16rem" value={body} onChange={setBody} />
           </Field>
         </div>
       )}

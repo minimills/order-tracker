@@ -139,6 +139,7 @@ export default function DashboardPage() {
   }
   async function done() {
     if (!editing) return
+    if (!editable) return setEditing(null)
     setBusy(true)
     const id = await save(current, editing)
     setBusy(false)
@@ -189,7 +190,24 @@ export default function DashboardPage() {
   }
   async function remove() {
     if (!(await confirmAction(`Permanently delete the dashboard “${current.name}”?`, { danger: true, confirmLabel: ACTION.permanentlyDelete }))) return
-    if (await rpc('delete_dashboard', { p_id: current.id }, 'Dashboard deleted.')) setParams({}, { replace: true })
+    if (await rpc('delete_dashboard', { p_id: current.id }, 'Dashboard deleted.')) {
+      setEditing(null)
+      setParams({}, { replace: true })
+    }
+  }
+  /** Duplicate: the changes made so far are saved first, so the copy has them. */
+  async function duplicate() {
+    if (editing && editable) {
+      setBusy(true)
+      const ok = await save(current, editing)
+      setBusy(false)
+      if (!ok) return
+    }
+    const id = await rpc('duplicate_dashboard', { p_id: current.id, p_name: null }, 'Dashboard duplicated. Your changes to this one are saved.')
+    if (typeof id === 'string') {
+      setEditing(null)
+      setParams({ tab: id }, { replace: true })
+    }
   }
   async function reset() {
     if (!(await confirmAction(`Reset “${current.name}” to its template? Your changes to it are replaced.`, { confirmLabel: 'Reset to Template' }))) return
@@ -249,21 +267,26 @@ export default function DashboardPage() {
                     {ACTION.print}
                   </button>
                 </Can>
-                <Can permission="dashboard.charts.customize" level="edit">
-                  {editable && (
-                    <button
-                      type="button"
-                      className={buttonClass}
-                      onClick={() =>
-                        setEditing({
-                          widgets: current.widgets,
-                          layouts: current.layouts,
-                        })
-                      }
-                    >
-                      Edit Dashboard
+                <Can permission="dashboard.share" level="edit">
+                  {saved && (
+                    <button type="button" className={secondaryButtonClass} onClick={() => setSharing(true)}>
+                      Share a Copy
                     </button>
                   )}
+                </Can>
+                <Can permission="dashboard.charts.customize" level="edit">
+                  <button
+                    type="button"
+                    className={buttonClass}
+                    onClick={() =>
+                      setEditing({
+                        widgets: current.widgets,
+                        layouts: current.layouts,
+                      })
+                    }
+                  >
+                    Edit Dashboard
+                  </button>
                 </Can>
               </>
             )}
@@ -297,50 +320,11 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* What can be done with this dashboard */}
-        {!editing && (
+        {/* About this dashboard (view mode) */}
+        {!editing && (current.locked || current.shared_by_name || current.template_id) && (
           <div className="flex flex-wrap items-center gap-2 text-sm">
             {current.locked && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Locked by an admin</span>}
             {current.shared_by_name && <span className="text-xs text-slate-500">A copy shared by {current.shared_by_name}</span>}
-            <Can permission="dashboard.tabs" level="edit">
-              {saved && !current.locked && (
-                <button type="button" className={small} onClick={rename}>
-                  Rename
-                </button>
-              )}
-              {saved && (
-                <button type="button" className={small} onClick={() => rpc('duplicate_dashboard', { p_id: current.id, p_name: null }, 'Dashboard duplicated.')}>
-                  Duplicate
-                </button>
-              )}
-              {saved && !current.is_default && (
-                <button type="button" className={small} onClick={() => rpc('set_default_dashboard', { p_id: current.id }, `“${current.name}” opens first now.`)}>
-                  Make Default
-                </button>
-              )}
-              {saved && list.length > 1 && (
-                <>
-                  <button type="button" className={small} aria-label="Move this tab left" disabled={list[0].id === current.id} onClick={() => move(-1)}>
-                    ←
-                  </button>
-                  <button type="button" className={small} aria-label="Move this tab right" disabled={list.at(-1)!.id === current.id} onClick={() => move(1)}>
-                    →
-                  </button>
-                </>
-              )}
-              {saved && !current.locked && (
-                <button type="button" className={`${small} text-red-700`} onClick={remove}>
-                  {ACTION.permanentlyDelete}
-                </button>
-              )}
-            </Can>
-            <Can permission="dashboard.share" level="edit">
-              {saved && (
-                <button type="button" className={small} onClick={() => setSharing(true)}>
-                  Share a Copy
-                </button>
-              )}
-            </Can>
             <Can permission="dashboard.reset" level="edit">
               {current.template_id && (
                 <button type="button" className={small} onClick={reset}>
@@ -351,10 +335,50 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {/* Managing this dashboard: only in Edit mode */}
+        {editing && (
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            {current.locked && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Locked by an admin: the widgets cannot be changed</span>}
+            {!saved && <span className="text-xs text-slate-500">Select Done once to save this dashboard; then it can be renamed, duplicated and moved.</span>}
+            <Can permission="dashboard.tabs" level="edit">
+              {saved && !current.locked && (
+                <button type="button" className={small} disabled={busy} onClick={rename}>
+                  Rename
+                </button>
+              )}
+              {saved && (
+                <button type="button" className={small} disabled={busy} onClick={duplicate}>
+                  Duplicate
+                </button>
+              )}
+              {saved && !current.is_default && (
+                <button type="button" className={small} disabled={busy} onClick={() => rpc('set_default_dashboard', { p_id: current.id }, `“${current.name}” opens first now.`)}>
+                  Make Default
+                </button>
+              )}
+              {saved && list.length > 1 && (
+                <>
+                  <button type="button" className={small} aria-label="Move this tab left" disabled={busy || list[0].id === current.id} onClick={() => move(-1)}>
+                    ←
+                  </button>
+                  <button type="button" className={small} aria-label="Move this tab right" disabled={busy || list.at(-1)!.id === current.id} onClick={() => move(1)}>
+                    →
+                  </button>
+                </>
+              )}
+              {saved && !current.locked && (
+                <button type="button" className={`${small} text-red-700`} disabled={busy} onClick={remove}>
+                  {ACTION.permanentlyDelete}
+                </button>
+              )}
+            </Can>
+          </div>
+        )}
+
         <DashboardCanvas
           widgets={shown.widgets}
           layouts={shown.layouts}
-          editing={!!editing}
+          editing={!!editing && editable}
           data={data}
           onChange={(widgets, layouts) => setEditing({ widgets, layouts })}
           onNote={saveNote}

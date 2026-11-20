@@ -14,7 +14,7 @@ insert into user_departments (user_email, department_id) select 'lee@test.ca', (
 -- Pat: boards (own board), automations. Lee: orders, shipping, payments, closing boards, automations.
 insert into user_permissions (user_email, perms) values
   ('pat@test.ca','{"automations":"edit","boards":"view","boards.create":"edit","boards.card.create":"edit","boards.card.move":"edit","boards.card.labels":"edit","boards.labels.create":"edit","boards.card.complete":"edit","boards.card.edit":"edit"}'),
-  ('lee@test.ca','{"automations":"edit","automations.share":"edit","orders.board":"view","order.page":"view","order.action.change_stage":"edit","order.action.mark_shipped":"edit","boards":"view","boards.archive":"edit","payments":"view"}')
+  ('lee@test.ca','{"automations":"edit","automations.share":"edit","orders.board":"view","order.page":"view","order.action.change_stage":"edit","order.action.mark_shipped":"edit","boards":"view","boards.close":"edit","payments":"view"}')
 on conflict (user_email) do update set perms = excluded.perms;
 insert into customers (id, name, company, country) values ('00000000-0000-0000-0000-0000000000c1','Ann Weaver','Fibre Farm','Canada');
 insert into orders (id, order_number, customer_id, stage, order_date, currency, order_total, voltage, delivery_equipment)
@@ -86,7 +86,7 @@ select save_automation((select jsonb_build_object('name', name, 'trigger_key', t
 select 'test rule 2', test_automation(jsonb_build_object('id', :'rule2', 'subject_id', '00000000-0000-0000-0000-0000000000a1'))::text;
 select 'board still open after test', not archived from boards where order_id = '00000000-0000-0000-0000-0000000000a1';
 select count(*) from apply_board_change('00000000-0000-0000-0000-0000000000a1', 'Shipped');
-select 'board after shipping', archived from boards where order_id = '00000000-0000-0000-0000-0000000000a1';
+select 'board after shipping (closed)', closed_at is not null, close_reason from boards where order_id = '00000000-0000-0000-0000-0000000000a1';
 select 'run log 2', status, actor_name, actions -> 0 ->> 'message' from automation_runs where automation_id = :'rule2' and not is_test;
 
 \echo == 6. Payment overdue -> notify the office (the minute job), Pat is not told (no payments access)

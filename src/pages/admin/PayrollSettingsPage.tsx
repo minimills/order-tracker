@@ -5,7 +5,7 @@ import AdminPageHeader from '../../components/admin/AdminPageHeader'
 import { buttonClass, cardGridClass, Field, inputClass, narrowInputClass, secondaryButtonClass } from '../../components/form'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
-import { loadPayrollSettings, minimumProblems, type PayrollSettings, type Tier } from '../../lib/timesheets'
+import { fillHours, loadPayrollSettings, minimumProblems, showHours, type PayrollSettings, type Tier } from '../../lib/timesheets'
 import { ACTION } from '../../lib/wording'
 
 const card = 'space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm'
@@ -101,6 +101,24 @@ export default function PayrollSettingsPage() {
           <Field label="Hours in a full day" htmlFor="pr-hpd" hint="Used for vacation, sick and banked days and statutory holiday pay. Can be changed per employee.">
             <input id="pr-hpd" inputMode="decimal" className={`${narrowInputClass} w-24`} value={s.hours_per_day} onChange={(e) => setS({ ...s, hours_per_day: n(e.target.value) })} />
           </Field>
+        </section>
+
+        <section className={card} data-setting="pr-fill">
+          <h2 className="text-base font-semibold">Weekday Fill</h2>
+          <p className="text-slate-600">
+            The hours that “Fill Weekdays” on a timesheet and “Fill Weekday Hours for Everyone” put on each weekday ({showHours(fillHours(s))} paid hours).
+          </p>
+          <div className="flex flex-wrap gap-3">
+            <Field label="Start" htmlFor="pr-fill-start">
+              <input id="pr-fill-start" type="time" step={900} className={`${narrowInputClass} w-32`} value={s.fill_start} onChange={(e) => setS({ ...s, fill_start: e.target.value })} />
+            </Field>
+            <Field label="End" htmlFor="pr-fill-end">
+              <input id="pr-fill-end" type="time" step={900} className={`${narrowInputClass} w-32`} value={s.fill_end} onChange={(e) => setS({ ...s, fill_end: e.target.value })} />
+            </Field>
+            <Field label="Unpaid break (minutes)" htmlFor="pr-fill-break">
+              <input id="pr-fill-break" inputMode="numeric" className={`${narrowInputClass} w-24`} value={s.fill_break_minutes} onChange={(e) => setS({ ...s, fill_break_minutes: n(e.target.value) })} />
+            </Field>
+          </div>
         </section>
 
         <section className={card} data-setting="pr-bank">

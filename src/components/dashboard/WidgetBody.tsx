@@ -1,6 +1,6 @@
 // @permission-scope dashboard
 /* Drawn only inside a widget frame, which checks the widget's own permission (widgetAllowed). */
-import { useEffect, useState, type ReactNode } from 'react'
+import { useContext, useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../lib/auth'
 import { countryFlag } from '../../lib/country'
@@ -17,6 +17,16 @@ import ScheduleChanges from '../schedule/ScheduleChanges'
 import WhosOff from '../timesheets/WhosOff'
 import CompareChart from '../freight/CompareChart'
 import ChartView from './ChartView'
+import MyWorkWidget from './MyWorkWidget'
+import { HealthColour } from '../../lib/healthColour'
+
+/** Tells the frame the number its good / bad colours judge (null = none). */
+type OnValue = (v: number | null) => void
+function useReport(onValue: OnValue | undefined, v: number | null | undefined) {
+  useEffect(() => {
+    if (v !== undefined) onValue?.(v)
+  }, [onValue, v])
+}
 
 /** Loads something once per refresh (the data object changes on every refresh). */
 function useLoad<T>(load: () => Promise<T>, deps: unknown[]) {
@@ -70,16 +80,30 @@ async function ordersFor(data: DashData, w: Widget) {
   return rows
 }
 
-export default function WidgetBody({ widget, data, print, onNote, canEditNote }: { widget: Widget; data: DashData; print?: boolean; onNote?: (text: string) => void; canEditNote?: boolean }) {
+export default function WidgetBody({
+  widget,
+  data,
+  print,
+  onNote,
+  canEditNote,
+  onValue,
+}: {
+  widget: Widget
+  data: DashData
+  print?: boolean
+  onNote?: (text: string) => void
+  canEditNote?: boolean
+  onValue?: OnValue
+}) {
   const def = widgetDef(widget.key)
   if (!def) return <Empty>This widget is no longer available.</Empty>
   switch (def.kind) {
     case 'kpi':
-      return <Kpi widget={widget} data={data} />
+      return <Kpi widget={widget} data={data} onValue={onValue} />
     case 'chart':
-      return <ChartWidget widget={widget} data={data} print={print} />
+      return <ChartWidget widget={widget} data={data} print={print} onValue={onValue} />
     case 'list':
-      return <ListWidget widget={widget} data={data} />
+      return <ListWidget widget={widget} data={data} onValue={onValue} />
     case 'schedule':
       return <ScheduleWidget data={data} />
     case 'board':
@@ -100,22 +124,39 @@ export default function WidgetBody({ widget, data, print, onNote, canEditNote }:
       return <Freight widget={widget} data={data} />
     case 'labour':
       return <Labour widget={widget} data={data} />
+    case 'work':
+      return <MyWorkWidget widget={widget} data={data} print={print} />
     case 'note':
       return <Note widget={widget} onNote={onNote} canEdit={!!canEditNote && !print} />
   }
 }
 
 // ---------------------------------------------------------------------------
-function Kpi({ widget, data }: { widget: Widget; data: DashData }) {
+const STAGE_OF: Record<string, string> = { in_production: 'In production', ready: 'Ready', ready_to_ship: 'Ready to ship' }
+/** The one number of a number widget (what its good / bad colours judge). */
+function kpiValue(metric: string, orders: OrderSummaryRow[], pays: Awaited<ReturnType<DashData['payDue']>>, widget: Widget): number | null {
+  if (STAGE_OF[metric]) return orders.filter((o) => o.stage === STAGE_OF[metric]).length
+  if (metric === 'payments_overdue') return pays.filter((p) => p.status === 'Overdue').length
+  if (metric === 'average_delay') {
+    const r = rangeDates({ range: widget.range ?? 'ytd', from: widget.from, to: widget.to })
+    const l = orders.filter((o) => o.delay_days !== null && o.actual_ship_date && o.actual_ship_date >= r.from && o.actual_ship_date <= r.to)
+    return l.length ? Math.round((l.reduce((a, o) => a + o.delay_days!, 0) / l.length) * 10) / 10 : null
+  }
+  return null
+}
+
+function Kpi({ widget, data, onValue }: { widget: Widget; data: DashData; onValue?: OnValue }) {
   const label = useStageLabels()
   const { can } = usePermissions()
   const metric = widget.key.slice(4)
-  const colour = colourHex(widget.colour)
+  const colour = useContext(HealthColour) ?? colourHex(widget.colour)
   const s = useLoad(async () => {
     const orders = await ordersFor(data, widget)
     const pays = metric === 'payments_overdue' ? await data.payDue() : []
     return { orders, pays }
   }, [data, metric, JSON.stringify(widget.filters)])
+  const value = s.data ? kpiValue(metric, s.data.orders, s.data.pays, widget) : undefined
+  useReport(onValue, value)
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
   const { orders, pays } = s.data
@@ -185,7 +226,7 @@ function Kpi({ widget, data }: { widget: Widget; data: DashData }) {
 }
 
 // ---------------------------------------------------------------------------
-function ChartWidget({ widget, data, print }: { widget: Widget; data: DashData; print?: boolean }) {
+function ChartWidget({ widget, data, print, onValue }: { widget: Widget; data: DashData; print?: boolean; onValue?: OnValue }) {
   const def = chartDef(widget.key.slice(6))
   const [settings, setSettings] = useState<ChartSettings | null>(null)
   useEffect(() => {
@@ -200,6 +241,7 @@ function ChartWidget({ widget, data, print }: { widget: Widget; data: DashData; 
     const before = widget.compare && !def.now ? await def.load(data, lastYear(r), cfg) : null
     return { now, before }
   }, [data, JSON.stringify(cfg), widget.compare])
+  useReport(onValue, s.data ? (s.data.now?.headline?.value ?? null) : undefined)
   if (!def) return <Empty>This chart is no longer available.</Empty>
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
@@ -236,7 +278,7 @@ function delayWords(d: number) {
   return r > 0 ? `${r} day${r === 1 ? '' : 's'} late` : `${-r} day${r === -1 ? '' : 's'} early`
 }
 
-function ListWidget({ widget, data }: { widget: Widget; data: DashData }) {
+function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData; onValue?: OnValue }) {
   const { session } = useAuth()
   const { can } = usePermissions()
   const label = useStageLabels()
@@ -259,6 +301,8 @@ function ListWidget({ widget, data }: { widget: Widget; data: DashData }) {
     }
     return { orders: await ordersFor(data, widget) }
   }, [data, kind, me, JSON.stringify(widget.filters)])
+  const counts = s.data as { tasks?: unknown[]; pays?: unknown[]; ships?: unknown[] } | null
+  useReport(onValue, kind === 'overdue' ? (counts ? (counts.tasks?.length ?? 0) + (counts.pays?.length ?? 0) + (counts.ships?.length ?? 0) : undefined) : null)
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
   const d = s.data as { tasks?: Awaited<ReturnType<DashData['myTasks']>>; pays?: Awaited<ReturnType<DashData['payDue']>>; ships?: OrderSummaryRow[]; orders?: OrderSummaryRow[] }
@@ -465,7 +509,9 @@ function BoardSnapshot({ widget, data }: { widget: Widget; data: DashData }) {
 }
 
 function CalendarToday({ data }: { data: DashData }) {
-  const s = useLoad(() => data.calendarToday(), [data])
+  const { session } = useAuth()
+  const me = session?.user.email?.toLowerCase() ?? ''
+  const s = useLoad(() => data.calendarToday(me), [data, me])
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
   const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' }) : 'All day')
@@ -565,7 +611,7 @@ function Chats({ widget, data }: { widget: Widget; data: DashData }) {
               <span className="block truncate font-medium">{c.name}</span>
               <span className="block truncate text-xs text-slate-500">{c.last_text}</span>
             </span>
-            <span className="shrink-0 rounded-full bg-blue-600 px-1.5 text-[11px] font-semibold text-white">{c.unread}</span>
+            <span className="shrink-0 rounded-full bg-blue-600 px-1.5 text-[0.6875rem] font-semibold text-white">{c.unread}</span>
           </Row>
         </li>
       ))}

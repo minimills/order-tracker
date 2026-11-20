@@ -50,8 +50,9 @@ export function dashData() {
           .map((t) => ({ ...t, board_name: names.get(t.board_id)! }))
           .sort((x, y) => (x.due_date ?? '9999').localeCompare(y.due_date ?? '9999'))
       }),
-    calendarToday: () =>
-      once('calendar', async () => ((await supabase!.rpc('calendar_entries', { p_from: today, p_to: today, p_tech: null })).data as CalendarRow[] | null) ?? []),
+    // My own calendar (and entries shared with me): asking for everyone needs "other people's calendars".
+    calendarToday: (email: string) =>
+      once('calendar', async () => ((await supabase!.rpc('calendar_entries', { p_from: today, p_to: today, p_tech: email || null })).data as CalendarRow[] | null) ?? []),
     events: () =>
       once('events', async () =>
         ((await supabase!.rpc('my_company_events', { p_past: false })).data as { id: string; title: string; start_date: string; end_date: string; starts_at: string | null; all_day: boolean; location: string | null }[] | null) ?? [],

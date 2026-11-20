@@ -1,5 +1,5 @@
 // @permission-scope service.calendar, service.calendar.navigate
-// The views of the Technician Calendar (only reachable from CalendarPage, which
+// The views of the Calendar (only reachable from CalendarPage, which
 // decides who may create, open, move and resize entries).
 import { addDays, addMonths, endOfMonth, endOfWeek, format, isSameMonth, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
@@ -21,6 +21,8 @@ const initials = (name: string | null) =>
 export type ViewProps = {
   rows: CalendarRow[]
   showTech: boolean
+  /** The signed-in person (entries of others shared with them get a mark). */
+  me: string
   /** Entry being dragged (drawn see-through, the pointer passes through it). */
   draggingKey: string | null
   canDrag: (r: CalendarRow) => boolean
@@ -34,7 +36,8 @@ export type ViewProps = {
 function label(r: CalendarRow) {
   const k = CALENDAR_KINDS[r.kind as CalendarKind] ?? CALENDAR_KINDS.onsite
   const time = r.start_at ? `${minutesLabel(hfxParts(r.start_at).minutes)} – ${minutesLabel(hfxParts(endOf(r)).minutes)} ` : ''
-  return `${r.from_phone ? 'From phone · ' : ''}${k.label}: ${time}${r.title}${r.tech_name ? ` (${r.tech_name})` : ''}${r.notes ? ` – ${r.notes}` : ''}`
+  const state = [r.from_phone && 'From phone', r.visibility === 'private' && 'Private', r.done && 'Done'].filter(Boolean).join(' · ')
+  return `${state ? `${state} · ` : ''}${k.label}: ${time}${r.title}${r.tech_name ? ` (${r.tech_name})` : ''}${r.notes ? ` – ${r.notes}` : ''}`
 }
 
 /** One entry. Click opens it; dragging moves it; the handle changes its length. */
@@ -63,7 +66,7 @@ function Chip({
       title={label(r)}
       aria-label={label(r)}
       data-entry={rowKey(r)}
-      className={`group relative rounded px-1.5 py-0.5 text-left text-[11px] leading-tight ring-1 select-none [-webkit-touch-callout:none] ${k.chip} ${
+      className={`group relative rounded px-1.5 py-0.5 text-left text-[0.6875rem] leading-tight ring-1 select-none [-webkit-touch-callout:none] ${k.chip} ${
         drag ? 'cursor-grab active:cursor-grabbing' : 'cursor-pointer'
       } ${dragging ? 'pointer-events-none opacity-60 shadow-lg' : ''} ${className}`}
       style={style}
@@ -82,8 +85,10 @@ function Chip({
         }
       }}
     >
-      <span className="block truncate">
-        {r.from_phone && <Icon name="phone" className="mr-0.5 inline h-3 w-3 align-[-2px]" label="From phone" />}
+      <span className={`block truncate ${r.done ? 'line-through opacity-70' : ''}`}>
+        {r.from_phone && <Icon name="phone" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label="From phone" />}
+        {r.source === 'manual' && r.visibility === 'private' && <Icon name="lock" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label="Private" />}
+        {r.source === 'manual' && r.tech_email !== p.me && <Icon name="users" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label={`Shared by ${r.tech_name ?? 'someone else'}`} />}
         {p.showTech && r.tech_name ? `${initials(r.tech_name)} · ` : ''}
         {timeText && <span className="font-medium">{timeText} </span>}
         {r.title}
@@ -156,7 +161,7 @@ export function MonthView({ anchor, p, onMore }: { anchor: Date; p: ViewProps; o
                 {list.length > 3 && (
                   <button
                     type="button"
-                    className="text-[11px] text-slate-600 underline"
+                    className="text-[0.6875rem] text-slate-600 underline"
                     onPointerDown={(e) => e.stopPropagation()}
                     onClick={(e) => {
                       e.stopPropagation()
@@ -262,7 +267,7 @@ export function TimeGridView({
         </div>
         {/* All-day entries */}
         <div className="grid border-b border-slate-300" style={{ gridTemplateColumns: cols }}>
-          <div className="px-1 py-1 text-right text-[10px] text-slate-500">All day</div>
+          <div className="px-1 py-1 text-right text-[0.625rem] text-slate-500">All day</div>
           {days.map((day) => (
             <div
               key={day}
@@ -283,7 +288,7 @@ export function TimeGridView({
           <div className="grid" style={{ gridTemplateColumns: cols }}>
             <div className="relative" style={{ height: 24 * HOUR_PX }}>
               {Array.from({ length: 24 }, (_, h) => (
-                <div key={h} className="absolute right-1 -translate-y-1/2 text-[10px] text-slate-500" style={{ top: h * HOUR_PX }}>
+                <div key={h} className="absolute right-1 -translate-y-1/2 text-[0.625rem] text-slate-500" style={{ top: h * HOUR_PX }}>
                   {h === 0 ? '' : minutesLabel(h * 60)}
                 </div>
               ))}
@@ -325,7 +330,7 @@ export function TimeGridView({
                 ))}
                 {createGhost && createGhost.day === day && (
                   <div
-                    className="pointer-events-none absolute inset-x-0.5 rounded bg-blue-500/25 px-1 text-[11px] text-blue-900 ring-1 ring-blue-500"
+                    className="pointer-events-none absolute inset-x-0.5 rounded bg-blue-500/25 px-1 text-[0.6875rem] text-blue-900 ring-1 ring-blue-500"
                     style={{ top: createGhost.from * PX_PER_MIN, height: Math.max((createGhost.to - createGhost.from) * PX_PER_MIN, 12) }}
                   >
                     {minutesLabel(createGhost.from)} – {minutesLabel(createGhost.to)}
@@ -368,7 +373,7 @@ export function MiniMonth({ selected, onPick, marked }: { selected: string; onPi
           →
         </button>
       </div>
-      <div className="grid grid-cols-7 text-center text-[10px] text-slate-500">
+      <div className="grid grid-cols-7 text-center text-[0.625rem] text-slate-500">
         {WEEKDAYS.map((d) => (
           <div key={d}>{d.slice(0, 2)}</div>
         ))}

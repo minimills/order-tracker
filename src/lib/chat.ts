@@ -90,6 +90,9 @@ export const STATE_DONE: Record<string, string> = {
   delete: 'Conversation deleted for you. It comes back if someone writes again.',
 }
 
+/** The action that undoes a list action (null = it cannot be undone once done). */
+export const STATE_UNDO: Record<string, string | null> = { archive: 'unarchive', unarchive: 'archive', hide: 'unhide', unhide: 'hide', read: 'unread', unread: 'read', clear: null, delete: null }
+
 /** Time off of people in a conversation (from the time-off step, when it is in place). */
 export type TimeOff = { email: string; name: string; kind: string; return_date: string | null }
 export const TIME_OFF_WORDS: Record<string, string> = { vacation: 'vacation', sick: 'sick leave', banked: 'banked time', unpaid: 'time off' }

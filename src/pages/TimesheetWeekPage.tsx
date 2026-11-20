@@ -18,6 +18,7 @@ import {
   loadWeekRows,
   previewWeek,
   showHours,
+  clockText,
   usePayrollSettings,
   weekDays,
   weekStartOf,
@@ -26,6 +27,7 @@ import {
   type WeekRow,
 } from '../lib/timesheets'
 import { ACTION } from '../lib/wording'
+import PrintButton from '../components/print/PrintButton'
 
 type Draft = {
   key: string
@@ -153,7 +155,7 @@ export default function TimesheetWeekPage() {
       ...list,
       ...days
         .filter((d) => [1, 2, 3, 4, 5].includes(new Date(`${d}T12:00:00Z`).getUTCDay()) && !list.some((r) => r.work_date === d))
-        .map((d) => ({ key: newKey(), work_date: d, kind: 'work', start_time: '07:00', end_time: '15:30', break_minutes: '30', hours: '', notes: '' })),
+        .map((d) => ({ key: newKey(), work_date: d, kind: 'work', start_time: settings.fill_start ?? '08:00', end_time: settings.fill_end ?? '16:30', break_minutes: String(settings.fill_break_minutes ?? 30), hours: '', notes: '' })),
     ])
 
   function askChoice(total: number, worked: number, bankedUsed: number, extra: number) {
@@ -227,7 +229,12 @@ export default function TimesheetWeekPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">{emp.name}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <h1 className="text-2xl font-semibold">{emp.name}</h1>
+            <Can permission="timesheets.print">
+              <PrintButton title={`Timesheet – ${emp.name}`} subtitle={`Week of ${showDate(ws, 'MMMM d, yyyy')}`} />
+            </Can>
+          </div>
           <p className="text-sm text-slate-600">
             {emp.pay_type === 'hourly' ? 'Hourly' : 'Salaried'} · week of {showDate(ws, 'EEE MMM d')} to {showDate(addDaysISO(ws, 6), 'EEE MMM d, yyyy')}
             {locked && ` · Approved by ${week?.approved_by_name ?? '—'}`}
@@ -266,7 +273,7 @@ export default function TimesheetWeekPage() {
               <Can permission="timesheets.enter" level="edit">
                 {editable && (
                   <button type="button" className={secondaryButtonClass} onClick={fillWeek}>
-                    Fill Weekdays (7:00–3:30)
+                    Fill Weekdays ({clockText(settings.fill_start ?? '08:00')} to {clockText(settings.fill_end ?? '16:30')})
                   </button>
                 )}
               </Can>

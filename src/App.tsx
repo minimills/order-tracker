@@ -1,4 +1,4 @@
-import { Route, Routes, Navigate } from 'react-router-dom'
+import { Route, Routes, Navigate, useLocation } from 'react-router-dom'
 import Layout from './components/Layout'
 import HomeRedirect from './components/HomeRedirect'
 import Page from './components/Page'
@@ -10,6 +10,7 @@ import ArchivePage from './pages/admin/ArchivePage'
 import ChecklistTemplatesPage from './pages/admin/ChecklistTemplatesPage'
 import BuildChecklistsPage from './pages/admin/BuildChecklistsPage'
 import ProductionPage from './pages/admin/ProductionPage'
+import ProductionAssignmentsPage from './pages/admin/ProductionAssignmentsPage'
 import BuildTimesPage from './pages/BuildTimesPage'
 import ServicePage from './pages/ServicePage'
 import ChatPage from './pages/ChatPage'
@@ -23,6 +24,7 @@ import CertificatePage from './pages/CertificatePage'
 import TemplatesPage from './pages/admin/TemplatesPage'
 import CeAdminPage from './pages/admin/CeAdminPage'
 import EmailTemplatesPage from './pages/admin/EmailTemplatesPage'
+import CalendarSettingsPage from './pages/admin/CalendarSettingsPage'
 import BoardAdminPage from './pages/admin/BoardAdminPage'
 import CompanyPage from './pages/admin/CompanyPage'
 import DepartmentsPage from './pages/admin/DepartmentsPage'
@@ -79,6 +81,12 @@ import StatusPage from './pages/admin/StatusPage'
 import ShopBoardPage from './pages/ShopBoardPage'
 
 /** Every page sits in <Page permission="…">; see src/lib/permissions/catalog.ts. */
+/** The Calendar moved from /service/calendar to /calendar (0053); old links keep working. */
+function CalendarRedirect() {
+  const { search } = useLocation()
+  return <Navigate to={`/calendar${search}`} replace />
+}
+
 export default function App() {
   return (
     <Routes>
@@ -184,7 +192,8 @@ export default function App() {
         <Route path="chat/:conversationId" element={<Page permission="chat"><ChatPage /></Page>} />
         <Route path="service" element={<Page permission="service"><ServicePage /></Page>} />
         <Route path="service/certificates/:id" element={<Page permission="service.certificate"><CertificatePage /></Page>} />
-        <Route path="service/calendar" element={<Page permission="service.calendar"><CalendarPage /></Page>} />
+        <Route path="calendar" element={<Page permission="service.calendar"><CalendarPage /></Page>} />
+        <Route path="service/calendar" element={<Page permission="service.calendar"><CalendarRedirect /></Page>} />
         <Route path="service/calls/:callId" element={<Page permission="service.calls"><ServiceOrderPage kind="call" /></Page>} />
         <Route path="service/:orderId" element={<Page permission="service"><ServiceOrderPage /></Page>} />
         <Route path="boards/:id" element={<Page permission="boards"><BoardPage /></Page>} />
@@ -224,9 +233,11 @@ export default function App() {
           <Route path="dashboard-charts" element={<Page permission="admin.dashboard_charts" level="edit"><DashboardChartsPage /></Page>} />
           <Route path="dashboard-templates" element={<Page permission="admin.dashboards" level="edit"><DashboardTemplatesPage /></Page>} />
           <Route path="automations" element={<Page permission="admin.automations" level="edit"><AutomationsAdminPage /></Page>} />
+          <Route path="calendar" element={<Page permission="admin.calendar" level="edit"><CalendarSettingsPage /></Page>} />
           <Route path="email-templates" element={<Page permission="admin.email_templates" level="edit"><EmailTemplatesPage /></Page>} />
           <Route path="build-checklists" element={<Page permission="admin.build_checklists" level="edit"><BuildChecklistsPage /></Page>} />
           <Route path="production" element={<Page permission="admin.production" level="edit"><ProductionPage /></Page>} />
+          <Route path="production-assignments" element={<Page permission="admin.production_assignments"><ProductionAssignmentsPage /></Page>} />
           <Route path="records" element={<Page permission="admin.records" level="edit"><RecordsPage /></Page>} />
           <Route path="serials" element={<Page permission="admin.serials" level="edit"><SerialsPage /></Page>} />
           <Route path="board" element={<Page permission="admin.board" level="edit"><BoardAdminPage /></Page>} />

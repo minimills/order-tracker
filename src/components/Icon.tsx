@@ -39,6 +39,7 @@ const PATHS = {
   history: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2',
   menu: 'M4 6h16M4 12h16M4 18h16',
   inbox: 'M3 13h5l2 3h4l2-3h5M5 5h14l2 8v6H3v-6z',
+  mail: 'M3 6h18v12H3zM3 7l9 6 9-6',
   printer: 'M6 9V3h12v6M6 18H4v-7h16v7h-2M7 14h10v7H7z',
   lock: 'M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4',
   truck: 'M3 6h11v10H3zM14 9h4l3 3v4h-7M7 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4M17 19a2 2 0 1 0 0-4 2 2 0 0 0 0 4',

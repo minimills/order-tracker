@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { toast } from 'sonner'
+import SenderLine from '../components/email/SenderLine'
 import Can from '../components/Can'
 import { buttonClass, Field, inputClass, Section, secondaryButtonClass } from '../components/form'
 import { useBreadcrumbs } from '../lib/breadcrumbs'
@@ -467,6 +468,7 @@ export default function FreightQuotePage() {
             <Field label="Message" htmlFor="fq-body">
               <textarea id="fq-body" rows={18} className={`${inputClass} font-mono text-xs`} value={email.body} onChange={(e) => setManual({ ...email, body: e.target.value })} />
             </Field>
+            {maySend && <SenderLine />}
             <div className="flex flex-wrap gap-2">
               <button type="button" className={secondaryButtonClass} onClick={() => copy('body')}>
                 {copied === 'body' ? 'Copied' : 'Copy Message'}

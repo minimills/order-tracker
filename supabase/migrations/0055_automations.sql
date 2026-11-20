@@ -1,7 +1,7 @@
--- 0049 Automations: WHEN something happens, IF optional conditions are true,
+-- 0055 Automations: WHEN something happens, IF optional conditions are true,
 -- THEN do one or more actions.
 --
--- Paste into the Supabase SQL Editor and run it once (after 0048).
+-- Paste into the Supabase SQL Editor and run it once (after 0054).
 --
 -- Step by step (the sections below, in this order):
 --  1. Permissions: "automations" (use automations) is allowed for everyone by
@@ -122,7 +122,7 @@ alter table public.user_preferences drop constraint user_preferences_start_page_
 alter table public.user_preferences add constraint user_preferences_start_page_check
   check (start_page is null or start_page in
     ('/dashboard', '/board', '/orders', '/orders/new', '/payments', '/freight', '/reports/department-delays',
-     '/reports/build-times', '/machines', '/boards', '/notices', '/service', '/service/calendar', '/chat', '/agent', '/settings', '/admin', '/shop-board',
+     '/reports/build-times', '/machines', '/boards', '/notices', '/service', '/calendar', '/chat', '/agent', '/settings', '/admin', '/shop-board',
      '/timesheets', '/my-timesheet', '/time-off', '/automations'));
 
 -- ===========================================================================
@@ -349,7 +349,7 @@ select $j${
  },
  "actions": [
   {"key": "move_card", "group": "Cards", "label": "Move the card to a stage", "subjects": ["card"], "perms": ["boards.card.move"]},
-  {"key": "copy_card", "group": "Cards", "label": "Copy the card to a board", "subjects": ["card"], "perms": ["boards.card.create"]},
+  {"key": "copy_card", "group": "Cards", "label": "Copy the card to a board", "subjects": ["card"], "perms": ["boards.card.copy"]},
   {"key": "archive_card", "group": "Cards", "label": "Archive the card", "subjects": ["card"], "perms": ["boards.card.archive"]},
   {"key": "add_label", "group": "Cards", "label": "Add a label", "subjects": ["card"], "perms": ["boards.card.labels"]},
   {"key": "remove_label", "group": "Cards", "label": "Remove a label", "subjects": ["card"], "perms": ["boards.card.labels"]},
@@ -361,10 +361,10 @@ select $j${
   {"key": "add_checklist", "group": "Cards", "label": "Add a checklist", "subjects": ["card"], "perms": ["boards.card.checklists"]},
   {"key": "create_card", "group": "Cards", "label": "Create a card on a board", "subjects": ["card", "order", "payment", "machine", "notice", "time_off", "none"], "perms": ["boards.card.create"]},
   {"key": "change_order_stage", "group": "Orders", "label": "Change the order's stage", "subjects": ["card", "order", "payment", "machine"], "perms": ["order.action.change_stage", "orders.board.change_stage", "order.action.mark_shipped"]},
-  {"key": "archive_production_board", "group": "Orders", "label": "Close (archive) the order's production board", "subjects": ["card", "order", "payment", "machine"], "perms": ["boards.archive"]},
+  {"key": "close_production_board", "group": "Orders", "label": "Close the order's production board", "subjects": ["card", "order", "payment", "machine"], "perms": ["boards.close"]},
   {"key": "notify", "group": "Messages", "label": "Send a notification", "subjects": ["card", "order", "payment", "machine", "notice", "time_off", "none"], "perms": []},
   {"key": "post_notice", "group": "Messages", "label": "Post a notice on the Notice Board", "subjects": ["card", "order", "payment", "machine", "notice", "time_off", "none"], "perms": ["notices.post.everyone", "notices.post.department"]},
-  {"key": "add_calendar_entry", "group": "Calendar", "label": "Add an entry to the Tech Calendar", "subjects": ["card", "order", "payment", "machine", "notice", "time_off", "none"], "perms": ["service.calendar.add", "service.calendar.manage"]}
+  {"key": "add_calendar_entry", "group": "Calendar", "label": "Add an entry to the Calendar", "subjects": ["card", "order", "payment", "machine", "notice", "time_off", "none"], "perms": ["service.calendar"]}
  ],
  "placeholders": ["title", "board", "stage", "from_stage", "order_number", "customer", "serial", "machine_type", "due_date", "label", "person", "person_name", "rule", "today"]
 }$j$::jsonb;
@@ -564,7 +564,7 @@ begin
     'actions', coalesce((select jsonb_agg(a) from jsonb_array_elements(d -> 'actions') a
                           where public.automation_allowed(a -> 'perms', 'edit')
                             and (a ->> 'group' <> 'Cards' or v_boards)
-                            and (a ->> 'key' not in ('archive_production_board') or v_boards)), '[]'::jsonb),
+                            and (a ->> 'key' not in ('close_production_board') or v_boards)), '[]'::jsonb),
     'fields', v_fields,
     'placeholders', d -> 'placeholders',
     'can_share', public.has_perm('automations.share', 'edit'),
@@ -596,7 +596,7 @@ begin
              order by (b.purpose = 'production'), b.name)
         from (select bb.*, public.board_access_of(bb.id, v_me) as lvl,
                      row_number() over (partition by bb.purpose = 'production' order by bb.created_at desc) as rn
-                from public.boards bb where not bb.archived) b
+                from public.boards bb where not bb.archived and bb.closed_at is null) b
        where b.lvl >= 1 and (b.purpose <> 'production' or b.rn <= 60)), '[]'::jsonb) else '[]'::jsonb end,
     'people', coalesce((select jsonb_agg(jsonb_build_object('email', a.email, 'name', coalesce(nullif(btrim(a.name), ''), a.email)) order by coalesce(nullif(btrim(a.name), ''), a.email))
                           from public.allowed_users a where public.automation_can_message(v_me, a.email)), '[]'::jsonb),
@@ -614,6 +614,7 @@ begin
     'my_departments', coalesce((select jsonb_agg(department_id) from public.user_departments where user_email = v_me), '[]'::jsonb),
     'can_post_everyone', public.has_perm('notices.post.everyone', 'edit'),
     'can_calendar_others', public.has_perm('service.calendar.manage', 'edit'),
+    'can_service', public.has_perm('service', 'view'),
     'can_board_rules', public.has_perm('boards', 'view'));
 end;
 $$;
@@ -1123,7 +1124,7 @@ begin
     return format('Moved the card to %s.', v_name);
 
   when 'copy_card', 'create_card' then
-    perform public.require_perm('boards.card.create', 'edit');
+    perform public.require_perm(case when v_type = 'copy_card' then 'boards.card.copy' else 'boards.card.create' end, 'edit');
     if v_type = 'copy_card' then
       v_card := public.automation_card_or_skip(p_ctx);
     end if;
@@ -1141,31 +1142,7 @@ begin
       perform public.automation_skip('That board has no stages.');
     end if;
     if v_type = 'copy_card' then
-      insert into public.board_cards (board_id, stage_id, title, description, due_date, order_id, customer_id, machine_id, link_text)
-      select v_id, v_stage, c.title, c.description, c.due_date,
-             case when public.has_perm('boards.card.link', 'edit') then c.order_id end,
-             case when public.has_perm('boards.card.link', 'edit') then c.customer_id end,
-             case when public.has_perm('boards.card.link', 'edit') and c.card_kind = 'task' then c.machine_id end,
-             case when public.has_perm('boards.card.link', 'edit') then c.link_text end
-        from public.board_cards c where c.id = v_card
-      returning id into v_new;
-      -- labels with the same name on the other board, and the checklists
-      if public.has_perm('boards.card.labels', 'edit') then
-        insert into public.board_card_labels (card_id, label_id)
-        select v_new, l2.id from public.board_card_labels cl
-          join public.board_labels l on l.id = cl.label_id
-          join public.board_labels l2 on l2.board_id = v_id and not l2.archived and lower(l2.name) = lower(l.name)
-         where cl.card_id = v_card
-        on conflict do nothing;
-      end if;
-      if public.has_perm('boards.card.checklists', 'edit') then
-        for x in select * from public.board_checklists where card_id = v_card and merge_into is null order by sort_order loop
-          insert into public.board_checklists (card_id, title, sort_order) values (v_new, x.title, x.sort_order) returning id into v_cl;
-          insert into public.board_checklist_items (checklist_id, item_text, sort_order)
-          select v_cl, it.item_text, it.sort_order from public.board_checklist_items it
-           where it.checklist_id = x.id and it.parent_id is null order by it.sort_order;
-        end loop;
-      end if;
+      perform public.copy_board_card(v_card, v_id, v_stage, null);
       return format('Copied the card to %s – %s.', (select name from public.boards where id = v_id), v_name);
     end if;
     v_title := left(nullif(btrim(public.automation_fill(a ->> 'title', p_ctx)), ''), 200);
@@ -1301,15 +1278,16 @@ begin
     perform public.apply_board_change(v_id, v_name);
     return format('Moved order %s to %s.', (select order_code from public.orders where id = v_id), public.automation_stage_label(v_name));
 
-  when 'archive_production_board' then
+  when 'close_production_board' then
     v_id := coalesce(nullif(p_ctx ->> 'production_board_id', '')::uuid,
                      case when p_ctx ->> 'board_purpose' = 'production' then v_board end);
     if v_id is null then perform public.automation_skip('This order has no production board.'); end if;
-    perform public.require_perm('boards.archive', 'edit');
-    perform public.require_board(v_id, 'manage');
-    update public.boards set archived = true where id = v_id and not archived;
-    if not found then perform public.automation_skip('The production board is already closed.'); end if;
-    return format('Closed (archived) the production board “%s”.', (select name from public.boards where id = v_id));
+    if exists (select 1 from public.boards where id = v_id and (closed_at is not null or archived)) then
+      perform public.automation_skip('The production board is already closed'
+        || case when (select close_reason from public.boards where id = v_id) = 'shipped' then ' (boards close by themselves when the order is shipped).' else '.' end);
+    end if;
+    perform public.close_board(v_id);
+    return format('Closed the production board “%s”.', (select name from public.boards where id = v_id));
 
   when 'notify' then
     v_title := left(coalesce(nullif(btrim(public.automation_fill(a ->> 'title', p_ctx)), ''), r.name || ': ' || coalesce(p_ctx ->> 'title', '')), 200);
@@ -1360,11 +1338,6 @@ begin
     if v_tech is null or not exists (select 1 from public.allowed_users where email = v_tech) then
       perform public.automation_skip('There is no person for the calendar entry.');
     end if;
-    if v_tech = r.owner_email then
-      perform public.require_any_perm(array['service.calendar.add', 'service.calendar.manage'], 'edit');
-    else
-      perform public.require_perm('service.calendar.manage', 'edit');
-    end if;
     if coalesce(a ->> 'when', 'days') = 'subject' then
       v_date := coalesce(nullif(p_ctx ->> 'start_date', '')::date, nullif(p_ctx ->> 'service_start', '')::date,
                          nullif(p_ctx ->> 'due_date', '')::date, nullif(p_ctx ->> 'expected_ship_date', '')::date);
@@ -1375,11 +1348,18 @@ begin
       v_end := v_date + greatest(coalesce((a ->> 'length')::int, 1), 1) - 1;
     end if;
     v_title := left(coalesce(nullif(btrim(public.automation_fill(a ->> 'title', p_ctx)), ''), coalesce(p_ctx ->> 'title', r.name)), 200);
-    insert into public.tech_calendar_entries (tech_email, kind, title, customer_id, start_date, end_date, notes, created_by, all_day)
-    values (v_tech, case when a ->> 'kind' = 'travel' then 'travel' else 'onsite' end, v_title,
-            nullif(p_ctx ->> 'customer_id', '')::uuid, v_date, greatest(v_end, v_date),
-            nullif(btrim(public.automation_fill(a ->> 'notes', p_ctx)), ''), r.owner_email, true);
-    return format('Added “%s” to the Tech Calendar for %s, %s.',
+    -- Through the Calendar's own function: its rules (private / shared, someone
+    -- else's calendar, service kinds) are checked for the owner.
+    perform public.save_calendar_entry(jsonb_build_object(
+      'tech_email', v_tech,
+      'kind', case when a ->> 'kind' in ('onsite', 'travel', 'training') then a ->> 'kind' else 'other' end,
+      'title', v_title, 'start_date', v_date, 'end_date', greatest(v_end, v_date), 'all_day', true,
+      'customer_id', nullif(p_ctx ->> 'customer_id', ''),
+      'notes', nullif(btrim(public.automation_fill(a ->> 'notes', p_ctx)), ''),
+      'visibility', case when v_tech = r.owner_email then 'private' else 'shared' end)
+      || case when v_tech = r.owner_email then '{}'::jsonb
+              else jsonb_build_object('shares', jsonb_build_array(jsonb_build_object('type', 'user', 'target', r.owner_email))) end);
+    return format('Added “%s” to the Calendar for %s, %s.',
                   v_title, coalesce((select nullif(btrim(name), '') from public.allowed_users where email = v_tech), v_tech),
                   to_char(v_date, 'Mon FMDD') || case when v_end > v_date then ' to ' || to_char(v_end, 'Mon FMDD') else '' end);
   else
@@ -1903,7 +1883,7 @@ begin
       end if;
     elsif r.trigger_key in ('card_due_soon', 'card_overdue') then
       for x in select c.id, c.board_id, c.due_date from public.board_cards c join public.boards b on b.id = c.board_id
-                where not c.archived and not b.archived and c.finished_at is null and c.due_date is not null
+                where not c.archived and not b.archived and b.closed_at is null and c.finished_at is null and c.due_date is not null
                   and (r.scope <> 'board' or c.board_id = r.board_id)
                   and case when r.trigger_key = 'card_overdue' then c.due_date < v_today
                            else c.due_date between v_today and v_today + coalesce(nullif(r.trigger_config ->> 'days', '')::int, b.due_soon_days, 2) end
@@ -2107,6 +2087,9 @@ begin
       when 'add_calendar_entry' then
         if coalesce(a ->> 'tech', 'owner') <> 'owner' and not public.has_perm('service.calendar.manage', 'edit') then
           v_out := v_out || 'You may only add entries to your own calendar.'::text;
+        end if;
+        if coalesce(a ->> 'kind', 'other') in ('onsite', 'travel', 'training') and not public.has_perm('service', 'view') then
+          v_out := v_out || 'Only people with the Service / Training page can add travel, on-site and training entries.'::text;
         end if;
       else
         null;
@@ -2670,8 +2653,8 @@ insert into public.automation_templates (key, name, description, trigger_key, tr
    'card_moved', '{}', '[{"type": "last_stage", "value": true}]',
    '[{"type": "mark_complete"}, {"type": "add_label", "label": "Done", "colour": "#16a34a"}]', 1),
   ('shipped_close_board', 'Order shipped: close its production board',
-   'When an order is shipped, its production board is archived.',
-   'order_shipped', '{}', '[]', '[{"type": "archive_production_board"}]', 2),
+   'When an order is shipped, its production board is closed (the app also does this by itself; use the same action for other stages, for example Ready to ship).',
+   'order_shipped', '{}', '[]', '[{"type": "close_production_board"}]', 2),
   ('overdue_notify_office', 'Payment overdue: notify the office',
    'When a payment is overdue, the office department gets an email notification.',
    'payment_overdue', '{}', '[]',
@@ -2695,10 +2678,10 @@ insert into public.automation_templates (key, name, description, trigger_key, tr
    'A weekly in-app reminder to yourself.',
    'schedule', '{"frequency": "weekly", "days": [1], "time": "08:00"}', '[]',
    '[{"type": "notify", "channel": "app", "targets": [{"type": "owner"}], "title": "Weekly reminder", "message": "Review the boards for this week."}]', 7),
-  ('time_off_calendar', 'Time off approved: put it on the Tech Calendar',
-   'When time off is approved, the days are added to that person''s Tech Calendar.',
+  ('time_off_calendar', 'Time off approved: put it on the Calendar',
+   'When time off is approved, the days are added to that person''s Calendar (shared with you).',
    'time_off_approved', '{}', '[]',
-   '[{"type": "add_calendar_entry", "tech": "person", "when": "subject", "kind": "onsite", "title": "{person_name}: time off"}]', 8),
+   '[{"type": "add_calendar_entry", "tech": "person", "when": "subject", "kind": "other", "title": "{person_name}: time off"}]', 8),
   ('final_check_notify', 'Final check signed: notify the owner',
    'When a final check is signed, you get an in-app notification.',
    'final_check_signed', '{}', '[]',
@@ -2809,6 +2792,25 @@ revoke execute on function public.pay_rate_on(uuid, date), public.ts_managers_of
   public.ts_week_id(uuid, date), public.ts_log(uuid, text, jsonb, text) from authenticated;
 -- Dashboards internals: only inside the functions above.
 revoke execute on function public.dashboard_template_people(uuid), public.dashboard_copy_template(uuid, text) from authenticated;
+-- Sending mailboxes: the password is only ever read by the send-email Edge Function.
+revoke execute on function public.mailbox_for_sending(text), public.set_mailbox_status(text, boolean, text) from authenticated;
+grant execute on function public.mailbox_for_sending(text), public.set_mailbox_status(text, boolean, text) to service_role;
+revoke execute on function public.summary_business_admin_only(), public.allowed_users_summary_business(),
+  public.notifications_plain_text() from authenticated;
+
+-- Boards upgrade 2 internals: only inside the functions above.
+revoke execute on function public.board_label_for(uuid, text, text), public.board_place_card(uuid, uuid, integer),
+  public.board_target_check(uuid, uuid), public.production_assign_defaults(uuid),
+  public.orders_production_close(), public.orders_crating_changed(), public.order_machines_crating() from authenticated;
+-- Calendar internals: only inside the functions above.
+revoke execute on function public.calendar_entry_visible(uuid, text), public.calendar_team_keys(),
+  public.orders_training_done_guard() from authenticated;
+-- (system_on() stays revoked above; mark_training_done uses it as the owner.)
+-- Crating hand-off internals: only through the triggers and functions above.
+revoke execute on function public.crating_handoff_check(uuid), public.crates_handoff_trigger(),
+  public.orders_crating_assignee_default(), public.orders_crating_handoff_guard(),
+  public.freight_settings_check_contact() from authenticated;
+-- (default_crating_assignee stays callable: the order trigger runs as the person; it only reads Production Assignments, which everyone may read.)
 -- Automations internals: the engine, running as another person, and checks about other people.
 revoke execute on function public.automation_become(text), public.automation_restore(jsonb),
   public.automation_context(public.automation_events, public.automations), public.automation_order_ctx(uuid), public.automation_card_ctx(uuid),
