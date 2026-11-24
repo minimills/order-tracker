@@ -49,7 +49,7 @@ function bucketOf(d: string, g: Group) {
 function bucketLabel(start: string, g: Group, long = false) {
   const x = parseISO(start)
   if (g === 'day') return format(x, long ? 'EEE MMM d, yyyy' : 'MMM d')
-  if (g === 'week') return `${long ? 'Week of ' : ''}${format(x, long ? 'MMM d, yyyy' : 'MMM d')}`
+  if (g === 'week') return `${long ? tr("Week of ") : ''}${format(x, long ? 'MMM d, yyyy' : 'MMM d')}`
   if (g === 'month') return format(x, long ? 'MMMM yyyy' : 'MMM yy')
   if (g === 'quarter') return `Q${Math.floor(x.getMonth() / 3) + 1} ${format(x, 'yyyy')}${long ? ` (${format(x, 'MMM d')} to ${format(endOfQuarter(x), 'MMM d')})` : ''}`
   return format(x, 'yyyy')
@@ -153,7 +153,7 @@ export default function ProfitLoss() {
       {extra && <p className="mt-0.5 text-xs text-slate-500">{extra}</p>}
     </div>
   )
-  const change = (a: number, b: number) => (compare ? `Same dates last year: ${cad(b)}${b ? ` (${a >= b ? '+' : ''}${cad(a - b)})` : ''}` : undefined)
+  const change = (a: number, b: number) => (compare ? tr("Same dates last year: {{cad}}{{value}}", { cad: cad(b), value: b ? ` (${a >= b ? '+' : ''}${cad(a - b)})` : '' }) : undefined)
   const shown = active ? data.buckets.find((b) => b.key === active) : null
 
   return (
@@ -192,8 +192,8 @@ export default function ProfitLoss() {
       </section>
       <p className="text-xs text-slate-500">
         {tr("In CAD, from cost breakdowns with a ship date in these dates and an invoice amount. Profit = invoice amount − breakdown cost.")}
-        {data.missing > 0 && tr(" {{missing}} breakdown{{value}} no invoice amount and {{value2}} left out.", { missing: data.missing, value: data.missing === 1 ? ' has' : tr("s have"), value2: data.missing === 1 ? 'is' : 'are' })}
-        {data.noDate > 0 && tr(" {{noDate}} without a ship date {{value}} left out.", { noDate: data.noDate, value: data.noDate === 1 ? 'is' : 'are' })}
+        {data.missing > 0 && tr(" {{count}} breakdown has no invoice amount and is left out.", { count: data.missing })}
+        {data.noDate > 0 && tr(" {{count}} breakdown without a ship date is left out.", { count: data.noDate })}
       </p>
 
       <section aria-label={tr("Profit and loss by period")} data-print-section="Chart" className="rounded-lg border border-slate-200 bg-white p-4">
@@ -271,7 +271,7 @@ export default function ProfitLoss() {
             </div>
             <p className="mt-2 min-h-5 text-sm" aria-live="polite">
               {shown
-                ? tr("{{bucketLabel}}: {{words}} {{cad}} on {{shipments}} shipment{{value}} (invoiced {{cad2}}, cost {{cad3}}){{value2}}", { bucketLabel: bucketLabel(shown.key, group, true), words: words(shown.now.profit), cad: cad(shown.now.profit), shipments: shown.now.shipments, value: shown.now.shipments === 1 ? '' : 's', cad2: cad(shown.now.invoiced), cad3: cad(shown.now.cost), value2: compare ? tr(" · last year {{cad}}", { cad: cad(shown.before.profit) }) : '' })
+                ? tr("{{bucketLabel}}: {{words}} {{cad}} on {{shipments}} (invoiced {{cad2}}, cost {{cad3}}){{value2}}", { bucketLabel: bucketLabel(shown.key, group, true), words: words(shown.now.profit), cad: cad(shown.now.profit), shipments: tr("{{count}} shipment", { count: shown.now.shipments }), cad2: cad(shown.now.invoiced), cad3: cad(shown.now.cost), value2: compare ? tr(" · last year {{cad}}", { cad: cad(shown.before.profit) }) : '' })
                 : tr("Point at a {{group}} for its numbers. {{showDate}} to {{showDate2}}.", { group: group, showDate: showDate(from), showDate2: showDate(to) })}
             </p>
           </>

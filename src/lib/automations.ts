@@ -348,16 +348,30 @@ export const BOARD_KINDS = [
 
 export const OPS: Record<string, string> = {
   has: 'has',
-  has_not: 'does not have',
+  get has_not() {
+    return tr("does not have")
+  },
   nobody: 'nobody',
-  gt: 'is more than',
-  lt: 'is less than',
-  eq: 'is exactly',
+  get gt() {
+    return tr("is more than")
+  },
+  get lt() {
+    return tr("is less than")
+  },
+  get eq() {
+    return tr("is exactly")
+  },
   equals: 'is',
-  not_equals: 'is not',
+  get not_equals() {
+    return tr("is not")
+  },
   contains: 'contains',
-  is_empty: 'is empty',
-  is_not_empty: 'is not empty',
+  get is_empty() {
+    return tr("is empty")
+  },
+  get is_not_empty() {
+    return tr("is not empty")
+  },
 }
 
 export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday']
@@ -372,19 +386,19 @@ export function describeRule(r: Rule, cat: Catalog | null, choices: Choices | nu
   if (!cat) return ''
   const t = cat.triggers.find((x) => x.key === r.trigger_key)
   const cfg = r.trigger_config as TriggerConfig & { days?: unknown }
-  let start = t ? t.label : 'Something happens (not available to you)'
+  let start = t ? t.label : tr("Something happens (not available to you)")
   if (t?.key === 'card_moved' || t?.key === 'service_call_status') start += cfg.stage_name ? `: ${cfg.stage_name}` : ''
   if (t?.key === 'label_added' && cfg.label) start += `: ${cfg.label}`
   if (t?.key === 'order_stage_changed' && cfg.stage) start += ` to ${stageLabel(cfg.stage)}`
-  if ((t?.key === 'card_due_soon' || t?.key === 'payment_due') && cfg.days !== undefined && cfg.days !== '') start += ` (${cfg.days} days ahead)`
+  if ((t?.key === 'card_due_soon' || t?.key === 'payment_due') && cfg.days !== undefined && cfg.days !== '') start += tr(" ({{days}} days ahead)", { days: cfg.days })
   if (t?.key === 'schedule') {
     const f = cfg.frequency ?? 'daily'
     const days = (r.trigger_config.days as number[] | undefined) ?? []
-    start = `${f === 'weekdays' ? 'Every weekday' : f === 'weekly' ? `Every ${days.map((d) => WEEKDAYS[d - 1]).join(', ') || 'week'}` : 'Every day'} at ${cfg.time ?? '08:00'}`
+    start = `${f === 'weekdays' ? tr("Every weekday") : f === 'weekly' ? `Every ${days.map((d) => WEEKDAYS[d - 1]).join(', ') || 'week'}` : tr("Every day")} at ${cfg.time ?? '08:00'}`
   }
   const conds = r.conditions.map((c) => conditionText(c, cat, choices)).filter(Boolean)
   const acts = r.actions.map((a) => actionText(a, cat, choices))
-  return `When ${lowerFirst(start)}${conds.length ? `, if ${conds.join(r.match === 'any' ? ' or ' : ' and ')}` : ''}, then ${acts.length ? acts.join(', then ') : 'nothing yet'}.`
+  return tr("When {{lowerFirst}}{{value}}, then {{value2}}.", { lowerFirst: lowerFirst(start), value: conds.length ? tr(", if {{value}}", { value: conds.join(r.match === 'any' ? ' or ' : ' and ') }) : '', value2: acts.length ? acts.join(', then ') : tr("nothing yet") })
 }
 
 function lowerFirst(s: string) {
@@ -395,42 +409,42 @@ function lowerFirst(s: string) {
 
 function names(values: string[] | undefined, lookup: (v: string) => string) {
   const list = (values ?? []).map(lookup)
-  if (list.length === 0) return '(none chosen)'
+  if (list.length === 0) return tr("(none chosen)")
   return list.length === 1 ? list[0] : `${list.slice(0, -1).join(', ')} or ${list[list.length - 1]}`
 }
 
 export function conditionText(c: Condition, cat: Catalog, choices: Choices | null) {
   const def = cat.conditions.find((x) => x.key === c.type)
-  if (!def) return 'a condition that is not available to you'
+  if (!def) return tr("a condition that is not available to you")
   const board = (id: string) => choices?.boards.find((b) => b.id === id)?.name ?? 'a board'
   const dept = (id: string) => choices?.departments.find((d) => d.id === id)?.name ?? 'a department'
-  const type = (id: string) => choices?.machine_types.find((m) => m.id === id)?.name ?? 'a machine type'
-  const person = (e: string) => (e === 'actor' ? 'the person who made the change' : (choices?.people.find((p) => p.email === e)?.name ?? e))
+  const type = (id: string) => choices?.machine_types.find((m) => m.id === id)?.name ?? tr("a machine type")
+  const person = (e: string) => (e === 'actor' ? tr("the person who made the change") : (choices?.people.find((p) => p.email === e)?.name ?? e))
   switch (c.type) {
     case 'board':
-      return `the board is ${names(c.values, board)}`
+      return tr("the board is {{names}}", { names: names(c.values, board) })
     case 'board_kind':
-      return `the board is one of: ${names(c.values, (v) => BOARD_KINDS.find((k) => k.value === v)?.label ?? v)}`
+      return tr("the board is one of: {{names}}", { names: names(c.values, (v) => BOARD_KINDS.find((k) => k.value === v)?.label ?? v) })
     case 'stage':
-      return `the stage is ${names(c.values, (v) => v)}`
+      return tr("the stage is {{names}}", { names: names(c.values, (v) => v) })
     case 'last_stage':
-      return c.value === false ? 'the card is not in the last stage' : 'the card is in the last stage'
+      return c.value === false ? tr("the card is not in the last stage") : tr("the card is in the last stage")
     case 'label':
-      return `the card ${c.op === 'has_not' ? 'does not have' : 'has'} the label ${names(c.values, (v) => v)}`
+      return tr("the card {{value}} the label {{names}}", { value: c.op === 'has_not' ? tr("does not have") : tr("has"), names: names(c.values, (v) => v) })
     case 'assignee':
-      return c.op === 'nobody' ? 'nobody is assigned' : `${names(c.values, person)} ${c.op === 'has_not' ? 'is not' : 'is'} on the card`
+      return c.op === 'nobody' ? tr("nobody is assigned") : tr("{{names}} {{value}} on the card", { names: names(c.values, person), value: c.op === 'has_not' ? tr("is not") : tr("is") })
     case 'department':
-      return `the department is ${names(c.values, dept)}`
+      return tr("the department is {{names}}", { names: names(c.values, dept) })
     case 'machine_type':
-      return `a machine is ${names(c.values, type)}`
+      return tr("a machine is {{names}}", { names: names(c.values, type) })
     case 'country':
-      return `the customer country is ${names(c.values, (v) => v)}`
+      return tr("the customer country is {{names}}", { names: names(c.values, (v) => v) })
     case 'order_value':
-      return `the order value ${OPS[c.op ?? 'gt']} ${c.value ?? ''}`
+      return tr("the order value {{value}} {{value2}}", { value: OPS[c.op ?? 'gt'], value2: c.value ?? '' })
     case 'voltage':
-      return `the voltage is ${names(c.values, (v) => v)}`
+      return tr("the voltage is {{names}}", { names: names(c.values, (v) => v) })
     case 'order_stage':
-      return `the order stage is ${names(c.values, (v) => stageLabel(v))}`
+      return tr("the order stage is {{names}}", { names: names(c.values, (v) => stageLabel(v)) })
     case 'field': {
       const f = Object.values(cat.fields)
         .flat()
@@ -445,42 +459,42 @@ export function conditionText(c: Condition, cat: Catalog, choices: Choices | nul
 
 export function actionText(a: Action, cat: Catalog, choices: Choices | null) {
   const def = cat.actions.find((x) => x.key === a.type)
-  if (!def) return 'an action that is not available to you'
+  if (!def) return tr("an action that is not available to you")
   const board = (id?: string) => choices?.boards.find((b) => b.id === id)?.name ?? 'a board'
   const person = (e?: string) =>
-    e === 'actor' ? 'the person who made the change' : e === 'owner' ? 'me' : e === 'all' ? 'everyone' : (choices?.people.find((p) => p.email === e)?.name ?? e ?? 'someone')
+    e === 'actor' ? tr("the person who made the change") : e === 'owner' ? 'me' : e === 'all' ? 'everyone' : (choices?.people.find((p) => p.email === e)?.name ?? e ?? 'someone')
   switch (a.type) {
     case 'move_card':
-      return a.stage === 'next' ? 'move the card to the next stage' : `move the card to ${a.stage_name ?? 'a stage'}`
+      return a.stage === 'next' ? tr("move the card to the next stage") : tr("move the card to {{value}}", { value: a.stage_name ?? tr("a stage") })
     case 'copy_card':
-      return `copy the card to ${board(a.board_id)}`
+      return tr("copy the card to {{board}}", { board: board(a.board_id) })
     case 'add_label':
-      return `add the label ${a.label ?? ''}`
+      return tr("add the label {{value}}", { value: a.label ?? '' })
     case 'remove_label':
-      return `remove the label ${a.label ?? ''}`
+      return tr("remove the label {{value}}", { value: a.label ?? '' })
     case 'assign':
       return `assign ${person(a.person)}`
     case 'unassign':
-      return `remove ${person(a.person)} from the card`
+      return tr("remove {{person}} from the card", { person: person(a.person) })
     case 'set_due':
-      return a.clear ? 'clear the due date' : `set the due date to ${a.days ?? 0} days from today`
+      return a.clear ? tr("clear the due date") : tr("set the due date to {{value}} days from today", { value: a.days ?? 0 })
     case 'shift_due':
-      return `move the due date by ${a.days ?? 0} days`
+      return tr("move the due date by {{value}} days", { value: a.days ?? 0 })
     case 'add_checklist':
-      return `add the checklist “${a.title ?? ''}”`
+      return tr("add the checklist “{{value}}”", { value: a.title ?? '' })
     case 'create_card':
-      return `create the card “${a.title ?? ''}” on ${board(a.board_id)}`
+      return tr("create the card “{{value}}” on {{board}}", { value: a.title ?? '', board: board(a.board_id) })
     case 'change_order_stage':
-      return `move the order to ${stageLabel(a.stage) || 'a stage'}`
+      return tr("move the order to {{value}}", { value: stageLabel(a.stage) || tr("a stage") })
     case 'notify': {
-      const ch = a.channel === 'push' ? 'a phone push notification' : a.channel === 'email' ? 'an email notification' : 'an in-app notification'
-      const who = (a.targets ?? []).map((t) => targetText(t, choices)).join(', ') || 'nobody yet'
-      return `send ${ch} to ${who}`
+      const ch = a.channel === 'push' ? tr("a phone push notification") : a.channel === 'email' ? tr("an email notification") : tr("an in-app notification")
+      const who = (a.targets ?? []).map((t) => targetText(t, choices)).join(', ') || tr("nobody yet")
+      return tr("send {{ch}} to {{who}}", { ch: ch, who: who })
     }
     case 'post_notice':
-      return `post the notice “${a.title ?? ''}”`
+      return tr("post the notice “{{value}}”", { value: a.title ?? '' })
     case 'add_calendar_entry':
-      return `add “${a.title ?? ''}” to the Calendar`
+      return tr("add “{{value}}” to the Calendar", { value: a.title ?? '' })
     default:
       return def.label.charAt(0).toLowerCase() + def.label.slice(1)
   }

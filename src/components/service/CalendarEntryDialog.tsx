@@ -40,7 +40,9 @@ export type ManualEntry = {
 
 type Choices = { people: { email: string; name: string }[]; groups: { id: string; name: string }[]; departments: { id: string; name: string }[] }
 const SERVICE_KINDS: EntryKind[] = ['onsite', 'travel', 'training']
-const KIND_LABEL: Record<EntryKind, string> = { other: 'Appointment', onsite: 'On site', travel: 'Travel', training: 'Training' }
+const KIND_LABEL: Record<EntryKind, string> = { other: 'Appointment', get onsite() {
+    return tr("On site")
+  }, travel: 'Travel', training: 'Training' }
 
 /** What a click on the calendar fills in for a new entry. */
 export type EntryPreset = { start_date: string; end_date: string; all_day: boolean; start_min?: number; end_min?: number }

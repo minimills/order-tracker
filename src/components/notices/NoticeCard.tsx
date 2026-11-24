@@ -96,11 +96,11 @@ export default function NoticeCard(props: Props) {
     props.onChanged()
   }
 
-  const acknowledge = () => run(() => acknowledgeNotice(n.id), 'Thank you. The notice is acknowledged.')
-  const pin = () => run(() => supabase!.rpc('pin_notice', { p_notice: n.id, p_pinned: !n.pinned }), n.pinned ? 'Notice unpinned.' : 'Notice pinned to the top.')
+  const acknowledge = () => run(() => acknowledgeNotice(n.id), tr("Thank you. The notice is acknowledged."))
+  const pin = () => run(() => supabase!.rpc('pin_notice', { p_notice: n.id, p_pinned: !n.pinned }), n.pinned ? tr("Notice unpinned.") : tr("Notice pinned to the top."))
   async function archive() {
     if (!n.archived && !(await confirmAction(confirmText.archive('this notice'), { confirmLabel: ACTION.archive }))) return
-    await run(() => supabase!.rpc('archive_notice', { p_notice: n.id, p_archived: !n.archived }), n.archived ? 'Notice restored.' : 'Notice archived.')
+    await run(() => supabase!.rpc('archive_notice', { p_notice: n.id, p_archived: !n.archived }), n.archived ? tr("Notice restored.") : tr("Notice archived."))
     void refreshUrgentNotices()
   }
   const react = (emoji: string) => {
@@ -125,7 +125,7 @@ export default function NoticeCard(props: Props) {
   const style = { '--tilt': tiltOf(n.id), backgroundColor: colour.paper, borderColor: colour.edge } as CSSProperties
   const boardLook =
     layout === 'board'
-      ? 'md:[rotate:var(--tilt)] md:transition-transform md:hover:[rotate:0deg] shadow-[0_1px_2px_rgba(15,23,42,0.08),0_6px_14px_-6px_rgba(15,23,42,0.25)]'
+      ? tr("md:[rotate:var(--tilt)] md:transition-transform md:hover:[rotate:0deg] shadow-[0_1px_2px_rgba(15,23,42,0.08),0_6px_14px_-6px_rgba(15,23,42,0.25)]")
       : 'shadow-sm'
 
   return (

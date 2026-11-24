@@ -99,7 +99,7 @@ export default function BoardAdminPage() {
                 className="w-16 rounded-md border border-slate-300 px-2 py-1 text-center font-semibold"
                 value={draft}
                 onChange={(e) => setDrafts({ ...drafts, [r.id]: e.target.value })}
-                onKeyDown={(e) => e.key === 'Enter' && valid && ask(r.id, n, `Move order ${r.order_code} to place ${n} in the queue`)}
+                onKeyDown={(e) => e.key === 'Enter' && valid && ask(r.id, n, tr("Move order {{order_code}} to place {{n}} in the queue", { order_code: r.order_code, n: n }))}
               />
               <div className="min-w-0 flex-1">
                 <Link to={`/orders/${r.id}`} className="font-medium hover:underline">
@@ -112,7 +112,7 @@ export default function BoardAdminPage() {
                 </div>
               </div>
               {valid && (
-                <button type="button" className={buttonClass} disabled={busy} onClick={() => ask(r.id, n, `Move order ${r.order_code} to place ${n} in the queue`)}>
+                <button type="button" className={buttonClass} disabled={busy} onClick={() => ask(r.id, n, tr("Move order {{order_code}} to place {{n}} in the queue", { order_code: r.order_code, n: n }))}>
                   {tr("Set")}
                 </button>
               )}

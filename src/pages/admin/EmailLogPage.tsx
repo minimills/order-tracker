@@ -24,7 +24,9 @@ type LogRow = {
   created_at: string
   created_by: string | null
 }
-const KIND: Record<LogRow['kind'], string> = { notification: 'Notification', digest: 'Daily summary', test: 'Test', resend: 'Resent' }
+const KIND: Record<LogRow['kind'], string> = { notification: 'Notification', get digest() {
+    return tr("Daily summary")
+  }, test: 'Test', resend: 'Resent' }
 const PAGE = 100
 
 /** Admin → Email Log: every email sent, with Resend. */

@@ -311,7 +311,7 @@ export function ShareDashboardDialog({ dashboardId, name, onClose }: { dashboard
     const { data, error } = await supabase.rpc('share_dashboard', { p_id: dashboardId, p_emails: chosen })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(tr("A copy of “{{name}}” was given to {{data}} {{value}}.", { name: name, data: data, value: data === 1 ? 'person' : 'people' }))
+    toast.success(tr("A copy of “{{name}}” was given to {{count}} person.", { name: name, count: data }))
     onClose()
   }
   return (

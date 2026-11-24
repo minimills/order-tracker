@@ -100,7 +100,7 @@ export default function CertificatePage() {
 
   if (!cert || !edit) return <p className="p-6 text-center text-slate-500">{tr("Loading…")}</p>
 
-  const noun = cert.kind === 'service_report' ? 'service report' : 'certificate'
+  const noun = cert.kind === 'service_report' ? tr("service report") : 'certificate'
   const company: CompanyInfo = cert.locked_at && cert.info.company ? cert.info.company : liveCompany
   const anySigned = Boolean(cert.tech_signed_at || cert.customer_signed_at)
   const editable = cert.status === 'draft' && !anySigned

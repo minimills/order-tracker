@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 type Result = { ok: true; message: string; emailed?: boolean } | { ok: false; message: string }
 
@@ -8,7 +9,7 @@ type Result = { ok: true; message: string; emailed?: boolean } | { ok: false; me
  * server that the caller may manage users.
  */
 export async function adminUsers(action: 'create' | 'resend' | 'remove' | 'change_email', body: Record<string, unknown>): Promise<Result> {
-  if (!supabase) return { ok: false, message: 'Not connected to the database.' }
+  if (!supabase) return { ok: false, message: tr("Not connected to the database.") }
   const { data, error } = await supabase.functions.invoke('admin-users', {
     body: { action, redirect_to: window.location.origin + window.location.pathname, ...body },
   })
@@ -24,6 +25,6 @@ export async function adminUsers(action: 'create' | 'resend' | 'remove' | 'chang
     }
   }
   if (/failed to send|fetch|not found|404/i.test(error.message))
-    return { ok: false, message: 'The “admin-users” Edge Function is not set up in Supabase yet (see the setup steps), or it could not be reached.' }
+    return { ok: false, message: tr("The “admin-users” Edge Function is not set up in Supabase yet (see the setup steps), or it could not be reached.") }
   return { ok: false, message: error.message }
 }

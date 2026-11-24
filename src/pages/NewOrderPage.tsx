@@ -263,8 +263,8 @@ export default function NewOrderPage() {
           const suffixes = codes.map((c) => Number(c.split('-')[1] ?? 0))
           const next = hasPlain && !codes.includes(`${splitOfInt}-1`) ? 2 : Math.max(0, ...suffixes) + 1
           return hasPlain && !codes.includes(`${splitOfInt}-1`)
-            ? `Order ${splitOfInt} will become ${splitOfInt}-1, and this order will be ${splitOfInt}-${next}.`
-            : `This order will be ${splitOfInt}-${next}.`
+            ? tr("Order {{splitOfInt}} will become {{splitOfInt2}}-1, and this order will be {{splitOfInt3}}-{{next}}.", { splitOfInt: splitOfInt, splitOfInt2: splitOfInt, splitOfInt3: splitOfInt, next: next })
+            : tr("This order will be {{splitOfInt}}-{{next}}.", { splitOfInt: splitOfInt, next: next })
         })()
       : null
 
@@ -272,57 +272,57 @@ export default function NewOrderPage() {
   function validate() {
     const e: Record<string, string> = {}
 
-    if (customer.mode === 'existing' && !customer.customer) e.customer = 'Select a customer, or create a new one.'
+    if (customer.mode === 'existing' && !customer.customer) e.customer = tr("Select a customer, or create a new one.")
     if (customer.mode === 'new') {
-      if (!customer.customer.name.trim()) e.name = 'Enter the customer’s name.'
+      if (!customer.customer.name.trim()) e.name = tr("Enter the customer’s name.")
       const bad = parseEmails(customer.customer.emails).filter((m) => !emailPattern.test(m))
-      if (bad.length) e.emails = `This doesn’t look like an email address: ${bad.join(', ')}`
+      if (bad.length) e.emails = tr("This doesn’t look like an email address: {{value}}", { value: bad.join(', ') })
     }
 
     if (isSplit) {
-      if (splitOfInt === null) e.splitOf = 'Enter the number of the original order, for example 76.'
-      else if (activeSplitInfo === 'not-found') e.splitOf = `There is no order ${splitOfInt}.`
+      if (splitOfInt === null) e.splitOf = tr("Enter the number of the original order, for example 76.")
+      else if (activeSplitInfo === 'not-found') e.splitOf = tr("There is no order {{splitOfInt}}.", { splitOfInt: splitOfInt })
     } else if (!may.number) {
       // the next free number is picked automatically
     } else if (orderNumberInt === null || orderNumberInt < 1) {
-      e.orderNumber = 'Enter a whole number, for example 77.'
+      e.orderNumber = tr("Enter a whole number, for example 77.")
     } else if (takenNumbers[orderNumberInt]) {
-      e.orderNumber = `Order ${orderNumberInt} already exists.${nextNumber ? ` The next free number is ${nextNumber}.` : ''}`
+      e.orderNumber = tr("Order {{orderNumberInt}} already exists.{{value}}", { orderNumberInt: orderNumberInt, value: nextNumber ? tr(" The next free number is {{nextNumber}}.", { nextNumber: nextNumber }) : '' })
     }
 
     const typeById = new Map(machineTypes.map((t) => [t.id, t]))
     const seen = new Map<string, string>()
     rows.forEach((row, i) => {
-      if (!row.machineTypeId) e[`row-${i}-type`] = 'Choose a machine type.'
-      if (parseQuantity(row.quantity) === null) e[`row-${i}-qty`] = 'Enter 1 to 50.'
+      if (!row.machineTypeId) e[`row-${i}-type`] = tr("Choose a machine type.")
+      if (parseQuantity(row.quantity) === null) e[`row-${i}-qty`] = tr("Enter 1 to 50.")
       const type = typeById.get(row.machineTypeId)
       row.manual.forEach((m, j) => {
         if (m === null) return
         const s = cleanSerial(m)
         const key = `row-${i}-unit-${j}`
-        if (!s) e[key] = 'Enter the serial number, or switch back to automatic numbering.'
-        else if (seen.has(s)) e[key] = `${s} is entered twice on this order.`
-        else if (takenSerials[s]) e[key] = `${s} is already in use on order ${takenSerials[s]}.`
+        if (!s) e[key] = tr("Enter the serial number, or switch back to automatic numbering.")
+        else if (seen.has(s)) e[key] = tr("{{s}} is entered twice on this order.", { s: s })
+        else if (takenSerials[s]) e[key] = tr("{{s}} is already in use on order {{value}}.", { s: s, value: takenSerials[s] })
         else if (type?.code && !s.startsWith(`${type.code}-`))
-          e[key] = `Serial numbers for ${type.name} start with ${type.code}-`
+          e[key] = tr("Serial numbers for {{name}} start with {{code}}-", { name: type.name, code: type.code })
         seen.set(s, key)
       })
     })
-    if (rows.length === 0) e.machines = 'Add at least one machine.'
+    if (rows.length === 0) e.machines = tr("Add at least one machine.")
 
     if (!may.total) {
       // no order total for this person
-    } else if (totalNum === null) e.total = 'Enter the order total (enter 0 if it is not known yet).'
-    else if (Number.isNaN(totalNum)) e.total = 'Enter a number, for example 12500 or 12,500.00'
+    } else if (totalNum === null) e.total = tr("Enter the order total (enter 0 if it is not known yet).")
+    else if (Number.isNaN(totalNum)) e.total = tr("Enter a number, for example 12500 or 12,500.00")
     if (fullPayment) {
       // no down payment to check
-    } else if (downNum !== null && Number.isNaN(downNum)) e.down = 'Enter a number.'
-    else if (downMode === 'percent' && downNum !== null && downNum > 100) e.down = 'The percentage cannot be more than 100.'
+    } else if (downNum !== null && Number.isNaN(downNum)) e.down = tr("Enter a number.")
+    else if (downMode === 'percent' && downNum !== null && downNum > 100) e.down = tr("The percentage cannot be more than 100.")
     else if (downAmount !== null && totalNum !== null && downAmount > totalNum)
-      e.down = 'The down payment cannot be more than the order total.'
-    if (!fullPayment && downDue && balanceDue && balanceDue < downDue) e.balanceDue = 'The balance would be due before the down payment.'
+      e.down = tr("The down payment cannot be more than the order total.")
+    if (!fullPayment && downDue && balanceDue && balanceDue < downDue) e.balanceDue = tr("The balance would be due before the down payment.")
 
-    if (can('orders.new.crating', 'edit') && crated === null) e.crated = 'Answer whether this order will be crated.'
+    if (can('orders.new.crating', 'edit') && crated === null) e.crated = tr("Answer whether this order will be crated.")
 
     return e
   }

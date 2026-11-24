@@ -14,13 +14,27 @@ export const DEFAULT_STAGE_LABELS = Object.fromEntries(STAGES.map((s) => [s, s])
 
 /** What each stage means (shown in Admin → Stage names). */
 export const STAGE_HINTS: Record<Stage, string> = {
-  Quote: 'Not ordered yet. Not on the shop board, no serial numbers.',
-  Confirmed: 'Ordered. On the shop board, waiting to be built.',
-  'In production': 'Being built.',
-  Ready: 'Machines are built and being tested.',
-  'Ready to ship': 'Tested and waiting to be crated / picked up.',
-  Shipped: 'The shipment has left. Leaves the shop board.',
-  Cancelled: 'Will not be built. Leaves the shop board.',
+  get Quote() {
+    return tr("Not ordered yet. Not on the shop board, no serial numbers.")
+  },
+  get Confirmed() {
+    return tr("Ordered. On the shop board, waiting to be built.")
+  },
+  get "In production"() {
+    return tr("Being built.")
+  },
+  get Ready() {
+    return tr("Machines are built and being tested.")
+  },
+  get "Ready to ship"() {
+    return tr("Tested and waiting to be crated / picked up.")
+  },
+  get Shipped() {
+    return tr("The shipment has left. Leaves the shop board.")
+  },
+  get Cancelled() {
+    return tr("Will not be built. Leaves the shop board.")
+  },
 }
 
 let labels: StageLabels = DEFAULT_STAGE_LABELS
@@ -51,7 +65,7 @@ export async function loadStageLabels() {
 
 /** Saves new names (admins / "admin.stages"). */
 export async function saveStageLabels(next: Partial<StageLabels>) {
-  if (!supabase) return { message: 'Not connected' }
+  if (!supabase) return { message: tr("Not connected") }
   const clean = Object.fromEntries(
     STAGES.filter((s) => next[s]?.trim() && next[s]!.trim() !== s).map((s) => [s, next[s]!.trim()]),
   )

@@ -99,7 +99,7 @@ export default function AbsenceCalendar() {
                 {days.map((d) => {
                   const here = cellFor(emp, d)
                   const a = here[0]
-                  const label = here.map((x) => `${timeOffLabel(x.kind)}${x.hours ? ` ${showHours(x.hours)} h` : ''}${x.status === 'pending' ? ' (waiting for a decision)' : ''}`).join(', ')
+                  const label = here.map((x) => `${timeOffLabel(x.kind)}${x.hours ? ` ${showHours(x.hours)} h` : ''}${x.status === 'pending' ? tr(" (waiting for a decision)") : ''}`).join(', ')
                   return (
                     <td key={d} className={`h-7 p-0.5 ${[6, 7].includes(isoDow(d)) ? 'bg-slate-50' : ''}`} title={a ? `${name}: ${label}` : undefined}>
                       {a &&

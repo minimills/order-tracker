@@ -462,7 +462,7 @@ export function ActionRow({
   switch (action.type) {
     case 'move_card':
       body = field(
-        'To the stage',
+        tr("To the stage"),
         <select
           id={`${id}-stage`}
           className={`${narrowInputClass} min-w-48`}
@@ -544,7 +544,7 @@ export function ActionRow({
       )
       break
     case 'shift_due':
-      body = days('Days (negative = earlier)', 'days', '2')
+      body = days(tr("Days (negative = earlier)"), 'days', '2')
       break
     case 'add_checklist':
       body = (
@@ -577,7 +577,7 @@ export function ActionRow({
       break
     case 'change_order_stage':
       body = field(
-        'New stage',
+        tr("New stage"),
         <select id={`${id}-ostage`} className={`${narrowInputClass} min-w-48`} value={action.stage ?? ''} onChange={(e) => set({ stage: e.target.value })} disabled={disabled}>
           <option value="">{tr("Choose a stage…")}</option>
           {choices.order_stages.map((s) => (

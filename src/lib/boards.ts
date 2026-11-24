@@ -127,9 +127,15 @@ export const BOARD_COLOURS = ['#2563eb', '#0891b2', '#059669', '#65a30d', '#d977
 export const LABEL_COLOURS = ['#dc2626', '#d97706', '#ca8a04', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#db2777', '#64748b']
 
 export const SHARE_LEVEL_TEXT: Record<ShareLevel, string> = {
-  view: 'Can view',
-  edit: 'Can work on cards',
-  manage: 'Can manage the board',
+  get view() {
+    return tr("Can view")
+  },
+  get edit() {
+    return tr("Can work on cards")
+  },
+  get manage() {
+    return tr("Can manage the board")
+  },
 }
 
 export const NOTIFY_EVENTS: { value: NotifyEvent; label: string }[] = [
@@ -172,10 +178,10 @@ export const DUE_TONE: Record<DueState, string> = {
 }
 export function dueWords(due: string, today: string) {
   const d = differenceInCalendarDays(parseISO(due), parseISO(today))
-  if (d === 0) return 'due today'
-  if (d === 1) return 'due tomorrow'
-  if (d < 0) return `${-d} day${d === -1 ? '' : 's'} late`
-  return `due in ${d} days`
+  if (d === 0) return tr("due today")
+  if (d === 1) return tr("due tomorrow")
+  if (d < 0) return tr("{{value}} day{{value2}} late", { value: -d, value2: d === -1 ? '' : 's' })
+  return tr("due in {{d}} days", { d: d })
 }
 
 // ---------------------------------------------------------------------------
@@ -184,7 +190,7 @@ export function dueWords(due: string, today: string) {
 /** 0 → "under a minute", 4500 → "1 h 15 min", 200000 → "2 d 7 h". */
 export function formatDuration(seconds: number | null | undefined) {
   if (seconds == null || seconds < 0) return '—'
-  if (seconds < 60) return 'under a minute'
+  if (seconds < 60) return tr("under a minute")
   const m = Math.round(seconds / 60)
   if (m < 60) return `${m} min`
   const h = Math.floor(m / 60)
@@ -259,42 +265,42 @@ export function textOn(hex: string) {
 export function eventText(e: CardEvent) {
   const d = e.details as Record<string, string | number | null>
   switch (e.kind) {
-    case 'created': return `Card added to ${d.stage}`
-    case 'moved': return `Moved from ${d.from} to ${d.to}`
-    case 'renamed': return `Renamed from “${d.old}” to “${d.new}”`
-    case 'description': return 'Description changed'
-    case 'due': return d.new ? `Due date set to ${d.new}${d.old ? ` (was ${d.old})` : ''}` : 'Due date removed'
-    case 'linked': return [d.order && `Linked to order ${d.order}`, d.customer && `customer ${d.customer}`, d.machine && `machine ${d.machine}`].filter(Boolean).join(', ') || 'Link removed'
+    case 'created': return tr("Card added to {{stage}}", { stage: d.stage })
+    case 'moved': return tr("Moved from {{from}} to {{to}}", { from: d.from, to: d.to })
+    case 'renamed': return tr("Renamed from “{{old}}” to “{{new}}”", { old: d.old, new: d.new })
+    case 'description': return tr("Description changed")
+    case 'due': return d.new ? tr("Due date set to {{new}}{{value}}", { new: d.new, value: d.old ? tr(" (was {{old}})", { old: d.old }) : '' }) : tr("Due date removed")
+    case 'linked': return [d.order && `Linked to order ${d.order}`, d.customer && `customer ${d.customer}`, d.machine && `machine ${d.machine}`].filter(Boolean).join(', ') || tr("Link removed")
     case 'started': return 'Started'
-    case 'finished': return `Finished (took ${formatDuration(Number(d.seconds))})`
-    case 'timing_reset': return 'Start / Finish cleared'
+    case 'finished': return tr("Finished (took {{formatDuration}})", { formatDuration: formatDuration(Number(d.seconds)) })
+    case 'timing_reset': return tr("Start / Finish cleared")
     case 'archived': return 'Archived'
-    case 'restored': return 'Restored from the archive'
-    case 'assigned': return `${d.name} assigned to the card`
-    case 'unassigned': return `${d.name} removed from the card`
-    case 'label_added': return `Label “${d.name}” added`
-    case 'label_removed': return `Label “${d.name}” removed`
-    case 'checklist_added': return `Checklist “${d.title}” added`
-    case 'checklist_removed': return `Checklist “${d.title}” removed`
+    case 'restored': return tr("Restored from the archive")
+    case 'assigned': return tr("{{name}} assigned to the card", { name: d.name })
+    case 'unassigned': return tr("{{name}} removed from the card", { name: d.name })
+    case 'label_added': return tr("Label “{{name}}” added", { name: d.name })
+    case 'label_removed': return tr("Label “{{name}}” removed", { name: d.name })
+    case 'checklist_added': return tr("Checklist “{{title}}” added", { title: d.title })
+    case 'checklist_removed': return tr("Checklist “{{title}}” removed", { title: d.title })
     case 'task_started': return `Started “${d.task}”`
     case 'task_done': return `Finished “${d.task}”${d.seconds != null ? ` (took ${formatDuration(Number(d.seconds))})` : ''}`
-    case 'task_reopened': return `Marked “${d.task}” incomplete`
-    case 'paused': return `Paused${d.task ? ` “${d.task}”` : ' the timer'}${d.note ? `: ${d.note}` : ''}`
-    case 'resumed': return `Resumed${d.task ? ` “${d.task}”` : ' the timer'}${d.seconds != null ? ` after ${formatDuration(Number(d.seconds))}` : ''}`
-    case 'comment': return `Added a comment: “${richTextInline(String(d.excerpt ?? ''))}”`
-    case 'leftover_split': return `${d.count} unfinished item${Number(d.count) === 1 ? '' : 's'} moved to a leftover card in ${d.stage}`
-    case 'leftover_created': return `Leftover card created for ${d.machine} (${d.stage})`
-    case 'leftover_merged': return `${d.count} leftover item${Number(d.count) === 1 ? '' : 's'} merged back as completed (${d.reason})`
-    case 'task_renamed': return `Task renamed from “${d.old}” to “${d.new}”`
-    case 'task_due': return d.new ? `“${d.task}” due ${d.new}${d.old ? ` (was ${d.old})` : ''}` : `Due date of “${d.task}” removed`
+    case 'task_reopened': return tr("Marked “{{task}}” incomplete", { task: d.task })
+    case 'paused': return `Paused${d.task ? ` “${d.task}”` : tr(" the timer")}${d.note ? `: ${d.note}` : ''}`
+    case 'resumed': return `Resumed${d.task ? ` “${d.task}”` : tr(" the timer")}${d.seconds != null ? ` after ${formatDuration(Number(d.seconds))}` : ''}`
+    case 'comment': return tr("Added a comment: “{{richTextInline}}”", { richTextInline: richTextInline(String(d.excerpt ?? '')) })
+    case 'leftover_split': return tr("{{number}} unfinished item{{value}} moved to a leftover card in {{stage}}", { number: d.count, value: Number(d.count) === 1 ? '' : 's', stage: d.stage })
+    case 'leftover_created': return tr("Leftover card created for {{machine}} ({{stage}})", { machine: d.machine, stage: d.stage })
+    case 'leftover_merged': return tr("{{number}} leftover item{{value}} merged back as completed ({{reason}})", { number: d.count, value: Number(d.count) === 1 ? '' : 's', reason: d.reason })
+    case 'task_renamed': return tr("Task renamed from “{{old}}” to “{{new}}”", { old: d.old, new: d.new })
+    case 'task_due': return d.new ? `“${d.task}” due ${d.new}${d.old ? ` (was ${d.old})` : ''}` : tr("Due date of “{{task}}” removed", { task: d.task })
     case 'task_assigned':
       return d.name
-        ? `“${d.task}” assigned to ${d.name}${d.old ? ` (was ${d.old})` : ''}${d.auto ? ' automatically' : ''}${d.running ? '; its timer keeps running' : ''}`
-        : `Nobody assigned to “${d.task}” any more${d.old ? ` (was ${d.old})` : ''}`
-    case 'copied_from': return `Copied from “${d.title}” on ${d.board}`
-    case 'copied_to': return `Copied to ${d.board} (${d.stage})`
-    case 'moved_board': return `Moved from the board ${d.from} to ${d.to} (${d.stage})`
-    case 'stage_time': return `Left ${d.stage}${d.auto_started || d.auto_finished ? ' (times filled in automatically)' : ''}`
+        ? tr("“{{task}}” assigned to {{name}}{{value}}{{value2}}{{value3}}", { task: d.task, name: d.name, value: d.old ? tr(" (was {{old}})", { old: d.old }) : '', value2: d.auto ? tr(" automatically") : '', value3: d.running ? tr("; its timer keeps running") : '' })
+        : tr("Nobody assigned to “{{task}}” any more{{value}}", { task: d.task, value: d.old ? tr(" (was {{old}})", { old: d.old }) : '' })
+    case 'copied_from': return tr("Copied from “{{title}}” on {{board}}", { title: d.title, board: d.board })
+    case 'copied_to': return tr("Copied to {{board}} ({{stage}})", { board: d.board, stage: d.stage })
+    case 'moved_board': return tr("Moved from the board {{from}} to {{to}} ({{stage}})", { from: d.from, to: d.to, stage: d.stage })
+    case 'stage_time': return `Left ${d.stage}${d.auto_started || d.auto_finished ? tr(" (times filled in automatically)") : ''}`
     default: return e.kind
   }
 }

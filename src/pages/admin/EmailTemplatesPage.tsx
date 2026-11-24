@@ -10,7 +10,7 @@ import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
 import { tr } from '../../i18n'
 
-const PLACEHOLDERS = '{customer_company} (the customer’s company, or their name when there is none), {customer_name}, {order_number}, {title}, {company_name}'
+const PLACEHOLDERS = () => tr('{customer_company} (the customer’s company, or their name when there is none), {customer_name}, {order_number}, {title}, {company_name}')
 const card = 'space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm'
 
 const DOCS: { key: 'certificate' | 'service_report'; title: string; text: string }[] = [
@@ -130,7 +130,7 @@ export default function EmailTemplatesPage() {
               <h2 className="text-base font-semibold">{d.title}</h2>
               <p className="text-slate-600">{d.text}</p>
             </div>
-            <Field label={tr("Subject")} htmlFor={`et-${d.key}-subject`} hint={tr("Placeholders: {{PLACEHOLDERS}}.", { PLACEHOLDERS: PLACEHOLDERS })}>
+            <Field label={tr("Subject")} htmlFor={`et-${d.key}-subject`} hint={tr("Placeholders: {{PLACEHOLDERS}}.", { PLACEHOLDERS: PLACEHOLDERS() })}>
               <input id={`et-${d.key}-subject`} className={inputClass} maxLength={300} value={t[`${d.key}_subject`]} onChange={(e) => setT({ ...t, [`${d.key}_subject`]: e.target.value })} />
             </Field>
             <Field label={tr("Default CC")} htmlFor={`et-${d.key}-cc`} hint={tr("Separate several addresses with commas. {office_email} = the office email from Admin → Company Details. Leave empty for no CC.")}>

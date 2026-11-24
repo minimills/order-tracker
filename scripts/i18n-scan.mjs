@@ -16,7 +16,7 @@ export const TEXT_ATTRS = new Set([
   'placeholder', 'title', 'aria-label', 'alt', 'label', 'hint', 'description', 'subtitle', 'heading', 'caption',
   'tooltip', 'legend', 'emptyText', 'empty', 'confirmLabel', 'aria-description', 'aria-roledescription', 'what', 'note',
 ])
-export const DATA_KEYS = new Set(['label', 'title', 'hint', 'description', 'text', 'heading', 'placeholder', 'help', 'empty', 'emptyText', 'confirmLabel', 'caption', 'subtitle', 'unitLabel', 'short', 'long'])
+export const DATA_KEYS = new Set(['where', 'label', 'title', 'hint', 'description', 'text', 'heading', 'placeholder', 'help', 'empty', 'emptyText', 'confirmLabel', 'caption', 'subtitle', 'unitLabel', 'short', 'long'])
 const TOAST = new Set(['success', 'error', 'info', 'warning', 'message', 'loading'])
 const MESSAGE_FNS = new Set(['confirmAction', 'askText', 'setError', 'setMessage', 'setProblem', 'setNotice', 'setWarning', 'setStatusText'])
 /** Calls whose object arguments are data for the database, never shown text. */
@@ -44,6 +44,61 @@ export function isText(raw) {
   if (/^[\w-]+\.(png|jpe?g|svg|pdf|csv|json|ics|zip|xlsx)$/i.test(s)) return false
   if (/^#[0-9a-f]{3,8}$/i.test(s)) return false
   return true
+}
+
+
+const CSS_WORD = /^(!?[a-z]+:)*!?-?[a-z]+(-[a-z0-9./\[\]%#()]+)+$|^(flex|grid|block|inline|hidden|rounded|border|shadow|truncate|italic|underline|uppercase|lowercase|capitalize|relative|absolute|fixed|sticky|static|grow|shrink|contents|invisible|visible|transition|transform|ring|outline|resize|select|antialiased|container|table|collapse|isolate|static|ordinal|prose|group|peer|sr-only|not-sr-only|keep-light|keep-dark)$/
+/** Does this text read as a sentence or phrase in English (two words, one lowercase)? */
+const STAGE_VALUES = new Set(['Quote', 'Confirmed', 'In production', 'Ready', 'Ready to ship', 'Shipped', 'Cancelled'])
+export function isProse(raw) {
+  const s = raw.replace(/\s+/g, ' ').trim()
+  if (STAGE_VALUES.has(s)) return false // stored stage values (shown through stageLabel)
+  if (!isText(s)) return false
+  if (!/[A-Za-z][a-z]+[ ,][^{}]*?\b[a-z]{2,}\b/.test(s) && !/\b[a-z]{3,} [a-z]{2,}\b/.test(s)) return false
+  const words = s.split(' ').filter(Boolean)
+  const css = words.filter((w) => CSS_WORD.test(w)).length
+  if (css && css >= words.length / 2) return false
+  if (/^[\w.-]+\s*(=|<|>|is|in)\s/.test(s) && /[=<>]/.test(s)) return false
+  if (/^\w+(, ?\w+)+$/.test(s) && /_/.test(s)) return false // column lists
+  if (/^[\w-]+(, ?\[?[\w-="]+\]?)+$/.test(s) && /\b(button|input|select|textarea|a)\b/.test(s)) return false // CSS selectors
+  if (/\b(select|from|where|insert|update)\b.*\b(from|where|set|into)\b/i.test(s) && /[*_]/.test(s)) return false
+  return true
+}
+/** Files whose English text is a file format or a legal document (translated by document language, not the screen). */
+const PROSE_SKIP = /src\/lib\/(permissions\/catalog|types|ce|cePdf|certificatePdf|sheetImport\/(layout|places|exportData))\.ts$/
+const NON_TEXT_KEYS = new Set(['keywords', 'className', 'class', 'kind', 'type', 'key', 'id', 'status', 'step', 'stage', 'href', 'to', 'path', 'icon', 'style', 'colour', 'color', 'value', 'source', 'event', 'action', 'table', 'column', 'order', 'mode', 'tone', 'variant', 'size', 'role', 'name', 'permission', 'level', 'format', 'pattern', 'lang', 'locale', 'route', 'link', 'url', 'query', 'q', 'filter', 'field', 'section', 'group', 'channel', 'target', 'rel', 'accept', 'inputMode', 'autoComplete', 'd', 'viewBox', 'fill', 'stroke', 'transform', 'cls', 'tw', 'sql', 'select'])
+function hasFunctionParent(node) {
+  for (let p = node.parent; p; p = p.parent) {
+    if (p.type === 'ArrowFunctionExpression' || p.type === 'FunctionExpression' || p.type === 'FunctionDeclaration' || (p.type === 'Property' && (p.kind === 'get' || p.method)) || p.type === 'MethodDefinition') return true
+  }
+  return false
+}
+function proseExcluded(node) {
+  let child = node
+  for (let p = node.parent; p; child = p, p = p.parent) {
+    if (isTrCall(p)) return true
+    if (p.type === 'ImportDeclaration' || p.type === 'ExportNamedDeclaration' && p.source === child || p.type === 'ExportAllDeclaration' || p.type === 'ImportExpression') return true
+    if (p.type === 'TSLiteralType' || p.type === 'TSTypeAnnotation' || p.type?.startsWith('TS') && p.type !== 'TSAsExpression' && p.type !== 'TSSatisfiesExpression' && p.type !== 'TSNonNullExpression') return true
+    if (p.type === 'BinaryExpression' && ['===', '!==', '==', '!=', 'in', 'instanceof'].includes(p.operator)) return true
+    if (p.type === 'SwitchCase' && p.test === child) return true
+    if (p.type === 'Property' && p.key === child) return true
+    if (p.type === 'Property' && NON_TEXT_KEYS.has(p.key?.name ?? p.key?.value)) return true
+    if (p.type === 'MemberExpression' && p.property === child) return true
+    if (p.type === 'JSXAttribute') return !TEXT_ATTRS.has(p.name?.name ?? p.name?.namespace?.name)
+    if (p.type === 'JSXExpressionContainer' || p.type === 'JSXElement') return true // handled by the JSX rules
+    if (p.type === 'CallExpression' || p.type === 'NewExpression') {
+      const name = calleeName(p.callee)
+      const obj = calleeObject(p.callee)
+      if (DB_CALLS.has(name) || obj === 'console' || obj === 'localStorage' || obj === 'sessionStorage' || obj === 'document' || obj === 'window' || obj === 'JSON') return true
+      if (['querySelector', 'querySelectorAll', 'closest', 'getItem', 'setItem', 'removeItem', 'matchMedia', 'addEventListener', 'removeEventListener', 'test', 'match', 'replace', 'split', 'startsWith', 'endsWith', 'includes', 'indexOf', 'RegExp', 'format', 'parse', 'formatDate', 'showDate', 'dtf', 'fetch', 'channel', 'on', 'setAttribute', 'getAttribute', 'createElement', 'postMessage', 'importScripts', 'require', 'Intl'].includes(name)) return true
+      if (name === 'inner' && p.arguments[3] === child) return true // hidden search keywords
+      if (TOAST.has(name) && obj === 'toast' || MESSAGE_FNS.has(name) || name === 'Error') return true // handled above
+    }
+    if (p.type === 'VariableDeclarator' && /^(cls|class|css|style|tw|sql|select|query|re|regex|pattern|fmt|key|id|url|path|route|href|DEFAULT_OPTIONS|.*_VALUES$)/i.test(p.id?.name ?? '')) return true
+    if (p.type === 'ThrowStatement') return false
+    if (p.type === 'Program' || p.type.endsWith('FunctionDeclaration') || p.type === 'ArrowFunctionExpression' || p.type === 'FunctionExpression') return false
+  }
+  return false
 }
 
 const quote = (s) => JSON.stringify(s)
@@ -217,6 +272,27 @@ export function scan(file, src) {
       const key = node.key.name ?? node.key.value
       found.push({ start: node.start, end: node.end, text, replacement: `get ${key}() {\n    return tr(${quote(text)})\n  }`, kind: 'data' })
     }
+  })
+  // sentences built in code (returned, pushed, joined, assigned): any prose literal not used as a key, id, class or comparison
+  walk(ast, null, (node) => {
+    if (node.type !== 'Literal' && node.type !== 'TemplateLiteral') return
+    if (node.type === 'Literal' && typeof node.value !== 'string') return
+    if (node.parent?.type === 'TemplateLiteral') return
+    const cooked = node.type === 'Literal' ? [node.value] : node.quasis.map((q) => q.value.cooked ?? q.value.raw)
+    if (!isProse(cooked.join(' '))) return
+    if (proseExcluded(node)) return
+    if (PROSE_SKIP.test(file.replace(/\\/g, '/'))) return
+    if (hasFunctionParent(node)) return add(outputEdits(src, node, 'prose'))
+    // evaluated once when the file loads: an object property becomes a getter so it follows the language
+    const prop = node.parent
+    if (prop?.type === 'Property' && prop.value === node && !prop.computed && prop.kind === 'init' && !prop.method && prop.parent?.type === 'ObjectExpression') {
+      const key = prop.key?.type === 'Identifier' ? prop.key.name : JSON.stringify(prop.key?.value)
+      const inner = outputEdits(src, node, 'prose')
+      if (!inner.length) return
+      const expr = applyEdits(src.slice(node.start, node.end), inner, node.start)
+      return add([{ start: prop.start, end: prop.end, text: inner[0].text, replacement: `get ${key}() {\n    return ${expr}\n  }`, kind: 'prose' }])
+    }
+    add(outputEdits(src, node, 'prose-top').map((e) => ({ ...e, replacement: null })))
   })
   // drop findings nested inside another finding (the outer one carries them)
   found.sort((a, b) => a.start - b.start || b.end - a.end)

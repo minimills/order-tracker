@@ -262,7 +262,7 @@ export default function EmailPage() {
             <Field label={tr("VAPID_PUBLIC_KEY")}>
               <div className="flex gap-2">
                 <input readOnly aria-label={tr("Public key")} className={`${inputClass} font-mono text-xs`} value={keys.publicKey} />
-                <button type="button" className={secondaryButtonClass} onClick={() => copy(keys.publicKey, 'Public key')}>
+                <button type="button" className={secondaryButtonClass} onClick={() => copy(keys.publicKey, tr("Public key"))}>
                   {tr("Copy")}
                 </button>
               </div>
@@ -270,7 +270,7 @@ export default function EmailPage() {
             <Field label={tr("VAPID_PRIVATE_KEY (keep it private)")}>
               <div className="flex gap-2">
                 <input readOnly aria-label={tr("Private key")} className={`${inputClass} font-mono text-xs`} value={keys.privateKey} />
-                <button type="button" className={secondaryButtonClass} onClick={() => copy(keys.privateKey, 'Private key')}>
+                <button type="button" className={secondaryButtonClass} onClick={() => copy(keys.privateKey, tr("Private key"))}>
                   {tr("Copy")}
                 </button>
               </div>

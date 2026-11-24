@@ -14,22 +14,22 @@ const inputClass =
 const buttonClass =
   'w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-60'
 
-const NO_ACCESS = 'This email doesn’t have access. Contact the office.'
+const NO_ACCESS = () => tr('This email doesn’t have access. Contact the office.')
 
 /** Turns a Supabase sign-in error into a sentence a person can act on. */
 function friendly(error: { message?: string; code?: string; status?: number }) {
   const msg = (error.message ?? '').toLowerCase()
   if (error.code === 'otp_expired' || msg.includes('expired') || msg.includes('invalid')) {
-    return 'That code is incorrect or has expired. Check the most recent email, or request a new code.'
+    return tr("That code is incorrect or has expired. Check the most recent email, or request a new code.")
   }
   if (error.status === 429 || msg.includes('rate limit') || msg.includes('security purposes')) {
-    return 'Too many attempts. Wait one minute, then try again.'
+    return tr("Too many attempts. Wait one minute, then try again.")
   }
   // No login for this email (sign-ups are off), or the login was blocked.
   if (msg.includes('signups not allowed') || msg.includes('not allowed for otp') || msg.includes('user not found') || msg.includes('banned')) {
-    return NO_ACCESS
+    return NO_ACCESS()
   }
-  return error.message || 'Sign-in could not be completed. Check your internet connection and try again.'
+  return error.message || tr("Sign-in could not be completed. Check your internet connection and try again.")
 }
 
 /**
@@ -71,7 +71,7 @@ export default function LoginPage() {
     const { data: allowed, error: checkError } = await supabase.rpc('can_sign_in', { p_email: address })
     if (!checkError && allowed === false) {
       setBusy(false)
-      setError(NO_ACCESS)
+      setError(NO_ACCESS())
       return
     }
     const { error: e } = await supabase.auth.signInWithOtp({

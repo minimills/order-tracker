@@ -17,11 +17,11 @@ export function orderBadges(o: OrderSummaryRow): Badge[] {
   }, tone: 'amber', kind: 'payment' })
   if (o.stage !== 'Shipped' && o.stage !== 'Cancelled' && !o.actual_ship_date && o.days_until_ship !== null) {
     const d = o.days_until_ship
-    if (d < 0) badges.push({ label: `Ship date passed (${-d} day${d === -1 ? '' : 's'} ago)`, tone: 'red', kind: 'ship_date' })
+    if (d < 0) badges.push({ label: tr("Ship date passed ({{value}} day{{value2}} ago)", { value: -d, value2: d === -1 ? '' : 's' }), tone: 'red', kind: 'ship_date' })
     else if (d === 0) badges.push({ get label() {
     return tr("Ships today")
   }, tone: 'amber', kind: 'ship_date' })
-    else if (d <= 14) badges.push({ label: `Ships in ${d} day${d === 1 ? '' : 's'}`, tone: 'amber', kind: 'ship_date' })
+    else if (d <= 14) badges.push({ label: tr("Ships in {{d}} day{{value}}", { d: d, value: d === 1 ? '' : 's' }), tone: 'amber', kind: 'ship_date' })
   }
   return badges
 }

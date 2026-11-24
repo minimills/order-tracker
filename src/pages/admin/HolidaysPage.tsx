@@ -8,14 +8,14 @@ import { friendlyError } from '../../lib/format'
 import { HOLIDAY_KIND, holidayApiUrl, rangeText, showDateTime, type Holiday } from '../../lib/notices'
 import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
-import { tr } from '../../i18n'
+import { tk, tr } from '../../i18n'
 
 type Settings = { province?: string; last_import_at?: string; last_import_count?: number; last_error?: string | null }
 type Status = { scheduled: boolean; pg_cron: boolean; pg_net: boolean }
 const PROVINCES: [string, string][] = [
-  ['AB', 'Alberta'], ['BC', 'British Columbia'], ['MB', 'Manitoba'], ['NB', 'New Brunswick'], ['NL', 'Newfoundland and Labrador'],
-  ['NS', 'Nova Scotia'], ['NT', 'Northwest Territories'], ['NU', 'Nunavut'], ['ON', 'Ontario'], ['PE', 'Prince Edward Island'],
-  ['QC', 'Quebec'], ['SK', 'Saskatchewan'], ['YT', 'Yukon'],
+  ['AB', tk('Alberta')], ['BC', tk('British Columbia')], ['MB', tk('Manitoba')], ['NB', tk('New Brunswick')], ['NL', tk('Newfoundland and Labrador')],
+  ['NS', tk('Nova Scotia')], ['NT', tk('Northwest Territories')], ['NU', tk('Nunavut')], ['ON', tk('Ontario')], ['PE', tk('Prince Edward Island')],
+  ['QC', tk('Quebec')], ['SK', tk('Saskatchewan')], ['YT', tk('Yukon')],
 ]
 const COLUMNS = 'id, name, start_date, end_date, kind, day_off, hidden, notes, source, edited'
 const blank = () => ({ id: '', name: '', start_date: todayISO(), end_date: '', kind: 'company' as Holiday['kind'], day_off: true, notes: '' })
@@ -101,7 +101,7 @@ export default function HolidaysPage() {
     const row = { name: form.name.trim(), start_date: form.start_date, end_date: end, kind: form.kind, day_off: form.day_off, notes: form.notes.trim() || null }
     await run(
       () => (form.id ? supabase!.from('company_holidays').update(row).eq('id', form.id) : supabase!.from('company_holidays').insert(row)),
-      form.id ? 'Holiday saved.' : 'Holiday added.',
+      form.id ? tr("Holiday saved.") : tr("Holiday added."),
     )
     setForm(null)
   }
@@ -132,11 +132,11 @@ export default function HolidaysPage() {
               id="hol-prov"
               className={`${narrowInputClass} w-64`}
               value={province}
-              onChange={(e) => run(() => supabase!.rpc('set_holiday_province', { p_province: e.target.value }), 'Province saved. Select Import Now to load its holidays.')}
+              onChange={(e) => run(() => supabase!.rpc('set_holiday_province', { p_province: e.target.value }), tr("Province saved. Select Import Now to load its holidays."))}
             >
               {PROVINCES.map(([code, name]) => (
                 <option key={code} value={code}>
-                  {name}
+                  {tr(name)}
                 </option>
               ))}
             </select>
@@ -161,7 +161,7 @@ export default function HolidaysPage() {
                   type="button"
                   className={secondaryButtonClass}
                   disabled={busy}
-                  onClick={() => run(() => supabase!.rpc('start_holiday_schedule'), 'Yearly refresh turned on.')}
+                  onClick={() => run(() => supabase!.rpc('start_holiday_schedule'), tr("Yearly refresh turned on."))}
                 >
                   {tr("Turn On Yearly Refresh")}
                 </button>
@@ -219,7 +219,7 @@ export default function HolidaysPage() {
                           type="button"
                           className="underline"
                           disabled={busy}
-                          onClick={() => run(() => supabase!.from('company_holidays').update({ hidden: !h.hidden }).eq('id', h.id), h.hidden ? 'Shown again.' : 'Hidden. It no longer counts as a day off.')}
+                          onClick={() => run(() => supabase!.from('company_holidays').update({ hidden: !h.hidden }).eq('id', h.id), h.hidden ? tr("Shown again.") : tr("Hidden. It no longer counts as a day off."))}
                         >
                           {h.hidden ? tr("Show") : tr("Hide")}
                         </button>

@@ -254,7 +254,7 @@ async function cratingByMonth(d: ChartData, from: string, to: string, value: (c:
   const ms = months(from, to, rows.map((c) => c.crated_on))
   const points = ms.map((m) => ({ label: m.label, long: m.long, value: round1(rows.filter((c) => c.crated_on.startsWith(m.key)).reduce((s, c) => s + value(c), 0)) }))
   const total = round1(rows.reduce((s, c) => s + value(c), 0))
-  return { points, unit, headline: { value: total, label: `${unit} in total` } }
+  return { points, unit, headline: { value: total, label: tr("{{unit}} in total", { unit: unit }) } }
 }
 
 // ---------------------------------------------------------------------------
@@ -350,7 +350,7 @@ export const CHARTS: ChartDef[] = [
   }, group: 'Orders', permission: 'dashboard.chart.by_country', types: NO_GAUGE, defaultType: 'bar', filters: ['machineType'],
     load: async (d, { from, to }, c) => {
       const rows = await filteredOrders(d, c, (o) => REAL_ORDER(o) && inRange(o.order_date, from, to))
-      return { points: countBy(rows, (o) => o.customer_country || 'Not set'), unit: 'orders', headline: { value: rows.length, get label() {
+      return { points: countBy(rows, (o) => o.customer_country || tr("Not set")), unit: 'orders', headline: { value: rows.length, get label() {
     return tr("orders")
   } } }
     },
@@ -364,7 +364,7 @@ export const CHARTS: ChartDef[] = [
       const rows = (await d.machines()).filter((m) => m.ready && orders.has(m.order_id) && typeOk(m, c))
       return { points: countBy(rows, (m) => orders.get(m.order_id)!.voltage || 'Unknown'), unit: 'machines', headline: { value: rows.length, get label() {
     return tr("machines built")
-  } }, note: 'Built machines on orders placed in these dates.' }
+  } }, note: tr("Built machines on orders placed in these dates.") }
     },
   },
   {
@@ -377,9 +377,9 @@ export const CHARTS: ChartDef[] = [
       for (const t of rows) by.set(t.person, [...(by.get(t.person) ?? []), t.seconds])
       const points = [...by].map(([label, v]) => ({ label, value: round1(v.reduce((a, b) => a + b, 0) / v.length / 3600), long: `${label} (${v.length} finished)` })).sort((a, b) => a.value - b.value).slice(0, 15)
       const avg = rows.length ? round1(rows.reduce((s, t) => s + t.seconds, 0) / rows.length / 3600) : 0
-      return { points, unit: 'hours per task', headline: { value: avg, get label() {
+      return { points, unit: tr("hours per task"), headline: { value: avg, get label() {
     return tr("hours per finished task on average")
-  } }, note: 'From the Start and Finish timers on the boards; pauses are left out.' }
+  } }, note: tr("From the Start and Finish timers on the boards; pauses are left out.") }
     },
   },
   {
@@ -394,7 +394,7 @@ export const CHARTS: ChartDef[] = [
       const avg = rows.length ? round1(rows.reduce((s, t) => s + t.seconds, 0) / rows.length / 3600) : 0
       return { points, unit: 'hours', headline: { value: avg, get label() {
     return tr("hours per finished task on average")
-  } }, note: 'The 12 tasks done most often; average time each takes.' }
+  } }, note: tr("The 12 tasks done most often; average time each takes.") }
     },
   },
   {
@@ -462,7 +462,7 @@ export const CHARTS: ChartDef[] = [
     return tr("Received late")
   }, value: rows.length - ok }], unit: 'payments', headline: { value: share(ok, rows.length), get label() {
     return tr("% received on time")
-  } }, note: 'Fully received payments with a due date.' }
+  } }, note: tr("Fully received payments with a due date.") }
     },
   },
   {
@@ -473,7 +473,7 @@ export const CHARTS: ChartDef[] = [
       const rows = (await d.payments()).filter((p) => Number(p.remaining) > 0 && !p.order_archived && p.stage !== 'Quote' && p.stage !== 'Cancelled')
       const by = new Map<string, number>()
       for (const p of rows) by.set(p.currency, (by.get(p.currency) ?? 0) + Number(p.remaining))
-      return { points: [...by].sort().map(([label, value]) => ({ label, value: Math.round(value) })), unit: 'in each currency', headline: null, note: 'Now. The currencies are not converted.' }
+      return { points: [...by].sort().map(([label, value]) => ({ label, value: Math.round(value) })), unit: tr("in each currency"), headline: null, note: tr("Now. The currencies are not converted.") }
     },
   },
   {
@@ -482,16 +482,16 @@ export const CHARTS: ChartDef[] = [
   }, group: 'Boards', permission: 'dashboard.chart.board_cards', types: NO_GAUGE, defaultType: 'bar', now: true, boards: true, filters: ['board'],
     load: async (d, _r, c) => {
       const ids = c.boards?.length ? c.boards : c.filters?.board ? [c.filters.board] : []
-      if (!ids.length) return { points: [], unit: 'cards', headline: null, note: 'Choose the boards to count.' }
+      if (!ids.length) return { points: [], unit: 'cards', headline: null, note: tr("Choose the boards to count.") }
       const boards = new Map((await d.boards()).map((b) => [b.id, b.name]))
       const { stages, cards } = await d.boardCards([...ids].sort())
       const points = stages
         .filter((s) => ids.includes(s.board_id))
         .sort((a, b) => ids.indexOf(a.board_id) - ids.indexOf(b.board_id) || a.sort_order - b.sort_order)
         .map((s) => ({ label: ids.length > 1 ? `${boards.get(s.board_id) ?? ''}: ${s.name}` : s.name, value: cards.filter((x) => x.stage_id === s.id).length }))
-      return { points, unit: 'open cards', headline: { value: cards.length, get label() {
+      return { points, unit: tr("open cards"), headline: { value: cards.length, get label() {
     return tr("open cards")
-  } }, note: `Now: ${ids.map((i) => boards.get(i) ?? 'a board you cannot open').join(', ')}.` }
+  } }, note: `Now: ${ids.map((i) => boards.get(i) ?? tr("a board you cannot open")).join(', ')}.` }
     },
   },
   { key: 'crating_plywood', get title() {

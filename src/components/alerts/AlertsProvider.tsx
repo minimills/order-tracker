@@ -180,9 +180,9 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
         load()
       },
       snooze: (a: AlertRow, days: number) =>
-        act('snooze_alert', { p_alert_key: a.alert_key, p_days: days }, `Snoozed for ${days === 1 ? '1 day' : `${days} days`}.`),
-      dismiss: (a: AlertRow) => act('dismiss_alert', { p_alert_key: a.alert_key }, 'Alert dismissed.'),
-      restore: (a: AlertRow) => act('restore_alert', { p_alert_key: a.alert_key }, 'Alert restored.'),
+        act('snooze_alert', { p_alert_key: a.alert_key, p_days: days }, tr("Snoozed for {{value}}.", { value: days === 1 ? tr("1 day") : tr("{{days}} days", { days: days }) })),
+      dismiss: (a: AlertRow) => act('dismiss_alert', { p_alert_key: a.alert_key }, tr("Alert dismissed.")),
+      restore: (a: AlertRow) => act('restore_alert', { p_alert_key: a.alert_key }, tr("Alert restored.")),
     }),
     [alerts, loading, load, act],
   )

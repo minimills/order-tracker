@@ -205,7 +205,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
     if (!started) return null
     const secs = formatDuration(activeSeconds(started, finished, ps))
     if (finished) return secs
-    return ps.some((p) => !p.resumed_at && p.paused_at >= started) ? `paused at ${secs}` : `running for ${secs}`
+    return ps.some((p) => !p.resumed_at && p.paused_at >= started) ? tr("paused at {{secs}}", { secs: secs }) : tr("running for {{secs}}", { secs: secs })
   }
   const cardPauses = pausesOf(data.pauses, card.id, null)
   const pauseTimer = async (itemId: string | null) => {
@@ -955,7 +955,7 @@ export default function CardDialog({ cardId, data, level, onClose, onChanged, on
                     if (!(await confirmAction(tr("Archive the card “{{title}}”? It can be restored later.", { title: card.title }), { get confirmLabel() {
     return tr("Archive")
   } }))) return
-                    if (await updateCard({ archived: true }, 'Card archived.')) onClose()
+                    if (await updateCard({ archived: true }, tr("Card archived."))) onClose()
                   }}
                 >
                   {tr("Archive Card")}

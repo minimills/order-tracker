@@ -30,7 +30,7 @@ export default function ServiceCallPanel({ call }: { call: ServiceCallInfo | nul
             </ul>
           )}
           <p className="text-xs text-slate-600">
-            {call.entries ? tr("{{entries}} day{{value}} logged", { entries: call.entries, value: call.entries === 1 ? '' : 's' }) : tr("No days logged yet")}
+            {call.entries ? tr("{{count}} day logged", { count: call.entries }) : tr("No days logged yet")}
             {call.report_status === 'signed' ? tr(" · service report signed") : call.report_status === 'draft' ? tr(" · service report in draft") : ''}
           </p>
           <Can permission="service">

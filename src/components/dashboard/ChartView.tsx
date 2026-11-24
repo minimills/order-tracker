@@ -7,7 +7,13 @@ import { tr } from '../../i18n'
 const BLUE = '#2a78d6'
 const SLICES = ['#2a78d6', '#eb6834', '#1baf7a', '#eda100', '#e87ba4', '#008300', '#6250d6', '#e34948']
 const STATUS = { good: '#0ca30c', watch: '#fab219', off: '#d03b3b' }
-const STATUS_WORD = { good: 'On target', watch: 'Close to the limit', off: 'Off target' }
+const STATUS_WORD = { get good() {
+    return tr("On target")
+  }, get watch() {
+    return tr("Close to the limit")
+  }, get off() {
+    return tr("Off target")
+  } }
 const W = 600
 const H = 210
 

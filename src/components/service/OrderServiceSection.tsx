@@ -23,7 +23,7 @@ function Item({ label, children }: { label: string; children: React.ReactNode })
   )
 }
 
-const days = (n: number | null) => (n === null ? '—' : `${n} day${n === 1 ? '' : 's'}`)
+const days = (n: number | null) => (n === null ? '—' : tr("{{count}} day", { count: n }))
 
 /** Order page: on-site training and commissioning plan, with a link to the service log. */
 export default function OrderServiceSection({ orderId }: { orderId: string }) {
@@ -85,7 +85,7 @@ export default function OrderServiceSection({ orderId }: { orderId: string }) {
         </Can>
         <Can permission="service.log">
           <Item label={tr("Service log")}>
-            {info.entries ? tr("{{entries}} day{{value}}, {{Number}} hours", { entries: info.entries, value: info.entries === 1 ? '' : 's', Number: Number(info.hours) }) : <span className="text-slate-400">{tr("No days logged")}</span>}
+            {info.entries ? tr("{{days}}, {{hours}}", { days: tr("{{count}} day", { count: info.entries }), hours: tr("{{count}} hour", { count: Number(info.hours) }) }) : <span className="text-slate-400">{tr("No days logged")}</span>}
           </Item>
         </Can>
       </dl>

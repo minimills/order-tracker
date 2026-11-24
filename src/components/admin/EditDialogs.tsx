@@ -119,7 +119,7 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
       )
     }
     refresh()
-    onDone(`Order ${f.order_number}${f.split_number ? `-${f.split_number}` : ''} saved.`)
+    onDone(tr("Order {{order_number}}{{value}} saved.", { order_number: f.order_number, value: f.split_number ? `-${f.split_number}` : '' }))
   }
 
   return (
@@ -340,7 +340,7 @@ export function AdminMachineDialog({ machine, onClose, onDone }: DialogProps & {
     }
     setSaving(false)
     refresh()
-    onDone('Machine saved.')
+    onDone(tr("Machine saved."))
   }
 
   return (

@@ -27,7 +27,7 @@ export default function DashboardPrintPage() {
   const widgets = (report?.widgets ?? []).filter((w) => Array.isArray(report?.widgets) && widgetAllowed(widgetDef(w.key), can))
   const small = widgets.filter((w) => widgetDef(w.key)?.kind === 'kpi')
   const big = widgets.filter((w) => widgetDef(w.key)?.kind !== 'kpi')
-  const sub = (w: Widget) => (widgetDef(w.key)?.range ? rangeText({ range: w.range ?? (widgetDef(w.key)?.kind === 'chart' ? '12m' : 'month'), from: w.from, to: w.to }) + (w.compare ? ', compared with last year' : '') : 'Now')
+  const sub = (w: Widget) => (widgetDef(w.key)?.range ? rangeText({ range: w.range ?? (widgetDef(w.key)?.kind === 'chart' ? '12m' : 'month'), from: w.from, to: w.to }) + (w.compare ? tr(", compared with last year") : '') : 'Now')
 
   return (
     <div className="keep-light mx-auto min-h-full max-w-5xl bg-white p-4 text-slate-900 sm:p-6 print:max-w-none print:p-0">

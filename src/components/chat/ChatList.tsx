@@ -81,7 +81,7 @@ export default function ChatList({
   async function act(r: ConversationRow, a: SwipeAction, full = false) {
     if (!supabase) return
     const action = stateAction(a, r)
-    const name = r.name ?? 'this conversation'
+    const name = r.name ?? tr("this conversation")
     if (full && (action === 'delete' || action === 'clear')) {
       // Cannot be taken back once done: wait 5 seconds, Undo cancels.
       setWaiting((m) => ({ ...m, [r.id]: action }))
@@ -98,7 +98,7 @@ export default function ChatList({
         if (action === 'delete' && r.id === activeId) navigate('/chat')
         onChanged()
       }, 5000)
-      toast(action === 'delete' ? `“${name}” will be deleted for you.` : `The messages of “${name}” will be cleared for you.`, {
+      toast(action === 'delete' ? tr("“{{name}}” will be deleted for you.", { name: name }) : tr("The messages of “{{name}}” will be cleared for you.", { name: name }), {
         duration: 5000,
         action: {
           label: ACTION.undo,

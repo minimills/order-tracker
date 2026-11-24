@@ -270,13 +270,13 @@ export default function BoardPage() {
     if (!supabase) return
     setStageMenu(null)
     const n = data!.cards.filter((c) => c.stage_id === stage.id).length
-    if (!(await confirmAction(tr("Archive all {{n}} card{{value}} in “{{name}}”? Machine cards stay (they follow their machine). Archived cards can be restored from the card.", { n: n, value: n === 1 ? '' : 's', name: stage.name }), { get confirmLabel() {
+    if (!(await confirmAction(tr("Archive all {{count}} card in “{{name}}”? Machine cards stay (they follow their machine). Archived cards can be restored from the card.", { count: n, name: stage.name }), { get confirmLabel() {
     return tr("Archive All Cards")
   }, danger: true }))) return
     const { data: res, error: err } = await supabase.rpc('archive_stage_cards', { p_stage: stage.id })
     if (err) return toast.error(friendlyError(err))
     const r = (res ?? { done: 0, skipped: 0 }) as { done: number; skipped: number }
-    toast.success(tr("{{done}} card{{value}} archived.{{value2}}", { done: r.done, value: r.done === 1 ? '' : 's', value2: r.skipped ? tr(" {{skipped}} machine card{{value}} stayed.", { skipped: r.skipped, value: r.skipped === 1 ? '' : 's' }) : '' }))
+    toast.success(tr("{{cards}} archived.{{value2}}", { cards: tr("{{count}} card", { count: r.done }), value2: r.skipped ? tr(" {{count}} machine card stayed.", { count: r.skipped }) : '' }))
     load()
   }
 

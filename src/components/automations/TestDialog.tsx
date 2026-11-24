@@ -45,17 +45,17 @@ export default function TestDialog({ automation, rule, onClose }: { automation?:
   const verdict = (r: TestResult) => {
     switch (r.status) {
       case 'problems':
-        return 'The automation cannot be tested yet:'
+        return tr("The automation cannot be tested yet:")
       case 'nothing':
         return r.message
       case 'not_matched':
-        return 'The conditions are not met for this one, so nothing would happen.'
+        return tr("The conditions are not met for this one, so nothing would happen.")
       case 'skipped':
-        return r.message ?? 'The automation would not run.'
+        return r.message ?? tr("The automation would not run.")
       case 'failed':
-        return `The automation would fail: ${r.message ?? ''}`
+        return tr("The automation would fail: {{value}}", { value: r.message ?? '' })
       default:
-        return 'This is what would happen:'
+        return tr("This is what would happen:")
     }
   }
 

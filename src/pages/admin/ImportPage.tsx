@@ -111,7 +111,7 @@ export default function ImportPage() {
   // ---------- Reading a file ----------
   async function onFile(file: File | undefined) {
     if (!file) return
-    setBusy('Reading the file…')
+    setBusy(tr("Reading the file…"))
     setResult(null)
     try {
       const gs = await readWorkbook(file)
@@ -162,7 +162,7 @@ export default function ImportPage() {
 
   async function fillCodes() {
     if (!supabase) return
-    setBusy('Saving codes…')
+    setBusy(tr("Saving codes…"))
     for (const s of check.codeSuggestions) {
       const { error } = await supabase.from('machine_types').update({ code: s.code }).eq('id', s.type.id)
       if (error) toast.error(`${s.type.name}: ${friendlyError(error)}`)
@@ -213,7 +213,7 @@ export default function ImportPage() {
   }
 
   async function download(kind: 'template' | 'backup') {
-    setBusy(kind === 'template' ? 'Making the template…' : 'Collecting all data…')
+    setBusy(kind === 'template' ? tr("Making the template…") : tr("Collecting all data…"))
     try {
       if (kind === 'template') await downloadWorkbook('order-import-template.xlsx', templateSheets())
       else await downloadWorkbook(`order-tracker-backup-${todayISO()}.xlsx`, await backupSheets())
@@ -278,7 +278,7 @@ export default function ImportPage() {
           </p>
           {n('needs_serial') > 0 && (
             <p className="mt-1">
-              {n('needs_serial')} {tr("machine")}{n('needs_serial') === 1 ? '' : 's'} {tr("need a serial:")}{' '}
+              {tr("{{count}} machine needs a serial:", { count: n('needs_serial') })}{' '}
               <Link to="/admin/serials" className="underline">
                 {tr("Admin → Serial Numbers")}
               </Link>
@@ -326,7 +326,7 @@ export default function ImportPage() {
               )}
               <span className="text-slate-600">
                 {check.orders.length} {tr("orders found (")}{plan.counts.newOrders} {tr("new,")} {plan.counts.updatedOrders} {tr("update)")}
-                {skippedTop > 0 && tr(" · {{skippedTop}} heading row{{value}} skipped", { skippedTop: skippedTop, value: skippedTop === 1 ? '' : 's' })}
+                {skippedTop > 0 && tr(" · {{count}} heading row skipped", { count: skippedTop })}
               </span>
               <span className="text-red-700">{errors} {tr("with errors")}</span>
               <span className="text-amber-800">{warnings} {tr("with warnings")}</span>

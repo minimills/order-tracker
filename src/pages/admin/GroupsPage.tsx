@@ -53,7 +53,7 @@ export default function GroupsPage() {
   async function add(e: FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    if (await run(() => supabase!.from('user_groups').insert({ name: name.trim() }), `Group “${name.trim()}” added.`)) setName('')
+    if (await run(() => supabase!.from('user_groups').insert({ name: name.trim() }), tr("Group “{{value}}” added.", { value: name.trim() }))) setName('')
   }
 
   const nameOf = (email: string) => people.find((p) => p.email === email)?.name ?? email

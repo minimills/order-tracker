@@ -53,27 +53,39 @@ const cell = 'px-2 py-1'
 const small = `${narrowInputClass} px-2 py-1`
 
 const EVENT_WORDS: Record<string, string> = {
-  entered: 'Hours saved',
-  approved: 'Approved and locked',
+  get entered() {
+    return tr("Hours saved")
+  },
+  get approved() {
+    return tr("Approved and locked")
+  },
   unlocked: 'Unlocked',
-  ot_choice: 'Hours over the threshold',
-  banked: 'Hours banked',
-  bank_removed: 'Banked hours removed',
-  reviewed: 'Imported hours reviewed',
+  get ot_choice() {
+    return tr("Hours over the threshold")
+  },
+  get banked() {
+    return tr("Hours banked")
+  },
+  get bank_removed() {
+    return tr("Banked hours removed")
+  },
+  get reviewed() {
+    return tr("Imported hours reviewed")
+  },
   imported: 'Imported',
-  time_off: 'Approved time off added',
+  get time_off() {
+    return tr("Approved time off added")
+  },
 }
 
 function eventText(e: Event) {
   const d = e.detail ?? {}
   if (e.action === 'ot_choice') {
-    return `${showHours(Number(d.total))} hours (${showHours(Number(d.worked))} worked + ${showHours(Number(d.banked))} banked): ${
-      d.choice === 'regular' ? 'all paid as regular pay' : `${showHours(Number(d.overtime))} hours paid as overtime`
-    }`
+    return tr("{{showHours}} hours ({{showHours2}} worked + {{showHours3}} banked): {{value}}", { showHours: showHours(Number(d.total)), showHours2: showHours(Number(d.worked)), showHours3: showHours(Number(d.banked)), value: d.choice === 'regular' ? tr("all paid as regular pay") : tr("{{showHours}} hours paid as overtime", { showHours: showHours(Number(d.overtime)) }) })
   }
-  if (e.action === 'banked') return `${showHours(Number(d.hours))} ${d.source} hours on ${showDate(String(d.day), 'EEE MMM d')} (bank +${showHours(Number(d.credited))})`
-  if (e.action === 'entered') return `${showHours(Number(d.worked))} worked, ${showHours(Number(d.overtime))} overtime`
-  if (e.action === 'time_off') return `${kindLabel(String(d.kind))} ${showHours(Number(d.hours))} hours on ${showDate(String(d.day), 'EEE MMM d')}`
+  if (e.action === 'banked') return tr("{{showHours}} {{source}} hours on {{showDate}} (bank +{{showHours2}})", { showHours: showHours(Number(d.hours)), source: d.source, showDate: showDate(String(d.day), 'EEE MMM d'), showHours2: showHours(Number(d.credited)) })
+  if (e.action === 'entered') return tr("{{showHours}} worked, {{showHours2}} overtime", { showHours: showHours(Number(d.worked)), showHours2: showHours(Number(d.overtime)) })
+  if (e.action === 'time_off') return tr("{{kindLabel}} {{showHours}} hours on {{showDate}}", { kindLabel: kindLabel(String(d.kind)), showHours: showHours(Number(d.hours)), showDate: showDate(String(d.day), 'EEE MMM d') })
   if (e.action === 'imported') return String(d.file ?? '')
   return ''
 }

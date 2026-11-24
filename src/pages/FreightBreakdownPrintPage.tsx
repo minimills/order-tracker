@@ -41,14 +41,14 @@ export default function FreightBreakdownPrintPage() {
         ['Order #', orderCode],
         ['Quote #', b.quote_number],
         ['Invoice #', b.invoice_number],
-        ['Ship date (picked up)', b.ship_date ? showDate(b.ship_date) : null],
-        ['Freight type', b.freight_type],
-        ['Shipping agent', b.agent_name],
-        ['Agent ref #', b.agent_ref],
-        ['Sub-contractor carrier', b.sub_contractor],
+        [tr("Ship date (picked up)"), b.ship_date ? showDate(b.ship_date) : null],
+        [tr("Freight type"), b.freight_type],
+        [tr("Shipping agent"), b.agent_name],
+        [tr("Agent ref #"), b.agent_ref],
+        [tr("Sub-contractor carrier"), b.sub_contractor],
         ['Carrier', b.carrier],
-        ['Carrier tracking number', b.tracking_number],
-        ['Currency', b.currency === 'USD' ? `USD (exchange rate ${Number(b.exchange_rate)} to CAD)` : 'CAD'],
+        [tr("Carrier tracking number"), b.tracking_number],
+        ['Currency', b.currency === 'USD' ? tr("USD (exchange rate {{Number}} to CAD)", { Number: Number(b.exchange_rate) }) : 'CAD'],
       ]
     : []
   const line = (label: string, value: number, strong = false, note?: string) => (

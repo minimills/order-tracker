@@ -104,14 +104,14 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
     const e: Record<string, string> = {}
     for (const m of MEASURES) {
       const n = parse(shown(m.key, m.kind))
-      if (n === 'bad') e[m.key] = 'Enter a number'
-      else if (n !== null && n <= 0) e[m.key] = 'Enter a number greater than 0'
+      if (n === 'bad') e[m.key] = tr("Enter a number")
+      else if (n !== null && n <= 0) e[m.key] = tr("Enter a number greater than 0")
     }
     const sheetsN = parse(sheets)
     const hoursN = parse(hours)
-    if (sheetsN === 'bad' || (sheetsN !== null && sheetsN < 0)) e.sheets = 'Enter a number (0 or more)'
-    if (hoursN === 'bad' || (hoursN !== null && hoursN < 0)) e.hours = 'Enter a number (0 or more)'
-    if (!cratedOn) e.cratedOn = 'Select the date'
+    if (sheetsN === 'bad' || (sheetsN !== null && sheetsN < 0)) e.sheets = tr("Enter a number (0 or more)")
+    if (hoursN === 'bad' || (hoursN !== null && hoursN < 0)) e.hours = tr("Enter a number (0 or more)")
+    if (!cratedOn) e.cratedOn = tr("Select the date")
     setErrors(e)
     if (Object.keys(e).length) return
 
@@ -135,7 +135,7 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
     })
     setSaving(false)
     if (err) return setError(friendlyError(err))
-    onDone(crate ? `Crate ${crate.number} saved.` : 'Crate saved.')
+    onDone(crate ? tr("Crate {{number}} saved.", { number: crate.number }) : tr("Crate saved."))
   }
 
   async function remove() {
@@ -152,7 +152,7 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
     const { error: err } = await supabase.from('crates').update({ archived: true }).eq('id', crate.id)
     setSaving(false)
     if (err) return setError(friendlyError(err))
-    onDone(`Crate ${crate.number} archived.`)
+    onDone(tr("Crate {{number}} archived.", { number: crate.number }))
   }
 
   const title = crate ? `Crate ${crate.number} · Order ${orderCode}` : `New Crate · Order ${orderCode}`

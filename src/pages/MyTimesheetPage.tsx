@@ -18,7 +18,9 @@ type Mine = {
 }
 const th = 'px-2 py-1.5 text-left font-medium'
 const td = 'px-2 py-1.5'
-const BANK_WORDS: Record<string, string> = { earn: 'Banked', import: 'Banked (imported)', adjust: 'Correction', used: 'Used' }
+const BANK_WORDS: Record<string, string> = { earn: 'Banked', get import() {
+    return tr("Banked (imported)")
+  }, adjust: 'Correction', used: 'Used' }
 
 /** My Timesheet: the signed-in employee's hours, banked hours, vacation and sick days. Read only. */
 export default function MyTimesheetPage() {
@@ -43,13 +45,13 @@ export default function MyTimesheetPage() {
   const cards = [
     { get title() {
     return tr("Banked Hours")
-  }, rows: [['Earned this year', b.banked.earned], ['Used this year', b.banked.used], ['Balance', b.banked.balance]] },
+  }, rows: [[tr("Earned this year"), b.banked.earned], [tr("Used this year"), b.banked.used], ['Balance', b.banked.balance]] },
     { get title() {
     return tr("Vacation Days")
-  }, rows: [['Entitlement', b.vacation.entitlement], ['Used or booked', b.vacation.used_days], ['Left', b.vacation.left]] },
+  }, rows: [['Entitlement', b.vacation.entitlement], [tr("Used or booked"), b.vacation.used_days], ['Left', b.vacation.left]] },
     { get title() {
     return tr("Sick Days")
-  }, rows: [['Paid sick days', b.sick.entitlement], ['Used', b.sick.used_days], ['Left', b.sick.left]] },
+  }, rows: [[tr("Paid sick days"), b.sick.entitlement], ['Used', b.sick.used_days], ['Left', b.sick.left]] },
   ] as const
 
   return (

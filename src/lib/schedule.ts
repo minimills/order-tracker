@@ -283,8 +283,8 @@ export function computeSchedule({ orders, types, stats, settings, today }: Sched
 
 /** "3 orders ahead, 41 working days to build, 8 days buffer" */
 export function workingText(p: OrderPlan) {
-  const ahead = p.ahead === 0 ? 'Next in the queue' : `${p.ahead} order${p.ahead === 1 ? '' : 's'} ahead`
-  return `${ahead}, ${p.build_days} working day${p.build_days === 1 ? '' : 's'} to build, ${p.buffer_days} day${p.buffer_days === 1 ? '' : 's'} buffer`
+  const ahead = p.ahead === 0 ? tr("Next in the queue") : tr("{{ahead}} order{{value}} ahead", { ahead: p.ahead, value: p.ahead === 1 ? '' : 's' })
+  return tr("{{ahead}}, {{build_days}} working day{{value}} to build, {{buffer_days}} day{{value2}} buffer", { ahead: ahead, build_days: p.build_days, value: p.build_days === 1 ? '' : 's', buffer_days: p.buffer_days, value2: p.buffer_days === 1 ? '' : 's' })
 }
 
 /** The deadlines to save when accepting a plan (one per machine and step). */

@@ -3,6 +3,7 @@ import { fillTemplate, fillTemplateHtml, loadEmailTemplates } from './emailTempl
 import { allowedBy, type Perms } from './permissions'
 import { NAV_ITEMS } from './permissions/nav'
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 // The welcome email for a new user (template in Admin → Email Templates).
 
@@ -11,11 +12,11 @@ export const PORTAL_URL = 'https://order.minimills.net'
 
 /** The pages a person can open, as lines for the welcome email. */
 export function welcomeFeatures(role: 'admin' | 'staff', perms: Perms) {
-  if (role === 'admin') return '- Everything: you are an administrator.'
+  if (role === 'admin') return tr("- Everything: you are an administrator.")
   const pages = NAV_ITEMS.filter(
     (p) => p.to !== '/admin' && (!p.permission || allowedBy(perms, p.permission, p.level)) && (!p.anyOf || p.anyOf.some((k) => allowedBy(perms, k, p.level))),
   ).map((p) => `- ${p.label}`)
-  return pages.length ? pages.join('\n') : '- Your pages are being set up. You will see them as soon as an administrator allows them.'
+  return pages.length ? pages.join('\n') : tr("- Your pages are being set up. You will see them as soon as an administrator allows them.")
 }
 
 /** The welcome email for one person, from the template in Admin → Email Templates. */

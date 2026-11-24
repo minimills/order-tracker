@@ -70,7 +70,7 @@ export default function MoveCopyDialog({
   }, [target, stage?.id])
 
   const choices = useMemo(() => (boards ?? []).filter((b) => b.id === boardId || (mayOtherBoard && !staysOnBoard)), [boards, boardId, mayOtherBoard, staysOnBoard])
-  const what = card ? `“${card.title}”` : `the ${stage!.count} card${stage!.count === 1 ? '' : 's'} in ${stage!.name}`
+  const what = card ? `“${card.title}”` : tr("the {{number}} card{{value}} in {{name}}", { number: stage!.count, value: stage!.count === 1 ? '' : 's', name: stage!.name })
 
   async function save() {
     if (!supabase || !stageId) return
@@ -82,7 +82,7 @@ export default function MoveCopyDialog({
       const r = await supabase.rpc('move_stage_cards', { p_stage: stage.id, p_board: target, p_target_stage: stageId, p_copy: mode === 'copy' })
       error = r.error
       const res = (r.data ?? { done: 0, skipped: 0 }) as { done: number; skipped: number }
-      message = `${res.done} card${res.done === 1 ? '' : 's'} ${mode === 'copy' ? 'copied' : 'moved'}.${res.skipped ? ` ${res.skipped} machine or service call card${res.skipped === 1 ? '' : 's'} stayed on this board.` : ''}`
+      message = `${res.done} card${res.done === 1 ? '' : 's'} ${mode === 'copy' ? 'copied' : 'moved'}.${res.skipped ? tr(" {{skipped}} machine or service call card{{value}} stayed on this board.", { skipped: res.skipped, value: res.skipped === 1 ? '' : 's' }) : ''}`
     } else if (card) {
       const index = place === 'top' ? 0 : null
       const r =
@@ -90,7 +90,7 @@ export default function MoveCopyDialog({
           ? await supabase.rpc('copy_board_card', { p_card: card.id, p_board: target, p_stage: stageId, p_index: index })
           : await supabase.rpc('move_card_to_board', { p_card: card.id, p_board: target, p_stage: stageId, p_index: index })
       error = r.error
-      message = mode === 'copy' ? 'Card copied.' : 'Card moved.'
+      message = mode === 'copy' ? tr("Card copied.") : tr("Card moved.")
     }
     setBusy(false)
     if (error) return toast.error(friendlyError(error))

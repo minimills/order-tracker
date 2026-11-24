@@ -113,7 +113,7 @@ export default function MachinePage() {
     })
   }, [id])
   const statusOf = (r: ListRow) =>
-    r.stage === 'Shipped' ? label('Shipped') : r.stage === 'Cancelled' ? label('Cancelled') : r.check_signed ? 'Final check complete' : r.built ? 'Built' : `Not built · ${label(r.stage)}`
+    r.stage === 'Shipped' ? label('Shipped') : r.stage === 'Cancelled' ? label('Cancelled') : r.check_signed ? tr("Final check complete") : r.built ? 'Built' : tr("Not built · {{label}}", { label: label(r.stage) })
   const shown = useMemo(() => {
     const words = q.toLowerCase().split(/\s+/).filter(Boolean)
     if (!all || words.length === 0) return all ?? []

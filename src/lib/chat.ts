@@ -56,13 +56,23 @@ export type Person = { email: string; name: string }
 export const REACTIONS = ['👍', '❤️', '😂', '😮', '🎉', '🙏', '✅'] as const
 
 export const KIND_LABEL: Record<ConversationKind, string> = {
-  direct: 'Direct messages',
+  get direct() {
+    return tr("Direct messages")
+  },
   group: 'Group chats',
-  department: 'Department channels',
-  user_group: 'Group channels',
+  get department() {
+    return tr("Department channels")
+  },
+  get user_group() {
+    return tr("Group channels")
+  },
   channel: 'Channels',
 }
-export const NOTIFY_LABEL: Record<NotifyMode, string> = { all: 'All messages', mentions: 'Mentions only', mute: 'Muted' }
+export const NOTIFY_LABEL: Record<NotifyMode, string> = { get all() {
+    return tr("All messages")
+  }, get mentions() {
+    return tr("Mentions only")
+  }, mute: 'Muted' }
 
 /** What a swipe on a conversation does (Settings → Chat; left = Archive, right = Delete for me by default). */
 export type SwipeAction = 'archive' | 'delete' | 'clear' | 'read_toggle' | 'hide'
@@ -91,14 +101,30 @@ export function stateAction(a: SwipeAction, r: ConversationRow) {
   return a
 }
 export const STATE_DONE: Record<string, string> = {
-  archive: 'Conversation archived.',
-  unarchive: 'Conversation moved back to your list.',
-  hide: 'Conversation hidden. Find it under Hidden at the bottom of the list.',
-  unhide: 'Conversation shown again.',
-  read: 'Marked as read.',
-  unread: 'Marked as unread.',
-  clear: 'Chat cleared for you. Others still see their messages.',
-  delete: 'Conversation deleted for you. It comes back if someone writes again.',
+  get archive() {
+    return tr("Conversation archived.")
+  },
+  get unarchive() {
+    return tr("Conversation moved back to your list.")
+  },
+  get hide() {
+    return tr("Conversation hidden. Find it under Hidden at the bottom of the list.")
+  },
+  get unhide() {
+    return tr("Conversation shown again.")
+  },
+  get read() {
+    return tr("Marked as read.")
+  },
+  get unread() {
+    return tr("Marked as unread.")
+  },
+  get clear() {
+    return tr("Chat cleared for you. Others still see their messages.")
+  },
+  get delete() {
+    return tr("Conversation deleted for you. It comes back if someone writes again.")
+  },
 }
 
 /** The action that undoes a list action (null = it cannot be undone once done). */
@@ -106,7 +132,13 @@ export const STATE_UNDO: Record<string, string | null> = { archive: 'unarchive',
 
 /** Time off of people in a conversation (from the time-off step, when it is in place). */
 export type TimeOff = { email: string; name: string; kind: string; return_date: string | null }
-export const TIME_OFF_WORDS: Record<string, string> = { vacation: 'vacation', sick: 'sick leave', banked: 'banked time', unpaid: 'time off' }
+export const TIME_OFF_WORDS: Record<string, string> = { vacation: 'vacation', get sick() {
+    return tr("sick leave")
+  }, get banked() {
+    return tr("banked time")
+  }, get unpaid() {
+    return tr("time off")
+  } }
 
 const timeFmt = dtf({ timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit' })
 const dayFmt = dtf({ timeZone: 'America/Halifax', month: 'short', day: 'numeric' })

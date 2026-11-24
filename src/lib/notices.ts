@@ -124,9 +124,15 @@ export function tiltOf(id: string) {
 }
 
 export const HOLIDAY_KIND: Record<Holiday['kind'], string> = {
-  statutory: 'Statutory holiday',
-  company: 'Company holiday',
-  closure: 'Office closure',
+  get statutory() {
+    return tr("Statutory holiday")
+  },
+  get company() {
+    return tr("Company holiday")
+  },
+  get closure() {
+    return tr("Office closure")
+  },
 }
 
 // ---------------------------------------------------------------------------
@@ -136,10 +142,10 @@ const dayDiff = (from: string, to: string) => Math.round((Date.parse(`${to}T12:0
 
 /** "today", "tomorrow", "in 3 days", or "now, until Jan 1" while it is on. */
 export function whenText(start: string, end: string, today = todayISO()) {
-  if (start <= today && end >= today) return end === today || start === end ? 'today' : `now, until ${showDate(end, 'MMM d')}`
+  if (start <= today && end >= today) return end === today || start === end ? 'today' : tr("now, until {{showDate}}", { showDate: showDate(end, 'MMM d') })
   const n = dayDiff(today, start)
   if (n === 1) return 'tomorrow'
-  return `in ${n} days`
+  return tr("in {{n}} days", { n: n })
 }
 
 /** "Dec 24 – Jan 1" or "Nov 11". */
@@ -249,7 +255,7 @@ export function useAudienceChoices(withPeople: boolean) {
   const nameOf = (a: Pick<Audience, 'target_type' | 'target'>) => {
     if (a.target_type === 'user') return people.find((p) => p.email === a.target)?.name ?? a.target
     if (a.target_type === 'group') return groups.find((g) => g.id === a.target)?.name ?? 'Removed group'
-    return departments.find((d) => d.id === a.target)?.name ?? 'Removed department'
+    return departments.find((d) => d.id === a.target)?.name ?? tr("Removed department")
   }
   return {
     people,

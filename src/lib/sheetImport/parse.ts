@@ -137,16 +137,16 @@ export function parseGrid(grid: Grid): ParseResult {
       const msgs: Msg[] = []
       const date = (col: string, what: string) => {
         const d = readDate(at(col))
-        if (d.problem) msgs.push({ row, level: 'warning', text: `${what} "${d.problem}" isn't a date I can read; it will be left empty.` })
+        if (d.problem) msgs.push({ row, level: 'warning', text: tr("{{what}} \"{{problem}}\" isn't a date I can read; it will be left empty.", { what: what, problem: d.problem }) })
         return d.iso
       }
       const money = (col: string, what: string) => {
         const m = readMoney(at(col))
-        if (m.problem) msgs.push({ row, level: 'error', text: `${what} "${m.problem}" is not a number.` })
+        if (m.problem) msgs.push({ row, level: 'error', text: tr("{{what}} \"{{problem}}\" is not a number.", { what: what, problem: m.problem }) })
         return m.text
       }
 
-      const dp = money('I', 'Down payment')
+      const dp = money('I', tr("Down payment"))
       // Balance: a formula like =48300-I101 means the order total is 48300.
       const L = at('L')
       let total = ''
@@ -161,11 +161,11 @@ export function parseGrid(grid: Grid): ParseResult {
           msgs.push({
             row,
             level: 'warning',
-            text: `Balance formula =${formula} is not "total − down payment"; its value ${balanceMoney.text} is used as the balance (total ${total}).`,
+            text: tr("Balance formula ={{formula}} is not \"total − down payment\"; its value {{text}} is used as the balance (total {{total}}).", { formula: formula, text: balanceMoney.text, total: total }),
           })
         }
       } else if (balanceMoney.problem) {
-        msgs.push({ row, level: 'error', text: `Balance "${balanceMoney.problem}" is not a number.` })
+        msgs.push({ row, level: 'error', text: tr("Balance \"{{problem}}\" is not a number.", { problem: balanceMoney.problem }) })
       } else if (dp) {
         total = dp
       }
@@ -176,25 +176,25 @@ export function parseGrid(grid: Grid): ParseResult {
         if (isEmpty(c) || (c!.kind === 'bool' && !c!.value)) return { date: '', amount: '' }
         if (c!.kind === 'date') return { date: c!.iso, amount: '' }
         if (isTick(c) && !(c!.kind === 'number' && c!.value > 1)) {
-          msgs.push({ row, level: 'warning', text: `${what} is marked as received but has no date; ${dueIso || 'today'} will be used.` })
+          msgs.push({ row, level: 'warning', text: tr("{{what}} is marked as received but has no date; {{value}} will be used.", { what: what, value: dueIso || tr("today") }) })
           return { date: dueIso, amount: '' }
         }
         if (c!.kind === 'number' && c!.value > 0 && !(c!.value > 20000 && c!.value < 80000 && Number.isInteger(c!.value))) {
           msgs.push({
             row,
             level: 'warning',
-            text: `${what} received shows an amount (${c!.value}) instead of a date; saved as ${c!.value} received${dueIso ? ` on ${dueIso}` : ''}.`,
+            text: tr("{{what}} received shows an amount ({{value}}) instead of a date; saved as {{value2}} received{{value3}}.", { what: what, value: c!.value, value2: c!.value, value3: dueIso ? tr(" on {{dueIso}}", { dueIso: dueIso }) : '' }),
           })
           return { date: dueIso, amount: String(c!.value) }
         }
         const d = readDate(c)
-        if (d.problem) msgs.push({ row, level: 'warning', text: `${what} received "${d.problem}" isn't a date; left as not received.` })
+        if (d.problem) msgs.push({ row, level: 'warning', text: tr("{{what}} received \"{{problem}}\" isn't a date; left as not received.", { what: what, problem: d.problem }) })
         return { date: d.iso, amount: '' }
       }
 
-      const dpDue = date('J', 'Down payment due date')
-      const balanceDue = date('M', 'Balance due date')
-      const dpRecv = received('K', 'Down payment', dpDue)
+      const dpDue = date('J', tr("Down payment due date"))
+      const balanceDue = date('M', tr("Balance due date"))
+      const dpRecv = received('K', tr("Down payment"), dpDue)
       const balRecv = received('N', 'Balance', balanceDue)
       const extra = (key: keyof typeof HEADER_EXTRAS) => (extras[key] !== undefined ? cellText(cells[extras[key]!]) : '')
 
@@ -204,10 +204,10 @@ export function parseGrid(grid: Grid): ParseResult {
         include: true,
         code,
         customer: cellText(at('B')),
-        expected: date('D', 'Expected ship date'),
+        expected: date('D', tr("Expected ship date")),
         voltage: cellText(at('E')),
         notes: cellText(at('F')),
-        actual: date('G', 'Actual ship date'),
+        actual: date('G', tr("Actual ship date")),
         dpAmount: dp,
         dpDue,
         dpReceived: dpRecv.date,
@@ -238,13 +238,13 @@ export function parseGrid(grid: Grid): ParseResult {
     const o: DraftOrder = current
     const msgs = o.readMessages
     if (!isEmpty(at('A'))) {
-      msgs.push({ row, level: 'warning', text: `Column A "${cellText(at('A'))}" is not an order number; this row is treated as a machine of order ${o.code}.` })
+      msgs.push({ row, level: 'warning', text: tr("Column A \"{{cellText}}\" is not an order number; this row is treated as a machine of order {{code}}.", { cellText: cellText(at('A')), code: o.code }) })
     }
     // An actual ship date sometimes sits on the first machine row.
     const g = readDate(at('G'))
     if (g.iso && !o.actual) {
       o.actual = g.iso
-      msgs.push({ row, level: 'info', text: `Actual ship date ${g.iso} found on a machine row; used for order ${o.code}.` })
+      msgs.push({ row, level: 'info', text: tr("Actual ship date {{iso}} found on a machine row; used for order {{code}}.", { iso: g.iso, code: o.code }) })
     }
     const name = cellText(at('B'))
     if (!name) {
@@ -272,7 +272,7 @@ export function parseGrid(grid: Grid): ParseResult {
   for (const o of orders) {
     if (!o.customer && o.machines.length === 0) {
       o.include = false
-      o.readMessages.push({ row: o.row, level: 'info', text: `Order ${o.code} has no customer and no machines, so it is left out (select it to include it).` })
+      o.readMessages.push({ row: o.row, level: 'info', text: tr("Order {{code}} has no customer and no machines, so it is left out (select it to include it).", { code: o.code }) })
     }
   }
   return { orders, skippedTop, extras }

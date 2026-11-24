@@ -54,7 +54,7 @@ export default function SettingsPage() {
               {role && <p className="mt-1 text-slate-600">{role === 'admin' ? tr("Admin (full access)") : tr("User (sees what an administrator has allowed)")}</p>}
               {departments !== null && (
                 <p className="mt-1 text-slate-600">
-                  {tr("Department")}{departments.length === 1 ? '' : 's'}: {departments.length ? departments.join(', ') : tr("none yet (an administrator can add you)")}
+                  {tr("Departments:")} {departments.length ? departments.join(', ') : tr("none yet (an administrator can add you)")}
                 </p>
               )}
             </section>

@@ -30,11 +30,11 @@ const targets = process.argv.slice(2).length ? process.argv.slice(2).map((f) => 
 let changed = 0
 for (const file of targets) {
   const text = readFileSync(file, 'utf8')
-  let edits = scan(file, text)
+  let edits = scan(file, text).filter((e) => e.replacement !== null)
   if (!edits.length) continue
   const isCatalog = file.endsWith('lib/permissions/catalog.ts')
   if (isCatalog) {
-    edits = edits.map((e) => (e.kind === 'data' ? { ...e, replacement: text.slice(e.start, e.end).replace(/:\s*(['"`])[\s\S]*\1\s*$/, `: tk(${JSON.stringify(e.text)})`) } : e))
+    edits = edits.map((e) => (e.kind === 'data' || e.kind === 'prose' ? { ...e, replacement: text.slice(e.start, e.end).replace(/:\s*(['"`])[\s\S]*\1\s*$/, `: tk(${JSON.stringify(e.text)})`) } : e))
   }
   let out = applyEdits(text, edits)
   const need = ['tr', 'tk'].filter((n) => new RegExp(`\\b${n}\\(`).test(out))

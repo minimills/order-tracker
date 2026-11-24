@@ -128,7 +128,7 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
       })
       if (error) return toast.error(friendlyError(error))
       const issued = (data as CeDeclaration[]) ?? []
-      toast.success(tr("{{length}} declaration{{value}} issued.", { length: issued.length, value: issued.length === 1 ? '' : 's' }))
+      toast.success(tr("{{count}} declaration issued.", { count: issued.length }))
       setIssued(issued)
       onIssued(issued)
     } finally {
@@ -178,7 +178,7 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
             {busy === 'preview' ? tr("Preparing…") : tr("Preview")}
           </button>
           <button type="button" className={buttonClass} onClick={issue} disabled={busy !== null || !selected.length}>
-            {busy === 'issue' ? tr("Generating…") : tr("Generate {{value}} Declaration{{value2}}", { value: selected.length || '', value2: selected.length === 1 ? '' : 's' })}
+            {busy === 'issue' ? tr("Generating…") : (selected.length ? tr("Generate {{count}} Declaration", { count: selected.length }) : tr("Generate Declarations"))}
           </button>
         </>
       }

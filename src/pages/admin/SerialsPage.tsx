@@ -148,7 +148,7 @@ export default function SerialsPage() {
 
       {needing.length > 0 && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          <strong>{needing.length}</strong> {tr("machine")}{needing.length === 1 ? '' : 's'} {tr("imported without a serial need one:")}{' '}
+          {tr("{{count}} machine imported without a serial needs one:", { count: needing.length })}{' '}
           {[...needingByType].map(([id, t], i) => (
             <span key={id}>
               {i > 0 && ', '}
@@ -320,7 +320,7 @@ export default function SerialsPage() {
                 {tr("Cancel")}
               </button>
               <button type="button" className={buttonClass} onClick={() => runResequence(true)} disabled={busy || changes.length === 0}>
-                {busy ? tr("Saving…") : tr("Change {{length}} serial{{value}}", { length: changes.length, value: changes.length === 1 ? '' : 's' })}
+                {busy ? tr("Saving…") : tr("Change {{count}} Serial", { count: changes.length })}
               </button>
             </>
           }

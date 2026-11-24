@@ -27,11 +27,11 @@ function check(d: Draft, others: MachineType[]) {
   const e: Partial<Record<keyof Draft, string>> = {}
   const name = d.name.trim()
   const code = d.code.trim().toUpperCase()
-  if (!name) e.name = 'Enter a name.'
-  else if (others.some((t) => t.name.toLowerCase() === name.toLowerCase())) e.name = 'Another type has this name.'
-  if (!codePattern.test(code)) e.code = 'Use only capital letters and numbers, for example LCR.'
-  else if (code && others.some((t) => t.code === code)) e.code = 'Another type uses this code.'
-  if (!/^\d+$/.test(d.next.trim()) || Number(d.next) < 1) e.next = 'Enter a whole number, 1 or more.'
+  if (!name) e.name = tr("Enter a name.")
+  else if (others.some((t) => t.name.toLowerCase() === name.toLowerCase())) e.name = tr("Another type has this name.")
+  if (!codePattern.test(code)) e.code = tr("Use only capital letters and numbers, for example LCR.")
+  else if (code && others.some((t) => t.code === code)) e.code = tr("Another type uses this code.")
+  if (!/^\d+$/.test(d.next.trim()) || Number(d.next) < 1) e.next = tr("Enter a whole number, 1 or more.")
   return e
 }
 

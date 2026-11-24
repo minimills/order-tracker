@@ -121,7 +121,7 @@ export default function ConversationInfo({
           className={inputClass}
           value={row.notify}
           onChange={(e) =>
-            void call(() => supabase!.rpc('set_chat_notify', { p_conv: row.id, p_mode: e.target.value as NotifyMode }), 'Notifications updated.')
+            void call(() => supabase!.rpc('set_chat_notify', { p_conv: row.id, p_mode: e.target.value as NotifyMode }), tr("Notifications updated."))
           }
         >
           {(Object.keys(NOTIFY_LABEL) as NotifyMode[]).map((k) => (

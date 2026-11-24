@@ -184,7 +184,7 @@ export default function RecordsPage() {
                               id: o.id,
                               what: `Order ${o.order_code}`,
                               explain:
-                                'The order disappears from the board, lists and alerts. Its unbuilt machines give their serials back, and everyone behind it on the board moves up.',
+                                tr("The order disappears from the board, lists and alerts. Its unbuilt machines give their serials back, and everyone behind it on the board moves up."),
                             })
                           }
                         >
@@ -227,7 +227,7 @@ export default function RecordsPage() {
                               table: 'customers',
                               id: c.id,
                               what: `customer ${c.name}`,
-                              explain: 'The customer is no longer offered on the New Order form. Their orders are not changed.',
+                              explain: tr("The customer is no longer offered on the New Order form. Their orders are not changed."),
                             })
                           }
                         >
@@ -278,8 +278,8 @@ export default function RecordsPage() {
                               id: m.id,
                               what: `machine ${m.serial_number ?? m.machine_types?.name ?? ''}`,
                               explain: m.ready
-                                ? 'The machine is removed from its order. It is built, so it keeps its serial.'
-                                : 'The machine is removed from its order and its serial is given back for other machines.',
+                                ? tr("The machine is removed from its order. It is built, so it keeps its serial.")
+                                : tr("The machine is removed from its order and its serial is given back for other machines."),
                             })
                           }
                         >

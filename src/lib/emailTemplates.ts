@@ -1,5 +1,6 @@
 import { cleanRichText, escapeHtml } from './richText'
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 // Email templates (Admin → Email Templates): certificate emails, customer
 // reminders, the welcome email, and who customer emails come from.
@@ -31,7 +32,11 @@ export const EMAIL_TEMPLATE_DEFAULTS: EmailTemplates = {
   from_address: '',
   reply_to: '',
   reminders: {},
-  welcome: { subject: 'Welcome to the {company_name} Order Tracker', body: 'Hello {name},\n\nYou can now use the {company_name} Order Tracker: {portal_url}\n\n{features}\n\n{sender_name}\n{company_name}' },
+  welcome: { get subject() {
+    return tr("Welcome to the {company_name} Order Tracker")
+  }, get body() {
+    return tr("Hello {name},\n\nYou can now use the {company_name} Order Tracker: {portal_url}\n\n{features}\n\n{sender_name}\n{company_name}")
+  } },
 }
 
 export async function loadEmailTemplates(): Promise<EmailTemplates> {

@@ -5,6 +5,7 @@
  */
 import { callFunction } from './edgeFunction'
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 export type PushSupport = {
   supported: boolean
@@ -25,7 +26,7 @@ export function pushSupport(): PushSupport {
 
 export function deviceName() {
   const ua = navigator.userAgent
-  const os = /iPhone/i.test(ua) ? 'iPhone' : /iPad/i.test(ua) ? 'iPad' : /Android/i.test(ua) ? 'Android phone' : /Mac/i.test(ua) ? 'Mac' : /Windows/i.test(ua) ? 'Windows computer' : 'Device'
+  const os = /iPhone/i.test(ua) ? 'iPhone' : /iPad/i.test(ua) ? 'iPad' : /Android/i.test(ua) ? tr("Android phone") : /Mac/i.test(ua) ? 'Mac' : /Windows/i.test(ua) ? tr("Windows computer") : 'Device'
   const browser = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) && !/Edg\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : 'browser'
   return `${os} (${browser})`
 }
@@ -58,9 +59,9 @@ export async function currentSubscription() {
 /** Asks for permission, subscribes this device and saves it. */
 export async function enablePushHere(): Promise<{ ok: boolean; message: string }> {
   const s = pushSupport()
-  if (!s.supported) return { ok: false, message: 'This browser cannot receive notifications. On an iPhone, add the app to your Home Screen first (see the steps below).' }
+  if (!s.supported) return { ok: false, message: tr("This browser cannot receive notifications. On an iPhone, add the app to your Home Screen first (see the steps below).") }
   const permission = await Notification.requestPermission()
-  if (permission !== 'granted') return { ok: false, message: 'Notifications were not allowed. Allow them for this app in your phone or browser settings, then try again.' }
+  if (permission !== 'granted') return { ok: false, message: tr("Notifications were not allowed. Allow them for this app in your phone or browser settings, then try again.") }
   const key = await callFunction<{ key: string }>('send-email', { action: 'push_key' })
   if (!key.ok) return { ok: false, message: key.message }
   const reg = (await navigator.serviceWorker.getRegistration()) ?? (await navigator.serviceWorker.register('/sw.js'))
@@ -71,7 +72,7 @@ export async function enablePushHere(): Promise<{ ok: boolean; message: string }
     { onConflict: 'endpoint' },
   )
   if (error) return { ok: false, message: error.message }
-  return { ok: true, message: 'Notifications are enabled on this device.' }
+  return { ok: true, message: tr("Notifications are enabled on this device.") }
 }
 
 /** Turns push off on this device. */

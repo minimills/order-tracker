@@ -60,19 +60,19 @@ export default function ServiceSummary() {
     ? [
         { get title() {
     return tr("Travel Days")
-  }, done: s.travel_done, scheduled: s.travel_scheduled, note: 'Logged travel days; scheduled = travel entries on the calendar and the travel days of upcoming training visits.' },
+  }, done: s.travel_done, scheduled: s.travel_scheduled, note: tr("Logged travel days; scheduled = travel entries on the calendar and the travel days of upcoming training visits.") },
         {
           get title() {
     return tr("On-site Training Days")
   },
           done: s.training_done,
           scheduled: s.training_scheduled,
-          note: 'Logged on-site days on training orders; scheduled = days of training visits not marked as done.',
-          extra: s.training_unscheduled ? `${s.training_unscheduled} training order${s.training_unscheduled === 1 ? ' has' : 's have'} no dates yet.` : undefined,
+          note: tr("Logged on-site days on training orders; scheduled = days of training visits not marked as done."),
+          extra: s.training_unscheduled ? tr("{{training_unscheduled}} training order{{value}} no dates yet.", { training_unscheduled: s.training_unscheduled, value: s.training_unscheduled === 1 ? tr(" has") : tr("s have") }) : undefined,
         },
         { get title() {
     return tr("Service Call Days")
-  }, done: s.calls_done, scheduled: s.calls_scheduled, note: 'Logged on-site days on service calls; scheduled = planned days of calls not done.' },
+  }, done: s.calls_done, scheduled: s.calls_scheduled, note: tr("Logged on-site days on service calls; scheduled = planned days of calls not done.") },
       ]
     : []
 

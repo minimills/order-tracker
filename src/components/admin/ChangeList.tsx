@@ -1,9 +1,9 @@
 import { tr } from '../../i18n'
 export type SerialChange = { order: string; machine_type?: string; old: string | null; new: string | null }
 const place = (n: number | null) => {
-  if (n === null) return 'not in the queue'
+  if (n === null) return tr("not in the queue")
   const s = ['th', 'st', 'nd', 'rd'][n % 100 > 10 && n % 100 < 14 ? 0 : Math.min(n % 10, 4) % 4] ?? 'th'
-  return `${n}${n % 10 > 3 || n % 10 === 0 ? 'th' : s} in the queue`
+  return tr("{{n}}{{value}} in the queue", { n: n, value: n % 10 > 3 || n % 10 === 0 ? tr("th") : s })
 }
 
 export type PositionChange = { order: string; old: number | null; new: number | null }

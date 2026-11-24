@@ -53,7 +53,7 @@ export default function DepartmentsPage() {
     const name = (drafts[d.id] ?? d.name).trim()
     if (!name || name === d.name) return
     if (taken(name, d.id)) return toast.error(tr("There is already a department with that name."))
-    if (await save(supabase.from('departments').update({ name }).eq('id', d.id), `Renamed to “${name}”.`)) {
+    if (await save(supabase.from('departments').update({ name }).eq('id', d.id), tr("Renamed to “{{name}}”.", { name: name }))) {
       setDrafts((all) => {
         const next = { ...all }
         delete next[d.id]
@@ -65,7 +65,7 @@ export default function DepartmentsPage() {
   async function setManager(d: Department, email: string) {
     if (!supabase) return
     const who = people.find((p) => p.email === email)?.name
-    await save(supabase.from('departments').update({ manager_email: email || null }).eq('id', d.id), email ? `${who} manages ${d.name}.` : `${d.name} has no manager now.`)
+    await save(supabase.from('departments').update({ manager_email: email || null }).eq('id', d.id), email ? `${who} manages ${d.name}.` : tr("{{name}} has no manager now.", { name: d.name }))
   }
 
   async function move(d: Department, dir: -1 | 1) {
@@ -166,7 +166,7 @@ export default function DepartmentsPage() {
                     supabase &&
                     save(
                       supabase.from('departments').update({ archived: !d.archived }).eq('id', d.id),
-                      d.archived ? `“${d.name}” is back.` : `“${d.name}” archived.`,
+                      d.archived ? tr("“{{name}}” is back.", { name: d.name }) : `“${d.name}” archived.`,
                     )
                   }
                 >

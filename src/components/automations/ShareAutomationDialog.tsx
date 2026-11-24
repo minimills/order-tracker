@@ -23,7 +23,7 @@ export default function ShareAutomationDialog({ automation, choices, onClose, on
       ? (choices.people.find((p) => p.email === s.target)?.name ?? s.target)
       : s.type === 'group'
         ? `Group: ${choices.groups.find((g) => g.id === s.target)?.name ?? 'removed group'}`
-        : `Department: ${choices.departments.find((d) => d.id === s.target)?.name ?? 'removed department'}`
+        : `Department: ${choices.departments.find((d) => d.id === s.target)?.name ?? tr("removed department")}`
 
   async function save() {
     setBusy(true)

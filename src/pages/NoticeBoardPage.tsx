@@ -141,7 +141,7 @@ export default function NoticeBoardPage() {
   const newCount = newIds?.size ?? 0
   const filtering = !!(q || cat || pri || mine || onlyNew)
 
-  const audienceText = (n: Notice) => (n.audience_everyone ? 'Everyone' : audienceOf(n.id).map(choices.nameOf).join(', ') || 'Chosen people')
+  const audienceText = (n: Notice) => (n.audience_everyone ? 'Everyone' : audienceOf(n.id).map(choices.nameOf).join(', ') || tr("Chosen people"))
   // Drawn inside the page's <Can permission="notices"> below.
   /* @rendered-inside-can */ const card = (n: Notice, layout: 'board' | 'list') => (
     <NoticeCard

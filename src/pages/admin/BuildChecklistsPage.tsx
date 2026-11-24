@@ -259,8 +259,7 @@ export default function BuildChecklistsPage() {
       {/* Sections */}
       <div className="flex items-center justify-between text-sm text-slate-600">
         <span>
-          {tr("{{count}} item", { count: active.length })} {tr("in")} {groupBySection(active).length} {tr("section")}
-          {groupBySection(active).length === 1 ? '' : 's'}{tr(". Drag ⠿ or use ↑ ↓ to change the order.")}
+          {tr("{{items}} in {{sections}}. Drag ⠿ or use ↑ ↓ to change the order.", { items: tr("{{count}} item", { count: active.length }), sections: tr("{{count}} section", { count: groupBySection(active).length }) })}
         </span>
         <span className="flex gap-3">
           <button type="button" className="underline" onClick={() => setCollapsed(new Set())}>

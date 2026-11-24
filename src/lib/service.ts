@@ -100,7 +100,11 @@ export type SavedEntry = {
   service_entry_machines: { machine_id: string; notes: string | null }[]
 }
 
-export const KIND_LABEL = { travel: 'Travel day', onsite: 'On-site day' } as const
+export const KIND_LABEL = { get travel() {
+    return tr("Travel day")
+  }, get onsite() {
+    return tr("On-site day")
+  } } as const
 
 export function newClientId() {
   return crypto.randomUUID()
@@ -302,7 +306,7 @@ export function certificateValues(c: Certificate, company: CompanyInfo, today: s
 
 /** "Order 76" or "Service call S-12". */
 export const documentReference = (c: Pick<Certificate, 'order_id' | 'info'>) =>
-  c.order_id ? `Order ${c.info.order_number ?? ''}` : (c.info.reference ?? `Service call ${c.info.order_number ?? ''}`)
+  c.order_id ? `Order ${c.info.order_number ?? ''}` : (c.info.reference ?? tr("Service call {{value}}", { value: c.info.order_number ?? '' }))
 
 export const certificateFileName = (c: Certificate) =>
   `${c.title} - ${documentReference(c)}${c.version > 1 ? ` (version ${c.version})` : ''}.pdf`

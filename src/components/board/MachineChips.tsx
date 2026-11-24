@@ -32,9 +32,13 @@ export type ChipMachine = {
 type Status = 0 | 1 | 2 | 3
 
 const STATUS_STYLE: Record<Status, { chip: string; icon: ReactNode; word: string }> = {
-  0: { chip: 'bg-slate-100 text-slate-700 ring-slate-300', icon: <span aria-hidden>○</span>, word: 'Not built' },
+  0: { chip: 'bg-slate-100 text-slate-700 ring-slate-300', icon: <span aria-hidden>○</span>, get word() {
+    return tr("Not built")
+  } },
   1: { chip: 'bg-green-50 text-green-800 ring-green-300', icon: <Icon name="check" className="h-3 w-3" />, word: 'Built' },
-  2: { chip: 'bg-blue-50 text-blue-800 ring-blue-300', icon: <Icon name="checklist" className="h-3 w-3" />, word: 'Final check complete' },
+  2: { chip: 'bg-blue-50 text-blue-800 ring-blue-300', icon: <Icon name="checklist" className="h-3 w-3" />, get word() {
+    return tr("Final check complete")
+  } },
   3: { chip: 'bg-teal-50 text-teal-900 ring-teal-400', icon: <Icon name="box" className="h-3 w-3" />, word: 'Crated' },
 }
 
@@ -123,7 +127,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
         const isOpen = pinned === g.typeId || (pinned === null && hover === g.typeId)
         const summary = showStatus
           ? `${g.fullName}: ${g.machines.length} machine${g.machines.length === 1 ? '' : 's'}${
-              g.mixed ? ' (mixed: see serials)' : `, ${g.status === 0 && g.machines[0].progress ? g.machines[0].progress : style.word.toLowerCase()}`
+              g.mixed ? tr(" (mixed: see serials)") : `, ${g.status === 0 && g.machines[0].progress ? g.machines[0].progress : style.word.toLowerCase()}`
             }`
           : `${g.fullName}: ${g.machines.length} machine${g.machines.length === 1 ? '' : 's'}`
         return (

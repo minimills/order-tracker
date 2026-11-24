@@ -39,9 +39,9 @@ export default function TrainingDoneButton({ info, onChanged }: { info: Pick<Ser
     if (error) return toast.error(friendlyError(error))
     const r = data as Result
     const parts = [
-      'Training marked as done.',
-      r.cards_done ? `${r.cards_done} card${r.cards_done === 1 ? '' : 's'} completed.` : '',
-      r.entries_done ? `${r.entries_done} calendar entr${r.entries_done === 1 ? 'y' : 'ies'} marked done.` : '',
+      tr("Training marked as done."),
+      r.cards_done ? tr("{{count}} card completed.", { count: r.cards_done }) : '',
+      r.entries_done ? tr("{{count}} calendar entry marked done.", { count: r.entries_done }) : '',
     ]
     toast.success(parts.filter(Boolean).join(' '))
     for (const s of r.cards_skipped) toast.warning(tr("“{{title}}” was not completed: {{reason}}.", { title: s.title, reason: s.reason }))
@@ -98,7 +98,7 @@ export default function TrainingDoneButton({ info, onChanged }: { info: Pick<Ser
             <p>{tr("Your name and today’s date are recorded on the order. The order moves to Completed on the Service / Training page.")}</p>
             <p>
               {open.entries
-                ? tr("{{entries}} calendar entr{{value}} linked to this order will be marked done.", { entries: open.entries, value: open.entries === 1 ? 'y' : 'ies' })
+                ? tr("{{count}} calendar entry linked to this order will be marked done.", { count: open.entries })
                 : tr("No calendar entries are linked to this order.")}
             </p>
             <fieldset>

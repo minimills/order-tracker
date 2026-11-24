@@ -109,8 +109,8 @@ export default function FreightDashboard() {
     return points
   }, [crates, start, end, rangeOk])
   const period = rangeOk ? sum(crates.filter((c) => c.crated_on >= start && c.crated_on <= end)) : null
-  const nameA = mode === 'year' ? String(year) : 'Chosen dates'
-  const nameB = mode === 'year' ? String(year - 1) : 'One year earlier'
+  const nameA = mode === 'year' ? String(year) : tr("Chosen dates")
+  const nameB = mode === 'year' ? String(year - 1) : tr("One year earlier")
 
   if (loading) return <p className="py-8 text-center text-slate-500">{tr("Loading…")}</p>
 

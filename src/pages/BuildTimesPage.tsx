@@ -42,11 +42,17 @@ type TaskRow = {
 
 const STEP_NAMES: Record<string, string> = {
   fabrication: 'Fabrication',
-  pickup: 'Ready for pick up',
+  get pickup() {
+    return tr("Ready for pick up")
+  },
   sandblasting: 'Sandblasting',
-  powder_coating: 'Powder coating',
+  get powder_coating() {
+    return tr("Powder coating")
+  },
   assembly: 'Assembly',
-  final_check: 'Final check',
+  get final_check() {
+    return tr("Final check")
+  },
   crating: 'Crating',
   shipping: 'Shipping',
 }
@@ -166,7 +172,7 @@ export default function BuildTimesPage() {
     const auto = rows.filter((r) => r.auto_started || r.auto_finished).length
     return (
       <span
-        title={tr("{{length}} build{{value}}; average {{formatDuration}} on the clock{{value2}}", { length: rows.length, value: rows.length === 1 ? '' : 's', formatDuration: formatDuration(avg(rows.map((r) => r.seconds))), value2: auto ? tr("; {{auto}} timed automatically when the card moved", { auto: auto }) : '' })}
+        title={tr("{{builds}}; average {{formatDuration}} on the clock{{value2}}", { builds: tr("{{count}} build", { count: rows.length }), formatDuration: formatDuration(avg(rows.map((r) => r.seconds))), value2: auto ? tr("; {{auto}} timed automatically when the card moved", { auto: auto }) : '' })}
       >
         {oneDecimal(days)} <span className="text-xs text-slate-500">({rows.length})</span>
       </span>

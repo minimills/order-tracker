@@ -253,8 +253,8 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
             <p className="mt-1 text-sm text-slate-600">
               {serviceDates(info.service_start, info.service_end) || tr("Dates not set")}
               {info.technician_name ? tr(" · Technician: {{technician_name}}", { technician_name: info.technician_name }) : ''}
-              {info.training_days !== null ? tr(" · {{Number}} on-site day{{value}}", { Number: Number(info.training_days), value: Number(info.training_days) === 1 ? '' : 's' }) : ''}
-              {info.travel_days !== null ? tr(" · {{Number}} travel day{{value}}", { Number: Number(info.travel_days), value: Number(info.travel_days) === 1 ? '' : 's' }) : ''}
+              {info.training_days !== null ? tr(" · {{count}} on-site day", { count: Number(info.training_days) }) : ''}
+              {info.travel_days !== null ? tr(" · {{count}} travel day", { count: Number(info.travel_days) }) : ''}
             </p>
             <Can permission="order.page">
               <Link to={`/orders/${orderId}`} className="text-sm text-blue-700 underline">

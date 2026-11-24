@@ -57,7 +57,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
       return toast.error(tr("That choice is already in the list."))
     await run(
       supabase.from('option_lists').update({ value }).eq('id', item.id),
-      `Renamed to "${value}". Every order using it was updated.`,
+      tr("Renamed to \"{{value}}\". Every order using it was updated.", { value: value }),
     )
     setDrafts((d) => {
       const next = { ...d }
@@ -124,7 +124,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
                   className="h-9 w-11 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
                   value={item.colour ?? '#64748b'}
                   onChange={(e) =>
-                    supabase && run(supabase.from('option_lists').update({ colour: e.target.value }).eq('id', item.id), `Colour for "${item.value}" saved.`)
+                    supabase && run(supabase.from('option_lists').update({ colour: e.target.value }).eq('id', item.id), tr("Colour for \"{{value}}\" saved.", { value: item.value }))
                   }
                 />
               )}
@@ -155,7 +155,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
                     supabase &&
                     run(
                       supabase.from('option_lists').update({ archived: !item.archived }).eq('id', item.id),
-                      item.archived ? `"${item.value}" is back.` : `"${item.value}" archived. Orders that already use it keep it.`,
+                      item.archived ? tr("\"{{value}}\" is back.", { value: item.value }) : tr("\"{{value}}\" archived. Orders that already use it keep it.", { value: item.value }),
                     )
                   }
                 >

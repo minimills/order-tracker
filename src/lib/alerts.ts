@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react'
 import { showDate } from './dates'
 import { formatMoney } from './format'
 import type { Currency, Stage } from './types'
+import { tr } from '../i18n'
 
 export type AlertKind =
   | 'payment_overdue'
@@ -48,29 +49,29 @@ export function alertText(a: AlertRow): { title: string; detail: string } {
   switch (a.kind) {
     case 'payment_overdue':
       return {
-        title: `Payment overdue · ${order}`,
-        detail: `${a.payment_type} of ${money} was due ${showDate(a.alert_date)} (${plural(-days, 'day')} ago) · ${who}`,
+        title: tr("Payment overdue · {{order}}", { order: order }),
+        detail: tr("{{payment_type}} of {{money}} was due {{showDate}} ({{plural}} ago) · {{who}}", { payment_type: a.payment_type, money: money, showDate: showDate(a.alert_date), plural: plural(-days, 'day'), who: who }),
       }
     case 'payment_due_today':
-      return { title: `Payment due today · ${order}`, detail: `${a.payment_type} of ${money} · ${who}` }
+      return { title: tr("Payment due today · {{order}}", { order: order }), detail: `${a.payment_type} of ${money} · ${who}` }
     case 'payment_due_urgent':
     case 'payment_due_soon':
       return {
-        title: `Payment due in ${plural(days, 'day')} · ${order}`,
-        detail: `${a.payment_type} of ${money} due ${showDate(a.alert_date)} · ${who}`,
+        title: tr("Payment due in {{plural}} · {{order}}", { plural: plural(days, 'day'), order: order }),
+        detail: tr("{{payment_type}} of {{money}} due {{showDate}} · {{who}}", { payment_type: a.payment_type, money: money, showDate: showDate(a.alert_date), who: who }),
       }
     case 'ship_passed':
       return {
-        title: `Ship date passed · ${order}`,
-        detail: `Expected to ship ${showDate(a.alert_date)} (${plural(-days, 'day')} ago), not marked as shipped · ${who}`,
+        title: tr("Ship date passed · {{order}}", { order: order }),
+        detail: tr("Expected to ship {{showDate}} ({{plural}} ago), not marked as shipped · {{who}}", { showDate: showDate(a.alert_date), plural: plural(-days, 'day'), who: who }),
       }
     case 'ship_soon':
       return {
-        title: days === 0 ? `Ships today · ${order}` : `Ships in ${plural(days, 'day')} · ${order}`,
-        detail: `Expected ship date ${showDate(a.alert_date)} · ${who}`,
+        title: days === 0 ? tr("Ships today · {{order}}", { order: order }) : tr("Ships in {{plural}} · {{order}}", { plural: plural(days, 'day'), order: order }),
+        detail: tr("Expected ship date {{showDate}} · {{who}}", { showDate: showDate(a.alert_date), who: who }),
       }
     case 'voltage_unknown':
-      return { title: `Voltage unknown · ${order}`, detail: `${stageLabel(a.stage)} order with no voltage set · ${who}` }
+      return { title: tr("Voltage unknown · {{order}}", { order: order }), detail: tr("{{stageLabel}} order with no voltage set · {{who}}", { stageLabel: stageLabel(a.stage), who: who }) }
   }
 }
 

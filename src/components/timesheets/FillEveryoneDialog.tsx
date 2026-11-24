@@ -49,7 +49,7 @@ export default function FillEveryoneDialog({ weekStart, onClose, onDone }: { wee
     if (error) return toast.error(friendlyError(error))
     const r = data as Result
     const days = r.filled.reduce((a, f) => a + f.days.length, 0)
-    toast.success(tr("Filled {{days}} day{{value}} for {{length}} employee{{value2}}.", { days: days, value: days === 1 ? '' : 's', length: r.filled.length, value2: r.filled.length === 1 ? '' : 's' }))
+    toast.success(tr("Filled {{days}} for {{employees}}.", { days: tr("{{count}} day", { count: days }), employees: tr("{{count}} employee", { count: r.filled.length }) }))
     onDone()
   }
 
@@ -76,7 +76,7 @@ export default function FillEveryoneDialog({ weekStart, onClose, onDone }: { wee
             {ACTION.cancel}
           </button>
           <button type="button" className={buttonClass} onClick={confirm} disabled={busy || !preview || totalDays === 0}>
-            {busy ? ACTION.saving : tr("Fill {{totalDays}} Day{{value}}", { totalDays: totalDays, value: totalDays === 1 ? '' : 's' })}
+            {busy ? ACTION.saving : tr("Fill {{count}} Day", { count: totalDays })}
           </button>
         </>
       }

@@ -87,7 +87,7 @@ export const HEALTH_DEFAULTS: Record<string, Health> = {
 export const healthWidgets = () => WIDGETS.filter((w) => (w.kind === 'kpi' && w.key !== 'kpi:money_owed') || w.key === 'list:overdue' || (w.kind === 'chart' && w.key !== 'chart:outstanding'))
 /** The number each widget's colours judge, in words. */
 export const healthValueText = (key: string) =>
-  key === 'list:overdue' ? 'number of overdue items' : key.startsWith('kpi:') ? (key === 'kpi:average_delay' ? 'average days late' : 'the number shown') : 'the headline number'
+  key === 'list:overdue' ? tr("number of overdue items") : key.startsWith('kpi:') ? (key === 'kpi:average_delay' ? tr("average days late") : tr("the number shown")) : tr("the headline number")
 /** The colours in force for one widget. */
 export function healthFor(w: Pick<Widget, 'key' | 'health'>, company?: Record<string, Health>): Health {
   return w.health ?? company?.[w.key] ?? HEALTH_DEFAULTS[w.key] ?? NONE
@@ -99,8 +99,8 @@ export function healthState(value: number | null | undefined, h: Health): Health
 }
 /** "Green below 0, red above 0." */
 export function healthWords(h: Health) {
-  if (h.direction === 'none') return 'No colours.'
-  return h.direction === 'low' ? `Green below ${h.good}, red above ${h.bad}.` : `Green above ${h.good}, red below ${h.bad}.`
+  if (h.direction === 'none') return tr("No colours.")
+  return h.direction === 'low' ? tr("Green below {{good}}, red above {{bad}}.", { good: h.good, bad: h.bad }) : tr("Green above {{good}}, red below {{bad}}.", { good: h.good, bad: h.bad })
 }
 
 export type Dashboard = {
@@ -181,7 +181,7 @@ export const WIDGETS: WidgetDef[] = [
     kind: 'chart',
     title: c.title,
     group: `Charts: ${c.group}`,
-    description: c.now ? 'A chart of the situation now.' : 'A chart for the dates chosen.',
+    description: c.now ? tr("A chart of the situation now.") : tr("A chart for the dates chosen."),
     permission: c.permission,
     needs: ['dashboard.charts'],
     w: 6,

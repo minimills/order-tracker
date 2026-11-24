@@ -41,8 +41,8 @@ const MEASURES: { key: Measure; label: (u: Units) => string; value: (c: CrateRow
   { key: 'length', label: (u) => `Length (${lengthUnit(u)})`, value: (c) => c.length_cm },
   { key: 'width', label: (u) => `Width (${lengthUnit(u)})`, value: (c) => c.width_cm },
   { key: 'height', label: (u) => `Height (${lengthUnit(u)})`, value: (c) => c.height_cm },
-  { key: 'sheets', label: () => 'Plywood sheets', value: (c) => c.plywood_sheets },
-  { key: 'hours', label: () => 'Hours to build', value: (c) => c.build_hours },
+  { key: 'sheets', label: () => tr("Plywood sheets"), value: (c) => c.plywood_sheets },
+  { key: 'hours', label: () => tr("Hours to build"), value: (c) => c.build_hours },
 ]
 
 /** Converts a stored (metric) value of a measure to the person's units, rounded for showing. */
@@ -136,9 +136,9 @@ export default function CratingReportPage() {
     downloadCsv(
       `crates-${todayISO()}.csv`,
       [
-        'Date crated', 'Order #', 'Customer', 'Company', 'Country', 'Contents', 'Serials',
-        `Length (${L})`, `Width (${L})`, `Height (${L})`, `Weight (${W})`, 'Plywood sheets', 'Hours to build',
-        'Crated by', 'Notes',
+        tr("Date crated"), 'Order #', 'Customer', 'Company', 'Country', 'Contents', 'Serials',
+        `Length (${L})`, `Width (${L})`, `Height (${L})`, `Weight (${W})`, tr("Plywood sheets"), tr("Hours to build"),
+        tr("Crated by"), 'Notes',
       ],
       rows.map((c) => [
         c.crated_on, c.order_code, c.customer_name, c.customer_company, c.customer_country,

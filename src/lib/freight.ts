@@ -286,10 +286,10 @@ export function quoteSubject(f: QuoteForm, company = 'Belfast Mini Mills') {
 function cargoText(f: QuoteForm) {
   if (BULK_TYPES.includes(f.shipmentType)) {
     const lines = [`Cargo: ${f.bulkCommodity.trim()}`]
-    if (f.bulkItems.trim()) lines.push(`Total items: ${f.bulkItems.trim()}`)
-    if (f.bulkSpace.trim()) lines.push(`Total space: ${f.bulkSpace.trim()} ${f.bulkSpaceUnit}`)
+    if (f.bulkItems.trim()) lines.push(tr("Total items: {{value}}", { value: f.bulkItems.trim() }))
+    if (f.bulkSpace.trim()) lines.push(tr("Total space: {{value}} {{bulkSpaceUnit}}", { value: f.bulkSpace.trim(), bulkSpaceUnit: f.bulkSpaceUnit }))
     if (f.bulkWeight.trim()) lines.push(`Weight: ${f.bulkWeight.trim()} ${f.weightUnit}`)
-    if (f.shipmentType === 'FCL') lines.push(`Container size required: ${f.containerSize}`)
+    if (f.shipmentType === 'FCL') lines.push(tr("Container size required: {{containerSize}}", { containerSize: f.containerSize }))
     return lines.join('\n')
   }
   const lines = ['Cargo:']
@@ -311,22 +311,7 @@ export function quoteBody(f: QuoteForm, signature = '') {
   const first = f.agentName.trim().split(/\s+/)[0] || 'there'
   const article = /^[AEFHILMNORSX]/.test(f.shipmentType) ? 'an' : 'a'
   const delivery = f.notABusiness ? `Delivery: ${f.delivery.trim()}` : `Delivery: ${f.businessName.trim()}\n${f.delivery.trim()}`
-  return `${f.greeting} ${first},
-
-Can you please provide us a quote for ${article} ${f.shipmentType} to ${f.destination.trim()}.
-
-Pick up: ${f.pickup.trim()}
-
-${delivery}
-
-Consignee name: ${f.consigneeName.trim()}
-Consignee Phone: ${f.consigneePhone.trim()}
-Consignee Email: ${f.consigneeEmail.trim()}
-
-${cargoText(f)}
-
-Lift-gate at origin: ${f.liftgateOrigin}
-Lift-gate at destination: ${f.liftgateDestination}${signature ? `\n\nThank you,\n${signature}` : ''}`
+  return tr("{{greeting}} {{first}},\n\nCan you please provide us a quote for {{article}} {{shipmentType}} to {{value}}.\n\nPick up: {{value2}}\n\n{{delivery}}\n\nConsignee name: {{value3}}\nConsignee Phone: {{value4}}\nConsignee Email: {{value5}}\n\n{{cargoText}}\n\nLift-gate at origin: {{liftgateOrigin}}\nLift-gate at destination: {{liftgateDestination}}{{value6}}", { greeting: f.greeting, first: first, article: article, shipmentType: f.shipmentType, value: f.destination.trim(), value2: f.pickup.trim(), delivery: delivery, value3: f.consigneeName.trim(), value4: f.consigneePhone.trim(), value5: f.consigneeEmail.trim(), cargoText: cargoText(f), liftgateOrigin: f.liftgateOrigin, liftgateDestination: f.liftgateDestination, value6: signature ? tr("\n\nThank you,\n{{signature}}", { signature: signature }) : '' })
 }
 
 /** A crate from the crating data as a cargo line in the chosen units. */

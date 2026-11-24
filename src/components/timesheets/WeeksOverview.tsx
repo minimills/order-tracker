@@ -51,7 +51,7 @@ export default function WeeksOverview() {
 
   async function approveAll() {
     if (!supabase || !openRows.length) return
-    if (!(await confirmAction(tr("Approve and lock {{length}} week{{value}} (week of {{showDate}})?", { length: openRows.length, value: openRows.length === 1 ? '' : 's', showDate: showDate(ws) }), { get confirmLabel() {
+    if (!(await confirmAction(tr("Approve and lock {{count}} week (week of {{showDate}})?", { count: openRows.length, showDate: showDate(ws) }), { get confirmLabel() {
     return tr("Approve Weeks")
   } }))) return
     let failed = 0
@@ -59,7 +59,7 @@ export default function WeeksOverview() {
       const { error } = await supabase.rpc('approve_timesheet_week', { p_employee: r.employee_id, p_week_start: ws, p_note: null })
       if (error) failed++
     }
-    if (failed) toast.error(tr("{{failed}} week{{value}} could not be approved. Open them to see why.", { failed: failed, value: failed === 1 ? '' : 's' }))
+    if (failed) toast.error(tr("{{count}} week could not be approved. Open it to see why.", { count: failed }))
     else toast.success(tr("Weeks approved and locked."))
     setVersion((v) => v + 1)
   }

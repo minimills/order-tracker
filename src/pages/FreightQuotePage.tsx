@@ -59,7 +59,7 @@ export default function FreightQuotePage() {
   const [f, setF] = useState<QuoteForm>({
     agentName: '', greeting: 'Hi', shipmentType: 'LTL', origin: 'PE', destination: '', pickup: '', delivery: '', businessName: '', notABusiness: false,
     consigneeName: '', consigneePhone: '', consigneeEmail: '', weightUnit: units === 'imperial' ? 'lb' : 'kg', dimUnit: units === 'imperial' ? 'in' : 'cm',
-    items: [newItem()], bulkCommodity: 'Fibre-processing machines', bulkItems: '', bulkSpace: '', bulkSpaceUnit: 'sq ft', bulkWeight: '', containerSize: CONTAINER_SIZES[1],
+    items: [newItem()], bulkCommodity: tr("Fibre-processing machines"), bulkItems: '', bulkSpace: '', bulkSpaceUnit: tr("sq ft"), bulkWeight: '', containerSize: CONTAINER_SIZES[1],
     liftgateOrigin: 'No', liftgateDestination: 'No',
   })
   const [to, setTo] = useState('')
@@ -384,7 +384,7 @@ export default function FreightQuotePage() {
               <>
                 {info && (
                   <p className="mb-2 text-xs text-slate-600">
-                    {info.crates.length ? tr("{{length}} {{value}} from the crating data of order {{order_code}}. Lines can be changed.", { length: info.crates.length, value: info.crates.length === 1 ? 'crate' : 'crates', order_code: info.order_code }) : tr("No crates have been entered on order {{order_code}} yet: type the cargo.", { order_code: info.order_code })}
+                    {info.crates.length ? tr("{{crates}} from the crating data of order {{order_code}}. Lines can be changed.", { crates: tr("{{count}} crate", { count: info.crates.length }), order_code: info.order_code }) : tr("No crates have been entered on order {{order_code}} yet: type the cargo.", { order_code: info.order_code })}
                   </p>
                 )}
                 <div className="overflow-x-auto">

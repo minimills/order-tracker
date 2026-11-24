@@ -1,4 +1,4 @@
-import { formatCurrency } from '../i18n'
+import { formatCurrency, tr } from '../i18n'
 import { MESSAGE } from './wording'
 /** Same format as the database: code + "-" + at least 4 digits, for example LCR-0073. */
 export function formatSerial(code: string, n: number) {
@@ -14,9 +14,9 @@ export function formatMoney(amount: number | null | undefined, currency: string)
 export function friendlyError(error: { message?: string; code?: string } | null | undefined) {
   if (!error) return MESSAGE.genericError
   if (error.code === '23505') {
-    if (error.message?.includes('machine_types_code_key')) return 'That code is already in use by another machine type.'
-    if (error.message?.includes('machine_types_name_key')) return 'That name is already in use by another machine type.'
-    if (error.message?.includes('serial')) return 'That serial number is already in use.'
+    if (error.message?.includes('machine_types_code_key')) return tr("That code is already in use by another machine type.")
+    if (error.message?.includes('machine_types_name_key')) return tr("That name is already in use by another machine type.")
+    if (error.message?.includes('serial')) return tr("That serial number is already in use.")
     return MESSAGE.duplicate
   }
   if (error.code === '42501' || error.message?.includes('row-level security')) {

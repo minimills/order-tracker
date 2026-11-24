@@ -154,7 +154,7 @@ export default function OrdersBoardPage() {
     const stageChange = stage !== null && stage !== order.stage
     const where = anchor ? `${place === 'before' ? 'above' : 'below'} order ${anchor.order_code}` : ''
     const description = stageChange
-      ? `move to ${label(stage)}${where ? `, ${where}` : ''}`
+      ? tr("move to {{label}}{{value}}", { label: label(stage), value: where ? `, ${where}` : '' })
       : `move ${where}`
     setRequest({ order, stage: stageChange ? stage : null, anchor, place, description })
   }
@@ -323,7 +323,7 @@ export default function OrdersBoardPage() {
             onClose={() => setRequest(null)}
             onDone={(n) => {
               toast.success(
-                tr("Order {{order_code}} moved.{{value}}", { order_code: request.order.order_code, value: n ? tr(" {{n}} serial number{{value}} changed.", { n: n, value: n === 1 ? '' : 's' }) : '' }),
+                tr("Order {{order_code}} moved.{{value}}", { order_code: request.order.order_code, value: n ? tr(" {{count}} serial number changed.", { count: n }) : '' }),
               )
               setRequest(null)
               load()

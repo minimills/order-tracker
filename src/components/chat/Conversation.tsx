@@ -363,7 +363,7 @@ export default function Conversation({
           </div>
 
           <div className="h-5 px-3 text-xs text-slate-500" aria-live="polite">
-            {typers.length > 0 && tr("{{value}} {{value2}} typing…", { value: typers.join(', '), value2: typers.length === 1 ? 'is' : 'are' })}
+            {typers.length > 0 && tr("{{names}} typing…", { names: typers.join(', '), count: typers.length })}
           </div>
 
           {canPost && away.length > 0 && (

@@ -1,6 +1,7 @@
 import { supabase } from './supabase'
 import type { Stage } from './types'
 import { showDims, showNumber, showWeight, weightFromKg, weightUnit, type Units } from './units'
+import { tr } from '../i18n'
 
 /** One row of the crate_report view (sizes in cm, weights in kg). */
 export type CrateRow = {
@@ -61,7 +62,7 @@ export async function loadCrates(orderIds: string[]) {
 
 /** "Carder - Large" or "2 × Picker + Carder - Small"; "(no machines)" if they were all removed. */
 export function contentsLabel(machineTypes: string[]) {
-  if (machineTypes.length === 0) return '(no machines)'
+  if (machineTypes.length === 0) return tr("(no machines)")
   const counts = new Map<string, number>()
   for (const t of machineTypes) counts.set(t, (counts.get(t) ?? 0) + 1)
   return [...counts].map(([name, n]) => (n > 1 ? `${n} × ${name}` : name)).join(' + ')
@@ -69,15 +70,15 @@ export function contentsLabel(machineTypes: string[]) {
 
 /** "Carder - Large LCR-2072 + Picker PCK-0031" */
 export function contentsWithSerials(c: CrateRow) {
-  if (c.machine_types.length === 0) return '(no machines)'
+  if (c.machine_types.length === 0) return tr("(no machines)")
   return contentsLabel(c.machine_types) + (c.serials.length ? ` (${c.serials.join(', ')})` : '')
 }
 
 /** "96 × 48 × 60 in · 1,200 lb · 4 sheets · 6.5 h" – the short line shown under a machine. */
 export function crateLine(c: CrateRow, units: Units) {
   const parts = [
-    showDims(c, units) ?? 'size not entered',
-    c.weight_kg == null ? 'weight not entered' : showWeight(c.weight_kg, units),
+    showDims(c, units) ?? tr("size not entered"),
+    c.weight_kg == null ? tr("weight not entered") : showWeight(c.weight_kg, units),
   ]
   if (c.plywood_sheets != null) parts.push(`${showNumber(c.plywood_sheets)} sheet${c.plywood_sheets === 1 ? '' : 's'}`)
   if (c.build_hours != null) parts.push(`${showNumber(c.build_hours)} h`)
@@ -99,19 +100,19 @@ export function freightSummary(
   lines.push(`Order ${order.order_code} – ${order.customer_name}${where}`)
   const total = crates.reduce((sum, c) => sum + (c.weight_kg ?? 0), 0)
   const missingWeight = crates.filter((c) => c.weight_kg == null).length
-  lines.push(`${crates.length} crate${crates.length === 1 ? '' : 's'}, dimensions L × W × H`)
+  lines.push(tr("{{length}} crate{{value}}, dimensions L × W × H", { length: crates.length, value: crates.length === 1 ? '' : 's' }))
   lines.push('')
   for (const c of crates) {
-    const dims = showDims(c, units) ?? 'size not entered yet'
-    const weight = c.weight_kg == null ? 'weight not entered yet' : showWeight(c.weight_kg, units)
+    const dims = showDims(c, units) ?? tr("size not entered yet")
+    const weight = c.weight_kg == null ? tr("weight not entered yet") : showWeight(c.weight_kg, units)
     lines.push(`Crate ${c.number}: ${dims}, ${weight} – ${contentsLabel(c.machine_types)}`)
   }
   lines.push('')
   lines.push(
-    `Total weight: ${showNumber(weightFromKg(total, units), units === 'imperial' ? 0 : 1)} ${weightUnit(units)}` +
-      (missingWeight ? ` (not counting ${missingWeight} crate${missingWeight === 1 ? '' : 's'} with no weight yet)` : ''),
+    tr("Total weight: {{showNumber}} {{weightUnit}}", { showNumber: showNumber(weightFromKg(total, units), units === 'imperial' ? 0 : 1), weightUnit: weightUnit(units) }) +
+      (missingWeight ? tr(" (not counting {{missingWeight}} crate{{value}} with no weight yet)", { missingWeight: missingWeight, value: missingWeight === 1 ? '' : 's' }) : ''),
   )
-  if (notCrated.length) lines.push(`Not crated yet: ${notCrated.join(', ')}`)
+  if (notCrated.length) lines.push(tr("Not crated yet: {{value}}", { value: notCrated.join(', ') }))
   return lines.join('\n')
 }
 

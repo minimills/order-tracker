@@ -247,7 +247,7 @@ export function TimeGridView({
     if (scroller.current) scroller.current.scrollTop = 7 * HOUR_PX - 8
   }, [first])
 
-  const cols = `3.25rem repeat(${days.length}, minmax(0, 1fr))`
+  const cols = tr("3.25rem repeat({{length}}, minmax(0, 1fr))", { length: days.length })
   const wide = days.length > 1
   return (
     <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">

@@ -43,11 +43,19 @@ export type Incoming = {
 }
 const MONEY = ['product_cost', 'shipping_cost', 'broker_fees', 'taxes', 'customs'] as const
 const MONEY_LABEL: Record<(typeof MONEY)[number], string> = {
-  product_cost: 'Product cost',
-  shipping_cost: 'Shipping cost',
-  broker_fees: 'Broker fees',
+  get product_cost() {
+    return tr("Product cost")
+  },
+  get shipping_cost() {
+    return tr("Shipping cost")
+  },
+  get broker_fees() {
+    return tr("Broker fees")
+  },
   taxes: 'Taxes',
-  customs: 'Customs and duties',
+  get customs() {
+    return tr("Customs and duties")
+  },
 }
 const cad = (n: number) => formatMoney(n, 'CAD')
 
@@ -102,7 +110,7 @@ export default function IncomingShipments() {
   function exportCsv() {
     downloadCsv(
       `incoming-freight-${from}-to-${to}.csv`,
-      ['Received', 'Supplier', 'Description', 'Reference', 'Delivery', 'Carrier', 'Tracking', 'Currency', 'Exchange rate', ...MONEY.map((k) => MONEY_LABEL[k]), 'Total', 'Total CAD', 'Shipping, fees, taxes and customs CAD', 'Notes', 'Archived'],
+      ['Received', 'Supplier', 'Description', 'Reference', 'Delivery', 'Carrier', 'Tracking', 'Currency', tr("Exchange rate"), ...MONEY.map((k) => MONEY_LABEL[k]), 'Total', 'Total CAD', tr("Shipping, fees, taxes and customs CAD"), 'Notes', 'Archived'],
       shown.map((r) => [
         r.received_on ?? '',
         r.supplier,

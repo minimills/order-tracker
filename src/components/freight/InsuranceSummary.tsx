@@ -54,7 +54,7 @@ export default function InsuranceSummary() {
   const inRange = useMemo(() => rows.filter((r) => r.ship_date && r.ship_date >= from && r.ship_date <= to), [rows, from, to])
   const noDate = rows.filter((r) => !r.ship_date).length
   const { groups, byType, total } = useMemo(() => {
-    const ocean = empty('Ocean and air')
+    const ocean = empty(tr("Ocean and air"))
     const inland = empty('Inland')
     const total = empty('Total')
     const types = new Map<string, Line>()
@@ -79,19 +79,19 @@ export default function InsuranceSummary() {
     const line = (l: Line, kind: string) => [kind, l.label, l.shipments, l.cargo.toFixed(2), l.freight.toFixed(2), l.insured.toFixed(2), l.insurance.toFixed(2)]
     downloadCsv(
       `insurance-summary-${from}-to-${to}.csv`,
-      ['Section', 'Group', 'Shipments', 'Cargo value (CAD)', 'Freight (CAD)', `Insured value (CAD, cargo + freight + ${uplift}%)`, 'Insurance paid (CAD)'],
+      ['Section', 'Group', 'Shipments', tr("Cargo value (CAD)"), 'Freight (CAD)', tr("Insured value (CAD, cargo + freight + {{uplift}}%)", { uplift: uplift }), tr("Insurance paid (CAD)")],
       [
         ...groups.map((g) => line(g, 'Summary')),
         line(total, 'Summary'),
-        ...byType.map((t) => line(t, 'By freight type')),
+        ...byType.map((t) => line(t, tr("By freight type"))),
         [],
-        ['Shipments', 'Ship date', 'Customer', 'Invoice #', 'Agent', 'Freight type', 'Ocean / air or inland', 'Entered currency', 'Exchange rate', 'Cargo value (CAD)', 'Freight (CAD)', 'Insured value (CAD)', 'Insurance paid (CAD)'],
+        ['Shipments', tr("Ship date"), 'Customer', 'Invoice #', 'Agent', tr("Freight type"), tr("Ocean / air or inland"), tr("Entered currency"), tr("Exchange rate"), tr("Cargo value (CAD)"), 'Freight (CAD)', tr("Insured value (CAD)"), tr("Insurance paid (CAD)")],
         ...inRange
           .slice()
           .sort((a, b) => (a.ship_date ?? '').localeCompare(b.ship_date ?? ''))
           .map((r) => [
             '', r.ship_date, r.customer_name, r.invoice_number, r.agent_name, r.freight_type,
-            settings.ocean_air_types.includes(r.freight_type) ? 'Ocean / air' : 'Inland',
+            settings.ocean_air_types.includes(r.freight_type) ? tr("Ocean / air") : 'Inland',
             r.currency, r.currency === 'USD' ? Number(r.exchange_rate) : '',
             Number(r.cargo_value_cad).toFixed(2), Number(r.freight_cad).toFixed(2), Number(r.insured_value_cad).toFixed(2), Number(r.insurance_cad).toFixed(2),
           ]),
@@ -158,7 +158,7 @@ export default function InsuranceSummary() {
       </div>
       <p className="text-sm text-slate-600">
         {tr("Saved cost breakdowns shipped")} {showDate(from)} {tr("to")} {showDate(to)}{tr(", in CAD. Ocean and air =")} {oceanTypes || tr("none")}{tr("; everything else is inland. Insured value = cargo value + freight, plus")} {uplift}%.
-        {noDate > 0 && tr(" {{noDate}} {{value}} no ship date and {{value2}} left out.", { noDate: noDate, value: noDate === 1 ? tr("breakdown has") : tr("breakdowns have"), value2: noDate === 1 ? 'is' : 'are' })}
+        {noDate > 0 && tr(" {{count}} breakdown has no ship date and is left out.", { count: noDate })}
       </p>
       {loading ? (
         <p className="py-8 text-center text-slate-500">{tr("Loading…")}</p>

@@ -167,16 +167,16 @@ export default function AutomationsAdminPage() {
               ))}
             </div>
             <div className="flex flex-wrap gap-2">
-              <button type="button" className={buttonClass} disabled={busy} onClick={() => call('set_automation_settings', { p: form }, 'Automation settings saved.')}>
+              <button type="button" className={buttonClass} disabled={busy} onClick={() => call('set_automation_settings', { p: form }, tr("Automation settings saved."))}>
                 {ACTION.save}
               </button>
               {status?.cron &&
                 (status.running ? (
-                  <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => call('stop_automation_schedule', {}, 'Scheduled automations turned off.')}>
+                  <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => call('stop_automation_schedule', {}, tr("Scheduled automations turned off."))}>
                     {tr("Turn Off Scheduled Automations")}
                   </button>
                 ) : (
-                  <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => call('start_automation_schedule', {}, 'Scheduled automations turned on.')}>
+                  <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => call('start_automation_schedule', {}, tr("Scheduled automations turned on."))}>
                     {tr("Turn On Scheduled Automations")}
                   </button>
                 ))}
@@ -215,7 +215,7 @@ export default function AutomationsAdminPage() {
                     type="button"
                     className={secondaryButtonClass}
                     disabled={busy || !reassign[r.id]}
-                    onClick={() => call('admin_reassign_automation', { p_id: r.id, p_email: reassign[r.id] }, 'Automation given to the new owner (turned off until they check it).')}
+                    onClick={() => call('admin_reassign_automation', { p_id: r.id, p_email: reassign[r.id] }, tr("Automation given to the new owner (turned off until they check it)."))}
                   >
                     {tr("Give to Another Person")}
                   </button>
@@ -223,7 +223,7 @@ export default function AutomationsAdminPage() {
                     type="button"
                     className={secondaryButtonClass}
                     disabled={busy}
-                    onClick={async () => (await confirmAction(tr("Archive “{{name}}”?", { name: r.name }), { confirmLabel: ACTION.archive })) && call('archive_automation', { p_id: r.id, p_archived: true }, 'Automation archived.')}
+                    onClick={async () => (await confirmAction(tr("Archive “{{name}}”?", { name: r.name }), { confirmLabel: ACTION.archive })) && call('archive_automation', { p_id: r.id, p_archived: true }, tr("Automation archived."))}
                   >
                     {ACTION.archive}
                   </button>
@@ -289,7 +289,7 @@ export default function AutomationsAdminPage() {
                   type="button"
                   className={secondaryButtonClass}
                   disabled={busy}
-                  onClick={() => call('archive_automation_template', { p_id: t.id, p_archived: !t.archived }, t.archived ? 'Template restored.' : 'Template archived.')}
+                  onClick={() => call('archive_automation_template', { p_id: t.id, p_archived: !t.archived }, t.archived ? tr("Template restored.") : tr("Template archived."))}
                 >
                   {t.archived ? ACTION.restore : ACTION.archive}
                 </button>
@@ -315,7 +315,7 @@ export default function AutomationsAdminPage() {
                 const r = rows.find((x) => x.id === tplFrom)
                 if (!r) return
                 const body = { ...ruleBody(r), id: undefined }
-                if (await call('save_automation_template', { p: body }, `“${r.name}” saved as a template.`)) setTplFrom('')
+                if (await call('save_automation_template', { p: body }, tr("“{{name}}” saved as a template.", { name: r.name }))) setTplFrom('')
               }}
             >
               {tr("Save as Template")}

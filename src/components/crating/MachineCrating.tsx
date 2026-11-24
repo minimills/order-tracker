@@ -38,12 +38,12 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
   const [busy, setBusy] = useState(false)
   const mine = crates.filter((c) => c.machine_ids.includes(machine.id))
   const crated = mine.length > 0
-  const labelOf = (id: string) => orderMachines.find((m) => m.id === id)?.label ?? 'another machine'
+  const labelOf = (id: string) => orderMachines.find((m) => m.id === id)?.label ?? tr("another machine")
 
   async function markNotCrated() {
     if (!supabase) return
     const ok = await confirmAction(
-      tr("Mark {{label}} as not crated? Its crating details ({{length}} crate{{value}}) are removed. A crate it shares with other machines is kept for them.", { label: machine.label, length: mine.length, value: mine.length === 1 ? '' : 's' }),
+      tr("Mark {{label}} as not crated? Its crating details ({{crates}}) are removed. A crate it shares with other machines is kept for them.", { label: machine.label, crates: tr("{{count}} crate", { count: mine.length }) }),
     )
     if (!ok) return
     setBusy(true)

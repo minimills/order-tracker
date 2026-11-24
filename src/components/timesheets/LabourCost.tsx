@@ -103,14 +103,14 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
   const { byEmp, byDept, company } = useMemo(() => {
     const e = new Map<string, Sum>()
     const d = new Map<string, Sum>()
-    const c = empty('Company total', '', '', '', settings.hours_per_day)
+    const c = empty(tr("Company total"), '', '', '', settings.hours_per_day)
     for (const r of yearRows) {
-      const rate = r.pay_type === 'salaried' ? `${cad(Number(r.annual_salary))} a year` : r.hourly_rate != null ? `${cad(Number(r.hourly_rate))} an hour` : 'No pay rate'
-      const s = e.get(r.employee_id) ?? empty(r.employee_name, r.department_name ?? 'No department', r.pay_type, rate, settings.hours_per_day)
+      const rate = r.pay_type === 'salaried' ? `${cad(Number(r.annual_salary))} a year` : r.hourly_rate != null ? tr("{{cad}} an hour", { cad: cad(Number(r.hourly_rate)) }) : tr("No pay rate")
+      const s = e.get(r.employee_id) ?? empty(r.employee_name, r.department_name ?? tr("No department"), r.pay_type, rate, settings.hours_per_day)
       s.rate = rate
       add(s, r, settings.hours_per_day)
       e.set(r.employee_id, s)
-      const dk = r.department_name ?? 'No department'
+      const dk = r.department_name ?? tr("No department")
       const ds = d.get(dk) ?? empty(dk, dk, '', '', settings.hours_per_day)
       add(ds, r, settings.hours_per_day)
       d.set(dk, ds)
@@ -132,7 +132,7 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
   const years = Array.from({ length: 6 }, (_, i) => thisYear - i)
 
   function exportCsv() {
-    const head = ['Employee', 'Department', 'Pay type', 'Pay rate', 'Weeks', 'Hours worked', 'Paid regular h', 'Paid overtime h', 'Vacation h', 'Sick h', 'Stat holiday h', 'Regular $', 'Overtime $', 'Vacation $', 'Sick $', 'Stat holiday $', 'Salary $', 'Employer costs $', 'Total $', 'Per hour', 'Per day', 'Per week', 'Per month', 'Per year']
+    const head = ['Employee', 'Department', tr("Pay type"), tr("Pay rate"), 'Weeks', tr("Hours worked"), tr("Paid regular h"), tr("Paid overtime h"), 'Vacation h', 'Sick h', tr("Stat holiday h"), 'Regular $', 'Overtime $', 'Vacation $', 'Sick $', tr("Stat holiday $"), 'Salary $', tr("Employer costs $"), 'Total $', tr("Per hour"), tr("Per day"), tr("Per week"), tr("Per month"), tr("Per year")]
     const line = (s: Sum) => {
       const p = per(s)
       return [s.name, s.dept, s.payType, s.rate, s.weeks.size, ...HOURS.map((k) => Math.round(s[k] * 100) / 100), ...MONEY.map((k) => Math.round(s[k] * 100) / 100), ...[p.hour, p.day, p.week, p.month, p.year].map((x) => Math.round(x * 100) / 100)]

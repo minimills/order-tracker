@@ -248,7 +248,7 @@ function ChartWidget({ widget, data, print, onValue }: { widget: Widget; data: D
   if (!s.data) return <Loading />
   const { now, before } = s.data as { now: ChartResult; before: ChartResult | null }
   const colour = colourHex(widget.colour)
-  const sub = def.now ? 'Now' : `${rangeText(cfg)}${before ? ', compared with the same dates last year' : ''}`
+  const sub = def.now ? 'Now' : `${rangeText(cfg)}${before ? tr(", compared with the same dates last year") : ''}`
   if (before && (display === 'column' || display === 'line' || display === 'bar')) {
     const labels = [...new Set([...before.points.map((p) => p.label), ...now.points.map((p) => p.label)])]
     const points = labels.map((l) => ({ key: l, label: l, long: now.points.find((p) => p.label === l)?.long ?? l, a: now.points.find((p) => p.label === l)?.value ?? 0, b: before.points.find((p) => p.label === l)?.value ?? 0 }))
@@ -275,8 +275,8 @@ function ChartWidget({ widget, data, print, onValue }: { widget: Widget; data: D
 // ---------------------------------------------------------------------------
 function delayWords(d: number) {
   const r = Math.round(d * 10) / 10
-  if (r === 0) return 'On time'
-  return r > 0 ? `${r} day${r === 1 ? '' : 's'} late` : `${-r} day${r === -1 ? '' : 's'} early`
+  if (r === 0) return tr("On time")
+  return r > 0 ? tr("{{count}} day late", { count: r }) : tr("{{count}} day early", { count: -r })
 }
 
 function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData; onValue?: OnValue }) {
@@ -320,7 +320,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
   )
   const ul = (items: ReactNode[], empty: string) => (items.length ? <ul className="divide-y divide-slate-100 text-sm">{items.slice(0, limit)}</ul> : <Empty>{empty}</Empty>)
 
-  if (kind === 'my_tasks') return ul(d.tasks!.map(taskRow), 'No open cards are assigned to you.')
+  if (kind === 'my_tasks') return ul(d.tasks!.map(taskRow), tr("No open cards are assigned to you."))
   if (kind === 'overdue') {
     const items = [
       ...d.tasks!.map(taskRow),
@@ -345,7 +345,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
         </li>
       )),
     ]
-    return ul(items, 'Nothing is overdue.')
+    return ul(items, tr("Nothing is overdue."))
   }
   if (kind === 'payments_due') {
     return ul(
@@ -366,7 +366,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
           </Row>
         </li>
       )),
-      'No payments are due.',
+      tr("No payments are due."),
     )
   }
   const orders = d.orders!
@@ -387,14 +387,14 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
               <span className="shrink-0 text-right">
                 <span className="block">{showDate(o.expected_ship_date)}</span>
                 <span className={`block text-xs ${days < 0 ? 'font-medium text-red-700' : days <= 14 ? 'text-amber-700' : 'text-slate-500'}`}>
-                  {days < 0 ? tr("{{value}} day{{value2}} ago", { value: -days, value2: days === -1 ? '' : 's' }) : days === 0 ? tr("Today") : tr("in {{days}} day{{value}}", { days: days, value: days === 1 ? '' : 's' })}
+                  {days < 0 ? tr("{{count}} day ago", { count: -days }) : days === 0 ? tr("Today") : tr("in {{count}} day", { count: days })}
                 </span>
               </span>
             </Row>
           </li>
         )
       }),
-      'No orders have an expected ship date yet.',
+      tr("No orders have an expected ship date yet."),
     )
   }
   if (kind === 'latest_shipped') {
@@ -418,7 +418,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
           </Row>
         </li>
       )),
-      'No orders have shipped yet.',
+      tr("No orders have shipped yet."),
     )
   }
   // new orders in the dates chosen
@@ -515,7 +515,7 @@ function CalendarToday({ data }: { data: DashData }) {
   const s = useLoad(() => data.calendarToday(me), [data, me])
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
-  const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString(currentLang(), { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' }) : 'All day')
+  const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString(currentLang(), { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' }) : tr("All day"))
   const list = [...s.data].sort((a, b) => (a.start_at ?? '').localeCompare(b.start_at ?? ''))
   return list.length ? (
     <ul className="divide-y divide-slate-100 text-sm">

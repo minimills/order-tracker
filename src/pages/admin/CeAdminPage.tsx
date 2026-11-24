@@ -15,7 +15,7 @@ import { tr } from '../../i18n'
 
 type Template = { id: string; key: 'ce_ec' | 'ce_eu'; name: string; title: string; part1: string; part2: string }
 
-const PLACEHOLDER_HINT = '{title}, {customer_company}, {customer_name}, {machines} (for example CWR 4175), {machines_long}, {order_number}, {sender_name}, {company_name}'
+const PLACEHOLDER_HINT = () => tr('{title}, {customer_company}, {customer_name}, {machines} (for example CWR 4175), {machines_long}, {order_number}, {sender_name}, {company_name}')
 
 /** Admin → Declaration of Conformity: settings, the EC and EU templates, and the register. */
 export default function CeAdminPage() {
@@ -171,7 +171,7 @@ export default function CeAdminPage() {
           <Field label={tr("Email subject")} htmlFor="ce-subject-default" className="sm:col-span-2">
             <input id="ce-subject-default" className={inputClass} value={s.email_subject} onChange={set('email_subject')} />
           </Field>
-          <Field label={tr("Email message")} className="sm:col-span-2" hint={tr("Placeholders: {{PLACEHOLDER_HINT}}", { PLACEHOLDER_HINT: PLACEHOLDER_HINT })}>
+          <Field label={tr("Email message")} className="sm:col-span-2" hint={tr("Placeholders: {{PLACEHOLDER_HINT}}", { PLACEHOLDER_HINT: PLACEHOLDER_HINT() })}>
             <RichTextEditor key={`msg-${version}`} label={tr("Email message")} minHeight="8rem" value={s.email_message} onChange={(email_message) => setS((x) => (x ? { ...x, email_message } : x))} />
           </Field>
         </div>

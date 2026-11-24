@@ -67,7 +67,7 @@ export default function EventsPanel({ highlightId, onMissing }: { highlightId: s
   }, [highlightId, list])
 
   const audienceText = (e: CompanyEvent) =>
-    e.audience_everyone ? 'Everyone' : audience.filter((a) => a.event_id === e.id).map(choices.nameOf).join(', ') || 'Chosen people'
+    e.audience_everyone ? 'Everyone' : audience.filter((a) => a.event_id === e.id).map(choices.nameOf).join(', ') || tr("Chosen people")
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label={tr("Upcoming events")}>
@@ -153,7 +153,7 @@ function EventItem({
   const answer = (r: Rsvp) => run(() => supabase!.rpc('set_event_rsvp', { p_event: e.id, p_response: e.my_response === r ? null : r }))
   async function archive() {
     if (!e.archived && !(await confirmAction(confirmText.archive('this event'), { confirmLabel: ACTION.archive }))) return
-    await run(() => supabase!.rpc('archive_company_event', { p_event: e.id, p_archived: !e.archived }), e.archived ? 'Event restored.' : 'Event archived.')
+    await run(() => supabase!.rpc('archive_company_event', { p_event: e.id, p_archived: !e.archived }), e.archived ? tr("Event restored.") : tr("Event archived."))
   }
 
   return (

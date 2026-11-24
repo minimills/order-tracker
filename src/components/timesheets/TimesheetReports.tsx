@@ -10,7 +10,7 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { loadBalances, loadWeekRows, showHours, useEmployees, type Balances, type WeekRow } from '../../lib/timesheets'
 import { useDepartments } from '../../lib/useDepartments'
-import { tr } from '../../i18n'
+import { tk, tr } from '../../i18n'
 
 const VIEWS = [
   { key: 'hours', get label() {
@@ -32,17 +32,17 @@ const th = 'px-2 py-1.5 text-left font-medium'
 const td = 'px-2 py-1.5'
 const r2 = (n: number) => Math.round(n * 100) / 100
 const HOUR_COLS = [
-  ['worked', 'Worked'],
-  ['regular', 'Regular'],
-  ['overtime', 'Overtime'],
-  ['paid_regular', 'Paid regular'],
-  ['paid_overtime', 'Paid overtime'],
-  ['banked_used', 'Banked used'],
-  ['banked_in', 'Banked (put in)'],
-  ['vacation', 'Vacation'],
-  ['sick', 'Sick'],
-  ['stat', 'Stat holiday'],
-  ['unpaid', 'Unpaid'],
+  ['worked', tk('Worked')],
+  ['regular', tk('Regular')],
+  ['overtime', tk('Overtime')],
+  ['paid_regular', tk('Paid regular')],
+  ['paid_overtime', tk('Paid overtime')],
+  ['banked_used', tk('Banked used')],
+  ['banked_in', tk('Banked (put in)')],
+  ['vacation', tk('Vacation')],
+  ['sick', tk('Sick')],
+  ['stat', tk('Stat holiday')],
+  ['unpaid', tk('Unpaid')],
 ] as const
 
 /** Timesheet reports: hours per employee per week / month / year, overtime, banked hours and leave taken; CSV for payroll. */
@@ -87,7 +87,7 @@ export default function TimesheetReports() {
   const keep = (id: string) => (!empFilter || id === empFilter) && (!deptFilter || empDept.get(id) === deptFilter)
   const shown = rows.filter((r) => keep(r.employee_id) && (r.entries > 0 || r.stat > 0 || r.credited !== 0))
   const period = (ws: string) => (by === 'week' ? ws : by === 'month' ? ws.slice(0, 7) : ws.slice(0, 4))
-  const periodLabel = (p: string) => (by === 'week' ? `Week of ${showDate(p)}` : by === 'month' ? showDate(`${p}-01`, 'MMMM yyyy') : p)
+  const periodLabel = (p: string) => (by === 'week' ? tr("Week of {{showDate}}", { showDate: showDate(p) }) : by === 'month' ? showDate(`${p}-01`, 'MMMM yyyy') : p)
 
   const grouped = (() => {
     const m = new Map<string, Record<string, number> & { employee_id: string; period: string; imported: number; review: number; choices: string[] }>()
@@ -97,7 +97,7 @@ export default function TimesheetReports() {
       for (const [k] of HOUR_COLS) g[k] += k === 'banked_in' ? r.earned_regular + r.earned_overtime : Number(r[k as keyof WeekRow])
       if (r.imported) g.imported++
       if (r.needs_review) g.review++
-      if (r.ot_choice && r.over_by_banked > 0) g.choices.push(`${showDate(r.week_start, 'MMM d')}: ${r.ot_choice === 'regular' ? 'regular pay' : 'overtime'} (${r.ot_choice_by_name ?? '—'})`)
+      if (r.ot_choice && r.over_by_banked > 0) g.choices.push(`${showDate(r.week_start, 'MMM d')}: ${r.ot_choice === 'regular' ? tr("regular pay") : 'overtime'} (${r.ot_choice_by_name ?? '—'})`)
       m.set(key, g)
     }
     return [...m.values()].sort((a, b) => (empName.get(a.employee_id) ?? '').localeCompare(empName.get(b.employee_id) ?? '') || a.period.localeCompare(b.period))
@@ -116,32 +116,32 @@ export default function TimesheetReports() {
     if (view === 'hours') {
       downloadCsv(
         `timesheet-hours-${stamp}.csv`,
-        ['Employee', 'Period', ...HOUR_COLS.map(([, l]) => l), 'Imported weeks', 'Weeks needing review', 'Banked time over the threshold'],
+        ['Employee', 'Period', ...HOUR_COLS.map(([, l]) => tr(l)), tr("Imported weeks"), tr("Weeks needing review"), tr("Banked time over the threshold")],
         grouped.map((g) => [empName.get(g.employee_id) ?? '', periodLabel(g.period), ...HOUR_COLS.map(([k]) => r2(g[k])), g.imported, g.review, g.choices.join('; ')]),
       )
     } else if (view === 'overtime') {
       downloadCsv(
         `timesheet-overtime-${stamp}.csv`,
-        ['Employee', 'Week of', 'Worked', 'Banked used', 'Overtime', 'Overtime banked', 'Paid overtime', 'Extra hours from banked time', 'Paid as', 'Chosen by', 'Chosen on'],
-        overtimeRows.map((r) => [r.employee_name, r.week_start, r.worked, r.banked_used, r.overtime, r.earned_overtime, r.paid_overtime, r.over_by_banked, r.over_by_banked > 0 ? (r.ot_choice === 'regular' ? 'Regular pay' : 'Overtime') : '', r.ot_choice_by_name ?? '', r.ot_choice_at?.slice(0, 10) ?? '']),
+        ['Employee', tr("Week of"), 'Worked', tr("Banked used"), 'Overtime', tr("Overtime banked"), tr("Paid overtime"), tr("Extra hours from banked time"), tr("Paid as"), tr("Chosen by"), tr("Chosen on")],
+        overtimeRows.map((r) => [r.employee_name, r.week_start, r.worked, r.banked_used, r.overtime, r.earned_overtime, r.paid_overtime, r.over_by_banked, r.over_by_banked > 0 ? (r.ot_choice === 'regular' ? tr("Regular pay") : 'Overtime') : '', r.ot_choice_by_name ?? '', r.ot_choice_at?.slice(0, 10) ?? '']),
       )
     } else if (view === 'banked') {
       downloadCsv(
         `timesheet-banked-${stamp}.csv`,
-        ['Employee', 'Date', 'What', 'From', 'Hours', 'Bank change', 'Balance', 'Note', 'By'],
+        ['Employee', 'Date', 'What', 'From', 'Hours', tr("Bank change"), 'Balance', 'Note', 'By'],
         ledgerRows.map((l) => [empName.get(l.employee_id) ?? '', l.work_date, LEDGER_WORDS[l.kind] ?? l.kind, l.source ?? '', l.hours, l.change, l.balance, l.note ?? '', l.by_name ?? '']),
       )
     } else {
       downloadCsv(
         `timesheet-leave-${stamp}.csv`,
-        ['Employee', 'Year', 'Vacation hours', 'Vacation days', 'Vacation entitlement', 'Sick hours', 'Sick days', 'Sick entitlement', 'Banked time used (hours)', 'Unpaid (hours)', 'Stat holiday (hours)'],
+        ['Employee', 'Year', tr("Vacation hours"), tr("Vacation days"), tr("Vacation entitlement"), tr("Sick hours"), tr("Sick days"), tr("Sick entitlement"), tr("Banked time used (hours)"), tr("Unpaid (hours)"), tr("Stat holiday (hours)")],
         leaveRows.map((l) => [l.name, l.year, r2(l.vacation), r2(l.vacation / l.hpd), l.b?.vacation.entitlement ?? '', r2(l.sick), r2(l.sick / l.hpd), l.b?.sick.entitlement ?? '', r2(l.banked), r2(l.unpaid), r2(l.stat)]),
       )
     }
   }
 
   const overtimeRows = shown.filter((r) => r.overtime > 0 || r.over_by_banked > 0)
-  const LEDGER_WORDS: Record<string, string> = { earn: 'Banked', import: 'Banked (imported)', adjust: 'Correction', used: 'Used' }
+  const LEDGER_WORDS: Record<string, string> = { earn: 'Banked', import: tr("Banked (imported)"), adjust: 'Correction', used: 'Used' }
   const ledgerRows = (() => {
     const bal = new Map<string, number>()
     const out = ledger.map((l) => {
@@ -244,7 +244,7 @@ export default function TimesheetReports() {
                 <th className={th}>{by === 'week' ? tr("Week") : by === 'month' ? tr("Month") : tr("Year")}</th>
                 {HOUR_COLS.map(([k, l]) => (
                   <th key={k} className={`${th} text-right`}>
-                    {l}
+                    {tr(l)}
                   </th>
                 ))}
                 <th className={th}>{tr("Notes")}</th>

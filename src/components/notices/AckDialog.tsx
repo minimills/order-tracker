@@ -32,7 +32,7 @@ export default function AckDialog({ notice, onClose }: { notice: Notice; onClose
     setBusy(false)
     if (e) return toast.error(friendlyError(e))
     const n = Number(data ?? 0)
-    toast.success(n === 0 ? tr("Nobody needed a reminder.") : tr("Reminder sent to {{n}} {{value}}.", { n: n, value: n === 1 ? 'person' : 'people' }))
+    toast.success(n === 0 ? tr("Nobody needed a reminder.") : tr("Reminder sent to {{count}} person.", { count: n }))
     onClose()
   }
 

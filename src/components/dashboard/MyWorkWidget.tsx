@@ -218,7 +218,7 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
     const machine = c.card_kind === 'machine' && !it
     const mayPress = !print && work.editable.has(c.board_id)
     const disabled = busy === (it?.id ?? c.id)
-    const status = !started ? 'Not started' : paused ? `Paused at ${formatDuration(activeSeconds(started, finished, ps))}` : `Running for ${formatDuration(activeSeconds(started, finished, ps))}`
+    const status = !started ? tr("Not started") : paused ? tr("Paused at {{formatDuration}}", { formatDuration: formatDuration(activeSeconds(started, finished, ps)) }) : tr("Running for {{formatDuration}}", { formatDuration: formatDuration(activeSeconds(started, finished, ps)) })
     return (
       <Can permission="boards.card.timing">
         <span className={`text-xs ${paused ? 'font-medium text-amber-800' : started ? 'text-green-800' : 'text-slate-500'}`}>
@@ -249,7 +249,7 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
                   type="button"
                   className={small}
                   disabled={disabled}
-                  onClick={() => (it ? setItem(it, { finished_at: now() }, 'Task completed.') : setCard(c, { finished_at: now() }, machine ? 'Stage finished.' : 'Card finished.'))}
+                  onClick={() => (it ? setItem(it, { finished_at: now() }, 'Task completed.') : setCard(c, { finished_at: now() }, machine ? tr("Stage finished.") : tr("Card finished.")))}
                 >
                   {machine ? tr("Finish Stage") : ACTION.finish}
                 </button>
@@ -313,7 +313,7 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
                   ))}
                   {tasks.length > 6 && (
                     <li className="text-xs text-slate-500">
-                      {tasks.length - 6} {tr("more open task")}{tasks.length - 6 === 1 ? '' : 's'}
+                      {tr("{{count}} more open task", { count: tasks.length - 6 })}
                       {open && (
                         <>
                           {' · '}

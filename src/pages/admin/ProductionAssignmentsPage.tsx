@@ -16,7 +16,13 @@ type Person = { email: string; name: string }
 type MachineType = { id: string; name: string }
 type Draft = { kind: 'user' | 'department'; who: string; type: string; applies: Rule['applies_to'] }
 
-const APPLIES: Record<Rule['applies_to'], string> = { both: 'Card and its tasks', card: 'Card only', tasks: 'Tasks only' }
+const APPLIES: Record<Rule['applies_to'], string> = { get both() {
+    return tr("Card and its tasks")
+  }, get card() {
+    return tr("Card only")
+  }, get tasks() {
+    return tr("Tasks only")
+  } }
 const blank: Draft = { kind: 'user', who: '', type: '', applies: 'both' }
 
 /**
@@ -58,7 +64,7 @@ export default function ProductionAssignmentsPage() {
   const nameOf = (r: Rule) =>
     r.assignee_type === 'user'
       ? (people.find((p) => p.email === r.user_email)?.name ?? r.user_email ?? '')
-      : `${departments.find((d) => d.id === r.department_id)?.name ?? 'Department'} (everyone in it)`
+      : tr("{{value}} (everyone in it)", { value: departments.find((d) => d.id === r.department_id)?.name ?? tr("Department") })
 
   async function add(stageId: string) {
     if (!supabase) return
@@ -100,7 +106,7 @@ export default function ProductionAssignmentsPage() {
     const { data, error } = await supabase.rpc('apply_production_assignments')
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(tr("Defaults applied to {{data}} machine card{{value}}.", { data: data, value: data === 1 ? '' : 's' }))
+    toast.success(tr("Defaults applied to {{count}} machine card.", { count: data }))
   }
 
   return (

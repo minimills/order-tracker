@@ -46,9 +46,9 @@ function rpcArgs(r: MoveRequest, shipDate: string | null, markBuilt: boolean) {
 }
 
 function notCratedText(notCrated: number, total: number) {
-  if (total === 1) return 'The machine on this order is not marked crated.'
-  if (notCrated >= total) return `None of the ${total} machines on this order are marked crated.`
-  return `${notCrated} of the ${total} machines on this order ${notCrated === 1 ? 'is' : 'are'} not marked crated.`
+  if (total === 1) return tr("The machine on this order is not marked crated.")
+  if (notCrated >= total) return tr("None of the {{total}} machines on this order are marked crated.", { total: total })
+  return tr("{{notCrated}} of the {{total}} machines on this order {{value}} not marked crated.", { notCrated: notCrated, total: total, value: notCrated === 1 ? tr("is") : tr("are") })
 }
 
 /**

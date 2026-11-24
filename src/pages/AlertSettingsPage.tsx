@@ -44,10 +44,10 @@ export default function AlertSettingsPage() {
     const e: Partial<Draft> = {}
     for (const key of Object.keys(d) as (keyof Draft)[]) {
       const n = Number(d[key])
-      if (!/^\d+$/.test(d[key].trim()) || n > 365) e[key] = 'Enter a whole number from 0 to 365.'
+      if (!/^\d+$/.test(d[key].trim()) || n > 365) e[key] = tr("Enter a whole number from 0 to 365.")
     }
     if (!e.payment_urgent_days && !e.payment_warn_days && Number(d.payment_urgent_days) > Number(d.payment_warn_days))
-      e.payment_urgent_days = 'This should not be more than the first warning.'
+      e.payment_urgent_days = tr("This should not be more than the first warning.")
     return e
   }
 

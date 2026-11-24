@@ -334,7 +334,7 @@ export function validate(drafts: Draft[], existingKeys: Set<string>, daysWithHou
     const p: Draft['problems'] = []
     const computed = rowHours(d)
     const importKey = `ts-${fingerprint([d.employee_id, d.date, d.start, d.end, d.breakMin, d.total, d.bankedEarned, d.bankedUsed, d.vacation, d.sick].join('|'))}`
-    if (!d.employee_id) p.push({ level: 'error', text: d.employeeText ? `Unknown employee “${d.employeeText}”` : 'No employee' })
+    if (!d.employee_id) p.push({ level: 'error', text: d.employeeText ? tr("Unknown employee “{{employeeText}}”", { employeeText: d.employeeText }) : tr("No employee") })
     if (!d.date) p.push({ level: 'error', get text() {
     return tr("Missing date")
   } })
@@ -345,9 +345,9 @@ export function validate(drafts: Draft[], existingKeys: Set<string>, daysWithHou
     return tr("The break is longer than the time worked")
   } })
     if (computed != null && has(d.total) && Math.abs(computed - Number(d.total)) > 0.05) {
-      p.push({ level: 'warning', text: `Total does not add up: the sheet says ${d.total}, start, end and break give ${computed}` })
+      p.push({ level: 'warning', text: tr("Total does not add up: the sheet says {{total}}, start, end and break give {{computed}}", { total: d.total, computed: computed }) })
     }
-    if (computed != null && computed > 16) p.push({ level: 'warning', text: `${computed} hours in one day` })
+    if (computed != null && computed > 16) p.push({ level: 'warning', text: tr("{{computed}} hours in one day", { computed: computed }) })
     const nothing = computed == null && !has(d.total) && !has(d.bankedEarned) && !has(d.bankedUsed) && !has(d.vacation) && !has(d.sick)
     if (nothing) p.push({ level: 'info', get text() {
     return tr("No hours on this row")
@@ -355,7 +355,7 @@ export function validate(drafts: Draft[], existingKeys: Set<string>, daysWithHou
     if (existingKeys.has(importKey)) p.push({ level: 'info', get text() {
     return tr("Already imported")
   } })
-    else if (seen.has(importKey)) p.push({ level: 'warning', text: `The same as row ${seen.get(importKey)}` })
+    else if (seen.has(importKey)) p.push({ level: 'warning', text: tr("The same as row {{value}}", { value: seen.get(importKey) }) })
     else if (d.employee_id && d.date && daysWithHours.get(`${d.employee_id}|${d.date}`)?.some((s) => s !== 'import')) {
       p.push({ level: 'warning', get text() {
     return tr("This day already has hours entered in the app")

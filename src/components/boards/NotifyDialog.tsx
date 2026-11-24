@@ -29,7 +29,7 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
   }, [load])
 
   const eventText = (r: NotifyRule) => {
-    if (r.event === 'card_moved') return r.stage_id ? `A card is moved to ${stages.find((s) => s.id === r.stage_id)?.name ?? 'a removed stage'}` : 'A card is moved (any stage)'
+    if (r.event === 'card_moved') return r.stage_id ? tr("A card is moved to {{value}}", { value: stages.find((s) => s.id === r.stage_id)?.name ?? tr("a removed stage") }) : tr("A card is moved (any stage)")
     return NOTIFY_EVENTS.find((e) => e.value === r.event)?.label ?? r.event
   }
 

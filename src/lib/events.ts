@@ -60,7 +60,9 @@ export const EVENT_COLOURS: { value: EventColour; label: string; stripe: string 
 ]
 export const stripeOf = (c: EventColour | null) => EVENT_COLOURS.find((x) => x.value === c)?.stripe ?? '#cbd5e1'
 
-export const RSVP_LABEL: Record<Rsvp, string> = { going: 'Going', maybe: 'Maybe', not_going: 'Not going' }
+export const RSVP_LABEL: Record<Rsvp, string> = { going: 'Going', maybe: 'Maybe', get not_going() {
+    return tr("Not going")
+  } }
 
 /** Reminder choices (minutes before the start). */
 export const REMINDER_CHOICES: { minutes: number; label: string }[] = [
@@ -91,18 +93,18 @@ export function countdown(e: Pick<CompanyEvent, 'all_day' | 'starts_at' | 'start
   const time = !e.all_day && e.starts_at ? ` ${showTime(e.starts_at)}` : ''
   if (e.start_date <= today && e.end_date >= today) {
     if (e.start_date === today) return { text: `Today${time}`, today: true }
-    return { text: `Now, until ${showDate(e.end_date, 'MMM d')}`, today: true }
+    return { text: tr("Now, until {{showDate}}", { showDate: showDate(e.end_date, 'MMM d') }), today: true }
   }
   const n = dayDiff(today, e.start_date)
   if (n === 1) return { text: `Tomorrow${time}`, today: false }
   if (n < 0) return { text: showDate(e.start_date, 'MMM d, yyyy'), today: false }
-  return { text: `in ${n} days`, today: false }
+  return { text: tr("in {{n}} days", { n: n }), today: false }
 }
 
 /** "Thu, Nov 12, 2:00 – 4:00 p.m." / "Mon, Nov 16 – Wed, Nov 18" / "Fri, Nov 20 (all day)". */
 export function whenText(e: Pick<CompanyEvent, 'all_day' | 'starts_at' | 'ends_at' | 'start_date' | 'end_date'>) {
   const day = (iso: string) => showDate(iso, 'EEE, MMM d')
-  if (e.all_day) return e.start_date === e.end_date ? `${day(e.start_date)} (all day)` : `${day(e.start_date)} – ${day(e.end_date)}`
+  if (e.all_day) return e.start_date === e.end_date ? tr("{{day}} (all day)", { day: day(e.start_date) }) : `${day(e.start_date)} – ${day(e.end_date)}`
   const start = `${day(e.start_date)}, ${showTime(e.starts_at!)}`
   if (!e.ends_at) return start
   return e.start_date === e.end_date ? `${start} – ${showTime(e.ends_at)}` : `${start} – ${day(e.end_date)}, ${showTime(e.ends_at)}`

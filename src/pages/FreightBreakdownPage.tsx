@@ -116,10 +116,10 @@ export default function FreightBreakdownPage() {
     const got = ['customer', 'currency']
     if (o.quote_number) got.push('quote #')
     if (o.invoice_number) got.push('invoice #')
-    if (o.order_total != null) got.push('invoice total')
-    if (orderFreightType(o.freight_type)) got.push('freight type')
-    if (o.actual_ship_date) got.push('ship date')
-    if (o.crating_hours != null) got.push('crating hours and plywood sheets')
+    if (o.order_total != null) got.push(tr("invoice total"))
+    if (orderFreightType(o.freight_type)) got.push(tr("freight type"))
+    if (o.actual_ship_date) got.push(tr("ship date"))
+    if (o.crating_hours != null) got.push(tr("crating hours and plywood sheets"))
     setFilled(got)
     return {
       ...base,

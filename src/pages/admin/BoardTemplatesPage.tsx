@@ -22,7 +22,7 @@ const toDraft = (t: BoardTemplate | null): Draft =>
         labels: t.labels.map((l) => `${l.name} ${l.colour}`).join('\n'),
         checklists: t.checklists.map((c) => [c.title, ...c.items.map((i) => `- ${i}`)].join('\n')).join('\n\n'),
       }
-    : { id: null, name: '', description: '', colour: BOARD_COLOURS[0], stages: 'To do\nDoing\nDone', labels: '', checklists: '' }
+    : { id: null, name: '', description: '', colour: BOARD_COLOURS[0], stages: tr("To do\nDoing\nDone"), labels: '', checklists: '' }
 
 /** "Urgent #dc2626" per line → labels (colour optional). */
 function parseLabels(text: string) {

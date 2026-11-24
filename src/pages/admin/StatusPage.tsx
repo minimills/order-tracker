@@ -63,7 +63,7 @@ function rows(s: Status | null, db: { ok: boolean; ms: number; error?: string },
   },
     icon: 'records',
     health: !db.ok ? 'down' : db.ms > 2500 ? 'degraded' : 'operational',
-    detail: !db.ok ? `Not answering: ${db.error ?? 'no reply'}` : `Answered in ${db.ms} ms${s ? ` · PostgreSQL ${s.database.version.split(' ')[0]}` : ''}${db.ms > 2500 ? ' (slow)' : ''}`,
+    detail: !db.ok ? tr("Not answering: {{value}}", { value: db.error ?? tr("no reply") }) : tr("Answered in {{ms}} ms{{value}}{{value2}}", { ms: db.ms, value: s ? tr(" · PostgreSQL {{value}}", { value: s.database.version.split(' ')[0] }) : '', value2: db.ms > 2500 ? tr(" (slow)") : '' }),
     checkedAt: at,
   })
   r.push({
@@ -73,7 +73,7 @@ function rows(s: Status | null, db: { ok: boolean; ms: number; error?: string },
   },
     icon: 'lock',
     health: auth.ok === null ? 'degraded' : auth.ok ? 'operational' : 'down',
-    detail: auth.ok ? 'Sign-in service is answering.' : auth.ok === null ? 'Checking…' : `Sign-in service is not answering${auth.error ? `: ${auth.error}` : '.'}`,
+    detail: auth.ok ? tr("Sign-in service is answering.") : auth.ok === null ? 'Checking…' : tr("Sign-in service is not answering{{value}}", { value: auth.error ? `: ${auth.error}` : '.' }),
     checkedAt: at,
   })
   if (!s) return r
@@ -87,8 +87,8 @@ function rows(s: Status | null, db: { ok: boolean; ms: number; error?: string },
     health:
       !e.ever_sent && !e.failed_24h ? 'not_set_up' : e.failed_24h && !e.sent_24h ? 'down' : e.failed_24h || e.waiting ? 'degraded' : 'operational',
     detail: !e.ever_sent && !e.failed_24h
-      ? 'No email has been sent yet. Set it up in Admin → Email.'
-      : `Last 24 hours: ${e.sent_24h} sent, ${e.failed_24h} failed${e.waiting ? `, ${e.waiting} waiting longer than 15 minutes` : ''}. Last sent ${when(e.last_sent_at)}.`,
+      ? tr("No email has been sent yet. Set it up in Admin → Email.")
+      : tr("Last 24 hours: {{sent_24h}} sent, {{failed_24h}} failed{{value}}. Last sent {{when}}.", { sent_24h: e.sent_24h, failed_24h: e.failed_24h, value: e.waiting ? tr(", {{waiting}} waiting longer than 15 minutes", { waiting: e.waiting }) : '', when: when(e.last_sent_at) }),
     checkedAt: at,
   })
   const p = s.push
@@ -99,7 +99,7 @@ function rows(s: Status | null, db: { ok: boolean; ms: number; error?: string },
   },
     icon: 'phone',
     health: !p.devices && !p.sent_24h && !p.failed_24h ? 'not_set_up' : p.failed_24h && !p.sent_24h ? 'down' : p.failed_24h || p.waiting ? 'degraded' : 'operational',
-    detail: `${plural(p.devices, 'phone or browser', 'phones or browsers')} signed up. Last 24 hours: ${p.sent_24h} sent, ${p.failed_24h} failed${p.waiting ? `, ${p.waiting} waiting` : ''}. Last sent ${when(p.last_sent_at)}.`,
+    detail: tr("{{plural}} signed up. Last 24 hours: {{sent_24h}} sent, {{failed_24h}} failed{{value}}. Last sent {{when}}.", { plural: plural(p.devices, 'phone or browser', 'phones or browsers'), sent_24h: p.sent_24h, failed_24h: p.failed_24h, value: p.waiting ? tr(", {{waiting}} waiting", { waiting: p.waiting }) : '', when: when(p.last_sent_at) }),
     checkedAt: at,
   })
   const failing = s.jobs.filter((j) => j.last_status === 'failed' || j.failed_24h > 0)
@@ -111,12 +111,12 @@ function rows(s: Status | null, db: { ok: boolean; ms: number; error?: string },
     icon: 'clock',
     health: !s.extensions.pg_cron ? 'down' : s.jobs.length === 0 ? 'not_set_up' : failing.length ? 'degraded' : 'operational',
     detail: !s.extensions.pg_cron
-      ? 'The pg_cron extension is off (Supabase → Database → Extensions).'
+      ? tr("The pg_cron extension is off (Supabase → Database → Extensions).")
       : s.jobs.length === 0
-        ? 'No jobs yet. Turn on automatic sending in Admin → Email.'
-        : `${plural(s.jobs.length, 'job')}${failing.length ? `, ${failing.length} with failed runs in the last 24 hours` : ', all running'}. Last run ${when(
+        ? tr("No jobs yet. Turn on automatic sending in Admin → Email.")
+        : tr("{{plural}}{{value}}. Last run {{when}}.", { plural: plural(s.jobs.length, 'job'), value: failing.length ? tr(", {{length}} with failed runs in the last 24 hours", { length: failing.length }) : tr(", all running"), when: when(
             s.jobs.map((j) => j.last_run).filter(Boolean).sort().at(-1),
-          )}.`,
+          ) }),
     checkedAt: at,
   })
   const c = s.calendar
@@ -127,7 +127,7 @@ function rows(s: Status | null, db: { ok: boolean; ms: number; error?: string },
   },
     icon: 'calendar',
     health: !c.links ? 'not_set_up' : c.errors >= c.links ? 'down' : c.errors ? 'degraded' : 'operational',
-    detail: !c.links ? 'Nobody has linked a phone calendar yet.' : `${plural(c.links, 'linked calendar')}, ${c.errors} with errors. Last read ${when(c.last_synced_at)}.`,
+    detail: !c.links ? tr("Nobody has linked a phone calendar yet.") : tr("{{plural}}, {{errors}} with errors. Last read {{when}}.", { plural: plural(c.links, 'linked calendar'), errors: c.errors, when: when(c.last_synced_at) }),
     checkedAt: at,
   })
   return r

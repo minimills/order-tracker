@@ -234,7 +234,7 @@ export default function OrderPage() {
     )
   }
 
-  const askMove = (stage: Stage) => setMove({ order, stage, anchor: null, place: 'after', description: `move to ${label(stage)}` })
+  const askMove = (stage: Stage) => setMove({ order, stage, anchor: null, place: 'after', description: tr("move to {{label}}", { label: label(stage) }) })
 
   async function createProductionBoard() {
     if (!supabase) return
@@ -741,8 +741,8 @@ export default function OrderPage() {
                             {delay === 0
                               ? tr("On time")
                               : delay > 0
-                                ? tr("{{delay}} day{{value}} late", { delay: delay, value: delay === 1 ? '' : 's' })
-                                : tr("{{value}} day{{value2}} early", { value: -delay, value2: delay === -1 ? '' : 's' })}
+                                ? tr("{{count}} day late", { count: delay })
+                                : tr("{{count}} day early", { count: -delay })}
                           </span>
                         )}
                       </Item>
@@ -832,7 +832,7 @@ export default function OrderPage() {
             request={move}
             onClose={() => setMove(null)}
             onDone={(n) => {
-              toast.success(tr("Order {{order_code}} moved.{{value}}", { order_code: order.order_code, value: n ? tr(" {{n}} serial number{{value}} changed.", { n: n, value: n === 1 ? '' : 's' }) : '' }))
+              toast.success(tr("Order {{order_code}} moved.{{value}}", { order_code: order.order_code, value: n ? tr(" {{count}} serial number changed.", { count: n }) : '' }))
               setMove(null)
               load()
             }}

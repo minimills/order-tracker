@@ -62,7 +62,7 @@ export default function DashboardTemplatesPage() {
   } }))) return
     const { data: n, error } = await supabase.rpc('apply_dashboard_template', { p_template: t.id })
     if (error) return toast.error(friendlyError(error))
-    toast.success(tr("Given to {{n}} {{value}}.", { n: n, value: n === 1 ? 'person' : 'people' }))
+    toast.success(tr("Given to {{count}} person.", { count: n }))
   }
   async function archive(t: Template) {
     if (!supabase) return
@@ -72,7 +72,7 @@ export default function DashboardTemplatesPage() {
   }
   const forText = (t: Template) => {
     const list = targets.filter((x) => x.template_id === t.id)
-    if (!list.length) return 'Not given to anyone yet'
+    if (!list.length) return tr("Not given to anyone yet")
     return list.map((x) => (x.target_type === 'user' ? people.find((p) => p.email === x.target)?.name ?? x.target : departments.find((d) => d.id === x.target)?.name ?? 'a department')).join(', ')
   }
 

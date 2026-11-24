@@ -82,8 +82,8 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
     const p = data as Preview
     onDone(
       mode.kind === 'add'
-        ? `${p.added.length} machine${p.added.length === 1 ? '' : 's'} added to order ${orderCode}.`
-        : `Machine removed from order ${orderCode}.`,
+        ? tr("{{length}} machine{{value}} added to order {{orderCode}}.", { length: p.added.length, value: p.added.length === 1 ? '' : 's', orderCode: orderCode })
+        : tr("Machine removed from order {{orderCode}}.", { orderCode: orderCode }),
     )
   }
 
@@ -96,7 +96,7 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
   }, [])
 
   const noSerials = stage === 'Quote' || stage === 'Cancelled'
-  const title = mode.kind === 'add' ? `Add Machines to Order ${orderCode}` : `Remove ${mode.label} From Order ${orderCode}?`
+  const title = mode.kind === 'add' ? tr("Add Machines to Order {{orderCode}}", { orderCode: orderCode }) : `Remove ${mode.label} From Order ${orderCode}?`
 
   const footer = (
     <>

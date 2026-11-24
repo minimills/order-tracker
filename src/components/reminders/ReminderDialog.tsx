@@ -94,7 +94,7 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
   const values = useMemo(() => {
     if (!data) return {}
     const money = (n: number | null) => (n == null ? '' : formatMoney(Number(n), data.currency))
-    const date = (d: string | null) => (d ? showDate(d, 'MMMM d, yyyy') : 'to be confirmed')
+    const date = (d: string | null) => (d ? showDate(d, 'MMMM d, yyyy') : tr("to be confirmed"))
     return {
       customer_name: data.customer_name ?? '',
       customer_company: data.customer_company || data.customer_name || '',

@@ -49,7 +49,7 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
     if (!Number.isInteger(n) || n < 0 || n > 60) return toast.error(tr("“Due soon” must be between 0 and 60 days."))
     await run(
       () => supabase!.from('boards').update({ name: name.trim(), description: description.trim() || null, colour, due_soon_days: n }).eq('id', board.id),
-      'Board saved.',
+      tr("Board saved."),
     )
   }
 

@@ -142,7 +142,7 @@ export default function PermissionEditor(props: Props) {
     if (kind === 'dept') {
       const d = departments.find((x) => x.id === id)
       next = (d?.default_permissions as Perms) ?? {}
-      name = `department preset “${d?.name}”`
+      name = tr("department preset “{{value}}”", { value: d?.name })
     } else if (kind === 'tpl') {
       const t = templates.find((x) => x.id === id)
       next = t?.perms ?? {}
@@ -150,12 +150,12 @@ export default function PermissionEditor(props: Props) {
     } else if (kind === 'user') {
       const u = otherUsers.find((x) => x.email === id)
       next = u?.perms ?? {}
-      name = `copied from ${u?.email}`
+      name = tr("copied from {{value}}", { value: u?.email })
     } else if (kind === 'all') {
       next = Object.fromEntries(
         CATALOG.filter((i) => i.group !== 'Admin').map((i) => [i.key, i.levels.includes('edit') ? 'edit' : 'view']),
       ) as Perms
-      name = 'everything except Admin'
+      name = tr("everything except Admin")
     } else if (kind === 'none') {
       next = {}
       name = 'nothing'

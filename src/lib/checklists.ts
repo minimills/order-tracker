@@ -1,4 +1,4 @@
-import { dtf } from '../i18n'
+import { dtf, tr } from '../i18n'
 import { supabase } from './supabase'
 
 /** One row of machine_checklist_status. */
@@ -85,14 +85,12 @@ export function groupBySection<T extends { section: string; sort_order: number }
 
 /** "In progress 42/60, last worked on by Sam on Nov 4, 2026 3:15 PM" */
 export function checklistStatusText(s: Pick<ChecklistStatusRow, 'status' | 'total_items' | 'done_items' | 'na_items' | 'last_worked_by_name' | 'last_worked_at' | 'signed_name' | 'signed_at' | 'ready'>) {
-  if (s.status === 'signed') return `Signed by ${s.signed_name ?? '—'} on ${showDateTime(s.signed_at)}`
+  if (s.status === 'signed') return tr("Signed by {{value}} on {{showDateTime}}", { value: s.signed_name ?? '—', showDateTime: showDateTime(s.signed_at) })
   if (s.status === 'in_progress') {
     const done = s.done_items + s.na_items
-    return `In progress ${done}/${s.total_items}${
-      s.last_worked_by_name ? `, last worked on by ${s.last_worked_by_name} on ${showDateTime(s.last_worked_at)}` : ''
-    }`
+    return tr("In progress {{done}}/{{total_items}}{{value}}", { done: done, total_items: s.total_items, value: s.last_worked_by_name ? tr(", last worked on by {{last_worked_by_name}} on {{showDateTime}}", { last_worked_by_name: s.last_worked_by_name, showDateTime: showDateTime(s.last_worked_at) }) : '' })
   }
-  return 'Not started'
+  return tr("Not started")
 }
 
 /** Downloads a signature picture and returns a link the page can show (or null). */

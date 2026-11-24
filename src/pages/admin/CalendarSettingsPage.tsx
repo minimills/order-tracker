@@ -45,7 +45,7 @@ export default function CalendarSettingsPage() {
   const nameOf = (t: Target) =>
     t.type === 'group'
       ? `Group: ${choices.groups.find((g) => g.id === t.target)?.name ?? 'archived group'}`
-      : `Department: ${choices.departments.find((d) => d.id === t.target)?.name ?? 'archived department'}`
+      : `Department: ${choices.departments.find((d) => d.id === t.target)?.name ?? tr("archived department")}`
   const list = adding.type === 'group' ? choices.groups : choices.departments
 
   return (

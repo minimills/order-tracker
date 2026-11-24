@@ -35,7 +35,7 @@ type Request = {
 type Work = { item_type: string; item_id: string; title: string; context: string; start_date: string; end_date: string; link: string; can_reassign: boolean; can_move: boolean }
 
 const datesText = (r: { start_date: string; end_date: string; hours: number | null }) =>
-  `${r.start_date === r.end_date ? showDate(r.start_date, 'EEE MMM d, yyyy') : `${showDate(r.start_date, 'EEE MMM d')} to ${showDate(r.end_date, 'EEE MMM d, yyyy')}`}${r.hours ? ` (${showHours(r.hours)} hours a day)` : ''}`
+  `${r.start_date === r.end_date ? showDate(r.start_date, 'EEE MMM d, yyyy') : `${showDate(r.start_date, 'EEE MMM d')} to ${showDate(r.end_date, 'EEE MMM d, yyyy')}`}${r.hours ? tr(" ({{showHours}} hours a day)", { showHours: showHours(r.hours) }) : ''}`
 /** The next weekday after a date (holidays are checked by the database when anything is saved). */
 const nextWeekday = (iso: string) => {
   let d = addDaysISO(iso, 1)
@@ -347,7 +347,7 @@ function DecideDialog({ r, who, decision, onClose, onDone }: { r: Request; who: 
     const res = data as { days_written: number; skipped_days: string[] } | null
     toast.success(
       decision === 'approved'
-        ? tr("Approved. {{value}} day{{value2}} added to the timesheet.{{value3}}", { value: res?.days_written ?? 0, value2: res?.days_written === 1 ? '' : 's', value3: res?.skipped_days?.length ? tr(" Not added (week already approved): {{value}}.", { value: res.skipped_days.join(', ') }) : '' })
+        ? tr("Approved. {{days}} added to the timesheet.{{value3}}", { days: tr("{{count}} day", { count: res?.days_written ?? 0 }), value3: res?.skipped_days?.length ? tr(" Not added (week already approved): {{value}}.", { value: res.skipped_days.join(', ') }) : '' })
         : tr("Declined."),
       { duration: 8000 },
     )
@@ -382,7 +382,11 @@ function DecideDialog({ r, who, decision, onClose, onDone }: { r: Request; who: 
   )
 }
 
-const TYPE_WORDS: Record<string, string> = { card: 'Card', service_call: 'Service call', training: 'Training visit' }
+const TYPE_WORDS: Record<string, string> = { card: 'Card', get service_call() {
+    return tr("Service call")
+  }, get training() {
+    return tr("Training visit")
+  } }
 
 function WorkDialog({ r, who, items, onClose, onDone }: { r: Request; who: string; items: Work[]; onClose: () => void; onDone: () => void }) {
   const people = useTsPeople().filter((p) => p.email !== r.user_email)
@@ -398,7 +402,7 @@ function WorkDialog({ r, who, items, onClose, onDone }: { r: Request; who: strin
       const c = choice[`${i.item_type}:${i.item_id}`]
       return { item_type: i.item_type, item_id: i.item_id, action: c.action, to_email: c.to, new_date: c.date }
     })
-    if (!(await confirmAction(tr("Apply {{length}} change{{value}}?", { length: changes.length, value: changes.length === 1 ? '' : 's' }), { get confirmLabel() {
+    if (!(await confirmAction(tr("Apply {{count}} change?", { count: changes.length }), { get confirmLabel() {
     return tr("Apply Changes")
   } }))) return
     setBusy(true)

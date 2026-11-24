@@ -84,16 +84,16 @@ export function belowMinimum(rule: Tier[], minimum: Tier[]) {
 export function minimumProblems(s: PayrollSettings): string[] {
   const out: string[] = []
   if (s.overtime_weekly_hours > s.pei_minimum.overtime_weekly_hours) {
-    out.push(`Overtime starts after ${s.overtime_weekly_hours} hours a week, later than the PEI standard of ${s.pei_minimum.overtime_weekly_hours} hours.`)
+    out.push(tr("Overtime starts after {{overtime_weekly_hours}} hours a week, later than the PEI standard of {{overtime_weekly_hours2}} hours.", { overtime_weekly_hours: s.overtime_weekly_hours, overtime_weekly_hours2: s.pei_minimum.overtime_weekly_hours }))
   }
-  if (s.overtime_rate < 1.5) out.push(`Overtime is paid at ${s.overtime_rate} times the rate; PEI requires at least 1.5 times.`)
+  if (s.overtime_rate < 1.5) out.push(tr("Overtime is paid at {{overtime_rate}} times the rate; PEI requires at least 1.5 times.", { overtime_rate: s.overtime_rate }))
   for (const b of belowMinimum(s.vacation_tiers, s.pei_minimum.vacation_tiers)) {
-    out.push(`After ${b.years} year${b.years === 1 ? '' : 's'} of service the rule gives ${b.rule} vacation days; the PEI minimum is ${b.minimum}.`)
+    out.push(tr("After {{years}} year{{value}} of service the rule gives {{rule}} vacation days; the PEI minimum is {{minimum}}.", { years: b.years, value: b.years === 1 ? '' : 's', rule: b.rule, minimum: b.minimum }))
   }
   for (const b of belowMinimum(s.sick_tiers, s.pei_minimum.sick_tiers)) {
-    out.push(`After ${b.years} year${b.years === 1 ? '' : 's'} of service the rule gives ${b.rule} paid sick days; the PEI minimum is ${b.minimum}.`)
+    out.push(tr("After {{years}} year{{value}} of service the rule gives {{rule}} paid sick days; the PEI minimum is {{minimum}}.", { years: b.years, value: b.years === 1 ? '' : 's', rule: b.rule, minimum: b.minimum }))
   }
-  if (!s.paid_holiday_kinds.includes('statutory')) out.push('Statutory holidays are not paid. PEI requires holiday pay for eligible employees.')
+  if (!s.paid_holiday_kinds.includes('statutory')) out.push(tr("Statutory holidays are not paid. PEI requires holiday pay for eligible employees."))
   return out
 }
 
@@ -311,7 +311,9 @@ export function monthsBetween(from: string, to: string) {
   return out
 }
 
-export const STATUS_WORDS: Record<string, string> = { pending: 'Waiting for a decision', approved: 'Approved', declined: 'Declined', cancelled: 'Cancelled' }
+export const STATUS_WORDS: Record<string, string> = { get pending() {
+    return tr("Waiting for a decision")
+  }, approved: 'Approved', declined: 'Declined', cancelled: 'Cancelled' }
 
 /** "8:00 a.m." from "08:00". */
 export function clockText(hhmm: string) {

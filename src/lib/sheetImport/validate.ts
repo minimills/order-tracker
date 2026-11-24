@@ -2,6 +2,7 @@ import { stageLabel } from '../stages'
 import { BOARD_STAGES, STAGES } from '../types'
 import { readPlace } from './places'
 import { NOT_A_MACHINE, type DraftMachine, type DraftOrder, type Level, type Msg } from './types'
+import { tr } from '../../i18n'
 
 /*
  * Works out what every row in the preview means and what is wrong with it.
@@ -150,21 +151,21 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
     const orderNumber = m ? Number(m[1]) : null
     const split = m && m[2] ? Number(m[2]) : null
     const code = orderNumber ? `${orderNumber}${split ? `-${split}` : ''}` : d.code
-    if (!orderNumber) add('error', `"${d.code}" is not an order number (like 74 or 74-1).`)
+    if (!orderNumber) add('error', tr("\"{{code}}\" is not an order number (like 74 or 74-1).", { code: d.code }))
     const existing = orderNumber ? (ctx.existing.get(code) ?? null) : null
     if (d.include && orderNumber) {
       const prev = seenCodes.get(code)
-      if (prev) add('error', `Order ${code} appears twice in the file (also row ${prev}). Deselect one of them.`)
+      if (prev) add('error', tr("Order {{code}} appears twice in the file (also row {{prev}}). Deselect one of them.", { code: code, prev: prev }))
       else seenCodes.set(code, d.row)
     }
-    if (existing) add('info', `Order ${code} is already in the app: it will be updated. Empty cells keep what the app has.`)
+    if (existing) add('info', tr("Order {{code}} is already in the app: it will be updated. Empty cells keep what the app has.", { code: code }))
 
     // ---------- Customer ----------
     const comma = d.customer.lastIndexOf(',')
     const customerName = (comma >= 0 ? d.customer.slice(0, comma) : d.customer).trim()
     const place = readPlace(comma >= 0 ? d.customer.slice(comma + 1) : '')
-    if (!customerName && !existing) add('error', `Order ${code} has no customer.`)
-    if (customerName && comma < 0) add('info', `No ", Country" after the customer name, so no country is saved.`)
+    if (!customerName && !existing) add('error', tr("Order {{code}} has no customer.", { code: code }))
+    if (customerName && comma < 0) add('info', tr("No \", Country\" after the customer name, so no country is saved."))
     if (place.note) add(place.note.includes('Please check') ? 'warning' : 'info', place.note)
 
     // ---------- Voltage ----------
@@ -174,12 +175,12 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
       voltage = existing ? null : 'Unknown'
     } else if (/^(\?+|-+|–|unknown|tbd|n\/?a)$/i.test(v)) {
       voltage = 'Unknown'
-      add('warning', `Voltage "${v}" will be saved as Unknown${existing ? ' (a voltage already set in the app is kept)' : ''}.`)
+      add('warning', tr("Voltage \"{{v}}\" will be saved as Unknown{{value}}.", { v: v, value: existing ? tr(" (a voltage already set in the app is kept)") : '' }))
     } else {
       voltage = pick(ctx.options.voltage, v) ?? ctx.options.voltage.find((o) => o.startsWith(v.match(/\d{3}/)?.[0] ?? '###')) ?? null
       if (!voltage) {
         voltage = 'Unknown'
-        add('warning', `Voltage "${v}" is not in the Voltage list; it will be saved as Unknown.`)
+        add('warning', tr("Voltage \"{{v}}\" is not in the Voltage list; it will be saved as Unknown.", { v: v }))
       }
     }
 
@@ -187,9 +188,9 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
     const n = d.notes.toLowerCase()
     let deliveryWanted: string | null = d.delivery || null
     if (!deliveryWanted) {
-      if (/no[\s-]*lift[\s-]*gate/.test(n)) deliveryWanted = 'No liftgate'
+      if (/no[\s-]*lift[\s-]*gate/.test(n)) deliveryWanted = tr("No liftgate")
       else if (/lift[\s-]*gate/.test(n)) deliveryWanted = 'Liftgate'
-      else if (/tractor/.test(n)) deliveryWanted = 'Tractor with forks'
+      else if (/tractor/.test(n)) deliveryWanted = tr("Tractor with forks")
       else if (/fork[\s-]*lift/.test(n)) deliveryWanted = 'Forklift'
     }
     const freightFound: string[] = []
@@ -200,33 +201,33 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
       if (/\bltl\b/.test(n)) freightFound.push('LTL')
       if (/\b40\s*('|’|ft\b|foot|feet|hc\b)|\b40'|container/.test(n)) freightFound.push("40' container")
     }
-    if (freightFound.length > 1) add('warning', `The notes mention more than one freight type (${freightFound.join(', ')}); ${freightFound[0]} is used.`)
+    if (freightFound.length > 1) add('warning', tr("The notes mention more than one freight type ({{value}}); {{value2}} is used.", { value: freightFound.join(', '), value2: freightFound[0] }))
     let delivery = deliveryWanted ? pick(ctx.options.delivery_equipment, deliveryWanted) : null
-    if (deliveryWanted && !delivery) add('warning', `"${deliveryWanted}" is not in the Delivery equipment list; left as Unknown.`)
+    if (deliveryWanted && !delivery) add('warning', tr("\"{{deliveryWanted}}\" is not in the Delivery equipment list; left as Unknown.", { deliveryWanted: deliveryWanted }))
     const freight = freightFound[0] ? pick(ctx.options.freight_type, freightFound[0]) : null
-    if (freightFound[0] && !freight) add('warning', `"${freightFound[0]}" is not in the Freight type list; left empty.`)
+    if (freightFound[0] && !freight) add('warning', tr("\"{{value}}\" is not in the Freight type list; left empty.", { value: freightFound[0] }))
     if (!delivery && !existing) delivery = 'Unknown'
     if (d.notes && !d.delivery && !d.freight && (deliveryWanted || freightFound[0])) {
       const found = [deliveryWanted && delivery && `delivery: ${delivery}`, freight && `freight: ${freight}`].filter(Boolean)
-      if (found.length) add('info', `Notes "${d.notes}" → ${found.join(', ')} (the note is kept too).`)
+      if (found.length) add('info', tr("Notes \"{{notes}}\" → {{value}} (the note is kept too).", { notes: d.notes, value: found.join(', ') }))
     }
 
     // ---------- Currency ----------
     const cur = d.currency.trim().toUpperCase()
-    if (cur && cur !== 'CAD' && cur !== 'USD') add('error', `Currency "${d.currency}" must be CAD or USD.`)
+    if (cur && cur !== 'CAD' && cur !== 'USD') add('error', tr("Currency \"{{currency}}\" must be CAD or USD.", { currency: d.currency }))
     const currency: 'CAD' | 'USD' = cur === 'USD' ? 'USD' : 'CAD'
 
     // ---------- Money ----------
     const total = money(d.total)
     const dpAmount = money(d.dpAmount)
-    if (d.total.trim() !== '' && Number.isNaN(total)) add('error', `Order total "${d.total}" is not a number.`)
-    if (d.dpAmount.trim() !== '' && Number.isNaN(dpAmount)) add('error', `Down payment "${d.dpAmount}" is not a number.`)
-    if (total !== null && dpAmount !== null && dpAmount > total) add('error', `The down payment (${dpAmount}) is more than the order total (${total}).`)
+    if (d.total.trim() !== '' && Number.isNaN(total)) add('error', tr("Order total \"{{total}}\" is not a number.", { total: d.total }))
+    if (d.dpAmount.trim() !== '' && Number.isNaN(dpAmount)) add('error', tr("Down payment \"{{dpAmount}}\" is not a number.", { dpAmount: d.dpAmount }))
+    if (total !== null && dpAmount !== null && dpAmount > total) add('error', tr("The down payment ({{dpAmount}}) is more than the order total ({{total}}).", { dpAmount: dpAmount, total: total }))
     for (const [label, val] of [
-      ['Down payment received amount', d.dpReceivedAmount],
-      ['Balance received amount', d.balanceReceivedAmount],
+      [tr("Down payment received amount"), d.dpReceivedAmount],
+      [tr("Balance received amount"), d.balanceReceivedAmount],
     ] as const)
-      if (val.trim() !== '' && Number.isNaN(Number(val))) add('error', `${label} "${val}" is not a number.`)
+      if (val.trim() !== '' && Number.isNaN(Number(val))) add('error', tr("{{label}} \"{{val}}\" is not a number.", { label: label, val: val }))
 
     // ---------- Machines ----------
     const usedExisting = new Set<string>()
@@ -239,7 +240,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
       }
       if (dm.typeChoice === NOT_A_MACHINE) {
         extraNotes.push(dm.name)
-        madd('info', `"${dm.name}" is not a machine: it will be added to the order notes.`)
+        madd('info', tr("\"{{name}}\" is not a machine: it will be added to the order notes.", { name: dm.name }))
         return { draft: dm, level: 'ok', msgs: mm, type: null, suggestion: null, action: 'note', serial: null, serialManual: false }
       }
 
@@ -248,7 +249,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
       let suggestion: ImportType | null = null
       if (!type && !dm.typeChoice && parts.code && byCode.get(parts.code)) {
         type = byCode.get(parts.code)!
-        madd('info', `"${dm.name}" read as ${type.name} from its serial ${dm.serial}.`)
+        madd('info', tr("\"{{name}}\" read as {{name2}} from its serial {{serial}}.", { name: dm.name, name2: type.name, serial: dm.serial }))
       }
       if (!type) {
         const target = words(dm.name)
@@ -264,7 +265,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
         if (best && bestD <= Math.max(2, Math.floor(target.length * 0.2))) suggestion = best
         madd(
           'error',
-          `"${dm.name}" doesn't match a machine type.${suggestion ? ` Did you mean ${suggestion.name}?` : ''} Pick one from the list, create a new type, or choose "Not a machine".`,
+          tr("\"{{name}}\" doesn't match a machine type.{{value}} Pick one from the list, create a new type, or choose \"Not a machine\".", { name: dm.name, value: suggestion ? tr(" Did you mean {{name}}?", { name: suggestion.name }) : '' }),
         )
         return { draft: dm, level: 'error', msgs: mm, type: null, suggestion, action: 'new', serial: null, serialManual: false }
       }
@@ -274,25 +275,25 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
       let serialManual = false
       const raw = dm.serial.trim()
       if (!raw) {
-        madd('warning', `No serial number: it will be saved as "needs serial".`)
+        madd('warning', tr("No serial number: it will be saved as \"needs serial\"."))
       } else if (!parts.number) {
-        madd('warning', `Serial "${raw}" has no number and will be saved as "needs serial".`)
+        madd('warning', tr("Serial \"{{raw}}\" has no number and will be saved as \"needs serial\".", { raw: raw }))
       } else {
         const code = parts.code ?? type.code
         if (!code) {
-          madd('warning', `Serial "${raw}" has no letters and ${type.name} has no code; it will be saved as "needs serial".`)
+          madd('warning', tr("Serial \"{{raw}}\" has no letters and {{name}} has no code; it will be saved as \"needs serial\".", { raw: raw, name: type.name }))
         } else {
           serial = formatSerial(code, parts.number)
-          if (!parts.code) madd('info', `Serial "${raw}" has no code; read as ${serial}.`)
+          if (!parts.code) madd('info', tr("Serial \"{{raw}}\" has no code; read as {{serial}}.", { raw: raw, serial: serial }))
           if (!type.code) {
             serialManual = true
             const votes = codeVotes.get(type.id) ?? new Map<string, number>()
             votes.set(code, (votes.get(code) ?? 0) + 1)
             codeVotes.set(type.id, votes)
-            madd('info', `${type.name} has no code in the app yet, so ${serial} is kept exactly as typed.`)
+            madd('info', tr("{{name}} has no code in the app yet, so {{serial}} is kept exactly as typed.", { name: type.name, serial: serial }))
           } else if (code !== type.code) {
             serialManual = true
-            madd('warning', `Serial ${serial} doesn't start with ${type.code} (the code for ${type.name}); it will be kept exactly as typed.`)
+            madd('warning', tr("Serial {{serial}} doesn't start with {{code}} (the code for {{name}}); it will be kept exactly as typed.", { serial: serial, code: type.code, name: type.name }))
           }
           if (ctx.keepSerials) serialManual = true
         }
@@ -301,10 +302,10 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
       // Duplicates
       if (serial) {
         const prev = d.include ? seenSerials.get(serial) : undefined
-        if (prev) madd('error', `Serial ${serial} is used twice in the file (also row ${prev}).`)
+        if (prev) madd('error', tr("Serial {{serial}} is used twice in the file (also row {{prev}}).", { serial: serial, prev: prev }))
         else if (d.include) seenSerials.set(serial, dm.row)
         const owner = ctx.serialOwner.get(serial)
-        if (owner && owner !== code) madd('error', `Serial ${serial} is already used by order ${owner}.`)
+        if (owner && owner !== code) madd('error', tr("Serial {{serial}} is already used by order {{owner}}.", { serial: serial, owner: owner }))
       }
 
       // Update or new (same rules as the database)
@@ -320,7 +321,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
           usedExisting.add(candidate.id)
           action = 'update'
         } else {
-          madd('info', `New machine: it will be added to order ${code}.`)
+          madd('info', tr("New machine: it will be added to order {{code}}.", { code: code }))
         }
       }
       const level = worst(mm.map((x) => x.level))
@@ -328,7 +329,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
     })
     if (existing) {
       const left = existing.machines.length - usedExisting.size
-      if (left > 0) add('info', `${left} machine${left === 1 ? '' : 's'} already in the app ${left === 1 ? 'is' : 'are'} not in the file; ${left === 1 ? 'it is' : 'they are'} kept.`)
+      if (left > 0) add('info', tr("{{left}} machine{{value}} already in the app {{value2}} not in the file; {{value3}} kept.", { left: left, value: left === 1 ? '' : 's', value2: left === 1 ? tr("is") : tr("are"), value3: left === 1 ? tr("it is") : tr("they are") }))
     }
 
     // ---------- Stage ----------
@@ -339,28 +340,28 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
       // The stored name ("Ready") or the name shown in the app ("Ready / testing") both work.
       const w = wantedStage.toLowerCase()
       stage = STAGES.find((s) => s.toLowerCase() === w || stageLabel(s).toLowerCase() === w) ?? ''
-      if (!stage) add('error', `Stage "${wantedStage}" is not one of: ${STAGES.map((s) => stageLabel(s)).join(', ')}.`)
+      if (!stage) add('error', tr("Stage \"{{wantedStage}}\" is not one of: {{value}}.", { wantedStage: wantedStage, value: STAGES.map((s) => stageLabel(s)).join(', ') }))
     } else if (d.actual) stage = 'Shipped'
     else if (/cancel+ed|\bcancel\b/i.test(d.notes)) stage = 'Cancelled'
     else if (included.length > 0 && included.every((x) => x.draft.built)) stage = 'Ready to ship'
     else if (included.some((x) => x.draft.built)) stage = 'In production'
     else stage = 'Confirmed'
     if (existing) {
-      if ((stage === 'Shipped' || stage === 'Cancelled') && existing.stage !== stage) add('info', `Stage will change from ${stageLabel(existing.stage)} to ${stageLabel(stage)}.`)
+      if ((stage === 'Shipped' || stage === 'Cancelled') && existing.stage !== stage) add('info', tr("Stage will change from {{stageLabel}} to {{stageLabel2}}.", { stageLabel: stageLabel(existing.stage), stageLabel2: stageLabel(stage) }))
       else if (stage !== existing.stage) {
-        add('info', `The app has this order as ${stageLabel(existing.stage)}; that is kept.`)
+        add('info', tr("The app has this order as {{stageLabel}}; that is kept.", { stageLabel: stageLabel(existing.stage) }))
         stage = existing.stage
       }
     } else if (!wantedStage) {
-      add('info', `Will be saved as ${stage}${stage === 'Shipped' ? ' (it has an actual ship date)' : ''}.`)
+      add('info', tr("Will be saved as {{stage}}{{value}}.", { stage: stage, value: stage === 'Shipped' ? tr(" (it has an actual ship date)") : '' }))
     }
     if (stage === 'Shipped') {
       const unticked = machines.filter((x) => (x.action === 'new' || x.action === 'update') && !x.draft.built).length
-      if (unticked) add('info', `The order is shipped, so its ${unticked} machine${unticked === 1 ? '' : 's'} not marked as built will be saved as built.`)
+      if (unticked) add('info', tr("The order is shipped, so its {{unticked}} machine{{value}} not marked as built will be saved as built.", { unticked: unticked, value: unticked === 1 ? '' : 's' }))
     }
-    if (!d.expected && !existing && BOARD.has(stage)) add('warning', 'No expected ship date.')
+    if (!d.expected && !existing && BOARD.has(stage)) add('warning', tr("No expected ship date."))
     if (total === null && !existing) {
-      add(stage === 'Shipped' || stage === 'Cancelled' ? 'info' : 'warning', 'No down payment or balance in the file, so the order total will be 0.')
+      add(stage === 'Shipped' || stage === 'Cancelled' ? 'info' : 'warning', tr("No down payment or balance in the file, so the order total will be 0."))
     }
 
     const level = worst([...msgs.map((x) => x.level), ...machines.map((x) => x.level)])
@@ -415,7 +416,7 @@ export function checkImport(drafts: DraftOrder[], ctx: ImportContext): CheckResu
           mc.msgs.push({
             row: mc.draft.row,
             level: 'warning',
-            text: `Will become ${sorted[i]} so that lower board numbers get lower serials. Select "Keep serials exactly as in the file" to prevent this.`,
+            text: tr("Will become {{value}} so that lower board numbers get lower serials. Select \"Keep serials exactly as in the file\" to prevent this.", { value: sorted[i] }),
           })
           mc.level = worst([mc.level, 'warning'])
         }

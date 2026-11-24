@@ -65,7 +65,7 @@ export default function ArchivePage() {
         table: 'order_machines' as const,
         id: x.id,
         label: `${x.machine_types?.name ?? 'Machine'} ${x.serial_number ?? ''}`.trim(),
-        detail: `on order ${x.orders?.order_code ?? '?'}`,
+        detail: tr("on order {{value}}", { value: x.orders?.order_code ?? '?' }),
         archived_at: x.archived_at,
         archived_by: x.archived_by,
       })),
