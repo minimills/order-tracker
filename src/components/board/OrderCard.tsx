@@ -10,6 +10,7 @@ import { badgeClass, orderBadges, type Badge } from './badges'
 import MachineChips, { type ChipMachine } from './MachineChips'
 import { DEADLINE_TONE, STEP_LABEL, type PromisedItem } from '../../lib/schedule'
 import { serviceDates, type ServiceInfo } from '../../lib/service'
+import { tr } from '../../i18n'
 
 type Props = {
   order: OrderSummaryRow
@@ -73,7 +74,7 @@ export default function OrderCard(props: Props) {
         if (e.key === 'Enter' && e.target === e.currentTarget) openOrder(e)
       }}
       tabIndex={opens ? 0 : undefined}
-      aria-label={opens ? `Order ${o.order_code}, open` : undefined}
+      aria-label={opens ? tr("Order {{order_code}}, open", { order_code: o.order_code }) : undefined}
       className={`relative rounded-md border border-slate-200 bg-white p-3 text-sm shadow-sm ${opens ? 'cursor-pointer hover:border-slate-400 hover:shadow focus:ring-2 focus:ring-blue-400 focus:outline-none' : ''} ${
         props.draggable ? 'cursor-grab active:cursor-grabbing' : ''
       } ${props.dragging ? 'opacity-40' : ''}`}
@@ -86,21 +87,21 @@ export default function OrderCard(props: Props) {
           <span
             className="mb-1.5 inline-block rounded px-1.5 py-0.5 text-[0.6875rem] font-bold text-white"
             style={{ backgroundColor: props.voltageColour ?? '#64748b' }}
-            title={`Voltage: ${o.voltage}`}
+            title={tr("Voltage: {{voltage}}", { voltage: o.voltage })}
           >
             {o.voltage}
           </span>
         )}
       </Can>
       <div className="flex items-start justify-between gap-2">
-        <Can permission="order.page" fallback={<span className="font-semibold">Order {o.order_code}</span>}>
+        <Can permission="order.page" fallback={<span className="font-semibold">{tr("Order")} {o.order_code}</span>}>
           <Link to={`/orders/${o.id}`} className="font-semibold hover:underline" draggable={false}>
-            Order {o.order_code}
+            {tr("Order")} {o.order_code}
           </Link>
         </Can>
         <Can permission="orders.board.card.built">
           <span className={`shrink-0 text-xs ${allReady ? 'font-medium text-green-700' : 'text-slate-500'}`}>
-            {o.machines_ready_count}/{o.machines_count} ready
+            {o.machines_ready_count}/{o.machines_count} {tr("ready")}
           </span>
         </Can>
       </div>
@@ -118,7 +119,7 @@ export default function OrderCard(props: Props) {
       <Can permission="orders.board.card.country">
         <div className="text-xs text-slate-500">
           {flag && <span className="mr-1">{flag}</span>}
-          {o.customer_country ?? 'Country not set'}
+          {o.customer_country ?? tr("Country not set")}
         </div>
       </Can>
       <Can permission="orders.board.card.machines">
@@ -131,7 +132,7 @@ export default function OrderCard(props: Props) {
       </Can>
       <Can permission="orders.board.card.ship_date">
         <div className="mt-1 text-xs text-slate-600">
-          {o.stage === 'Shipped' ? <>Shipped {showDate(o.actual_ship_date)}</> : <>Ship by {showDate(o.expected_ship_date)}</>}
+          {o.stage === 'Shipped' ? <>{tr("Shipped")} {showDate(o.actual_ship_date)}</> : <>{tr("Ship by")} {showDate(o.expected_ship_date)}</>}
         </div>
       </Can>
 
@@ -139,7 +140,7 @@ export default function OrderCard(props: Props) {
         <Can permission="orders.board.card.deadline">
           <div className="mt-1 text-xs">
             <span className={`rounded px-1.5 py-0.5 ring-1 ${DEADLINE_TONE[props.deadline.state]}`}>
-              {props.deadline.state === 'missed' ? 'Missed: ' : 'Next: '}
+              {props.deadline.state === 'missed' ? tr("Missed: ") : tr("Next: ")}
               {STEP_LABEL[props.deadline.step]} {showDate(props.deadline.due, 'MMM d')}
             </span>
           </div>
@@ -149,7 +150,7 @@ export default function OrderCard(props: Props) {
       {props.service && (props.service.training_needed || props.service.technician_email) && (
         <Can permission="orders.board.card.service">
           <div className="mt-1 text-xs text-slate-600">
-            Training: {serviceDates(props.service.service_start, props.service.service_end) || 'dates not set'}
+            {tr("Training:")} {serviceDates(props.service.service_start, props.service.service_end) || tr("dates not set")}
             {props.service.technician_name ? ` · ${props.service.technician_name}` : ''}
           </div>
         </Can>

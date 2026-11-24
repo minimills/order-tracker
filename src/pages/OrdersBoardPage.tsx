@@ -18,16 +18,31 @@ import { useStageLabels } from '../lib/stages'
 import { supabase } from '../lib/supabase'
 import { BOARD_STAGES, type OrderSummaryRow, type Stage } from '../lib/types'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Column = { stage: Stage; title: string; hint?: string; permission: string }
 
 const COLUMNS: Column[] = [
-  { stage: 'Quote', title: 'Quote', permission: 'orders.board.column.quote' },
-  { stage: 'Confirmed', title: 'Confirmed', permission: 'orders.board.column.confirmed' },
-  { stage: 'In production', title: 'In production', permission: 'orders.board.column.in_production' },
-  { stage: 'Ready', title: 'Ready', permission: 'orders.board.column.ready' },
-  { stage: 'Ready to ship', title: 'Ready to ship', permission: 'orders.board.column.ready_to_ship' },
-  { stage: 'Shipped', title: 'Shipped', hint: 'last 30 days', permission: 'orders.board.column.shipped' },
+  { stage: 'Quote', get title() {
+    return tr("Quote")
+  }, permission: 'orders.board.column.quote' },
+  { stage: 'Confirmed', get title() {
+    return tr("Confirmed")
+  }, permission: 'orders.board.column.confirmed' },
+  { stage: 'In production', get title() {
+    return tr("In production")
+  }, permission: 'orders.board.column.in_production' },
+  { stage: 'Ready', get title() {
+    return tr("Ready")
+  }, permission: 'orders.board.column.ready' },
+  { stage: 'Ready to ship', get title() {
+    return tr("Ready to ship")
+  }, permission: 'orders.board.column.ready_to_ship' },
+  { stage: 'Shipped', get title() {
+    return tr("Shipped")
+  }, get hint() {
+    return tr("last 30 days")
+  }, permission: 'orders.board.column.shipped' },
 ]
 
 type DropTarget = { stage: Stage; anchorId: string | null; place: 'before' | 'after' }
@@ -203,14 +218,14 @@ export default function OrdersBoardPage() {
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">Orders Board</h1>
+              <h1 className="text-2xl font-semibold">{tr("Orders Board")}</h1>
               <Can permission="orders.board.print">
-                <PrintButton title="Orders Board" />
+                <PrintButton title={tr("Orders Board")} />
               </Can>
             </div>
             {canDrag && (
               <p className="text-sm text-slate-600">
-                Drag a card to {canChangeStage ? 'change its stage or ' : ''}its place in the queue.
+                {tr("Drag a card to")} {canChangeStage ? tr("change its stage or ") : ''}{tr("its place in the queue.")}
               </p>
             )}
             <Can permission="orders.board.card.chip_status">
@@ -222,26 +237,26 @@ export default function OrdersBoardPage() {
           <div className="flex gap-2">
             <Can permission="orders.board.refresh">
               <button type="button" className={secondaryButtonClass} onClick={load}>
-                Refresh
+                {tr("Refresh")}
               </button>
             </Can>
             <Can permission="shop_board">
               <Link to="/shop-board" className={secondaryButtonClass}>
-                Shop Board
+                {tr("Shop Board")}
               </Link>
             </Can>
             <Can permission="orders.new" level="edit">
               <Link to="/orders/new" className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700">
-                New Order
+                {tr("New Order")}
               </Link>
             </Can>
           </div>
         </div>
 
         {loading ? (
-          <p className="text-center text-slate-500">Loading…</p>
+          <p className="text-center text-slate-500">{tr("Loading…")}</p>
         ) : columns.length === 0 ? (
-          <p className="text-center text-slate-500">No columns of the board are enabled for your account.</p>
+          <p className="text-center text-slate-500">{tr("No columns of the board are enabled for your account.")}</p>
         ) : (
           <div className="flex min-h-0 flex-1 gap-3 overflow-x-auto pb-2" data-print-layout="wrap">
             {columns.map((column) => {
@@ -264,7 +279,7 @@ export default function OrdersBoardPage() {
                     </div>
                     <div className="flex min-h-24 flex-1 flex-col gap-2 overflow-y-auto px-2 pb-3">
                       {column.orders.length === 0 && (
-                        <p className="px-1 py-4 text-center text-xs text-slate-400">No orders in this stage.</p>
+                        <p className="px-1 py-4 text-center text-xs text-slate-400">{tr("No orders in this stage.")}</p>
                       )}
                       {column.orders.map((o) => {
                         const onBoard = BOARD_STAGES.includes(column.stage)
@@ -308,7 +323,7 @@ export default function OrdersBoardPage() {
             onClose={() => setRequest(null)}
             onDone={(n) => {
               toast.success(
-                `Order ${request.order.order_code} moved.${n ? ` ${n} serial number${n === 1 ? '' : 's'} changed.` : ''}`,
+                tr("Order {{order_code}} moved.{{value}}", { order_code: request.order.order_code, value: n ? tr(" {{n}} serial number{{value}} changed.", { n: n, value: n === 1 ? '' : 's' }) : '' }),
               )
               setRequest(null)
               load()

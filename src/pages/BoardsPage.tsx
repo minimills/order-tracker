@@ -11,6 +11,7 @@ import { boardNumberText, type Board } from '../lib/boards'
 import { friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Row = Board & { board_shares: { id: string }[] }
 
@@ -53,9 +54,9 @@ export default function BoardsPage() {
         {b.description && <div className="mt-0.5 line-clamp-2 text-sm text-slate-600">{b.description}</div>}
         <div className="mt-2 text-xs text-slate-500">
           {boardNumberText(b) && `${boardNumberText(b)} · `}
-          {b.purpose === 'production' ? 'Production' : b.owner_email === me ? 'Yours' : `Owner: ${b.owner_email ?? 'none'}`}
-          {b.board_shares.length > 0 && ' · shared'}
-          {b.archived && ' · archived'}
+          {b.purpose === 'production' ? tr("Production") : b.owner_email === me ? tr("Yours") : tr("Owner: {{value}}", { value: b.owner_email ?? 'none' })}
+          {b.board_shares.length > 0 && tr(" · shared")}
+          {b.archived && tr(" · archived")}
         </div>
       </Link>
     </li>
@@ -67,56 +68,56 @@ export default function BoardsPage() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">Boards</h1>
+              <h1 className="text-2xl font-semibold">{tr("Boards")}</h1>
               <Can permission="boards.print">
-                <PrintButton title="Boards" />
+                <PrintButton title={tr("Boards")} />
               </Can>
             </div>
-            <p className="text-sm text-slate-600">Your own boards and boards shared with you, with cards organised in stages.</p>
+            <p className="text-sm text-slate-600">{tr("Your own boards and boards shared with you, with cards organised in stages.")}</p>
           </div>
           <div className="flex items-center gap-4">
             <Can permission="boards.show_archived">
               <label className="flex items-center gap-2 text-sm text-slate-600">
                 <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-                Show archived
+                {tr("Show archived")}
               </label>
             </Can>
             <Can permission="boards.closed">
               <button type="button" className={secondaryButtonClass} onClick={() => setClosedOpen(true)}>
-                Closed Boards{boards.some((b) => b.closed_at) ? ` (${boards.filter((b) => b.closed_at).length})` : ''}
+                {tr("Closed Boards")}{boards.some((b) => b.closed_at) ? ` (${boards.filter((b) => b.closed_at).length})` : ''}
               </button>
             </Can>
             <Can permission="boards.create" level="edit">
               <button type="button" className={buttonClass} onClick={() => setCreating(true)}>
-                Create Board
+                {tr("Create Board")}
               </button>
             </Can>
           </div>
         </div>
 
         {loading ? (
-          <p className="text-center text-slate-500">Loading…</p>
+          <p className="text-center text-slate-500">{tr("Loading…")}</p>
         ) : (
           <>
             {production.length > 0 && (
               <section>
-                <h2 className="mb-2 font-semibold">Production Boards</h2>
-                <p className="mb-2 text-sm text-slate-600">One board per order in the shop queue, made automatically when the order is confirmed.</p>
+                <h2 className="mb-2 font-semibold">{tr("Production Boards")}</h2>
+                <p className="mb-2 text-sm text-slate-600">{tr("One board per order in the shop queue, made automatically when the order is confirmed.")}</p>
                 <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{production.map(tile)}</ul>
               </section>
             )}
             <section>
-              <h2 className="mb-2 font-semibold">My Boards</h2>
+              <h2 className="mb-2 font-semibold">{tr("My Boards")}</h2>
               {mine.length === 0 ? (
-                <p className="text-sm text-slate-500">You have not created any boards yet.</p>
+                <p className="text-sm text-slate-500">{tr("You have not created any boards yet.")}</p>
               ) : (
                 <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{mine.map(tile)}</ul>
               )}
             </section>
             <section>
-              <h2 className="mb-2 font-semibold">Shared with Me</h2>
+              <h2 className="mb-2 font-semibold">{tr("Shared with Me")}</h2>
               {others.length === 0 ? (
-                <p className="text-sm text-slate-500">No boards have been shared with you yet.</p>
+                <p className="text-sm text-slate-500">{tr("No boards have been shared with you yet.")}</p>
               ) : (
                 <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">{others.map(tile)}</ul>
               )}

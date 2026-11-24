@@ -24,6 +24,7 @@ import {
   weightUnit,
   type Units,
 } from '../lib/units'
+import { tr } from '../i18n'
 
 type Stat = { avg: number; min: number; max: number; n: number } | null
 
@@ -174,9 +175,9 @@ export default function CratingReportPage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold">Crating Tables</h2>
+          <h2 className="text-lg font-semibold">{tr("Crating Tables")}</h2>
           <p className="text-sm text-slate-600">
-            The weight, size and build time of our crates, based on every crate entered so far.
+            {tr("The weight, size and build time of our crates, based on every crate entered so far.")}
           </p>
         </div>
         <Can permission="crating.units">
@@ -187,17 +188,17 @@ export default function CratingReportPage() {
       <Can permission="reports.crating.filters">
       <div className="grid gap-2 sm:grid-cols-[auto_auto_1fr_auto] sm:items-end">
         <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Crated from</span>
+          <span className="mb-1 block text-slate-600">{tr("Crated from")}</span>
           <input type="date" className={inputClass} value={from} onChange={(e) => setFilter('from', e.target.value)} />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-600">to</span>
+          <span className="mb-1 block text-slate-600">{tr("to")}</span>
           <input type="date" className={inputClass} value={to} onChange={(e) => setFilter('to', e.target.value)} />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Machine type</span>
+          <span className="mb-1 block text-slate-600">{tr("Machine type")}</span>
           <select className={inputClass} value={typeId} onChange={(e) => setFilter('type', e.target.value)}>
-            <option value="">All machine types</option>
+            <option value="">{tr("All machine types")}</option>
             {typeChoices.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name}
@@ -207,14 +208,14 @@ export default function CratingReportPage() {
         </label>
         {filtersOn && (
           <button type="button" className="text-sm underline sm:pb-2" onClick={() => setParams(params.get('tab') ? { tab: params.get('tab')! } : {}, { replace: true })}>
-            Clear Filters
+            {tr("Clear Filters")}
           </button>
         )}
       </div>
       </Can>
 
       {loading ? (
-        <p className="py-8 text-center text-slate-500">Loading…</p>
+        <p className="py-8 text-center text-slate-500">{tr("Loading…")}</p>
       ) : (
         <>
           {/* ---------- Per machine type ---------- */}
@@ -222,15 +223,14 @@ export default function CratingReportPage() {
           <section className="rounded-lg border border-slate-200 bg-white">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-4">
               <div>
-                <h2 className="font-semibold">By Machine Type</h2>
+                <h2 className="font-semibold">{tr("By Machine Type")}</h2>
                 <p className="text-xs text-slate-500">
-                  Average, with the smallest – largest below. A crate holding several machines is counted once, under
-                  everything it holds. “1 of 2” means only 1 of the 2 crates has that field filled in.
+                  {tr("Average, with the smallest – largest below. A crate holding several machines is counted once, under everything it holds. “1 of 2” means only 1 of the 2 crates has that field filled in.")}
                 </p>
               </div>
               <Can permission="reports.crating.export_summary">
                 <button type="button" className={secondaryButtonClass} onClick={exportSummary} disabled={groups.length === 0}>
-                  Export Summary CSV
+                  {tr("Export Summary CSV")}
                 </button>
               </Can>
             </div>
@@ -238,8 +238,8 @@ export default function CratingReportPage() {
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs text-slate-600">
                   <tr>
-                    <th className="px-3 py-2 font-semibold">Machine type</th>
-                    <th className="px-3 py-2 text-right font-semibold">Crates</th>
+                    <th className="px-3 py-2 font-semibold">{tr("Machine type")}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{tr("Crates")}</th>
                     {MEASURES.map((m) => (
                       <th key={m.key} className="px-3 py-2 text-right font-semibold whitespace-nowrap">
                         {m.label(units)}
@@ -252,8 +252,8 @@ export default function CratingReportPage() {
                     <tr>
                       <td colSpan={MEASURES.length + 2} className="px-3 py-6 text-center text-slate-500">
                         {crates.length === 0
-                          ? 'No crates have been entered yet. Mark a machine as crated on an order that is ready to ship.'
-                          : 'No crates match these filters. Clear the filters to see all crates.'}
+                          ? tr("No crates have been entered yet. Mark a machine as crated on an order that is ready to ship.")
+                          : tr("No crates match these filters. Clear the filters to see all crates.")}
                       </td>
                     </tr>
                   )}
@@ -271,7 +271,7 @@ export default function CratingReportPage() {
                                 <div className="font-medium">{showNumber(inUnits(m.key, s.avg, units), d)}</div>
                                 <div className="text-xs text-slate-500">
                                   {showNumber(inUnits(m.key, s.min, units), d)} – {showNumber(inUnits(m.key, s.max, units), d)}
-                                  {s.n < g.crates.length && <> · {s.n} of {g.crates.length}</>}
+                                  {s.n < g.crates.length && <> · {s.n} {tr("of")} {g.crates.length}</>}
                                 </div>
                               </>
                             ) : (
@@ -293,11 +293,11 @@ export default function CratingReportPage() {
           <section className="rounded-lg border border-slate-200 bg-white">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 p-4">
               <h2 className="font-semibold">
-                Every crate <span className="font-normal text-slate-500">({rows.length})</span>
+                {tr("Every crate")} <span className="font-normal text-slate-500">({rows.length})</span>
               </h2>
               <Can permission="reports.crating.export_csv">
                 <button type="button" className={secondaryButtonClass} onClick={exportCrates} disabled={rows.length === 0}>
-                  Export CSV
+                  {tr("Export CSV")}
                 </button>
               </Can>
             </div>
@@ -305,15 +305,15 @@ export default function CratingReportPage() {
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs text-slate-600">
                   <tr>
-                    <th className="px-3 py-2 font-semibold">Date crated</th>
-                    <th className="px-3 py-2 font-semibold">Order</th>
-                    <th className="px-3 py-2 font-semibold">Contents</th>
-                    <th className="px-3 py-2 font-semibold whitespace-nowrap">Size (L × W × H)</th>
-                    <th className="px-3 py-2 text-right font-semibold">Weight</th>
-                    <th className="px-3 py-2 text-right font-semibold">Plywood</th>
-                    <th className="px-3 py-2 text-right font-semibold">Hours</th>
-                    <th className="px-3 py-2 font-semibold">Crated by</th>
-                    <th className="px-3 py-2 font-semibold">Notes</th>
+                    <th className="px-3 py-2 font-semibold">{tr("Date crated")}</th>
+                    <th className="px-3 py-2 font-semibold">{tr("Order")}</th>
+                    <th className="px-3 py-2 font-semibold">{tr("Contents")}</th>
+                    <th className="px-3 py-2 font-semibold whitespace-nowrap">{tr("Size (L × W × H)")}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{tr("Weight")}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{tr("Plywood")}</th>
+                    <th className="px-3 py-2 text-right font-semibold">{tr("Hours")}</th>
+                    <th className="px-3 py-2 font-semibold">{tr("Crated by")}</th>
+                    <th className="px-3 py-2 font-semibold">{tr("Notes")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -349,7 +349,7 @@ export default function CratingReportPage() {
                   {rows.length === 0 && (
                     <tr>
                       <td colSpan={9} className="px-3 py-6 text-center text-slate-500">
-                        No crates match these filters.
+                        {tr("No crates match these filters.")}
                       </td>
                     </tr>
                   )}

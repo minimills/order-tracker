@@ -1,3 +1,4 @@
+import { currentLang } from '../i18n'
 /**
  * Imperial / Metric for crate sizes and weights.
  * The database always stores metric (cm, kg); these helpers convert for display
@@ -47,7 +48,7 @@ export function weightToKg(value: number, units: Units) {
   return units === 'imperial' ? value * KG_PER_LB : value
 }
 
-const display = (decimals: number) => new Intl.NumberFormat('en-CA', { maximumFractionDigits: decimals })
+const display = (decimals: number) => new Intl.NumberFormat(currentLang(), { maximumFractionDigits: decimals })
 
 /** "1,200" – a number for reading (thousands separators, no trailing zeros). */
 export function showNumber(n: number | null | undefined, decimals = 2) {

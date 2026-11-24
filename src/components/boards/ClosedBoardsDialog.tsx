@@ -8,6 +8,7 @@ import { ACTION } from '../../lib/wording'
 import Can from '../Can'
 import { inputClass, Modal, narrowInputClass, secondaryButtonClass } from '../form'
 import ReopenBoardDialog from './ReopenBoardDialog'
+import { tr } from '../../i18n'
 
 /**
  * "Closed Boards": every closed board the person can open (production boards
@@ -50,7 +51,7 @@ export default function ClosedBoardsDialog({ onClose, onChanged }: { onClose: ()
 
   return (
     <Modal
-      title="Closed Boards"
+      title={tr("Closed Boards")}
       wide
       onClose={onClose}
       footer={
@@ -61,24 +62,24 @@ export default function ClosedBoardsDialog({ onClose, onChanged }: { onClose: ()
     >
       <div className="space-y-3 text-sm">
         <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))]">
-          <input aria-label="Search closed boards" className={inputClass} placeholder="Search name or board number" value={q} onChange={(e) => setQ(e.target.value)} />
-          <select aria-label="Kind of board" className={narrowInputClass} value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
-            <option value="all">All boards</option>
-            <option value="production">Orders (production boards)</option>
-            <option value="other">Other boards</option>
+          <input aria-label={tr("Search closed boards")} className={inputClass} placeholder={tr("Search name or board number")} value={q} onChange={(e) => setQ(e.target.value)} />
+          <select aria-label={tr("Kind of board")} className={narrowInputClass} value={kind} onChange={(e) => setKind(e.target.value as typeof kind)}>
+            <option value="all">{tr("All boards")}</option>
+            <option value="production">{tr("Orders (production boards)")}</option>
+            <option value="other">{tr("Other boards")}</option>
           </select>
-          <select aria-label="Why it was closed" className={narrowInputClass} value={reason} onChange={(e) => setReason(e.target.value as typeof reason)}>
-            <option value="all">Closed for any reason</option>
-            <option value="shipped">Order shipped</option>
-            <option value="manual">Closed by hand</option>
+          <select aria-label={tr("Why it was closed")} className={narrowInputClass} value={reason} onChange={(e) => setReason(e.target.value as typeof reason)}>
+            <option value="all">{tr("Closed for any reason")}</option>
+            <option value="shipped">{tr("Order shipped")}</option>
+            <option value="manual">{tr("Closed by hand")}</option>
           </select>
-          <input type="date" aria-label="Closed from" className={narrowInputClass} value={from} onChange={(e) => setFrom(e.target.value)} />
-          <input type="date" aria-label="Closed until" className={narrowInputClass} value={to} onChange={(e) => setTo(e.target.value)} />
+          <input type="date" aria-label={tr("Closed from")} className={narrowInputClass} value={from} onChange={(e) => setFrom(e.target.value)} />
+          <input type="date" aria-label={tr("Closed until")} className={narrowInputClass} value={to} onChange={(e) => setTo(e.target.value)} />
         </div>
         {rows === null ? (
-          <p className="text-slate-500">Loading…</p>
+          <p className="text-slate-500">{tr("Loading…")}</p>
         ) : shown.length === 0 ? (
-          <p className="text-slate-500">{rows.length === 0 ? 'No boards are closed.' : 'No closed boards match these filters.'}</p>
+          <p className="text-slate-500">{rows.length === 0 ? tr("No boards are closed.") : tr("No closed boards match these filters.")}</p>
         ) : (
           <ul className="divide-y divide-slate-200 rounded-md border border-slate-200">
             {shown.map((b) => (
@@ -87,16 +88,16 @@ export default function ClosedBoardsDialog({ onClose, onChanged }: { onClose: ()
                 <span className="min-w-0 flex-1">
                   <span className="font-medium">{b.name}</span>
                   <span className="block text-xs text-slate-500">
-                    {boardNumberText(b)} · closed {b.closed_at ? showDate(b.closed_at.slice(0, 10)) : ''}
-                    {b.close_reason === 'shipped' ? ' (order shipped)' : b.closed_by_name ? ` by ${b.closed_by_name}` : ''}
+                    {boardNumberText(b)} {tr("· closed")} {b.closed_at ? showDate(b.closed_at.slice(0, 10)) : ''}
+                    {b.close_reason === 'shipped' ? tr(" (order shipped)") : b.closed_by_name ? tr(" by {{closed_by_name}}", { closed_by_name: b.closed_by_name }) : ''}
                   </span>
                 </span>
                 <Link to={`/boards/${b.id}`} className="text-blue-700 underline" onClick={onClose}>
-                  Open
+                  {tr("Open")}
                 </Link>
                 <Can permission="boards.reopen" level="edit">
                   <button type="button" className="underline" onClick={() => setReopen(b)}>
-                    Reopen
+                    {tr("Reopen")}
                   </button>
                 </Can>
               </li>

@@ -10,6 +10,7 @@ import { callFunction } from '../../lib/edgeFunction'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import PrintButton from '../../components/print/PrintButton'
+import { tr } from '../../i18n'
 
 type LogRow = {
   id: string
@@ -52,7 +53,9 @@ export default function EmailLogPage() {
   }, [load])
 
   async function resend(r: LogRow) {
-    if (!(await confirmAction(`Send “${r.subject}” to ${r.to_email} again?`, { confirmLabel: 'Resend' }))) return
+    if (!(await confirmAction(tr("Send “{{subject}}” to {{to_email}} again?", { subject: r.subject, to_email: r.to_email }), { get confirmLabel() {
+    return tr("Resend")
+  } }))) return
     setBusy(r.id)
     const res = await callFunction('send-email', { action: 'resend', id: r.id })
     setBusy(null)
@@ -64,30 +67,30 @@ export default function EmailLogPage() {
   return (
     <div className="space-y-4">
       <AdminPageHeader
-        title="Email Log"
+        title={tr("Email Log")}
         print={
           <Can permission="admin.email_log.print">
-            <PrintButton title="Email Log" />
+            <PrintButton title={tr("Email Log")} />
           </Can>
         }
-      >Every email the Order Tracker has sent, newest first.</AdminPageHeader>
+      >{tr("Every email the Order Tracker has sent, newest first.")}</AdminPageHeader>
       <div className="flex flex-wrap gap-2">
-        <input aria-label="Search" className={`${narrowInputClass} w-72`} placeholder="Search by recipient or subject" value={q} onChange={(e) => setQ(e.target.value)} />
-        <select aria-label="Status" className={`${narrowInputClass} w-40`} value={status} onChange={(e) => setStatus(e.target.value)}>
-          <option value="">All statuses</option>
-          <option value="sent">Sent</option>
-          <option value="failed">Failed</option>
+        <input aria-label={tr("Search")} className={`${narrowInputClass} w-72`} placeholder={tr("Search by recipient or subject")} value={q} onChange={(e) => setQ(e.target.value)} />
+        <select aria-label={tr("Status")} className={`${narrowInputClass} w-40`} value={status} onChange={(e) => setStatus(e.target.value)}>
+          <option value="">{tr("All statuses")}</option>
+          <option value="sent">{tr("Sent")}</option>
+          <option value="failed">{tr("Failed")}</option>
         </select>
       </div>
       <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-500">
             <tr>
-              <th className="px-3 py-2 font-normal">Sent</th>
-              <th className="px-3 py-2 font-normal">To</th>
-              <th className="px-3 py-2 font-normal">Subject</th>
-              <th className="px-3 py-2 font-normal">Type</th>
-              <th className="px-3 py-2 font-normal">Status</th>
+              <th className="px-3 py-2 font-normal">{tr("Sent")}</th>
+              <th className="px-3 py-2 font-normal">{tr("To")}</th>
+              <th className="px-3 py-2 font-normal">{tr("Subject")}</th>
+              <th className="px-3 py-2 font-normal">{tr("Type")}</th>
+              <th className="px-3 py-2 font-normal">{tr("Status")}</th>
               <th className="px-3 py-2 font-normal" />
             </tr>
           </thead>
@@ -104,19 +107,19 @@ export default function EmailLogPage() {
                 <td className="px-3 py-2 whitespace-nowrap">{KIND[r.kind]}</td>
                 <td className="px-3 py-2">
                   {r.status === 'sent' ? (
-                    <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-800">Sent</span>
+                    <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs font-medium text-green-800">{tr("Sent")}</span>
                   ) : (
                     <span className="rounded bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-800" title={r.error ?? ''}>
-                      Failed
+                      {tr("Failed")}
                     </span>
                   )}
                   {r.status === 'failed' && r.error && <div className="mt-0.5 max-w-xs text-xs text-red-700">{r.error}</div>}
-                  {r.saved_to_sent === false && <div className="mt-0.5 text-xs text-amber-800">Not saved in Sent folder</div>}
+                  {r.saved_to_sent === false && <div className="mt-0.5 text-xs text-amber-800">{tr("Not saved in Sent folder")}</div>}
                 </td>
                 <td className="px-3 py-2">
                   <Can permission="admin.email_log" level="edit">
                     <button type="button" className={secondaryButtonClass} disabled={busy === r.id} onClick={() => resend(r)}>
-                      {busy === r.id ? 'Sending…' : 'Resend'}
+                      {busy === r.id ? tr("Sending…") : tr("Resend")}
                     </button>
                   </Can>
                 </td>
@@ -124,12 +127,12 @@ export default function EmailLogPage() {
             ))}
           </tbody>
         </table>
-        {!loading && rows.length === 0 && <p className="p-4 text-sm text-slate-500">No emails match these filters.</p>}
-        {loading && <p className="p-4 text-sm text-slate-500">Loading…</p>}
+        {!loading && rows.length === 0 && <p className="p-4 text-sm text-slate-500">{tr("No emails match these filters.")}</p>}
+        {loading && <p className="p-4 text-sm text-slate-500">{tr("Loading…")}</p>}
       </div>
       {rows.length === limit && (
         <button type="button" className={secondaryButtonClass} onClick={() => setLimit(limit + PAGE)}>
-          Load More
+          {tr("Load More")}
         </button>
       )}
 
@@ -140,15 +143,15 @@ export default function EmailLogPage() {
               <div className="text-sm">
                 <div className="font-semibold">{open.subject}</div>
                 <div className="text-slate-600">
-                  To {open.to_email} · {activityTime.format(new Date(open.created_at))}
+                  {tr("To")} {open.to_email} · {activityTime.format(new Date(open.created_at))}
                 </div>
               </div>
-              <button type="button" aria-label="Close" className="rounded px-2 text-xl leading-none text-slate-500 hover:bg-slate-100" onClick={() => setOpen(null)}>
+              <button type="button" aria-label={tr("Close")} className="rounded px-2 text-xl leading-none text-slate-500 hover:bg-slate-100" onClick={() => setOpen(null)}>
                 ×
               </button>
             </div>
             {/* The stored email, shown without running anything in it. */}
-            <iframe title="Email preview" sandbox="" className="h-[60vh] w-full" srcDoc={open.html ?? ''} />
+            <iframe title={tr("Email preview")} sandbox="" className="h-[60vh] w-full" srcDoc={open.html ?? ''} />
           </div>
         </div>
       )}

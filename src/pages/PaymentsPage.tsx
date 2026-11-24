@@ -14,13 +14,20 @@ import { formatMoney, friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import type { PaymentRow } from '../lib/types'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type GroupKey = 'overdue' | 'week' | 'later'
 
 const GROUPS: { key: GroupKey; title: string; tone: string }[] = [
-  { key: 'overdue', title: 'Overdue', tone: 'border-red-300 bg-red-50 text-red-900' },
-  { key: 'week', title: 'Due this week', tone: 'border-amber-300 bg-amber-50 text-amber-900' },
-  { key: 'later', title: 'Later', tone: 'border-slate-200 bg-white text-slate-900' },
+  { key: 'overdue', get title() {
+    return tr("Overdue")
+  }, tone: 'border-red-300 bg-red-50 text-red-900' },
+  { key: 'week', get title() {
+    return tr("Due this week")
+  }, tone: 'border-amber-300 bg-amber-50 text-amber-900' },
+  { key: 'later', get title() {
+    return tr("Later")
+  }, tone: 'border-slate-200 bg-white text-slate-900' },
 ]
 
 function groupOf(p: PaymentRow): GroupKey {
@@ -83,18 +90,18 @@ export default function PaymentsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h1 className="text-2xl font-semibold">Payments</h1>
+            <h1 className="text-2xl font-semibold">{tr("Payments")}</h1>
             <Can permission="payments.print">
-              <PrintButton title="Payments" />
+              <PrintButton title={tr("Payments")} />
             </Can>
           </div>
           <p className="text-sm text-slate-600">
-            Every outstanding payment, soonest first. Cancelled and archived orders are not included.
+            {tr("Every outstanding payment, soonest first. Cancelled and archived orders are not included.")}
           </p>
         </div>
         <Can permission="payments.page.refresh">
           <button type="button" className={secondaryButtonClass} onClick={load}>
-            Refresh
+            {tr("Refresh")}
           </button>
         </Can>
       </div>
@@ -114,13 +121,13 @@ export default function PaymentsPage() {
         ))}
       </div>
       <p className="text-sm text-slate-600">
-        Total still owed: <strong>{totalsText(rows)}</strong>
+        {tr("Total still owed:")} <strong>{totalsText(rows)}</strong>
       </p>
 
-      {loading && <p className="text-center text-slate-500">Loading…</p>}
+      {loading && <p className="text-center text-slate-500">{tr("Loading…")}</p>}
       {!loading && rows.length === 0 && (
         <div className="rounded-lg border border-dashed border-slate-300 bg-white p-8 text-center text-slate-500">
-          No payments are outstanding.
+          {tr("No payments are outstanding.")}
         </div>
       )}
 
@@ -142,12 +149,12 @@ export default function PaymentsPage() {
                   >
                     <div>
                       <div className="font-medium">{showDate(p.due_date)}</div>
-                      <div className="text-xs text-slate-500">{p.due_date ? dueText(p) : 'No due date'}</div>
+                      <div className="text-xs text-slate-500">{p.due_date ? dueText(p) : tr("No due date")}</div>
                     </div>
                     <div className="min-w-0">
-                      <Can permission="order.page" fallback={<span className="font-medium">Order {p.order_code}</span>}>
+                      <Can permission="order.page" fallback={<span className="font-medium">{tr("Order")} {p.order_code}</span>}>
                         <Link to={`/orders/${p.order_id}`} className="font-medium hover:underline">
-                          Order {p.order_code}
+                          {tr("Order")} {p.order_code}
                         </Link>
                       </Can>{' '}
                       <span className="text-slate-500">· {p.payment_type}</span>
@@ -161,13 +168,13 @@ export default function PaymentsPage() {
                           </span>
                         )}
                       </div>
-                      {p.stage === 'Quote' && <div className="text-xs text-slate-500">Order is still a quote</div>}
+                      {p.stage === 'Quote' && <div className="text-xs text-slate-500">{tr("Order is still a quote")}</div>}
                     </div>
                     <div className="tabular-nums lg:text-right">
                       <div className="font-semibold">{formatMoney(p.remaining, p.currency)}</div>
                       {p.received_amount > 0 && (
                         <div className="text-xs text-slate-500">
-                          of {formatMoney(p.amount, p.currency)} ({formatMoney(p.received_amount, p.currency)} received)
+                          {tr("of")} {formatMoney(p.amount, p.currency)} ({formatMoney(p.received_amount, p.currency)} {tr("received)")}
                         </div>
                       )}
                     </div>
@@ -178,12 +185,12 @@ export default function PaymentsPage() {
                       <div className="flex flex-wrap gap-2 lg:justify-end">
                         <Can permission="reminders.send" level="edit">
                           <button type="button" className={secondaryButtonClass} onClick={() => setReminding(p)}>
-                            Send Reminder
+                            {tr("Send Reminder")}
                           </button>
                         </Can>
                         <Can permission="payments.action.mark_received" level="edit">
                           <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
-                            Mark as Received
+                            {tr("Mark as Received")}
                           </button>
                         </Can>
                       </div>
@@ -205,7 +212,7 @@ export default function PaymentsPage() {
           payment={receiving}
           onClose={() => setReceiving(null)}
           onDone={() => {
-            toast.success(`Order ${receiving.order_code}: ${receiving.payment_type} marked as received.`)
+            toast.success(tr("Order {{order_code}}: {{payment_type}} marked as received.", { order_code: receiving.order_code, payment_type: receiving.payment_type }))
             setReceiving(null)
             load()
           }}

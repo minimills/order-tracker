@@ -7,6 +7,7 @@ import type { Group, Person } from '../../lib/boards'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { confirmAction } from '../../lib/confirm'
+import { tr } from '../../i18n'
 
 type Member = { group_id: string; user_email: string }
 
@@ -41,7 +42,7 @@ export default function GroupsPage() {
     const { error } = await fn()
     setBusy(false)
     if (error) {
-      toast.error(error.code === '23505' ? 'There is already a group with that name.' : friendlyError(error))
+      toast.error(error.code === '23505' ? tr("There is already a group with that name.") : friendlyError(error))
       return false
     }
     if (ok) toast.success(ok)
@@ -58,20 +59,19 @@ export default function GroupsPage() {
   const nameOf = (email: string) => people.find((p) => p.email === email)?.name ?? email
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Groups">
-        Groups of people, for example Procurement or Techs. Use them to share boards and choose who gets board notifications. A
-        person can be in any number of groups. (Departments are set in Admin → Departments.)
+      <AdminPageHeader title={tr("Groups")}>
+        {tr("Groups of people, for example Procurement or Techs. Use them to share boards and choose who gets board notifications. A person can be in any number of groups. (Departments are set in Admin → Departments.)")}
       </AdminPageHeader>
 
       <form onSubmit={add} className="flex gap-2 rounded-lg border border-slate-200 bg-white p-4">
-        <input aria-label="New group name" className={inputClass} placeholder="New group, for example Procurement" value={name} onChange={(e) => setName(e.target.value)} />
+        <input aria-label={tr("New group name")} className={inputClass} placeholder={tr("New group, for example Procurement")} value={name} onChange={(e) => setName(e.target.value)} />
         <button type="submit" className={buttonClass} disabled={busy}>
-          Create Group
+          {tr("Create Group")}
         </button>
       </form>
 
       <label className="flex items-center gap-2 text-sm text-slate-600">
-        <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Show archived groups
+        <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> {tr("Show archived groups")}
       </label>
 
       <ul className="space-y-3">
@@ -83,25 +83,27 @@ export default function GroupsPage() {
               <li key={g.id} className={`rounded-lg border border-slate-200 bg-white p-4 ${g.archived ? 'opacity-60' : ''}`}>
                 <div className="flex flex-wrap items-center gap-2">
                   <input
-                    aria-label={`Group name ${g.name}`}
+                    aria-label={tr("Group name {{name}}", { name: g.name })}
                     className={`${inputClass} max-w-xs font-semibold`}
                     defaultValue={g.name}
                     disabled={g.archived}
                     onBlur={(e) => e.target.value.trim() && e.target.value.trim() !== g.name && run(() => supabase!.from('user_groups').update({ name: e.target.value.trim() }).eq('id', g.id))}
                   />
                   <span className="text-sm text-slate-500">
-                    {mine.length} {mine.length === 1 ? 'person' : 'people'}
+                    {mine.length} {mine.length === 1 ? tr("person") : tr("people")}
                   </span>
                   <button
                     type="button"
                     className={`${secondaryButtonClass} ml-auto`}
                     disabled={busy}
                     onClick={async () =>
-                      (g.archived || (await confirmAction(`Archive the group “${g.name}”? Boards shared with this group are no longer shared with its members.`, { confirmLabel: 'Archive' }))) &&
+                      (g.archived || (await confirmAction(tr("Archive the group “{{name}}”? Boards shared with this group are no longer shared with its members.", { name: g.name }), { get confirmLabel() {
+    return tr("Archive")
+  } }))) &&
                       run(() => supabase!.from('user_groups').update({ archived: !g.archived }).eq('id', g.id))
                     }
                   >
-                    {g.archived ? 'Restore' : 'Archive'}
+                    {g.archived ? tr("Restore") : tr("Archive")}
                   </button>
                 </div>
                 <ul className="mt-2 flex flex-wrap gap-1.5">
@@ -111,7 +113,7 @@ export default function GroupsPage() {
                       {!g.archived && (
                         <button
                           type="button"
-                          aria-label={`Remove ${nameOf(m.user_email)} from ${g.name}`}
+                          aria-label={tr("Remove {{nameOf}} from {{name}}", { nameOf: nameOf(m.user_email), name: g.name })}
                           className="text-xs text-slate-500 hover:text-red-700"
                           onClick={() => run(() => supabase!.from('user_group_members').delete().eq('group_id', g.id).eq('user_email', m.user_email))}
                         >
@@ -120,17 +122,17 @@ export default function GroupsPage() {
                       )}
                     </li>
                   ))}
-                  {mine.length === 0 && <li className="text-sm text-slate-500">Nobody yet.</li>}
+                  {mine.length === 0 && <li className="text-sm text-slate-500">{tr("Nobody yet.")}</li>}
                 </ul>
                 {!g.archived && (
                   <select
-                    aria-label={`Add a person to ${g.name}`}
+                    aria-label={tr("Add a person to {{name}}", { name: g.name })}
                     className={`${inputClass} mt-2 max-w-xs py-1`}
                     value=""
                     disabled={busy}
                     onChange={(e) => e.target.value && run(() => supabase!.from('user_group_members').insert({ group_id: g.id, user_email: e.target.value }))}
                   >
-                    <option value="">Add a person…</option>
+                    <option value="">{tr("Add a person…")}</option>
                     {people
                       .filter((p) => !mine.some((m) => m.user_email === p.email))
                       .map((p) => (
@@ -143,7 +145,7 @@ export default function GroupsPage() {
               </li>
             )
           })}
-        {groups.length === 0 && <li className="text-sm text-slate-500">No groups have been created yet.</li>}
+        {groups.length === 0 && <li className="text-sm text-slate-500">{tr("No groups have been created yet.")}</li>}
       </ul>
     </div>
   )

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import Can from './Can'
+import { tr } from '../i18n'
 
 async function copyText(text: string) {
   try {
@@ -39,8 +40,8 @@ export default function SerialNumber({ serial, className = '' }: { serial: strin
         <button
           type="button"
           draggable={false}
-          aria-label={`Copy serial ${serial}`}
-          title="Copy"
+          aria-label={tr("Copy serial {{serial}}", { serial: serial })}
+          title={tr("Copy")}
           onClick={async (e) => {
             e.stopPropagation()
             e.preventDefault()
@@ -50,7 +51,7 @@ export default function SerialNumber({ serial, className = '' }: { serial: strin
             copied ? 'bg-green-100 text-green-800' : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'
           }`}
         >
-          {copied ? 'Copied' : '⧉'}
+          {copied ? tr("Copied") : '⧉'}
         </button>
       </Can>
     </span>

@@ -1,17 +1,26 @@
 // @permission-scope crating.units
 import { usePreferences } from '../../lib/preferences'
 import type { Units } from '../../lib/units'
+import { tr } from '../../i18n'
 
 const OPTIONS: { value: Units; label: string; hint: string }[] = [
-  { value: 'imperial', label: 'Imperial', hint: 'inches, lb' },
-  { value: 'metric', label: 'Metric', hint: 'cm, kg' },
+  { value: 'imperial', get label() {
+    return tr("Imperial")
+  }, get hint() {
+    return tr("inches, lb")
+  } },
+  { value: 'metric', get label() {
+    return tr("Metric")
+  }, get hint() {
+    return tr("cm, kg")
+  } },
 ]
 
 /** Imperial / Metric switch. The choice is remembered for each person. */
 export default function UnitsSwitch({ className = '' }: { className?: string }) {
   const { units, setUnits } = usePreferences()
   return (
-    <div role="radiogroup" aria-label="Units" className={`inline-flex rounded-md border border-slate-300 bg-white p-0.5 text-xs ${className}`}>
+    <div role="radiogroup" aria-label={tr("Units")} className={`inline-flex rounded-md border border-slate-300 bg-white p-0.5 text-xs ${className}`}>
       {OPTIONS.map((o) => (
         <button
           key={o.value}

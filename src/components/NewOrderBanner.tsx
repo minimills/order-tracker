@@ -4,6 +4,7 @@ import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import Can from './Can'
 import Icon from './Icon'
+import { tr } from '../i18n'
 
 type NewOrder = { id: string; order_code: string; customer_name: string; customer_company: string | null; shownAt: number }
 const SHOW_MS = 60_000
@@ -53,14 +54,14 @@ export default function NewOrderBanner() {
           <div key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 bg-green-700 px-4 py-2 text-sm text-white md:px-8">
             <Icon name="plus" className="h-4 w-4" />
             <span className="min-w-0 flex-1">
-              <span className="font-semibold">New order {o.order_code} added</span>
+              <span className="font-semibold">{tr("New order")} {o.order_code} {tr("added")}</span>
               <span className="text-green-100"> · {o.customer_company || o.customer_name}</span>
             </span>
             <Link to={`/orders/${o.id}`} className="rounded-md border border-white/60 px-3 py-1 font-medium hover:bg-white/10">
-              Open Order {o.order_code}
+              {tr("Open Order")} {o.order_code}
             </Link>
             <button type="button" className="rounded-md px-3 py-1 font-medium hover:bg-white/10" onClick={() => setList((l) => l.filter((x) => x.id !== o.id))}>
-              Dismiss
+              {tr("Dismiss")}
             </button>
           </div>
         ))}

@@ -17,6 +17,7 @@ import { supabase } from '../lib/supabase'
 import { PRINT_KEY } from '../lib/useChart'
 import { starterDashboard, type Dashboard, type Widget } from '../lib/widgets'
 import { ACTION } from '../lib/wording'
+import { tr } from '../i18n'
 
 const STARTER = 'starter'
 /** Tables whose changes refresh the widgets (row security decides what each person receives). */
@@ -106,7 +107,7 @@ export default function DashboardPage() {
   if (!list)
     return (
       <Can permission="dashboard">
-        <div className="p-8 text-center text-slate-500">Loading…</div>
+        <div className="p-8 text-center text-slate-500">{tr("Loading…")}</div>
       </Can>
     )
   const current = list.find((d) => d.id === params.get('tab')) ?? list.find((d) => d.is_default) ?? list[0]
@@ -116,7 +117,7 @@ export default function DashboardPage() {
   }
   const editable = canCustomize && !current.locked
   const choose = (id: string) => {
-    if (editing) return toast.error('Select Done or Cancel first.')
+    if (editing) return toast.error(tr("Select Done or Cancel first."))
     setParams(id === (list.find((d) => d.is_default) ?? list[0]).id ? {} : { tab: id }, { replace: true })
   }
 
@@ -147,7 +148,7 @@ export default function DashboardPage() {
     setEditing(null)
     await load()
     if (current.id === STARTER) setParams({}, { replace: true })
-    toast.success('Dashboard saved.')
+    toast.success(tr("Dashboard saved."))
   }
   async function rpc(name: string, args: Record<string, unknown>, ok?: string) {
     if (!supabase) return null
@@ -163,7 +164,9 @@ export default function DashboardPage() {
   const saved = current.id !== STARTER
 
   async function newDashboard() {
-    const name = await askText('Name of the new dashboard, for example “Production”', { label: 'Name', confirmLabel: ACTION.create })
+    const name = await askText(tr("Name of the new dashboard, for example “Production”"), { get label() {
+    return tr("Name")
+  }, confirmLabel: ACTION.create })
     if (!name) return
     if (!saved) await save(current, {})
     const id = await save({ ...current, id: STARTER }, { name, widgets: [], layouts: {} })
@@ -173,9 +176,11 @@ export default function DashboardPage() {
     setEditing({ widgets: [], layouts: {} })
   }
   async function rename() {
-    const name = await askText('New name of this dashboard', {
+    const name = await askText(tr("New name of this dashboard"), {
       initial: current.name,
-      label: 'Name',
+      get label() {
+    return tr("Name")
+  },
       confirmLabel: ACTION.save,
     })
     if (name && (await save(current, { name }))) load()
@@ -189,7 +194,7 @@ export default function DashboardPage() {
     rpc('reorder_dashboards', { p_ids: ids })
   }
   async function remove() {
-    if (!(await confirmAction(`Permanently delete the dashboard “${current.name}”?`, { danger: true, confirmLabel: ACTION.permanentlyDelete }))) return
+    if (!(await confirmAction(tr("Permanently delete the dashboard “{{name}}”?", { name: current.name }), { danger: true, confirmLabel: ACTION.permanentlyDelete }))) return
     if (await rpc('delete_dashboard', { p_id: current.id }, 'Dashboard deleted.')) {
       setEditing(null)
       setParams({}, { replace: true })
@@ -210,7 +215,9 @@ export default function DashboardPage() {
     }
   }
   async function reset() {
-    if (!(await confirmAction(`Reset “${current.name}” to its template? Your changes to it are replaced.`, { confirmLabel: 'Reset to Template' }))) return
+    if (!(await confirmAction(tr("Reset “{{name}}” to its template? Your changes to it are replaced.", { name: current.name }), { get confirmLabel() {
+    return tr("Reset to Template")
+  } }))) return
     const id = await rpc('reset_dashboard', { p_id: current.id }, 'Dashboard reset to the template.')
     if (typeof id === 'string') setParams({ tab: id }, { replace: true })
   }
@@ -228,7 +235,7 @@ export default function DashboardPage() {
         }),
       )
     } catch {
-      return toast.error('This browser does not allow the printable page. Allow site data for this page and try again.')
+      return toast.error(tr("This browser does not allow the printable page. Allow site data for this page and try again."))
     }
     navigate('/dashboard/print')
   }
@@ -239,13 +246,13 @@ export default function DashboardPage() {
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-2xl font-semibold">Dashboard</h1>
+            <h1 className="text-2xl font-semibold">{tr("Dashboard")}</h1>
             <p className="text-sm text-slate-600">
               {showDate(todayISO(), 'EEEE, MMMM d, yyyy')} · {updatedText(data.loadedAt)}
               <Can permission="dashboard.refresh">
                 {' · '}
                 <button type="button" className="underline" onClick={refresh}>
-                  Refresh Now
+                  {tr("Refresh Now")}
                 </button>
               </Can>
             </p>
@@ -270,7 +277,7 @@ export default function DashboardPage() {
                 <Can permission="dashboard.share" level="edit">
                   {saved && (
                     <button type="button" className={secondaryButtonClass} onClick={() => setSharing(true)}>
-                      Share a Copy
+                      {tr("Share a Copy")}
                     </button>
                   )}
                 </Can>
@@ -285,7 +292,7 @@ export default function DashboardPage() {
                       })
                     }
                   >
-                    Edit Dashboard
+                    {tr("Edit Dashboard")}
                   </button>
                 </Can>
               </>
@@ -295,7 +302,7 @@ export default function DashboardPage() {
 
         {/* Tabs: one per dashboard */}
         {(list.length > 1 || canTabs) && (
-          <div className="flex flex-wrap items-center gap-1 border-b border-slate-200" role="tablist" aria-label="Dashboards">
+          <div className="flex flex-wrap items-center gap-1 border-b border-slate-200" role="tablist" aria-label={tr("Dashboards")}>
             {list.map((d) => (
               <Can key={d.id} permission="dashboard.switch">
                 <button
@@ -306,14 +313,14 @@ export default function DashboardPage() {
                   className={`-mb-px max-w-[14rem] truncate border-b-2 px-3 py-2 text-sm ${d.id === current.id ? 'border-slate-900 font-semibold' : 'border-transparent text-slate-600'}`}
                 >
                   {d.name}
-                  {d.is_default && list.length > 1 && <span className="ml-1 text-xs font-normal text-slate-500">(default)</span>}
+                  {d.is_default && list.length > 1 && <span className="ml-1 text-xs font-normal text-slate-500">{tr("(default)")}</span>}
                 </button>
               </Can>
             ))}
             <Can permission="dashboard.tabs" level="edit">
               {!editing && (
                 <button type="button" className="px-2 py-2 text-sm text-blue-700 underline" onClick={newDashboard}>
-                  + New Dashboard
+                  {tr("+ New Dashboard")}
                 </button>
               )}
             </Can>
@@ -323,12 +330,12 @@ export default function DashboardPage() {
         {/* About this dashboard (view mode) */}
         {!editing && (current.locked || current.shared_by_name || current.template_id) && (
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            {current.locked && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Locked by an admin</span>}
-            {current.shared_by_name && <span className="text-xs text-slate-500">A copy shared by {current.shared_by_name}</span>}
+            {current.locked && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{tr("Locked by an admin")}</span>}
+            {current.shared_by_name && <span className="text-xs text-slate-500">{tr("A copy shared by")} {current.shared_by_name}</span>}
             <Can permission="dashboard.reset" level="edit">
               {current.template_id && (
                 <button type="button" className={small} onClick={reset}>
-                  Reset to Template
+                  {tr("Reset to Template")}
                 </button>
               )}
             </Can>
@@ -338,30 +345,30 @@ export default function DashboardPage() {
         {/* Managing this dashboard: only in Edit mode */}
         {editing && (
           <div className="flex flex-wrap items-center gap-2 text-sm">
-            {current.locked && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Locked by an admin: the widgets cannot be changed</span>}
-            {!saved && <span className="text-xs text-slate-500">Select Done once to save this dashboard; then it can be renamed, duplicated and moved.</span>}
+            {current.locked && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{tr("Locked by an admin: the widgets cannot be changed")}</span>}
+            {!saved && <span className="text-xs text-slate-500">{tr("Select Done once to save this dashboard; then it can be renamed, duplicated and moved.")}</span>}
             <Can permission="dashboard.tabs" level="edit">
               {saved && !current.locked && (
                 <button type="button" className={small} disabled={busy} onClick={rename}>
-                  Rename
+                  {tr("Rename")}
                 </button>
               )}
               {saved && (
                 <button type="button" className={small} disabled={busy} onClick={duplicate}>
-                  Duplicate
+                  {tr("Duplicate")}
                 </button>
               )}
               {saved && !current.is_default && (
                 <button type="button" className={small} disabled={busy} onClick={() => rpc('set_default_dashboard', { p_id: current.id }, `“${current.name}” opens first now.`)}>
-                  Make Default
+                  {tr("Make Default")}
                 </button>
               )}
               {saved && list.length > 1 && (
                 <>
-                  <button type="button" className={small} aria-label="Move this tab left" disabled={busy || list[0].id === current.id} onClick={() => move(-1)}>
+                  <button type="button" className={small} aria-label={tr("Move this tab left")} disabled={busy || list[0].id === current.id} onClick={() => move(-1)}>
                     ←
                   </button>
-                  <button type="button" className={small} aria-label="Move this tab right" disabled={busy || list.at(-1)!.id === current.id} onClick={() => move(1)}>
+                  <button type="button" className={small} aria-label={tr("Move this tab right")} disabled={busy || list.at(-1)!.id === current.id} onClick={() => move(1)}>
                     →
                   </button>
                 </>

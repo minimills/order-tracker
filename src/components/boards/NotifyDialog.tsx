@@ -8,6 +8,7 @@ import { useTargets } from '../../lib/useTargets'
 import Can from '../Can'
 import { buttonClass, narrowInputClass, Modal, secondaryButtonClass } from '../form'
 import TargetPicker, { type Target } from './TargetPicker'
+import { tr } from '../../i18n'
 
 /** Which events on this board notify whom (shown in the bell; email later). */
 export default function NotifyDialog({ board, stages, onClose }: { board: Board; stages: Stage[]; onClose: () => void }) {
@@ -34,7 +35,7 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
 
   async function add() {
     if (!supabase) return
-    if (['user', 'group', 'department'].includes(target.type) && !target.target) return toast.error('Select who should be notified.')
+    if (['user', 'group', 'department'].includes(target.type) && !target.target) return toast.error(tr("Select who should be notified."))
     setBusy(true)
     const { error } = await supabase.from('board_notify_rules').insert({
       board_id: board.id,
@@ -55,17 +56,16 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
 
   return (
     <Modal
-      title={`Notifications · ${board.name}`}
+      title={tr("Notifications · {{name}}", { name: board.name })}
       onClose={onClose}
       footer={
         <button type="button" className={secondaryButtonClass} onClick={onClose}>
-          Close
+          {tr("Close")}
         </button>
       }
     >
       <p className="text-sm text-slate-600">
-        Notifications appear under Notifications for the people selected (only people who can open this board, and never the person who
-        made the change). Email notifications will be added in a future update.
+        {tr("Notifications appear under Notifications for the people selected (only people who can open this board, and never the person who made the change). Email notifications will be added in a future update.")}
       </p>
       <ul className="mt-3 divide-y divide-slate-100 rounded-md border border-slate-200 text-sm">
         {rules.map((r) => (
@@ -75,18 +75,18 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
             </span>
             <Can permission="boards.notifications" level="edit">
               <button type="button" className="text-xs text-red-700 underline" onClick={() => remove(r)}>
-                Remove
+                {tr("Remove")}
               </button>
             </Can>
           </li>
         ))}
-        {rules.length === 0 && <li className="px-3 py-2 text-slate-500">No one is notified about this board.</li>}
+        {rules.length === 0 && <li className="px-3 py-2 text-slate-500">{tr("No one is notified about this board.")}</li>}
       </ul>
       <Can permission="boards.notifications" level="edit">
         <div className="mt-4 space-y-2 rounded-md bg-slate-50 p-3">
-          <div className="text-sm font-medium">Add a Notification</div>
+          <div className="text-sm font-medium">{tr("Add a Notification")}</div>
           <div className="flex flex-wrap gap-2">
-            <select aria-label="When" className={`${narrowInputClass} w-56`} value={event} onChange={(e) => setEvent(e.target.value as NotifyEvent)}>
+            <select aria-label={tr("When")} className={`${narrowInputClass} w-56`} value={event} onChange={(e) => setEvent(e.target.value as NotifyEvent)}>
               {NOTIFY_EVENTS.map((e) => (
                 <option key={e.value} value={e.value}>
                   {e.label}
@@ -94,8 +94,8 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
               ))}
             </select>
             {event === 'card_moved' && (
-              <select aria-label="Stage" className={`${narrowInputClass} w-44`} value={stage} onChange={(e) => setStage(e.target.value)}>
-                <option value="">Any stage</option>
+              <select aria-label={tr("Stage")} className={`${narrowInputClass} w-44`} value={stage} onChange={(e) => setStage(e.target.value)}>
+                <option value="">{tr("Any stage")}</option>
                 {stages.map((s) => (
                   <option key={s.id} value={s.id}>
                     {s.name}
@@ -104,10 +104,10 @@ export default function NotifyDialog({ board, stages, onClose }: { board: Board;
               </select>
             )}
           </div>
-          <div className="text-xs text-slate-600">Notify</div>
+          <div className="text-xs text-slate-600">{tr("Notify")}</div>
           <TargetPicker value={target} onChange={setTarget} withAssignees />
           <button type="button" className={buttonClass} onClick={add} disabled={busy}>
-            Add Notification
+            {tr("Add Notification")}
           </button>
         </div>
       </Can>

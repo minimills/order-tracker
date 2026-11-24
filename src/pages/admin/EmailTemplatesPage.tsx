@@ -8,13 +8,22 @@ import { EMAIL_TEMPLATE_DEFAULTS, loadEmailTemplates, REMINDER_KEYS, REMINDER_PL
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 const PLACEHOLDERS = '{customer_company} (the customer’s company, or their name when there is none), {customer_name}, {order_number}, {title}, {company_name}'
 const card = 'space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm'
 
 const DOCS: { key: 'certificate' | 'service_report'; title: string; text: string }[] = [
-  { key: 'certificate', title: 'Commissioning Certificate', text: 'Used when a signed commissioning certificate is emailed from its page.' },
-  { key: 'service_report', title: 'Service Report', text: 'Used when a signed service report (from a service call) is emailed from its page.' },
+  { key: 'certificate', get title() {
+    return tr("Commissioning Certificate")
+  }, get text() {
+    return tr("Used when a signed commissioning certificate is emailed from its page.")
+  } },
+  { key: 'service_report', get title() {
+    return tr("Service Report")
+  }, get text() {
+    return tr("Used when a signed service report (from a service call) is emailed from its page.")
+  } },
 ]
 
 /**
@@ -42,38 +51,37 @@ export default function EmailTemplatesPage() {
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
     setSaved(JSON.stringify(t))
-    toast.success('Email templates saved.')
+    toast.success(tr("Email templates saved."))
   }
 
-  if (!t) return <p className="text-sm text-slate-500">Loading…</p>
+  if (!t) return <p className="text-sm text-slate-500">{tr("Loading…")}</p>
   const dirty = JSON.stringify(t) !== saved
   const setReminder = (k: string, patch: Partial<{ name: string; subject: string; body: string }>) =>
     setT((x) => (x ? { ...x, reminders: { ...x.reminders, [k]: { ...x.reminders[k], ...patch } } } : x))
 
   return (
     <div className="space-y-4">
-      <AdminPageHeader title="Email Templates">
-        The wording of emails the app sends to customers and to new users. The person sending can still change the text, the recipients and the subject before sending.
+      <AdminPageHeader title={tr("Email Templates")}>
+        {tr("The wording of emails the app sends to customers and to new users. The person sending can still change the text, the recipients and the subject before sending.")}
       </AdminPageHeader>
       <div className="max-w-3xl space-y-4">
         <section className={card} data-setting="et-sender">
           <div>
-            <h2 className="text-base font-semibold">Office Sending Address</h2>
+            <h2 className="text-base font-semibold">{tr("Office Sending Address")}</h2>
             <p className="text-slate-600">
-              Emails a person sends (reminders, certificates, quotes and so on) come from their own mailbox when they connected one in Settings → Email. Otherwise they come from
-              this office address with that person’s name as the sender, and replies go to that person’s email. Leave it empty to use the mailbox that sends the app’s emails.
+              {tr("Emails a person sends (reminders, certificates, quotes and so on) come from their own mailbox when they connected one in Settings → Email. Otherwise they come from this office address with that person’s name as the sender, and replies go to that person’s email. Leave it empty to use the mailbox that sends the app’s emails.")}
             </p>
           </div>
-          <Field label="Office from address" htmlFor="et-from-address" hint="Only an address your mailbox is allowed to send as; otherwise the email may be refused or land in spam.">
+          <Field label={tr("Office from address")} htmlFor="et-from-address" hint={tr("Only an address your mailbox is allowed to send as; otherwise the email may be refused or land in spam.")}>
             <input id="et-from-address" type="email" className={inputClass} value={t.from_address} onChange={(e) => setT({ ...t, from_address: e.target.value })} />
           </Field>
         </section>
 
         <section className={card} data-setting="et-reminders">
           <div>
-            <h2 className="text-base font-semibold">Customer Reminders</h2>
+            <h2 className="text-base font-semibold">{tr("Customer Reminders")}</h2>
             <p className="text-slate-600">
-              Used by “Send Reminder” on an order and on the Payments page. Placeholders: {REMINDER_PLACEHOLDERS}.
+              {tr("Used by “Send Reminder” on an order and on the Payments page. Placeholders:")} {REMINDER_PLACEHOLDERS}.
             </p>
           </div>
           {REMINDER_KEYS.filter((k) => t.reminders[k]).map((k) => (
@@ -86,14 +94,14 @@ export default function EmailTemplatesPage() {
               </button>
               {open === k && (
                 <div className="space-y-3 border-t border-slate-200 p-3">
-                  <Field label="Name in the list" htmlFor={`et-r-${k}-name`}>
+                  <Field label={tr("Name in the list")} htmlFor={`et-r-${k}-name`}>
                     <input id={`et-r-${k}-name`} className={inputClass} maxLength={60} value={t.reminders[k].name} onChange={(e) => setReminder(k, { name: e.target.value })} />
                   </Field>
-                  <Field label="Subject" htmlFor={`et-r-${k}-subject`}>
+                  <Field label={tr("Subject")} htmlFor={`et-r-${k}-subject`}>
                     <input id={`et-r-${k}-subject`} className={inputClass} maxLength={300} value={t.reminders[k].subject} onChange={(e) => setReminder(k, { subject: e.target.value })} />
                   </Field>
-                  <Field label="Message">
-                    <RichTextEditor label={`${t.reminders[k].name} message`} minHeight="10rem" value={t.reminders[k].body} onChange={(body) => setReminder(k, { body })} />
+                  <Field label={tr("Message")}>
+                    <RichTextEditor label={tr("{{name}} message", { name: t.reminders[k].name })} minHeight="10rem" value={t.reminders[k].body} onChange={(body) => setReminder(k, { body })} />
                   </Field>
                 </div>
               )}
@@ -103,17 +111,16 @@ export default function EmailTemplatesPage() {
 
         <section className={card} data-setting="et-welcome">
           <div>
-            <h2 className="text-base font-semibold">Welcome Email for New Users</h2>
+            <h2 className="text-base font-semibold">{tr("Welcome Email for New Users")}</h2>
             <p className="text-slate-600">
-              Sent when a user is added in Admin → Users, and with “Welcome Email” there (with a preview). Placeholders: {WELCOME_PLACEHOLDERS}. {'{features}'} becomes the list of
-              pages that person is allowed to use.
+              {tr("Sent when a user is added in Admin → Users, and with “Welcome Email” there (with a preview). Placeholders:")} {WELCOME_PLACEHOLDERS}. {'{features}'} {tr("becomes the list of pages that person is allowed to use.")}
             </p>
           </div>
-          <Field label="Subject" htmlFor="et-welcome-subject">
+          <Field label={tr("Subject")} htmlFor="et-welcome-subject">
             <input id="et-welcome-subject" className={inputClass} maxLength={300} value={t.welcome.subject} onChange={(e) => setT({ ...t, welcome: { ...t.welcome, subject: e.target.value } })} />
           </Field>
-          <Field label="Message">
-            <RichTextEditor label="Welcome message" minHeight="14rem" value={t.welcome.body} onChange={(body) => setT((x) => (x ? { ...x, welcome: { ...x.welcome, body } } : x))} />
+          <Field label={tr("Message")}>
+            <RichTextEditor label={tr("Welcome message")} minHeight="14rem" value={t.welcome.body} onChange={(body) => setT((x) => (x ? { ...x, welcome: { ...x.welcome, body } } : x))} />
           </Field>
         </section>
 
@@ -123,10 +130,10 @@ export default function EmailTemplatesPage() {
               <h2 className="text-base font-semibold">{d.title}</h2>
               <p className="text-slate-600">{d.text}</p>
             </div>
-            <Field label="Subject" htmlFor={`et-${d.key}-subject`} hint={`Placeholders: ${PLACEHOLDERS}.`}>
+            <Field label={tr("Subject")} htmlFor={`et-${d.key}-subject`} hint={tr("Placeholders: {{PLACEHOLDERS}}.", { PLACEHOLDERS: PLACEHOLDERS })}>
               <input id={`et-${d.key}-subject`} className={inputClass} maxLength={300} value={t[`${d.key}_subject`]} onChange={(e) => setT({ ...t, [`${d.key}_subject`]: e.target.value })} />
             </Field>
-            <Field label="Default CC" htmlFor={`et-${d.key}-cc`} hint="Separate several addresses with commas. {office_email} = the office email from Admin → Company Details. Leave empty for no CC.">
+            <Field label={tr("Default CC")} htmlFor={`et-${d.key}-cc`} hint={tr("Separate several addresses with commas. {office_email} = the office email from Admin → Company Details. Leave empty for no CC.")}>
               <input id={`et-${d.key}-cc`} className={inputClass} value={t[`${d.key}_cc`]} onChange={(e) => setT({ ...t, [`${d.key}_cc`]: e.target.value })} />
             </Field>
             <button
@@ -134,13 +141,13 @@ export default function EmailTemplatesPage() {
               className={secondaryButtonClass}
               onClick={() => setT({ ...t, [`${d.key}_subject`]: EMAIL_TEMPLATE_DEFAULTS[`${d.key}_subject`], [`${d.key}_cc`]: EMAIL_TEMPLATE_DEFAULTS[`${d.key}_cc`] })}
             >
-              Use the Standard Wording
+              {tr("Use the Standard Wording")}
             </button>
           </section>
         ))}
 
         <button type="button" className={buttonClass} onClick={save} disabled={busy || !dirty}>
-          {busy ? 'Saving…' : ACTION.save}
+          {busy ? tr("Saving…") : ACTION.save}
         </button>
       </div>
     </div>

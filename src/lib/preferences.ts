@@ -5,6 +5,7 @@ import { friendlyError } from './format'
 import { supabase } from './supabase'
 import { applyTheme, readLocal, writeLocal, type GlassBase, type Theme } from './theme'
 import type { Units } from './units'
+import { currentLang, isLang, setLanguage, tr, type Lang } from '../i18n'
 
 export type ShopBoardView = 'rows' | 'list' | 'cards'
 
@@ -30,6 +31,8 @@ type Prefs = {
   shopBoardView: ShopBoardView
   /** Shop board: order numbers lowest first (asc) or highest first (desc) (0051). */
   shopBoardSort: 'asc' | 'desc'
+  /** The language chosen in Settings (null = not chosen yet). */
+  language: Lang | null
   /** True once the database has answered. */
   loaded: boolean
 }
@@ -76,11 +79,17 @@ async function load(email: string) {
     desktopNotifications: (p.data?.desktop_notifications as boolean | undefined) ?? current.desktopNotifications,
     shopBoardView: (p.data?.shop_board_view as ShopBoardView | undefined) ?? current.shopBoardView,
     shopBoardSort: (p.data?.shop_board_sort as 'asc' | 'desc' | undefined) ?? current.shopBoardSort,
+    language: isLang(p.data?.language) ? p.data.language : null,
     loaded: true,
   }
   byEmail.set(email, next)
   saveLocal(units)
   rememberLook(next)
+  // The language saved on the profile always wins over this browser's language.
+  if (next.language) {
+    writeLocal('bmm.lang', next.language)
+    if (next.language !== currentLang()) await setLanguage(next.language)
+  }
   emit()
 }
 
@@ -101,6 +110,7 @@ function localPrefs(): Prefs {
     desktopNotifications: readLocal('bmm.desktop') !== 'off',
     shopBoardView: (readLocal('bmm.shopview') as ShopBoardView | null) ?? 'rows',
     shopBoardSort: readLocal('bmm.shopsort') === 'desc' ? 'desc' : 'asc',
+    language: null,
     loaded: false,
   }
 }
@@ -131,7 +141,7 @@ export function usePreferences() {
     saveLocal(units)
     emit()
     const { error } = await supabase!.rpc('set_my_units', { p_units: units })
-    if (error) toast.error(`Could not remember your choice: ${friendlyError(error)}`)
+    if (error) toast.error(`${tr('Could not remember your choice:')} ${friendlyError(error)}`)
   }
 
   /** Sets my own start page (needs "settings.start_page"). */
@@ -141,7 +151,7 @@ export function usePreferences() {
     if (error) return toast.error(friendlyError(error))
     byEmail.set(email, { ...prefs, startPage: page })
     emit()
-    toast.success('Start page saved.')
+    toast.success(tr('Start page saved.'))
   }
 
   /** Saves theme / sidebar / desktop choices for me (shown straight away, then saved). */
@@ -160,10 +170,23 @@ export function usePreferences() {
     if (patch.shopBoardView) p.shop_board_view = patch.shopBoardView
     if (patch.shopBoardSort) p.shop_board_sort = patch.shopBoardSort
     const { error } = await supabase.rpc('set_my_preferences', { p })
-    if (error) toast.error(`Could not remember your choice: ${friendlyError(error)}`)
+    if (error) toast.error(`${tr('Could not remember your choice:')} ${friendlyError(error)}`)
+  }
+
+  /** Switches every screen to this language now, and saves it on my profile (any device). */
+  async function setMyLanguage(language: Lang) {
+    await setLanguage(language)
+    writeLocal('bmm.lang', language)
+    if (email) byEmail.set(email, { ...prefs, language })
+    emit()
+    if (!email || !supabase) return
+    const { error } = await supabase.rpc('set_my_preferences', { p: { language } })
+    if (error) toast.error(`${tr('Could not remember your choice:')} ${friendlyError(error)}`)
   }
 
   return {
+    language: prefs.language,
+    setMyLanguage,
     units: prefs.units,
     theme: prefs.theme,
     glassBase: prefs.glassBase,

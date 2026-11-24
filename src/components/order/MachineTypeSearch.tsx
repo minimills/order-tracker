@@ -3,6 +3,7 @@ import { useId, useMemo, useRef, useState, type KeyboardEvent } from 'react'
 import type { MachineType } from '../../lib/types'
 import { inputClass, secondaryButtonClass } from '../form'
 import { MAX_QUANTITY, parseQuantity } from './machines'
+import { tr } from '../../i18n'
 
 type Props = {
   types: MachineType[]
@@ -54,13 +55,13 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
   function add() {
     const t = chosen ?? (results.length === 1 ? results[0] : null)
     if (!t) {
-      setError(query.trim() ? 'Select a machine type from the list.' : 'Enter a machine type first.')
+      setError(query.trim() ? tr("Select a machine type from the list.") : tr("Enter a machine type first."))
       search.current?.focus()
       return
     }
     const n = parseQuantity(qty)
     if (n === null) {
-      setError(`Quantity must be 1 to ${MAX_QUANTITY}.`)
+      setError(tr("Quantity must be 1 to {{MAX_QUANTITY}}.", { MAX_QUANTITY: MAX_QUANTITY }))
       qtyBox.current?.select()
       return
     }
@@ -97,7 +98,7 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
       <div className="grid grid-cols-[1fr_5rem] gap-2 sm:grid-cols-[1fr_6rem_auto]">
         <div className="relative">
           <label htmlFor={`${id}-search`} className="mb-1 block text-sm font-medium text-slate-700">
-            Add a Machine
+            {tr("Add a Machine")}
           </label>
           <input
             ref={search}
@@ -109,7 +110,7 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
             aria-activedescendant={open && results[highlight] ? `${id}-opt-${highlight}` : undefined}
             autoComplete="off"
             className={inputClass}
-            placeholder="Search, for example card"
+            placeholder={tr("Search, for example card")}
             value={query}
             onChange={(e) => {
               setQuery(e.target.value)
@@ -141,20 +142,20 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
                   className={`flex cursor-pointer justify-between gap-2 px-3 py-1.5 ${i === highlight ? 'bg-blue-50 text-blue-900' : ''}`}
                 >
                   <span>{t.name}</span>
-                  <span className="font-mono text-xs text-slate-500">{t.code ?? 'no code yet'}</span>
+                  <span className="font-mono text-xs text-slate-500">{t.code ?? tr("no code yet")}</span>
                 </li>
               ))}
             </ul>
           )}
           {open && !chosen && query.trim() && results.length === 0 && (
             <div className="absolute z-20 mt-1 w-full rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-slate-500 shadow">
-              No machine type matches “{query}”.
+              {tr("No machine type matches “")}{query}”.
             </div>
           )}
         </div>
         <div>
           <label htmlFor={`${id}-qty`} className="mb-1 block text-sm font-medium text-slate-700">
-            How many
+            {tr("How many")}
           </label>
           <input
             ref={qtyBox}
@@ -176,14 +177,13 @@ export default function MachineTypeSearch({ types, onAdd }: Props) {
         </div>
         <div className="col-span-2 flex items-end sm:col-span-1">
           <button type="button" className={secondaryButtonClass} onClick={add}>
-            Add
+            {tr("Add")}
           </button>
         </div>
       </div>
       {error && <p className="mt-1 text-xs font-medium text-red-600">{error}</p>}
       <p className="mt-1 text-xs text-slate-500">
-        Enter a name, choose with ↑ ↓ and press Enter, enter the quantity and press Enter again. The box is then ready for the next
-        machine.
+        {tr("Enter a name, choose with ↑ ↓ and press Enter, enter the quantity and press Enter again. The box is then ready for the next machine.")}
       </p>
     </div>
   )

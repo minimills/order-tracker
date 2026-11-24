@@ -11,6 +11,7 @@ import Can from '../Can'
 import { buttonClass, Field, inputClass, secondaryButtonClass } from '../form'
 import Icon from '../Icon'
 import { loadOrderCrating } from '../../lib/crates'
+import { tr } from '../../i18n'
 
 /** What the user asked for: a new stage and/or a new place on the board. */
 export type MoveRequest = {
@@ -157,12 +158,12 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
   async function confirm() {
     if (!supabase) return
     if (toShipped && !shipDate) {
-      setError('Enter the date the shipment left.')
+      setError(tr("Enter the date the shipment left."))
       return
     }
     const blocked = gateMove && notSigned.length > 0
     if (blocked && (!canOverride || !overrideReason.trim())) {
-      setError(canOverride ? 'Enter a reason for moving on without signed final checks.' : 'Sign the final checks first, then try again.')
+      setError(canOverride ? tr("Enter a reason for moving on without signed final checks.") : tr("Sign the final checks first, then try again."))
       return
     }
     setSaving(true)
@@ -176,7 +177,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
       return
     }
     if (toReady && notStarted.length) {
-      toast.warning(`Remember the final check for: ${notStarted.join(', ')}.`, { duration: 10000 })
+      toast.warning(tr("Remember the final check for: {{value}}.", { value: notStarted.join(', ') }), { duration: 10000 })
     }
     refreshAlerts()
     onDone((data as unknown[] | null)?.length ?? 0)
@@ -189,12 +190,12 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
     <div className="fixed inset-0 z-40 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" role="dialog" aria-modal="true" aria-labelledby="move-title">
       <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-lg bg-white p-5 shadow-xl sm:max-w-lg sm:rounded-lg">
         <h2 id="move-title" className="text-lg font-semibold">
-          Order {request.order.order_code}: {request.description}
+          {tr("Order")} {request.order.order_code}: {request.description}
         </h2>
 
         {toShipped && (
           <div className="mt-4 space-y-3 rounded-md bg-slate-50 p-3">
-            <Field label="Date the shipment left" htmlFor="ship-date">
+            <Field label={tr("Date the shipment left")} htmlFor="ship-date">
               <input
                 id="ship-date"
                 type="date"
@@ -208,8 +209,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
             {notCrated > 0 && (
               <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-sm text-amber-900" role="alert">
                 <Icon name="alert" className="mr-1 h-4 w-4" />
-                {notCratedText(notCrated, request.order.machines_count)} You can still mark it as shipped and enter the crates
-                later from the Order page.
+                {notCratedText(notCrated, request.order.machines_count)} {tr("You can still mark it as shipped and enter the crates later from the Order page.")}
               </p>
             )}
             </Can>
@@ -217,48 +217,46 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
               <label className="flex items-start gap-2 text-sm">
                 <input type="checkbox" className="mt-0.5" checked={markBuilt} onChange={(e) => setMarkBuilt(e.target.checked)} />
                 <span>
-                  Mark all machines on this order as built ({request.order.machines_ready_count} of{' '}
-                  {request.order.machines_count} are marked built now). Built machines keep their serials for good.
+                  {tr("Mark all machines on this order as built (")}{request.order.machines_ready_count} {tr("of")}{' '}
+                  {request.order.machines_count} {tr("are marked built now). Built machines keep their serials for good.")}
                 </span>
               </label>
             )}
           </div>
         )}
 
-        {!preview && !error && <p className="mt-4 text-sm text-slate-500">Calculating the changes…</p>}
+        {!preview && !error && <p className="mt-4 text-sm text-slate-500">{tr("Calculating the changes…")}</p>}
 
         {preview && (
           <div className="mt-4 space-y-4 text-sm">
             <div>
-              <h3 className="font-medium">Shop Queue</h3>
+              <h3 className="font-medium">{tr("Shop Queue")}</h3>
               <p className="mt-1">
                 {!me
-                  ? 'The order of the shop queue does not change.'
+                  ? tr("The order of the shop queue does not change.")
                   : me.new === null
-                    ? `Order ${request.order.order_code} leaves the shop queue${others.length ? '; the orders behind it move up' : ''}.`
+                    ? tr("Order {{order_code}} leaves the shop queue{{value}}.", { order_code: request.order.order_code, value: others.length ? tr("; the orders behind it move up") : '' })
                     : me.old === null
-                      ? `Order ${request.order.order_code} joins the shop queue${request.anchor ? ` ${request.place === 'before' ? 'above' : 'below'} order ${request.anchor.order_code}` : ' at the end'}.`
-                      : `Order ${request.order.order_code} moves ${me.new < me.old ? 'up' : 'down'} the queue${request.anchor ? `, ${request.place === 'before' ? 'above' : 'below'} order ${request.anchor.order_code}` : ''}.`}
+                      ? tr("Order {{order_code}} joins the shop queue{{value}}.", { order_code: request.order.order_code, value: request.anchor ? ` ${request.place === 'before' ? 'above' : 'below'} order ${request.anchor.order_code}` : tr(" at the end") })
+                      : tr("Order {{order_code}} moves {{value}} the queue{{value2}}.", { order_code: request.order.order_code, value: me.new < me.old ? 'up' : 'down', value2: request.anchor ? tr(", {{value}} order {{order_code}}", { value: request.place === 'before' ? 'above' : 'below', order_code: request.anchor.order_code }) : '' })}
               </p>
               {me && (
                 <p className="mt-1 text-xs text-slate-500">
-                  Promised ship dates and department deadlines do not change by themselves. If the new queue gives
-                  different dates, they appear as suggestions on the Order page and the Dashboard, where they can be accepted or kept.
+                  {tr("Promised ship dates and department deadlines do not change by themselves. If the new queue gives different dates, they appear as suggestions on the Order page and the Dashboard, where they can be accepted or kept.")}
                 </p>
               )}
             </div>
 
             {(preview.numbers?.length ?? 0) > 0 && (
               <div>
-                <h3 className="font-medium">Order Numbers</h3>
+                <h3 className="font-medium">{tr("Order Numbers")}</h3>
                 <p className="mt-1 text-slate-600">
-                  A cancelled order gives its number back: it is called “C-” plus its old number, and every later order
-                  moves down by one number. Customers may need to be told about the new numbers.
+                  {tr("A cancelled order gives its number back: it is called “C-” plus its old number, and every later order moves down by one number. Customers may need to be told about the new numbers.")}
                 </p>
                 <ul className="mt-2 grid gap-x-6 tabular-nums sm:grid-cols-2">
                   {preview.numbers!.map((n) => (
                     <li key={n.old}>
-                      Order {n.old} → <strong>{n.new}</strong>
+                      {tr("Order")} {n.old} → <strong>{n.new}</strong>
                     </li>
                   ))}
                 </ul>
@@ -266,24 +264,23 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
             )}
 
             <div>
-              <h3 className="font-medium">Serial Numbers</h3>
+              <h3 className="font-medium">{tr("Serial Numbers")}</h3>
               {preview.serials.length === 0 ? (
-                <p className="mt-1 text-slate-500">No serial numbers change.</p>
+                <p className="mt-1 text-slate-500">{tr("No serial numbers change.")}</p>
               ) : (
                 <>
                   <p className="mt-1 text-slate-600">
-                    {preview.serials.length} serial number{preview.serials.length === 1 ? '' : 's'} will change, so
-                    orders earlier in the queue keep the lower serials. Built machines are not affected.
+                    {tr("{{count}} serial number", { count: preview.serials.length })} {tr("will change, so orders earlier in the queue keep the lower serials. Built machines are not affected.")}
                   </p>
                   <div className="overflow-x-auto">
                     <table className="mt-2 w-full text-left">
                       <thead className="text-xs text-slate-500">
                         <tr>
-                          <th className="py-1 font-normal">Order</th>
-                          <th className="py-1 font-normal">Machine</th>
-                          <th className="py-1 font-normal">Old</th>
+                          <th className="py-1 font-normal">{tr("Order")}</th>
+                          <th className="py-1 font-normal">{tr("Machine")}</th>
+                          <th className="py-1 font-normal">{tr("Old")}</th>
                           <th className="py-1 font-normal" />
-                          <th className="py-1 font-normal">New</th>
+                          <th className="py-1 font-normal">{tr("New")}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100 font-mono text-xs">
@@ -291,9 +288,9 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
                           <tr key={i}>
                             <td className="py-1 font-sans">{s.order}</td>
                             <td className="py-1 font-sans">{s.machine_type}</td>
-                            <td className="py-1">{s.old ?? '(none)'}</td>
+                            <td className="py-1">{s.old ?? tr("(none)")}</td>
                             <td className="py-1 text-slate-400">→</td>
-                            <td className="py-1 font-semibold">{s.new ?? '(none)'}</td>
+                            <td className="py-1 font-semibold">{s.new ?? tr("(none)")}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -308,8 +305,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
         <Can permission="checklist.ready_reminder">
           {toReady && notStarted.length > 0 && (
             <div className="mt-4 rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900" role="status">
-              Final check not started yet for: <strong>{notStarted.join(', ')}</strong>. Start it from the order page or
-              the machine chip on the board.
+              {tr("Final check not started yet for:")} <strong>{notStarted.join(', ')}</strong>{tr(". Start it from the order page or the machine chip on the board.")}
             </div>
           )}
         </Can>
@@ -317,17 +313,17 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
         {gateMove && notSigned.length > 0 && (
           <div className="mt-4 rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-900" role="alert">
             <p>
-              Every machine’s final check must be signed first. Not signed yet: <strong>{notSigned.join(', ')}</strong>.
+              {tr("Every machine’s final check must be signed first. Not signed yet:")} <strong>{notSigned.join(', ')}</strong>.
             </p>
             <Can permission="checklist.override" level="edit">
               <label className="mt-3 block">
-                <span className="mb-1 block font-medium">Move anyway? Enter a reason (it is recorded):</span>
+                <span className="mb-1 block font-medium">{tr("Move anyway? Enter a reason (it is recorded):")}</span>
                 <textarea
                   rows={2}
                   className={inputClass}
                   value={overrideReason}
                   onChange={(e) => setOverrideReason(e.target.value)}
-                  placeholder="For example: the customer is checking the machine at pick-up"
+                  placeholder={tr("For example: the customer is checking the machine at pick-up")}
                 />
               </label>
             </Can>
@@ -338,7 +334,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
 
         <div className="mt-6 flex justify-end gap-3">
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button
             ref={confirmRef}
@@ -347,7 +343,7 @@ export default function MoveDialog({ request, onClose, onDone }: Props) {
             onClick={confirm}
             disabled={!preview || saving || (gateMove && notSigned.length > 0 && (!canOverride || !overrideReason.trim()))}
           >
-            {saving ? 'Saving…' : gateMove && notSigned.length > 0 ? 'Override and Move' : 'Confirm Move'}
+            {saving ? tr("Saving…") : gateMove && notSigned.length > 0 ? tr("Override and Move") : tr("Confirm Move")}
           </button>
         </div>
       </div>

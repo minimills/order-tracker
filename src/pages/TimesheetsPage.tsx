@@ -8,12 +8,21 @@ import WeeksOverview from '../components/timesheets/WeeksOverview'
 import { usePermissions } from '../lib/permissions'
 import { TIMESHEET_KEYS } from '../lib/permissions/catalog'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 const TABS = [
-  { key: 'weeks', label: 'Weekly Hours', permission: 'timesheets' },
-  { key: 'absences', label: 'Absence Calendar', permission: 'timesheets.absences' },
-  { key: 'reports', label: 'Reports', permission: 'timesheets.reports' },
-  { key: 'labour', label: 'Labour Cost', permission: 'timesheets.labour_cost' },
+  { key: 'weeks', get label() {
+    return tr("Weekly Hours")
+  }, permission: 'timesheets' },
+  { key: 'absences', get label() {
+    return tr("Absence Calendar")
+  }, permission: 'timesheets.absences' },
+  { key: 'reports', get label() {
+    return tr("Reports")
+  }, permission: 'timesheets.reports' },
+  { key: 'labour', get label() {
+    return tr("Labour Cost")
+  }, permission: 'timesheets.labour_cost' },
 ] as const
 
 /** Timesheets: weekly hours of every employee, the absence calendar, reports and labour cost (each tab has its own permission). */
@@ -29,21 +38,21 @@ export default function TimesheetsPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">Timesheets</h1>
+              <h1 className="text-2xl font-semibold">{tr("Timesheets")}</h1>
               <Can permission="timesheets.print">
-                <PrintButton title="Timesheets" />
+                <PrintButton title={tr("Timesheets")} />
               </Can>
             </div>
-            <p className="text-sm text-slate-600">Hours, overtime, banked hours, time off and payroll reports.</p>
+            <p className="text-sm text-slate-600">{tr("Hours, overtime, banked hours, time off and payroll reports.")}</p>
           </div>
           <Can permission="timesheets.time_off">
             <Link to="/time-off" className={secondaryButtonClass}>
-              Time Off Requests
+              {tr("Time Off Requests")}
             </Link>
           </Can>
         </div>
         {allowed.length > 1 && (
-          <div className="flex gap-1 overflow-x-auto border-b border-slate-200" role="tablist" aria-label="Timesheets">
+          <div className="flex gap-1 overflow-x-auto border-b border-slate-200" role="tablist" aria-label={tr("Timesheets")}>
             {allowed.map((t) => (
               <Can key={t.key} permission={t.permission}>
                 <button

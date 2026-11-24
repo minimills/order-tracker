@@ -8,6 +8,7 @@ import { callFunction } from '../../lib/edgeFunction'
 import { Field, Modal, buttonClass, inputClass, secondaryButtonClass } from '../form'
 import RichTextEditor from '../RichTextEditor'
 import SenderLine from '../email/SenderLine'
+import { tr } from '../../i18n'
 
 type Preview = { to: string[]; cc: string[]; subject: string; message: string; warnings: string[] }
 const split = (s: string) => s.split(/[,;\s]+/).map((x) => x.trim()).filter(Boolean)
@@ -41,8 +42,8 @@ export default function CeEmailDialog({ declarations, onClose, onSent }: { decla
   }, [declarations])
 
   async function send() {
-    if (!split(to).length) return toast.error('Enter at least one email address in To.')
-    if (!subject.trim()) return toast.error('Enter a subject.')
+    if (!split(to).length) return toast.error(tr("Enter at least one email address in To."))
+    if (!subject.trim()) return toast.error(tr("Enter a subject."))
     setBusy(true)
     try {
       const files = await declarationPdfs(declarations, company.logo, combined)
@@ -58,7 +59,7 @@ export default function CeEmailDialog({ declarations, onClose, onSent }: { decla
         attachments: files.map((x) => ({ file_name: x.file_name, pdf_base64: toBase64(x.bytes) })),
       })
       if (!r.ok) return toast.error(r.message)
-      toast.success(r.message || 'Sent.')
+      toast.success(r.message || tr("Sent."))
       onSent()
     } finally {
       setBusy(false)
@@ -67,16 +68,16 @@ export default function CeEmailDialog({ declarations, onClose, onSent }: { decla
 
   return (
     <Modal
-      title="Email Declarations of Conformity"
+      title={tr("Email Declarations of Conformity")}
       onClose={onClose}
       busy={busy}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={busy}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button type="button" className={buttonClass} onClick={send} disabled={busy || loading}>
-            {busy ? 'Sending…' : 'Send Email'}
+            {busy ? tr("Sending…") : tr("Send Email")}
           </button>
         </>
       }
@@ -88,30 +89,30 @@ export default function CeEmailDialog({ declarations, onClose, onSent }: { decla
             {w}
           </p>
         ))}
-        <Field label="To" htmlFor="ce-to" hint="Separate several addresses with commas. The customer’s email is filled in.">
+        <Field label={tr("To")} htmlFor="ce-to" hint={tr("Separate several addresses with commas. The customer’s email is filled in.")}>
           <input id="ce-to" className={inputClass} value={to} onChange={(e) => setTo(e.target.value)} />
         </Field>
-        <Field label="CC" htmlFor="ce-cc" hint="The office email is filled in.">
+        <Field label="CC" htmlFor="ce-cc" hint={tr("The office email is filled in.")}>
           <input id="ce-cc" className={inputClass} value={cc} onChange={(e) => setCc(e.target.value)} />
         </Field>
         <Field label="BCC" htmlFor="ce-bcc">
           <input id="ce-bcc" className={inputClass} value={bcc} onChange={(e) => setBcc(e.target.value)} />
         </Field>
-        <Field label="Subject" htmlFor="ce-subject">
+        <Field label={tr("Subject")} htmlFor="ce-subject">
           <input id="ce-subject" className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)} />
         </Field>
-        <Field label="Message">
-          {loading ? <p className="text-slate-500">Loading…</p> : <RichTextEditor label="Message" minHeight="8rem" value={message} onChange={setMessage} />}
+        <Field label={tr("Message")}>
+          {loading ? <p className="text-slate-500">{tr("Loading…")}</p> : <RichTextEditor label={tr("Message")} minHeight="8rem" value={message} onChange={setMessage} />}
         </Field>
         <SenderLine />
         {declarations.length > 1 && (
           <fieldset className="space-y-1">
-            <legend className="font-medium">Attachments</legend>
+            <legend className="font-medium">{tr("Attachments")}</legend>
             <label className="flex items-center gap-2">
-              <input type="radio" name="ce-files" checked={!combined} onChange={() => setCombined(false)} /> One PDF per machine
+              <input type="radio" name="ce-files" checked={!combined} onChange={() => setCombined(false)} /> {tr("One PDF per machine")}
             </label>
             <label className="flex items-center gap-2">
-              <input type="radio" name="ce-files" checked={combined} onChange={() => setCombined(true)} /> One combined PDF
+              <input type="radio" name="ce-files" checked={combined} onChange={() => setCombined(true)} /> {tr("One combined PDF")}
             </label>
           </fieldset>
         )}

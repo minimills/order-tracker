@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import type { Customer } from '../../lib/types'
 import { Field, inputClass, secondaryButtonClass } from '../form'
 import { emptyNewCustomer, type CustomerChoice, type NewCustomer } from './customer'
+import { tr } from '../../i18n'
 
 type Props = {
   value: CustomerChoice
@@ -50,20 +51,20 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
     return (
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-sm text-slate-600">New customer</p>
+          <p className="text-sm text-slate-600">{tr("New customer")}</p>
           <button
             type="button"
             className="text-sm text-slate-600 underline"
             onClick={() => onChange({ mode: 'existing', customer: null })}
           >
-            Select an Existing Customer Instead
+            {tr("Select an Existing Customer Instead")}
           </button>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <Field label="Name *" htmlFor="cust-name" error={errors.name}>
+          <Field label={tr("Name *")} htmlFor="cust-name" error={errors.name}>
             <input id="cust-name" className={inputClass} value={c.name} onChange={(e) => set('name', e.target.value)} />
           </Field>
-          <Field label="Company" htmlFor="cust-company">
+          <Field label={tr("Company")} htmlFor="cust-company">
             <input
               id="cust-company"
               className={inputClass}
@@ -73,9 +74,9 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
           </Field>
           <Can permission="customer.contact" level="edit">
             <Field
-              label="Email addresses"
+              label={tr("Email addresses")}
               htmlFor="cust-emails"
-              hint="Separate multiple email addresses with commas."
+              hint={tr("Separate multiple email addresses with commas.")}
               error={errors.emails}
               className="md:col-span-2"
             >
@@ -83,12 +84,12 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
                 id="cust-emails"
                 className={inputClass}
                 value={c.emails}
-                placeholder="jane@farm.com, orders@farm.com"
+                placeholder={tr("jane@farm.com, orders@farm.com")}
                 onChange={(e) => set('emails', e.target.value)}
               />
             </Field>
           </Can>
-          <Field label="Country" htmlFor="cust-country">
+          <Field label={tr("Country")} htmlFor="cust-country">
             <input
               id="cust-country"
               className={inputClass}
@@ -96,7 +97,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
               onChange={(e) => set('country', e.target.value)}
             />
           </Field>
-          <Field label="State / province" htmlFor="cust-state">
+          <Field label={tr("State / province")} htmlFor="cust-state">
             <input
               id="cust-state"
               className={inputClass}
@@ -129,7 +130,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
             onChange({ mode: 'existing', customer: null })
           }}
         >
-          Change
+          {tr("Change")}
         </button>
       </div>
     )
@@ -137,21 +138,21 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
 
   return (
     <div className="space-y-2">
-      <Field label="Find a customer" htmlFor="cust-search" error={errors.customer}>
+      <Field label={tr("Find a customer")} htmlFor="cust-search" error={errors.customer}>
         <input
           id="cust-search"
           className={inputClass}
           value={query}
-          placeholder="Enter a name or company"
+          placeholder={tr("Enter a name or company")}
           autoComplete="off"
           onChange={(e) => setQuery(e.target.value)}
         />
       </Field>
       {cleaned.length > 0 && (
         <ul className="divide-y divide-slate-100 rounded-md border border-slate-200">
-          {searching && results.length === 0 && <li className="px-3 py-2 text-sm text-slate-500">Searching…</li>}
+          {searching && results.length === 0 && <li className="px-3 py-2 text-sm text-slate-500">{tr("Searching…")}</li>}
           {!searching && results.length === 0 && (
-            <li className="px-3 py-2 text-sm text-slate-500">No matching customers found.</li>
+            <li className="px-3 py-2 text-sm text-slate-500">{tr("No matching customers found.")}</li>
           )}
           {results.map((c) => (
             <li key={c.id}>
@@ -176,7 +177,7 @@ export default function CustomerPicker({ value, onChange, errors }: Props) {
             onChange({ mode: 'new', customer: { ...emptyNewCustomer, name: results.length === 0 ? query.trim() : '' } })
           }
         >
-          Create New Customer
+          {tr("Create New Customer")}
         </button>
       </Can>
     </div>

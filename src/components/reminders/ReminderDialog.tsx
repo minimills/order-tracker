@@ -13,6 +13,7 @@ import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../
 import RichTextEditor from '../RichTextEditor'
 import SenderLine from '../email/SenderLine'
 import { isEmptyRichText } from '../../lib/richText'
+import { tr } from '../../i18n'
 
 type Data = {
   order_id: string
@@ -127,8 +128,8 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
   }, [tpl, template, data, values])
 
   async function send() {
-    if (!splitEmails(to).length) return toast.error('Enter at least one email address in To.')
-    if (!subject.trim() || isEmptyRichText(body)) return toast.error('The email needs a subject and a message.')
+    if (!splitEmails(to).length) return toast.error(tr("Enter at least one email address in To."))
+    if (!subject.trim() || isEmptyRichText(body)) return toast.error(tr("The email needs a subject and a message."))
     setBusy(true)
     const r = await callFunction<{ message?: string }>('send-email', {
       action: 'reminder_send', order_id: orderId, payment_id: data?.payment_id ?? null, template,
@@ -136,13 +137,13 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
     })
     setBusy(false)
     if (!r.ok) return toast.error(r.message)
-    toast.success(r.message || 'Reminder sent.')
+    toast.success(r.message || tr("Reminder sent."))
     onClose()
   }
 
   return (
     <Modal
-      title={data ? `Send Reminder – Order ${data.order_number}` : 'Send Reminder'}
+      title={data ? tr("Send Reminder – Order {{order_number}}", { order_number: data.order_number }) : tr("Send Reminder")}
       onClose={onClose}
       busy={busy}
       wide
@@ -152,7 +153,7 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
             {ACTION.cancel}
           </button>
           <button type="button" className={buttonClass} onClick={send} disabled={busy || !data || !tpl}>
-            {busy ? 'Sending…' : 'Send Email'}
+            {busy ? tr("Sending…") : tr("Send Email")}
           </button>
         </>
       }
@@ -160,11 +161,11 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
       {problem ? (
         <p className="rounded bg-red-50 p-3 text-sm text-red-800">{problem}</p>
       ) : !data || !tpl ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-slate-500">{tr("Loading…")}</p>
       ) : (
         <div className="space-y-3 text-sm">
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Template" htmlFor="rm-template" hint="Choosing a template writes the email again.">
+            <Field label={tr("Template")} htmlFor="rm-template" hint={tr("Choosing a template writes the email again.")}>
               <select id="rm-template" className={inputClass} value={template} onChange={(e) => setTemplate(e.target.value)}>
                 {REMINDER_KEYS.filter((k) => tpl.reminders[k]).map((k) => (
                   <option key={k} value={k}>
@@ -174,20 +175,20 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
               </select>
             </Field>
             {data.payments.length > 0 && (
-              <Field label="Payment" htmlFor="rm-payment">
+              <Field label={tr("Payment")} htmlFor="rm-payment">
                 <select id="rm-payment" className={inputClass} value={data.payment_id ?? ''} onChange={(e) => setPayment(e.target.value || null)}>
                   {data.payments.map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.payment_type} · {formatMoney(Number(p.remaining), data.currency)}
-                      {p.due_date ? ` · due ${showDate(p.due_date)}` : ''}
+                      {p.due_date ? tr(" · due {{showDate}}", { showDate: showDate(p.due_date) }) : ''}
                     </option>
                   ))}
                 </select>
               </Field>
             )}
           </div>
-          {!data.customer_emails?.length && <p className="rounded bg-amber-50 p-2 text-amber-900">This customer has no email address saved. Type it in To.</p>}
-          <Field label="To" htmlFor="rm-to" hint="Separate several addresses with commas.">
+          {!data.customer_emails?.length && <p className="rounded bg-amber-50 p-2 text-amber-900">{tr("This customer has no email address saved. Type it in To.")}</p>}
+          <Field label={tr("To")} htmlFor="rm-to" hint={tr("Separate several addresses with commas.")}>
             <input id="rm-to" className={inputClass} value={to} onChange={(e) => setTo(e.target.value)} />
           </Field>
           <div className="grid gap-3 sm:grid-cols-2">
@@ -198,21 +199,21 @@ export default function ReminderDialog({ orderId, paymentId, onClose }: { orderI
               <input id="rm-bcc" className={inputClass} value={bcc} onChange={(e) => setBcc(e.target.value)} />
             </Field>
           </div>
-          <Field label="Subject" htmlFor="rm-subject">
+          <Field label={tr("Subject")} htmlFor="rm-subject">
             <input id="rm-subject" className={inputClass} maxLength={300} value={subject} onChange={(e) => setSubject(e.target.value)} />
           </Field>
-          <Field label="Message" hint="This is what the customer receives, on the company letterhead. Change anything before sending.">
-            <RichTextEditor key={bodyVersion} label="Message" minHeight="12rem" value={body} onChange={setBody} />
+          <Field label={tr("Message")} hint={tr("This is what the customer receives, on the company letterhead. Change anything before sending.")}>
+            <RichTextEditor key={bodyVersion} label={tr("Message")} minHeight="12rem" value={body} onChange={setBody} />
           </Field>
           <SenderLine />
           {sent.length > 0 && (
             <Can permission="reminders">
               <div className="rounded border border-slate-200 p-2">
-                <p className="mb-1 font-medium">Reminders Sent Before</p>
+                <p className="mb-1 font-medium">{tr("Reminders Sent Before")}</p>
                 <ul className="space-y-0.5 text-xs text-slate-700">
                   {sent.map((s) => (
                     <li key={s.id}>
-                      <span className={s.status === 'sent' ? '' : 'text-red-700'}>{s.status === 'sent' ? 'Sent' : 'Not sent'}</span> {showDate(s.sent_at.slice(0, 10))} to {s.to_emails.join(', ')}: {s.subject}
+                      <span className={s.status === 'sent' ? '' : 'text-red-700'}>{s.status === 'sent' ? tr("Sent") : tr("Not sent")}</span> {showDate(s.sent_at.slice(0, 10))} {tr("to")} {s.to_emails.join(', ')}: {s.subject}
                       {s.sent_by_name ? ` (${s.sent_by_name})` : ''}
                     </li>
                   ))}

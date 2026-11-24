@@ -2,6 +2,9 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { isSupabaseConfigured, supabase } from '../lib/supabase'
+import LanguagePicker from '../components/LanguagePicker'
+import { setLanguage, tr } from '../i18n'
+import { writeLocal } from '../lib/theme'
 
 /** Supabase lets you ask for a new code once a minute. */
 const RESEND_WAIT_SECONDS = 60
@@ -102,7 +105,7 @@ export default function LoginPage() {
     if (!supabase || !sentTo) return
     const token = code.replace(/\D/g, '')
     if (token.length < 6) {
-      setError('Enter the 6-digit code from the email.')
+      setError(tr("Enter the 6-digit code from the email."))
       return
     }
     setBusy(true)
@@ -116,22 +119,35 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-full items-center justify-center p-4">
       <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-        <div className="text-lg font-semibold">Belfast Mini Mills</div>
-        <div className="text-sm text-slate-500">Order Tracker</div>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="text-lg font-semibold">Belfast Mini Mills</div>
+            <div className="text-sm text-slate-500">{tr('Order Tracker')}</div>
+          </div>
+          <div className="w-44 max-w-full">
+            <LanguagePicker
+              id="signin-language"
+              onChange={(l) => {
+                writeLocal('bmm.lang.signin', l)
+                setLanguage(l)
+              }}
+            />
+          </div>
+        </div>
 
         {!isSupabaseConfigured ? (
           <p className="mt-6 text-sm text-amber-800">
-            Not connected to the database yet. Fill in <code>.env.local</code> (see README), then restart the app.
+            {tr("Not connected to the database yet. Fill in")} <code>.env.local</code> {tr("(see README), then restart the app.")}
           </p>
         ) : loading ? (
-          <p className="mt-6 text-sm text-slate-500">Loading…</p>
+          <p className="mt-6 text-sm text-slate-500">{tr("Loading…")}</p>
         ) : sentTo ? (
           <form onSubmit={onCode} className="mt-6 space-y-3" noValidate>
             <p className="text-sm">
-              A sign-in code was emailed to <strong>{sentTo}</strong>.
+              {tr("A sign-in code was emailed to")} <strong>{sentTo}</strong>.
             </p>
             <label className="block text-sm font-medium" htmlFor="code">
-              Code From the Email
+              {tr("Code From the Email")}
             </label>
             <input
               ref={codeInput}
@@ -147,7 +163,7 @@ export default function LoginPage() {
             />
             {error && <p className="text-sm text-red-700">{error}</p>}
             <button type="submit" disabled={busy} className={buttonClass}>
-              {busy ? 'Checking…' : 'Sign In'}
+              {busy ? tr("Checking…") : tr("Sign In")}
             </button>
             <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
               <button
@@ -156,7 +172,7 @@ export default function LoginPage() {
                 disabled={busy || waitSeconds > 0}
                 onClick={() => sendCode(sentTo)}
               >
-                {waitSeconds > 0 ? `Send a New Code in ${waitSeconds}s` : 'Send a New Code'}
+                {waitSeconds > 0 ? tr("Send a New Code in {{waitSeconds}}s", { waitSeconds: waitSeconds }) : tr("Send a New Code")}
               </button>
               <button
                 type="button"
@@ -166,17 +182,17 @@ export default function LoginPage() {
                   setError(null)
                 }}
               >
-                Use a Different Email
+                {tr("Use a Different Email")}
               </button>
             </div>
             <p className="text-xs text-slate-500">
-              The code can be used once and expires after a short time. If it does not arrive, check your spam folder.
+              {tr("The code can be used once and expires after a short time. If it does not arrive, check your spam folder.")}
             </p>
           </form>
         ) : (
           <form onSubmit={onEmail} className="mt-6 space-y-3">
             <label className="block text-sm font-medium" htmlFor="email">
-              Email Address
+              {tr("Email Address")}
             </label>
             <input
               id="email"
@@ -190,9 +206,9 @@ export default function LoginPage() {
             />
             {error && <p className="text-sm text-red-700">{error}</p>}
             <button type="submit" disabled={busy} className={buttonClass}>
-              {busy ? 'Sending…' : 'Email Me a Sign-In Code'}
+              {busy ? tr("Sending…") : tr("Email Me a Sign-In Code")}
             </button>
-            <p className="text-xs text-slate-500">No password is needed. A 6-digit code is emailed to you to enter here.</p>
+            <p className="text-xs text-slate-500">{tr("No password is needed. A 6-digit code is emailed to you to enter here.")}</p>
           </form>
         )}
       </div>

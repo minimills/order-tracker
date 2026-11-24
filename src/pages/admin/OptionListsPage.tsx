@@ -7,15 +7,30 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { OptionItem, OptionListName } from '../../lib/types'
 import Icon from '../../components/Icon'
+import { tr } from '../../i18n'
 
 const LISTS: { name: OptionListName; title: string }[] = [
-  { name: 'voltage', title: 'Voltage' },
-  { name: 'delivery_equipment', title: 'Delivery equipment' },
-  { name: 'freight_type', title: 'Freight type' },
-  { name: 'payment_type', title: 'Payment types' },
-  { name: 'notice_category', title: 'Notice categories' },
-  { name: 'ce_directive', title: 'CE directives (for declarations of conformity)' },
-  { name: 'incoming_delivery_type', title: 'Incoming freight: type of delivery' },
+  { name: 'voltage', get title() {
+    return tr("Voltage")
+  } },
+  { name: 'delivery_equipment', get title() {
+    return tr("Delivery equipment")
+  } },
+  { name: 'freight_type', get title() {
+    return tr("Freight type")
+  } },
+  { name: 'payment_type', get title() {
+    return tr("Payment types")
+  } },
+  { name: 'notice_category', get title() {
+    return tr("Notice categories")
+  } },
+  { name: 'ce_directive', get title() {
+    return tr("CE directives (for declarations of conformity)")
+  } },
+  { name: 'incoming_delivery_type', get title() {
+    return tr("Incoming freight: type of delivery")
+  } },
 ]
 
 const small = 'rounded border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40'
@@ -39,7 +54,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
     const value = (drafts[item.id] ?? item.value).trim()
     if (!value || value === item.value) return
     if (items.some((i) => i.id !== item.id && i.value.toLowerCase() === value.toLowerCase()))
-      return toast.error('That choice is already in the list.')
+      return toast.error(tr("That choice is already in the list."))
     await run(
       supabase.from('option_lists').update({ value }).eq('id', item.id),
       `Renamed to "${value}". Every order using it was updated.`,
@@ -72,7 +87,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
     const value = newValue.trim()
     if (!value) return
     const existing = items.find((i) => i.value.toLowerCase() === value.toLowerCase())
-    if (existing) return toast.error(existing.archived ? 'That choice is archived. Show archived and bring it back.' : 'That choice is already in the list.')
+    if (existing) return toast.error(existing.archived ? tr("That choice is archived. Show archived and bring it back.") : tr("That choice is already in the list."))
     const sort = Math.max(0, ...items.map((i) => i.sort_order)) + 1
     await run(supabase.from('option_lists').insert({ list_name: list.name, value, sort_order: sort }), `Added "${value}".`)
     setNewValue('')
@@ -84,7 +99,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
         <h2 className="font-semibold">{list.title}</h2>
         <label className="flex items-center gap-1.5 text-xs text-slate-600">
           <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-          Show archived
+          {tr("Show archived")}
         </label>
       </div>
       <ul className="space-y-2">
@@ -94,7 +109,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
           return (
             <li key={item.id} className={`flex flex-wrap items-center gap-2 ${item.archived ? 'opacity-60' : ''}`}>
               <input
-                aria-label={`${list.title} choice`}
+                aria-label={tr("{{title}} choice", { title: list.title })}
                 className={`${inputClass} min-w-0 flex-1`}
                 value={draft}
                 disabled={item.locked || item.archived}
@@ -104,8 +119,8 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
               {list.name === 'voltage' && !item.archived && (
                 <input
                   type="color"
-                  aria-label={`Colour for ${item.value}`}
-                  title="Chip colour on the Orders board"
+                  aria-label={tr("Colour for {{value}}", { value: item.value })}
+                  title={tr("Chip colour on the Orders board")}
                   className="h-9 w-11 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
                   value={item.colour ?? '#64748b'}
                   onChange={(e) =>
@@ -115,22 +130,22 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
               )}
               {draft.trim() !== item.value && (
                 <button type="button" className={buttonClass} onClick={() => rename(item)}>
-                  Save Changes
+                  {tr("Save Changes")}
                 </button>
               )}
               {!item.archived && (
                 <>
-                  <button type="button" className={small} disabled={idx <= 0} onClick={() => move(item, -1)} aria-label="Move up">
+                  <button type="button" className={small} disabled={idx <= 0} onClick={() => move(item, -1)} aria-label={tr("Move up")}>
                     ↑
                   </button>
-                  <button type="button" className={small} disabled={idx >= active.length - 1} onClick={() => move(item, 1)} aria-label="Move down">
+                  <button type="button" className={small} disabled={idx >= active.length - 1} onClick={() => move(item, 1)} aria-label={tr("Move down")}>
                     ↓
                   </button>
                 </>
               )}
               {item.locked ? (
-                <span className="text-xs text-slate-500" title="The app relies on this choice">
-                  <Icon name="lock" className="h-3.5 w-3.5" /> built in
+                <span className="text-xs text-slate-500" title={tr("The app relies on this choice")}>
+                  <Icon name="lock" className="h-3.5 w-3.5" /> {tr("built in")}
                 </span>
               ) : (
                 <button
@@ -144,7 +159,7 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
                     )
                   }
                 >
-                  {item.archived ? 'Restore' : 'Archive'}
+                  {item.archived ? tr("Restore") : tr("Archive")}
                 </button>
               )}
             </li>
@@ -153,14 +168,14 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
       </ul>
       <form onSubmit={add} className="mt-3 flex gap-2">
         <input
-          aria-label={`New ${list.title} choice`}
+          aria-label={tr("New {{title}} choice", { title: list.title })}
           className={inputClass}
-          placeholder="Add a choice"
+          placeholder={tr("Add a choice")}
           value={newValue}
           onChange={(e) => setNewValue(e.target.value)}
         />
         <button type="submit" className={buttonClass} disabled={!newValue.trim()}>
-          Add
+          {tr("Add")}
         </button>
       </form>
     </section>
@@ -187,9 +202,8 @@ export default function OptionListsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Dropdown Lists">
-        The choices offered in the order forms. Renaming a choice updates every order that uses it. Archiving hides it
-        from new orders but keeps it on orders that already have it. Built-in choices (marked with a lock) can be moved but not renamed.
+      <AdminPageHeader title={tr("Dropdown Lists")}>
+        {tr("The choices offered in the order forms. Renaming a choice updates every order that uses it. Archiving hides it from new orders but keeps it on orders that already have it. Built-in choices (marked with a lock) can be moved but not renamed.")}
       </AdminPageHeader>
       <div className="grid gap-4 md:grid-cols-2">
         {LISTS.map((l) => (

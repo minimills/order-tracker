@@ -19,6 +19,7 @@ import { formatMoney, friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { Customer } from '../../lib/types'
 import SerialNumber from '../../components/SerialNumber'
+import { tr } from '../../i18n'
 
 type Tab = 'orders' | 'customers' | 'machines'
 type OrderRow = AdminOrder & { customer_name: string; board_position: number | null }
@@ -114,8 +115,8 @@ export default function RecordsPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Orders, Customers and Machines">
-        Edit any field. Archive hides a record from normal screens; it can be brought back from the Archive page.
+      <AdminPageHeader title={tr("Orders, Customers and Machines")}>
+        {tr("Edit any field. Archive hides a record from normal screens; it can be brought back from the Archive page.")}
       </AdminPageHeader>
 
       <div className="flex flex-wrap items-center gap-3">
@@ -135,16 +136,16 @@ export default function RecordsPage() {
         </div>
         <input
           type="search"
-          aria-label="Search"
+          aria-label={tr("Search")}
           className={`${inputClass} max-w-sm`}
-          placeholder={tab === 'machines' ? 'Search serial, type or order #' : 'Search'}
+          placeholder={tab === 'machines' ? tr("Search serial, type or order #") : tr("Search")}
           value={q}
           onChange={(e) => setQ(e.target.value)}
         />
       </div>
 
       {loading ? (
-        <p className="text-center text-slate-500">Loading…</p>
+        <p className="text-center text-slate-500">{tr("Loading…")}</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
           <table className="min-w-full text-sm">
@@ -152,10 +153,10 @@ export default function RecordsPage() {
               <>
                 <thead className="bg-slate-50 text-left text-xs text-slate-500">
                   <tr>
-                    <th className="px-3 py-2 font-normal">Order</th>
-                    <th className="px-3 py-2 font-normal">Customer</th>
-                    <th className="px-3 py-2 font-normal">Stage</th>
-                    <th className="px-3 py-2 text-right font-normal">Total</th>
+                    <th className="px-3 py-2 font-normal">{tr("Order")}</th>
+                    <th className="px-3 py-2 font-normal">{tr("Customer")}</th>
+                    <th className="px-3 py-2 font-normal">{tr("Stage")}</th>
+                    <th className="px-3 py-2 text-right font-normal">{tr("Total")}</th>
                     <th />
                   </tr>
                 </thead>
@@ -172,7 +173,7 @@ export default function RecordsPage() {
                       <td className="px-3 py-2 text-right tabular-nums">{formatMoney(o.order_total, o.currency)}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button type="button" className={small} onClick={() => setEditOrder(o)}>
-                          Edit
+                          {tr("Edit")}
                         </button>{' '}
                         <button
                           type="button"
@@ -187,7 +188,7 @@ export default function RecordsPage() {
                             })
                           }
                         >
-                          Archive
+                          {tr("Archive")}
                         </button>
                       </td>
                     </tr>
@@ -200,10 +201,10 @@ export default function RecordsPage() {
               <>
                 <thead className="bg-slate-50 text-left text-xs text-slate-500">
                   <tr>
-                    <th className="px-3 py-2 font-normal">Name</th>
-                    <th className="px-3 py-2 font-normal">Company</th>
-                    <th className="px-3 py-2 font-normal">Emails</th>
-                    <th className="px-3 py-2 font-normal">Country</th>
+                    <th className="px-3 py-2 font-normal">{tr("Name")}</th>
+                    <th className="px-3 py-2 font-normal">{tr("Company")}</th>
+                    <th className="px-3 py-2 font-normal">{tr("Emails")}</th>
+                    <th className="px-3 py-2 font-normal">{tr("Country")}</th>
                     <th />
                   </tr>
                 </thead>
@@ -216,7 +217,7 @@ export default function RecordsPage() {
                       <td className="px-3 py-2">{[c.state_province, c.country].filter(Boolean).join(', ')}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button type="button" className={small} onClick={() => setEditCustomer(c)}>
-                          Edit
+                          {tr("Edit")}
                         </button>{' '}
                         <button
                           type="button"
@@ -230,7 +231,7 @@ export default function RecordsPage() {
                             })
                           }
                         >
-                          Archive
+                          {tr("Archive")}
                         </button>
                       </td>
                     </tr>
@@ -243,10 +244,10 @@ export default function RecordsPage() {
               <>
                 <thead className="bg-slate-50 text-left text-xs text-slate-500">
                   <tr>
-                    <th className="px-3 py-2 font-normal">Serial</th>
-                    <th className="px-3 py-2 font-normal">Machine type</th>
-                    <th className="px-3 py-2 font-normal">Order</th>
-                    <th className="px-3 py-2 font-normal">Built</th>
+                    <th className="px-3 py-2 font-normal">{tr("Serial")}</th>
+                    <th className="px-3 py-2 font-normal">{tr("Machine type")}</th>
+                    <th className="px-3 py-2 font-normal">{tr("Order")}</th>
+                    <th className="px-3 py-2 font-normal">{tr("Built")}</th>
                     <th />
                   </tr>
                 </thead>
@@ -254,8 +255,8 @@ export default function RecordsPage() {
                   {shownMachines.slice(0, LIMIT).map((m) => (
                     <tr key={m.id}>
                       <td className="px-3 py-2 font-mono">
-                        {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span className="font-sans text-slate-400">none</span>}
-                        {m.serial_manual && <span className="ml-1 font-sans text-xs text-slate-500">(by hand)</span>}
+                        {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span className="font-sans text-slate-400">{tr("none")}</span>}
+                        {m.serial_manual && <span className="ml-1 font-sans text-xs text-slate-500">{tr("(by hand)")}</span>}
                       </td>
                       <td className="px-3 py-2">{m.machine_types?.name}</td>
                       <td className="px-3 py-2">
@@ -263,10 +264,10 @@ export default function RecordsPage() {
                           {m.orders?.order_code}
                         </Link>
                       </td>
-                      <td className="px-3 py-2">{m.ready ? 'Built' : ''}</td>
+                      <td className="px-3 py-2">{m.ready ? tr("Built") : ''}</td>
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         <button type="button" className={small} onClick={() => setEditMachine(m)}>
-                          Edit
+                          {tr("Edit")}
                         </button>{' '}
                         <button
                           type="button"
@@ -282,7 +283,7 @@ export default function RecordsPage() {
                             })
                           }
                         >
-                          Archive
+                          {tr("Archive")}
                         </button>
                       </td>
                     </tr>
@@ -293,10 +294,10 @@ export default function RecordsPage() {
           </table>
           {counts[tab] > LIMIT && (
             <p className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
-              Showing the first {LIMIT} of {counts[tab]}. Search to narrow it down.
+              {tr("Showing the first")} {LIMIT} {tr("of")} {counts[tab]}{tr(". Search to narrow it down.")}
             </p>
           )}
-          {counts[tab] === 0 && <p className="px-3 py-6 text-center text-sm text-slate-500">No matching records found.</p>}
+          {counts[tab] === 0 && <p className="px-3 py-6 text-center text-sm text-slate-500">{tr("No matching records found.")}</p>}
         </div>
       )}
 

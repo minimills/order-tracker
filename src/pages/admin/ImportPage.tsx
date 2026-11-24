@@ -16,6 +16,7 @@ import type { DraftMachine, DraftOrder, Grid } from '../../lib/sheetImport/types
 import { checkImport, type ExistingOrder, type ImportContext, type ImportType } from '../../lib/sheetImport/validate'
 import { downloadWorkbook, readWorkbook } from '../../lib/sheetImport/xlsx'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Filter = 'all' | 'attention' | 'errors'
 type Summary = Record<string, number | Record<string, number>>
@@ -119,7 +120,7 @@ export default function ImportPage() {
       setFileName(file.name)
       await openSheet(gs, g.name)
     } catch (e) {
-      toast.error(`That file could not be read: ${(e as Error).message}`)
+      toast.error(tr("That file could not be read: {{message}}", { message: (e as Error).message }))
     } finally {
       setBusy(null)
     }
@@ -132,7 +133,7 @@ export default function ImportPage() {
     setSkippedTop(parsed.skippedTop)
     setDrafts(parsed.orders)
     await loadExisting(parsed.orders)
-    if (parsed.orders.length === 0) toast.error(`No orders found on the "${g.name}" sheet. Order numbers must be in column A.`)
+    if (parsed.orders.length === 0) toast.error(tr("No orders found on the \"{{name}}\" sheet. Order numbers must be in column A.", { name: g.name }))
   }
 
   // ---------- Checking (runs after every edit) ----------
@@ -168,20 +169,20 @@ export default function ImportPage() {
     }
     await loadTypes()
     setBusy(null)
-    toast.success('Codes saved in Machine types.')
+    toast.success(tr("Codes saved in Machine types."))
   }
 
   async function createType() {
     if (!supabase || !creating) return
     const name = creating.name.trim()
     const code = creating.code.trim().toUpperCase()
-    if (!name) return toast.error('Enter a name.')
-    if (code && !/^[A-Z0-9]+$/.test(code)) return toast.error('The code can only have capital letters and numbers.')
+    if (!name) return toast.error(tr("Enter a name."))
+    if (code && !/^[A-Z0-9]+$/.test(code)) return toast.error(tr("The code can only have capital letters and numbers."))
     const { data, error } = await supabase.from('machine_types').insert({ name, code: code || null }).select('id').single()
     if (error) return toast.error(friendlyError(error))
     await loadTypes()
     applyTypeToName(creating.machine.name, (data as { id: string }).id)
-    toast.success(`Machine type "${name}" created.`)
+    toast.success(tr("Machine type \"{{name}}\" created.", { name: name }))
     setCreating(null)
   }
 
@@ -194,7 +195,7 @@ export default function ImportPage() {
     const { data, error } = await supabase.rpc('import_sheet', { p_orders: plan.payload, p_skipped: plan.skipped })
     setBusy(null)
     setConfirming(false)
-    if (error) return toast.error(`No data was imported: ${friendlyError(error)}`)
+    if (error) return toast.error(tr("No data was imported: {{friendlyError}}", { friendlyError: friendlyError(error) }))
     // Quote # / Invoice # from the optional backup columns (empty cells never overwrite).
     for (const o of plan.payload as { order_number: number | null; split_number: number | null; quote_number: string | null; invoice_number: string | null }[]) {
       if (!o.order_number || (!o.quote_number && !o.invoice_number)) continue
@@ -202,13 +203,13 @@ export default function ImportPage() {
       if (o.quote_number) refs.quote_number = o.quote_number
       if (o.invoice_number) refs.invoice_number = o.invoice_number
       const { error: refError } = await supabase.from('orders').update(refs).eq('order_code', o.split_number ? `${o.order_number}-${o.split_number}` : String(o.order_number))
-      if (refError) toast.error(`Order ${o.order_number}: the quote / invoice number was not saved (${friendlyError(refError)}).`)
+      if (refError) toast.error(tr("Order {{order_number}}: the quote / invoice number was not saved ({{friendlyError}}).", { order_number: o.order_number, friendlyError: friendlyError(refError) }))
     }
     setResult(data as Summary)
     setDrafts([])
     setGrids([])
     refreshAlerts()
-    toast.success('Import finished.')
+    toast.success(tr("Import finished."))
   }
 
   async function download(kind: 'template' | 'backup') {
@@ -227,24 +228,23 @@ export default function ImportPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Import and Backup">
-        Bring orders in from a spreadsheet laid out like the old Google Sheet, or download everything as a backup in the
-        same layout. Nothing is saved until you select Import and confirm.
+      <AdminPageHeader title={tr("Import and Backup")}>
+        {tr("Bring orders in from a spreadsheet laid out like the old Google Sheet, or download everything as a backup in the same layout. Nothing is saved until you select Import and confirm.")}
       </AdminPageHeader>
 
       <div className="grid gap-3 md:grid-cols-3">
         <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="font-medium">1. Get the template</div>
-          <p className="mt-1 text-sm text-slate-600">Columns A–N exactly like the old sheet, plus an Instructions sheet with an example.</p>
+          <div className="font-medium">{tr("1. Get the template")}</div>
+          <p className="mt-1 text-sm text-slate-600">{tr("Columns A–N exactly like the old sheet, plus an Instructions sheet with an example.")}</p>
           <button type="button" className={`${secondaryButtonClass} mt-3`} onClick={() => download('template')} disabled={!!busy}>
-            ⬇ Download template
+            {tr("⬇ Download template")}
           </button>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="font-medium">2. Upload the filled file</div>
-          <p className="mt-1 text-sm text-slate-600">.xlsx from Google Sheets (File → Download → Microsoft Excel) or Excel.</p>
+          <div className="font-medium">{tr("2. Upload the filled file")}</div>
+          <p className="mt-1 text-sm text-slate-600">{tr(".xlsx from Google Sheets (File → Download → Microsoft Excel) or Excel.")}</p>
           <label className={`${buttonClass} mt-3 inline-block cursor-pointer`}>
-            ⬆ Upload filled file
+            {tr("⬆ Upload filled file")}
             <input
               type="file"
               accept=".xlsx,.xls,.ods,.csv"
@@ -258,10 +258,10 @@ export default function ImportPage() {
           </label>
         </div>
         <div className="rounded-lg border border-slate-200 bg-white p-4">
-          <div className="font-medium">Backup</div>
-          <p className="mt-1 text-sm text-slate-600">Every order, machine and payment in the same layout (it can be imported again).</p>
+          <div className="font-medium">{tr("Backup")}</div>
+          <p className="mt-1 text-sm text-slate-600">{tr("Every order, machine and payment in the same layout (it can be imported again).")}</p>
           <button type="button" className={`${secondaryButtonClass} mt-3`} onClick={() => download('backup')} disabled={!!busy}>
-            ⬇ Download all data
+            {tr("⬇ Download all data")}
           </button>
         </div>
       </div>
@@ -270,24 +270,24 @@ export default function ImportPage() {
 
       {result && (
         <section className="rounded-lg border border-green-300 bg-green-50 p-4 text-sm">
-          <h2 className="text-lg font-semibold text-green-900">Import Finished</h2>
+          <h2 className="text-lg font-semibold text-green-900">{tr("Import Finished")}</h2>
           <p className="mt-1">
-            <strong>{n('orders_created') + n('orders_updated')}</strong> orders ({n('orders_created')} new, {n('orders_updated')} updated),{' '}
-            <strong>{n('machines_created') + n('machines_updated')}</strong> machines, <strong>{n('payments_created') + n('payments_updated')}</strong>{' '}
-            payments imported; <strong>{n('skipped')}</strong> skipped. {n('customers_created')} new customers.
+            <strong>{n('orders_created') + n('orders_updated')}</strong> {tr("orders (")}{n('orders_created')} {tr("new,")} {n('orders_updated')} {tr("updated),")}{' '}
+            <strong>{n('machines_created') + n('machines_updated')}</strong> {tr("machines,")} <strong>{n('payments_created') + n('payments_updated')}</strong>{' '}
+            {tr("payments imported;")} <strong>{n('skipped')}</strong> skipped. {n('customers_created')} {tr("new customers.")}
           </p>
           {n('needs_serial') > 0 && (
             <p className="mt-1">
-              {n('needs_serial')} machine{n('needs_serial') === 1 ? '' : 's'} need a serial:{' '}
+              {n('needs_serial')} {tr("machine")}{n('needs_serial') === 1 ? '' : 's'} {tr("need a serial:")}{' '}
               <Link to="/admin/serials" className="underline">
-                Admin → Serial Numbers
+                {tr("Admin → Serial Numbers")}
               </Link>
               .
             </p>
           )}
           {result.next_serial_numbers && Object.keys(result.next_serial_numbers).length > 0 && (
             <p className="mt-1">
-              Next serial numbers set to:{' '}
+              {tr("Next serial numbers set to:")}{' '}
               {Object.entries(result.next_serial_numbers as Record<string, number>)
                 .map(([code, next]) => `${code}-${String(next).padStart(4, '0')}`)
                 .join(', ')}
@@ -296,11 +296,11 @@ export default function ImportPage() {
           )}
           <p className="mt-2">
             <Link to="/orders?stage=all" className="underline">
-              View the Orders
+              {tr("View the Orders")}
             </Link>{' '}
-            · This import is recorded in{' '}
+            {tr("· This import is recorded in")}{' '}
             <Link to="/admin/activity" className="underline">
-              Activity
+              {tr("Activity")}
             </Link>
             .
           </p>
@@ -314,7 +314,7 @@ export default function ImportPage() {
               <span className="font-semibold">{fileName}</span>
               {grids.length > 1 && (
                 <select
-                  aria-label="Sheet"
+                  aria-label={tr("Sheet")}
                   className="rounded border border-slate-300 px-2 py-1 text-sm"
                   value={sheet}
                   onChange={(e) => openSheet(grids, e.target.value)}
@@ -325,11 +325,11 @@ export default function ImportPage() {
                 </select>
               )}
               <span className="text-slate-600">
-                {check.orders.length} orders found ({plan.counts.newOrders} new, {plan.counts.updatedOrders} update)
-                {skippedTop > 0 && ` · ${skippedTop} heading row${skippedTop === 1 ? '' : 's'} skipped`}
+                {check.orders.length} {tr("orders found (")}{plan.counts.newOrders} {tr("new,")} {plan.counts.updatedOrders} {tr("update)")}
+                {skippedTop > 0 && tr(" · {{skippedTop}} heading row{{value}} skipped", { skippedTop: skippedTop, value: skippedTop === 1 ? '' : 's' })}
               </span>
-              <span className="text-red-700">{errors} with errors</span>
-              <span className="text-amber-800">{warnings} with warnings</span>
+              <span className="text-red-700">{errors} {tr("with errors")}</span>
+              <span className="text-amber-800">{warnings} {tr("with warnings")}</span>
             </div>
             <div className="flex flex-wrap items-center gap-3 text-sm">
               <div className="flex gap-1 rounded-md bg-slate-100 p-1" role="tablist">
@@ -354,7 +354,7 @@ export default function ImportPage() {
               </div>
               <label className="flex items-center gap-2">
                 <input type="checkbox" checked={keepSerials} onChange={(e) => setKeepSerials(e.target.checked)} />
-                Keep serials exactly as in the file
+                {tr("Keep serials exactly as in the file")}
               </label>
               <button
                 type="button"
@@ -362,18 +362,18 @@ export default function ImportPage() {
                 disabled={errors > 0 || included.length === 0 || !!busy}
                 onClick={() => setConfirming(true)}
               >
-                Import…
+                {tr("Import…")}
               </button>
             </div>
-            {errors > 0 && <p className="text-sm text-red-700">Fix the red rows (or deselect them) before importing.</p>}
+            {errors > 0 && <p className="text-sm text-red-700">{tr("Fix the red rows (or deselect them) before importing.")}</p>}
             {check.codeSuggestions.length > 0 && (
               <div className="rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900">
-                These machine types have no code in the app yet, but your serials use one:{' '}
+                {tr("These machine types have no code in the app yet, but your serials use one:")}{' '}
                 {check.codeSuggestions.map((s) => `${s.type.name} → ${s.code}`).join(', ')}.{' '}
                 <button type="button" className="font-medium underline" onClick={fillCodes} disabled={!!busy}>
-                  Save These Codes
+                  {tr("Save These Codes")}
                 </button>{' '}
-                (then those serials follow the normal numbering).
+                {tr("(then those serials follow the normal numbering).")}
               </div>
             )}
           </section>
@@ -394,64 +394,63 @@ export default function ImportPage() {
                 onUseForAll={applyTypeToName}
               />
             ))}
-            {shown.length === 0 && <p className="text-center text-sm text-slate-500">No rows match this filter.</p>}
+            {shown.length === 0 && <p className="text-center text-sm text-slate-500">{tr("No rows match this filter.")}</p>}
           </div>
         </>
       )}
 
       {confirming && (
         <Modal
-          title="Import Now?"
+          title={tr("Import Now?")}
           onClose={() => setConfirming(false)}
           busy={!!busy}
           footer={
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setConfirming(false)} disabled={!!busy}>
-                Cancel
+                {tr("Cancel")}
               </button>
               <button type="button" className={buttonClass} onClick={runImport} disabled={!!busy}>
-                {busy ? 'Importing…' : 'Confirm Import'}
+                {busy ? tr("Importing…") : tr("Confirm Import")}
               </button>
             </>
           }
         >
           <ul className="list-disc space-y-1 pl-5 text-sm">
             <li>
-              <strong>{plan.counts.newOrders}</strong> new orders and <strong>{plan.counts.updatedOrders}</strong> existing orders updated
+              <strong>{plan.counts.newOrders}</strong> {tr("new orders and")} <strong>{plan.counts.updatedOrders}</strong> {tr("existing orders updated")}
             </li>
             <li>
-              <strong>{plan.counts.machines}</strong> machines and <strong>{plan.counts.payments}</strong> payments
+              <strong>{plan.counts.machines}</strong> {tr("machines and")} <strong>{plan.counts.payments}</strong> {tr("payments")}
             </li>
-            {plan.counts.notMachines > 0 && <li>{plan.counts.notMachines} non-machine rows added to order notes</li>}
-            <li>{plan.skipped} rows not selected were skipped</li>
+            {plan.counts.notMachines > 0 && <li>{plan.counts.notMachines} {tr("non-machine rows added to order notes")}</li>}
+            <li>{plan.skipped} {tr("rows not selected were skipped")}</li>
           </ul>
           <p className="mt-3 text-sm text-slate-600">
-            Everything is saved in one step: if any part fails, nothing is saved. Afterwards each machine type’s next
-            serial is set one above the highest imported number.
+            {tr("Everything is saved in one step: if any part fails, nothing is saved. Afterwards each machine type’s next serial is set one above the highest imported number.")}
           </p>
         </Modal>
       )}
 
       {creating && (
         <Modal
-          title="Create a Machine Type"
+          title={tr("Create a Machine Type")}
           onClose={() => setCreating(null)}
           footer={
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setCreating(null)}>
-                Cancel
+                {tr("Cancel")}
               </button>
               <button type="button" className={buttonClass} onClick={createType}>
-                Create
+                {tr("Create")}
               </button>
             </>
           }
         >
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Name" htmlFor="ct-name">
+            <Field label={tr("Name")} htmlFor="ct-name">
               <input id="ct-name" className={inputClass} value={creating.name} onChange={(e) => setCreating({ ...creating, name: e.target.value })} />
             </Field>
-            <Field label="Code (optional)" htmlFor="ct-code" hint="Capital letters and numbers, for example SSD.">
+            <Field label={tr("Code (optional)")} htmlFor="ct-code" hint={tr("Capital letters and numbers, for example SSD.")}>
               <input
                 id="ct-code"
                 className={`${inputClass} uppercase`}
@@ -460,7 +459,7 @@ export default function ImportPage() {
               />
             </Field>
           </div>
-          <p className="mt-3 text-sm text-slate-600">Every row named “{creating.machine.name}” will use the new type.</p>
+          <p className="mt-3 text-sm text-slate-600">{tr("Every row named “")}{creating.machine.name}{tr("” will use the new type.")}</p>
         </Modal>
       )}
     </div>

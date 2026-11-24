@@ -9,6 +9,7 @@ import { usePermissions } from '../../lib/permissions'
 import { serviceDates, type ServiceInfo } from '../../lib/service'
 import { supabase } from '../../lib/supabase'
 import TrainingDoneButton from './TrainingDoneButton'
+import { tr } from '../../i18n'
 
 const FIELD_KEYS = ['order.field.training_needed', 'order.field.training_days', 'order.field.travel_days', 'order.field.technician', 'order.field.service_dates']
 
@@ -45,12 +46,12 @@ export default function OrderServiceSection({ orderId }: { orderId: string }) {
   if (!info) return null
   return (
     <Section
-      title="Service / Training"
+      title={tr("Service / Training")}
       aside={
         <div className="flex flex-wrap gap-2">
           <Can permission="service">
             <Link to={`/service/${orderId}`} className={secondaryButtonClass}>
-              Open Service Log
+              {tr("Open Service Log")}
             </Link>
           </Can>
           {(info.training_needed || info.technician_email || info.service_start) && (
@@ -60,7 +61,7 @@ export default function OrderServiceSection({ orderId }: { orderId: string }) {
           )}
           {canAny(FIELD_KEYS, 'edit') && (
             <button type="button" className={secondaryButtonClass} onClick={() => setEditing(true)}>
-              Edit Service
+              {tr("Edit Service")}
             </button>
           )}
         </div>
@@ -68,23 +69,23 @@ export default function OrderServiceSection({ orderId }: { orderId: string }) {
     >
       <dl className="grid grid-cols-2 gap-4">
         <Can permission="order.field.training_needed">
-          <Item label="Training needed">{info.training_needed ? 'Needed' : 'Not needed'}</Item>
+          <Item label={tr("Training needed")}>{info.training_needed ? tr("Needed") : tr("Not needed")}</Item>
         </Can>
         <Can permission="order.field.technician">
-          <Item label="Technician">{info.technician_name ?? <span className="text-slate-400">Not assigned</span>}</Item>
+          <Item label={tr("Technician")}>{info.technician_name ?? <span className="text-slate-400">{tr("Not assigned")}</span>}</Item>
         </Can>
         <Can permission="order.field.training_days">
-          <Item label="On-site training days">{days(info.training_days)}</Item>
+          <Item label={tr("On-site training days")}>{days(info.training_days)}</Item>
         </Can>
         <Can permission="order.field.travel_days">
-          <Item label="Travel days">{days(info.travel_days)}</Item>
+          <Item label={tr("Travel days")}>{days(info.travel_days)}</Item>
         </Can>
         <Can permission="order.field.service_dates">
-          <Item label="Planned dates">{serviceDates(info.service_start, info.service_end) || <span className="text-slate-400">Not planned</span>}</Item>
+          <Item label={tr("Planned dates")}>{serviceDates(info.service_start, info.service_end) || <span className="text-slate-400">{tr("Not planned")}</span>}</Item>
         </Can>
         <Can permission="service.log">
-          <Item label="Service log">
-            {info.entries ? `${info.entries} day${info.entries === 1 ? '' : 's'}, ${Number(info.hours)} hours` : <span className="text-slate-400">No days logged</span>}
+          <Item label={tr("Service log")}>
+            {info.entries ? tr("{{entries}} day{{value}}, {{Number}} hours", { entries: info.entries, value: info.entries === 1 ? '' : 's', Number: Number(info.hours) }) : <span className="text-slate-400">{tr("No days logged")}</span>}
           </Item>
         </Can>
       </dl>
@@ -124,9 +125,9 @@ function ServiceFieldsDialog({ info, onClose, onSaved }: { info: ServiceInfo; on
     if (!supabase) return
     const num = (v: string) => (v.trim() === '' ? null : Number(v))
     for (const v of [f.training_days, f.travel_days]) {
-      if (v.trim() !== '' && (!Number.isFinite(Number(v)) || Number(v) < 0)) return toast.error('Days must be a number of 0 or more.')
+      if (v.trim() !== '' && (!Number.isFinite(Number(v)) || Number(v) < 0)) return toast.error(tr("Days must be a number of 0 or more."))
     }
-    if (f.service_start && f.service_end && f.service_end < f.service_start) return toast.error('The end date must be on or after the start date.')
+    if (f.service_start && f.service_end && f.service_end < f.service_start) return toast.error(tr("The end date must be on or after the start date."))
     const patch: Record<string, unknown> = {}
     if (can('order.field.training_needed', 'edit')) patch.training_needed = f.training_needed
     if (can('order.field.training_days', 'edit')) patch.training_days = num(f.training_days)
@@ -140,22 +141,22 @@ function ServiceFieldsDialog({ info, onClose, onSaved }: { info: ServiceInfo; on
     const { error } = await supabase.from('orders').update(patch).eq('id', info.order_id)
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Service details saved.')
+    toast.success(tr("Service details saved."))
     onSaved()
   }
 
   return (
     <Modal
-      title={`Service for Order ${info.order_code}`}
+      title={tr("Service for Order {{order_code}}", { order_code: info.order_code })}
       onClose={onClose}
       busy={saving}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? tr("Saving…") : tr("Save Changes")}
           </button>
         </>
       }
@@ -164,23 +165,23 @@ function ServiceFieldsDialog({ info, onClose, onSaved }: { info: ServiceInfo; on
         <Can permission="order.field.training_needed" level="edit">
           <label className="flex items-center gap-2 text-sm sm:col-span-2">
             <input type="checkbox" checked={f.training_needed} onChange={(e) => setF({ ...f, training_needed: e.target.checked })} />
-            On-site training and commissioning needed
+            {tr("On-site training and commissioning needed")}
           </label>
         </Can>
         <Can permission="order.field.training_days" level="edit">
-          <Field label="On-site training days" htmlFor="sv-training">
+          <Field label={tr("On-site training days")} htmlFor="sv-training">
             <input id="sv-training" inputMode="decimal" className={inputClass} value={f.training_days} onChange={(e) => setF({ ...f, training_days: e.target.value })} />
           </Field>
         </Can>
         <Can permission="order.field.travel_days" level="edit">
-          <Field label="Travel days" htmlFor="sv-travel">
+          <Field label={tr("Travel days")} htmlFor="sv-travel">
             <input id="sv-travel" inputMode="decimal" className={inputClass} value={f.travel_days} onChange={(e) => setF({ ...f, travel_days: e.target.value })} />
           </Field>
         </Can>
         <Can permission="order.field.technician" level="edit">
-          <Field label="Technician" htmlFor="sv-tech" className="sm:col-span-2">
+          <Field label={tr("Technician")} htmlFor="sv-tech" className="sm:col-span-2">
             <select id="sv-tech" className={inputClass} value={f.technician_email} onChange={(e) => setF({ ...f, technician_email: e.target.value })}>
-              <option value="">Not assigned</option>
+              <option value="">{tr("Not assigned")}</option>
               {f.technician_email && !people.some((p) => p.email === f.technician_email) && <option value={f.technician_email}>{info.technician_name ?? f.technician_email}</option>}
               {people.map((p) => (
                 <option key={p.email} value={p.email}>
@@ -191,10 +192,10 @@ function ServiceFieldsDialog({ info, onClose, onSaved }: { info: ServiceInfo; on
           </Field>
         </Can>
         <Can permission="order.field.service_dates" level="edit">
-          <Field label="Planned start" htmlFor="sv-start">
+          <Field label={tr("Planned start")} htmlFor="sv-start">
             <input id="sv-start" type="date" className={inputClass} value={f.service_start} onChange={(e) => setF({ ...f, service_start: e.target.value })} />
           </Field>
-          <Field label="Planned end" htmlFor="sv-end">
+          <Field label={tr("Planned end")} htmlFor="sv-end">
             <input id="sv-end" type="date" className={inputClass} value={f.service_end} min={f.service_start || undefined} onChange={(e) => setF({ ...f, service_end: e.target.value })} />
           </Field>
         </Can>

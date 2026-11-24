@@ -15,11 +15,24 @@ import { supabase } from '../lib/supabase'
 import { buttonClass, secondaryButtonClass } from '../components/form'
 import PrintButton from '../components/print/PrintButton'
 import ServiceSummary from '../components/service/ServiceSummary'
+import { tr } from '../i18n'
 
 const LISTS: { state: ServiceState; title: string; permission: string; empty: string }[] = [
-  { state: 'in_progress', title: 'In Progress', permission: 'service.list.in_progress', empty: 'No training is in progress.' },
-  { state: 'upcoming', title: 'Upcoming', permission: 'service.list.upcoming', empty: 'No training is planned.' },
-  { state: 'completed', title: 'Completed', permission: 'service.list.completed', empty: 'No training has been completed yet.' },
+  { state: 'in_progress', get title() {
+    return tr("In Progress")
+  }, permission: 'service.list.in_progress', get empty() {
+    return tr("No training is in progress.")
+  } },
+  { state: 'upcoming', get title() {
+    return tr("Upcoming")
+  }, permission: 'service.list.upcoming', get empty() {
+    return tr("No training is planned.")
+  } },
+  { state: 'completed', get title() {
+    return tr("Completed")
+  }, permission: 'service.list.completed', get empty() {
+    return tr("No training has been completed yet.")
+  } },
 ]
 
 /** Service: on-site training and commissioning, one row per order. */
@@ -55,9 +68,13 @@ export default function ServicePage() {
 
   async function newCall() {
     if (!supabase) return
-    const title = await askText('What is the problem? A few words are enough; add the details on the next page.', {
-      label: 'Problem',
-      confirmLabel: 'Create Service Call',
+    const title = await askText(tr("What is the problem? A few words are enough; add the details on the next page."), {
+      get label() {
+    return tr("Problem")
+  },
+      get confirmLabel() {
+    return tr("Create Service Call")
+  },
     })
     if (!title?.trim()) return
     const { data, error } = await supabase.rpc('create_service_call', { p_title: title.trim() })
@@ -98,19 +115,19 @@ export default function ServicePage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">Service / Training</h1>
+              <h1 className="text-2xl font-semibold">{tr("Service / Training")}</h1>
               <Can permission="service.print">
-                <PrintButton title="Service / Training" />
+                <PrintButton title={tr("Service / Training")} />
               </Can>
             </div>
-            <p className="text-sm text-slate-600">On-site training and commissioning. Open an order to log the days and create the certificate.</p>
+            <p className="text-sm text-slate-600">{tr("On-site training and commissioning. Open an order to log the days and create the certificate.")}</p>
           </div>
           <Can permission="service.filters">
             <div className="flex flex-wrap items-center gap-3">
-              <input type="search" aria-label="Search" placeholder="Search order, customer, technician" className={`${narrowInputClass} w-64`} value={q} onChange={(e) => set('q', e.target.value)} />
+              <input type="search" aria-label={tr("Search")} placeholder={tr("Search order, customer, technician")} className={`${narrowInputClass} w-64`} value={q} onChange={(e) => set('q', e.target.value)} />
               <label className="flex items-center gap-2 text-sm">
                 <input type="checkbox" checked={mine} onChange={(e) => set('mine', e.target.checked ? '1' : '')} />
-                Only mine
+                {tr("Only mine")}
               </label>
             </div>
           </Can>
@@ -119,13 +136,13 @@ export default function ServicePage() {
         <div className="flex flex-wrap gap-2">
           <Can permission="service.calendar">
             <Link to="/calendar" className={secondaryButtonClass}>
-              Calendar
+              {tr("Calendar")}
             </Link>
           </Can>
           {board && (
             <Can permission="boards">
               <Link to={`/boards/${board}`} className={secondaryButtonClass}>
-                Service Calls Board
+                {tr("Service Calls Board")}
               </Link>
             </Can>
           )}
@@ -134,7 +151,7 @@ export default function ServicePage() {
         <Can permission="service.log">
           {waiting.length > 0 && (
             <p className="rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900" role="status">
-              {waiting.length} day {waiting.length === 1 ? 'entry is' : 'entries are'} not yet saved. They are kept on this device and are sent automatically when the connection is back.
+              {waiting.length} {tr("day")} {waiting.length === 1 ? tr("entry is") : tr("entries are")} {tr("not yet saved. They are kept on this device and are sent automatically when the connection is back.")}
             </p>
           )}
         </Can>
@@ -143,7 +160,7 @@ export default function ServicePage() {
           <ServiceSummary />
         </Can>
 
-        {loading && <p className="text-center text-slate-500">Loading…</p>}
+        {loading && <p className="text-center text-slate-500">{tr("Loading…")}</p>}
         {!loading &&
           LISTS.map((list) => {
             const items = shown
@@ -162,7 +179,7 @@ export default function ServicePage() {
                       {items.map((r) => (
                         <li key={r.order_id}>
                           <Link to={`/service/${r.order_id}`} className="grid gap-1 px-4 py-3 text-sm hover:bg-slate-50 sm:grid-cols-[6rem_1fr_12rem_10rem] sm:items-center">
-                            <span className="font-semibold">Order {r.order_code}</span>
+                            <span className="font-semibold">{tr("Order")} {r.order_code}</span>
                             <span>
                               {r.customer_name}
                               {r.customer_company ? <span className="text-slate-500"> · {r.customer_company}</span> : null}
@@ -173,8 +190,8 @@ export default function ServicePage() {
                                 </span>
                               ) : null}
                             </span>
-                            <span className="text-slate-700">{serviceDates(r.service_start, r.service_end) || <span className="text-slate-400">Dates not set</span>}</span>
-                            <span className="text-slate-700">{r.technician_name ?? <span className="text-slate-400">No technician</span>}</span>
+                            <span className="text-slate-700">{serviceDates(r.service_start, r.service_end) || <span className="text-slate-400">{tr("Dates not set")}</span>}</span>
+                            <span className="text-slate-700">{r.technician_name ?? <span className="text-slate-400">{tr("No technician")}</span>}</span>
                           </Link>
                         </li>
                       ))}
@@ -189,19 +206,19 @@ export default function ServicePage() {
           <section className="rounded-lg border border-slate-200 bg-white">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
               <h2 className="font-semibold">
-                Service Calls <span className="text-sm font-normal text-slate-500">({calls.filter((c) => !c.done).length} open)</span>
+                {tr("Service Calls")} <span className="text-sm font-normal text-slate-500">({calls.filter((c) => !c.done).length} {tr("open)")}</span>
               </h2>
               <Can permission="service.calls.create" level="edit">
                 <button type="button" className={buttonClass} onClick={newCall}>
-                  New Service Call
+                  {tr("New Service Call")}
                 </button>
               </Can>
             </div>
-            <CallList calls={calls.filter((c) => !c.done && matches(c))} empty="No open service calls." />
+            <CallList calls={calls.filter((c) => !c.done && matches(c))} empty={tr("No open service calls.")} />
             {calls.some((c) => c.done) && (
               <details className="border-t border-slate-200">
-                <summary className="cursor-pointer px-4 py-3 text-sm font-medium">Done ({calls.filter((c) => c.done).length})</summary>
-                <CallList calls={calls.filter((c) => c.done && matches(c))} empty="No finished service calls match." />
+                <summary className="cursor-pointer px-4 py-3 text-sm font-medium">{tr("Done (")}{calls.filter((c) => c.done).length})</summary>
+                <CallList calls={calls.filter((c) => c.done && matches(c))} empty={tr("No finished service calls match.")} />
               </details>
             )}
           </section>
@@ -241,8 +258,8 @@ function CallList({ calls, empty }: { calls: ServiceCallInfo[]; empty: string })
               ) : null}
             </span>
             <span className="text-slate-600">{c.stage_name}</span>
-            <span className="text-slate-700">{serviceDates(c.planned_start, c.planned_end) || <span className="text-slate-400">Dates not set</span>}</span>
-            <span className="text-slate-700">{c.technician_name ?? <span className="text-slate-400">No technician</span>}</span>
+            <span className="text-slate-700">{serviceDates(c.planned_start, c.planned_end) || <span className="text-slate-400">{tr("Dates not set")}</span>}</span>
+            <span className="text-slate-700">{c.technician_name ?? <span className="text-slate-400">{tr("No technician")}</span>}</span>
           </Link>
         </li>
       ))}

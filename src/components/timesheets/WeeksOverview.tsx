@@ -13,6 +13,7 @@ import { usePermissions } from '../../lib/permissions'
 import { confirmAction } from '../../lib/confirm'
 import Can from '../Can'
 import FillEveryoneDialog from './FillEveryoneDialog'
+import { tr } from '../../i18n'
 
 const th = 'px-2 py-1.5 text-left font-medium'
 const td = 'px-2 py-1.5'
@@ -50,32 +51,34 @@ export default function WeeksOverview() {
 
   async function approveAll() {
     if (!supabase || !openRows.length) return
-    if (!(await confirmAction(`Approve and lock ${openRows.length} week${openRows.length === 1 ? '' : 's'} (week of ${showDate(ws)})?`, { confirmLabel: 'Approve Weeks' }))) return
+    if (!(await confirmAction(tr("Approve and lock {{length}} week{{value}} (week of {{showDate}})?", { length: openRows.length, value: openRows.length === 1 ? '' : 's', showDate: showDate(ws) }), { get confirmLabel() {
+    return tr("Approve Weeks")
+  } }))) return
     let failed = 0
     for (const r of openRows) {
       const { error } = await supabase.rpc('approve_timesheet_week', { p_employee: r.employee_id, p_week_start: ws, p_note: null })
       if (error) failed++
     }
-    if (failed) toast.error(`${failed} week${failed === 1 ? '' : 's'} could not be approved. Open them to see why.`)
-    else toast.success('Weeks approved and locked.')
+    if (failed) toast.error(tr("{{failed}} week{{value}} could not be approved. Open them to see why.", { failed: failed, value: failed === 1 ? '' : 's' }))
+    else toast.success(tr("Weeks approved and locked."))
     setVersion((v) => v + 1)
   }
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className={secondaryButtonClass} onClick={() => go(addDaysISO(ws, -7))} aria-label="Previous week">
+        <button type="button" className={secondaryButtonClass} onClick={() => go(addDaysISO(ws, -7))} aria-label={tr("Previous week")}>
           ←
         </button>
-        <input type="date" aria-label="Choose a week" className={narrowInputClass} value={ws} onChange={(e) => e.target.value && go(e.target.value)} />
-        <button type="button" className={secondaryButtonClass} onClick={() => go(addDaysISO(ws, 7))} aria-label="Next week">
+        <input type="date" aria-label={tr("Choose a week")} className={narrowInputClass} value={ws} onChange={(e) => e.target.value && go(e.target.value)} />
+        <button type="button" className={secondaryButtonClass} onClick={() => go(addDaysISO(ws, 7))} aria-label={tr("Next week")}>
           →
         </button>
         <span className="text-sm text-slate-600">
-          Week of {showDate(ws, 'EEE MMM d')} to {showDate(addDaysISO(ws, 6), 'EEE MMM d, yyyy')}
+          {tr("Week of")} {showDate(ws, 'EEE MMM d')} {tr("to")} {showDate(addDaysISO(ws, 6), 'EEE MMM d, yyyy')}
         </span>
-        <select aria-label="Department" className={`${narrowInputClass} ml-auto`} value={dept} onChange={(e) => setDept(e.target.value)}>
-          <option value="">All departments</option>
+        <select aria-label={tr("Department")} className={`${narrowInputClass} ml-auto`} value={dept} onChange={(e) => setDept(e.target.value)}>
+          <option value="">{tr("All departments")}</option>
           {departments
             .filter((d) => !d.archived)
             .map((d) => (
@@ -84,15 +87,15 @@ export default function WeeksOverview() {
               </option>
             ))}
         </select>
-        <input aria-label="Search employees" placeholder="Search" className={`${narrowInputClass} w-40`} value={q} onChange={(e) => setQ(e.target.value)} />
+        <input aria-label={tr("Search employees")} placeholder={tr("Search")} className={`${narrowInputClass} w-40`} value={q} onChange={(e) => setQ(e.target.value)} />
         <Can permission="timesheets.fill_all" level="edit">
           <button type="button" className={secondaryButtonClass} onClick={() => setFilling(true)}>
-            Fill Weekday Hours for Everyone
+            {tr("Fill Weekday Hours for Everyone")}
           </button>
         </Can>
         {openRows.length > 0 && (
           <button type="button" className={secondaryButtonClass} onClick={approveAll}>
-            Approve All ({openRows.length})
+            {tr("Approve All (")}{openRows.length})
           </button>
         )}
       </div>
@@ -101,23 +104,23 @@ export default function WeeksOverview() {
         <table className="w-full min-w-[52rem] text-sm">
           <thead className="bg-slate-50 text-xs text-slate-600">
             <tr>
-              <th className={th}>Employee</th>
-              <th className={`${th} text-right`}>Worked</th>
-              <th className={`${th} text-right`}>Banked used</th>
-              <th className={`${th} text-right`}>Regular</th>
-              <th className={`${th} text-right`}>Overtime</th>
-              <th className={`${th} text-right`}>Vacation</th>
-              <th className={`${th} text-right`}>Sick</th>
-              <th className={`${th} text-right`}>Stat holiday</th>
-              <th className={`${th} text-right`}>Banked</th>
-              <th className={th}>Status</th>
+              <th className={th}>{tr("Employee")}</th>
+              <th className={`${th} text-right`}>{tr("Worked")}</th>
+              <th className={`${th} text-right`}>{tr("Banked used")}</th>
+              <th className={`${th} text-right`}>{tr("Regular")}</th>
+              <th className={`${th} text-right`}>{tr("Overtime")}</th>
+              <th className={`${th} text-right`}>{tr("Vacation")}</th>
+              <th className={`${th} text-right`}>{tr("Sick")}</th>
+              <th className={`${th} text-right`}>{tr("Stat holiday")}</th>
+              <th className={`${th} text-right`}>{tr("Banked")}</th>
+              <th className={th}>{tr("Status")}</th>
             </tr>
           </thead>
           <tbody>
             {shown.length === 0 && (
               <tr>
                 <td className={`${td} text-slate-500`} colSpan={10}>
-                  No employees. Add them in Admin → Users → Employee Setup.
+                  {tr("No employees. Add them in Admin → Users → Employee Setup.")}
                 </td>
               </tr>
             )}
@@ -129,7 +132,7 @@ export default function WeeksOverview() {
                     <Link to={`/timesheets/employee/${e.id}?week=${ws}`} className="font-medium text-blue-700 underline">
                       {e.name}
                     </Link>
-                    <span className="ml-1 text-xs text-slate-500">{e.pay_type === 'salaried' ? 'Salaried' : 'Hourly'}</span>
+                    <span className="ml-1 text-xs text-slate-500">{e.pay_type === 'salaried' ? tr("Salaried") : tr("Hourly")}</span>
                   </td>
                   <td className={`${td} text-right tabular-nums`}>{showHours(r?.worked ?? 0)}</td>
                   <td className={`${td} text-right tabular-nums`}>{showHours(r?.banked_used ?? 0)}</td>
@@ -141,16 +144,16 @@ export default function WeeksOverview() {
                   <td className={`${td} text-right tabular-nums`}>{showHours((r?.earned_regular ?? 0) + (r?.earned_overtime ?? 0))}</td>
                   <td className={td}>
                     {!r || r.entries === 0 ? (
-                      <span className="text-slate-400">No hours</span>
+                      <span className="text-slate-400">{tr("No hours")}</span>
                     ) : r.needs_review ? (
-                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900">Needs review</span>
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-900">{tr("Needs review")}</span>
                     ) : r.status === 'approved' ? (
-                      <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-900">Approved</span>
+                      <span className="rounded bg-green-100 px-1.5 py-0.5 text-xs text-green-900">{tr("Approved")}</span>
                     ) : (
-                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">Not approved</span>
+                      <span className="rounded bg-slate-100 px-1.5 py-0.5 text-xs">{tr("Not approved")}</span>
                     )}
                     {r?.ot_choice && r.over_by_banked > 0 && (
-                      <span className="ml-1 text-xs text-slate-500">{r.ot_choice === 'regular' ? 'Extra paid as regular' : 'Extra paid as overtime'}</span>
+                      <span className="ml-1 text-xs text-slate-500">{r.ot_choice === 'regular' ? tr("Extra paid as regular") : tr("Extra paid as overtime")}</span>
                     )}
                   </td>
                 </tr>
@@ -160,7 +163,7 @@ export default function WeeksOverview() {
         </table>
       </div>
       <p className="text-xs text-slate-500">
-        Overtime: hours over {showHours(settings.overtime_weekly_hours)} a week (hours worked + banked hours used). Banked: hours put in the bank this week (not paid now).
+        {tr("Overtime: hours over")} {showHours(settings.overtime_weekly_hours)} {tr("a week (hours worked + banked hours used). Banked: hours put in the bank this week (not paid now).")}
       </p>
       {filling && (
         <Can permission="timesheets.fill_all" level="edit">

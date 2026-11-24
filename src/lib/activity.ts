@@ -1,3 +1,4 @@
+import { dtf, tr } from '../i18n'
 import { STEP_LABEL, type StepKey } from './schedule'
 import { CATALOG_BY_KEY } from './permissions/catalog'
 import { isRichText, richTextToPlain } from './richText'
@@ -106,7 +107,7 @@ const THING: Record<string, string> = {
 /** Fields that are filled in automatically and only add noise. */
 const HIDDEN = new Set(['id', 'created_at', 'archived_at', 'archived_by', 'order_id', 'order_code', 'checklist_done_at', 'checklist_done_by', 'last_worked_at', 'last_worked_by_name', 'signed_by', 'signature_path', 'machine_id', 'started_by', 'started_by_name', 'started_at', 'schedule_kept', 'done_by_name'])
 
-export const activityTime = new Intl.DateTimeFormat('en-CA', {
+export const activityTime = dtf({
   timeZone: 'America/Halifax',
   dateStyle: 'medium',
   timeStyle: 'short',
@@ -134,7 +135,9 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
     for (const s of (c.serial_changes as { order: string; old: string | null; new: string | null }[]) ?? []) {
       lines.push(`Serial (order ${s.order}): ${s.old ?? 'none'} → ${s.new ?? 'none'}`)
     }
-    return { title: 'Moved on the Orders Board', lines }
+    return { get title() {
+    return tr("Moved on the Orders Board")
+  }, lines }
   }
 
   if (e.action === 'admin' && (c as Record<string, unknown>).action === 'permissions') {

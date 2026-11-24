@@ -6,6 +6,7 @@ import { acknowledgeNotice, useUrgentNotices } from '../../lib/notices'
 import { usePermissions } from '../../lib/permissions'
 import Can from '../Can'
 import Icon from '../Icon'
+import { tr } from '../../i18n'
 
 /** A red banner at the top of every page while an Urgent notice for me is not acknowledged. */
 export default function UrgentBanner() {
@@ -20,7 +21,7 @@ export default function UrgentBanner() {
     const { error } = await acknowledgeNotice(first.id)
     setBusy(false)
     if (error) toast.error(friendlyError(error))
-    else toast.success('Thank you. The notice is acknowledged.')
+    else toast.success(tr("Thank you. The notice is acknowledged."))
   }
 
   return (
@@ -29,19 +30,19 @@ export default function UrgentBanner() {
         <span className="flex min-w-0 flex-1 items-center gap-2">
           <Icon name="alert" className="h-5 w-5 shrink-0" />
           <span className="min-w-0">
-            <span className="font-semibold">Urgent notice: </span>
+            <span className="font-semibold">{tr("Urgent notice:")} </span>
             {first.title}
-            {first.author_name && <span className="text-red-100"> · posted by {first.author_name}</span>}
-            {list.length > 1 && <span className="text-red-100"> · and {list.length - 1} more</span>}
+            {first.author_name && <span className="text-red-100"> {tr("· posted by")} {first.author_name}</span>}
+            {list.length > 1 && <span className="text-red-100"> {tr("· and")} {list.length - 1} {tr("more")}</span>}
           </span>
         </span>
         <span className="flex shrink-0 gap-2">
           <Link to={`/notices?notice=${first.id}`} className="rounded-md border border-white/60 px-3 py-1 font-medium hover:bg-white/10">
-            Read Notice
+            {tr("Read Notice")}
           </Link>
           <Can permission="notices.acknowledge" level="edit">
             <button type="button" disabled={busy} onClick={acknowledge} className="rounded-md bg-white px-3 py-1 font-semibold text-red-800 hover:bg-red-50 disabled:opacity-60">
-              Acknowledge
+              {tr("Acknowledge")}
             </button>
           </Can>
         </span>

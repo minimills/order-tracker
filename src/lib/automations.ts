@@ -1,3 +1,4 @@
+import { currentLang, tr } from '../i18n'
 /**
  * Automations: WHEN something happens, IF optional conditions are true, THEN
  * do one or more actions. The lists of triggers, conditions, fields and actions
@@ -218,7 +219,7 @@ export function ruleBody(r: Rule) {
 }
 
 const rpc = async <T,>(fn: string, args?: Record<string, unknown>) => {
-  if (!supabase) throw new Error('The database is not set up.')
+  if (!supabase) throw new Error(tr("The database is not set up."))
   const { data, error } = await supabase.rpc(fn, args)
   if (error) throw error
   return data as T
@@ -266,39 +267,83 @@ export function templateAllowed(t: Template, cat: Catalog) {
 }
 
 export const RUN_STATUS: Record<string, { text: string; tone: string }> = {
-  done: { text: 'Completed', tone: 'bg-green-100 text-green-800' },
-  partial: { text: 'Partly completed', tone: 'bg-amber-100 text-amber-800' },
-  failed: { text: 'Failed', tone: 'bg-red-100 text-red-800' },
-  skipped: { text: 'Skipped', tone: 'bg-slate-200 text-slate-700' },
-  limited: { text: 'Limited', tone: 'bg-amber-100 text-amber-800' },
-  loop: { text: 'Stopped (repeat)', tone: 'bg-amber-100 text-amber-800' },
-  test: { text: 'Test', tone: 'bg-blue-100 text-blue-800' },
+  done: { get text() {
+    return tr("Completed")
+  }, tone: 'bg-green-100 text-green-800' },
+  partial: { get text() {
+    return tr("Partly completed")
+  }, tone: 'bg-amber-100 text-amber-800' },
+  failed: { get text() {
+    return tr("Failed")
+  }, tone: 'bg-red-100 text-red-800' },
+  skipped: { get text() {
+    return tr("Skipped")
+  }, tone: 'bg-slate-200 text-slate-700' },
+  limited: { get text() {
+    return tr("Limited")
+  }, tone: 'bg-amber-100 text-amber-800' },
+  loop: { get text() {
+    return tr("Stopped (repeat)")
+  }, tone: 'bg-amber-100 text-amber-800' },
+  test: { get text() {
+    return tr("Test")
+  }, tone: 'bg-blue-100 text-blue-800' },
 }
 
 export const ACTION_STATUS: Record<string, string> = { ok: 'Done', skipped: 'Skipped', failed: 'Failed' }
 
 export const CHANNELS = [
-  { value: 'app', label: 'In-app notification' },
-  { value: 'push', label: 'Phone push notification' },
-  { value: 'email', label: 'Email notification' },
+  { value: 'app', get label() {
+    return tr("In-app notification")
+  } },
+  { value: 'push', get label() {
+    return tr("Phone push notification")
+  } },
+  { value: 'email', get label() {
+    return tr("Email notification")
+  } },
 ] as const
 
 export const TARGET_KINDS = [
-  { value: 'user', label: 'A person' },
-  { value: 'group', label: 'A group' },
-  { value: 'department', label: 'A department' },
-  { value: 'assignees', label: 'The people on the card' },
-  { value: 'actor', label: 'The person who made the change' },
-  { value: 'owner', label: 'Me (the owner)' },
-  { value: 'board', label: 'Everyone who can open the board' },
-  { value: 'person', label: 'The person who is off' },
-  { value: 'technician', label: 'The technician' },
+  { value: 'user', get label() {
+    return tr("A person")
+  } },
+  { value: 'group', get label() {
+    return tr("A group")
+  } },
+  { value: 'department', get label() {
+    return tr("A department")
+  } },
+  { value: 'assignees', get label() {
+    return tr("The people on the card")
+  } },
+  { value: 'actor', get label() {
+    return tr("The person who made the change")
+  } },
+  { value: 'owner', get label() {
+    return tr("Me (the owner)")
+  } },
+  { value: 'board', get label() {
+    return tr("Everyone who can open the board")
+  } },
+  { value: 'person', get label() {
+    return tr("The person who is off")
+  } },
+  { value: 'technician', get label() {
+    return tr("The technician")
+  } },
 ] as const
 
 export const BOARD_KINDS = [
-  { value: 'production', label: 'Production boards' },
-  { value: 'service', label: 'Service Calls board' },
-  { value: 'other', label: 'Other boards' },
+  { value: 'production', get label() {
+    return tr("Production boards")
+  } },
+  { value: 'service', get label() {
+    return tr("Service Calls board")
+  } },
+  { value: 'other', get label() {
+    return tr("Other boards")
+  } },
 ]
 
 export const OPS: Record<string, string> = {
@@ -319,7 +364,7 @@ export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday',
 
 export function when(iso: string | null | undefined) {
   if (!iso) return ''
-  return new Date(iso).toLocaleString('en-CA', { timeZone: 'America/Halifax', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+  return new Date(iso).toLocaleString(currentLang(), { timeZone: 'America/Halifax', month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
 }
 
 /** The automation in words: "When a card is moved to Done, if …, then …". */

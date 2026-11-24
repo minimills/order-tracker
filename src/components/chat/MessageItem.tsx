@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Can from '../Can'
 import { clockTime, linkHref, loadPreview, messageHtml, REACTIONS, type ChatLink, type ChatMessage, type Preview, type Reaction } from '../../lib/chat'
+import { tr } from '../../i18n'
 
 /** Small previews under a message for the orders, machines, boards and cards it mentions. */
 /* @rendered-inside-can */
@@ -29,7 +30,7 @@ function LinkPreviews({ links }: { links: ChatLink[] }) {
               {preview.detail && <span className="block truncate text-slate-500">{preview.detail}</span>}
             </>
           ) : (
-            <span className="text-slate-500">{link.text}: not available to you</span>
+            <span className="text-slate-500">{link.text}{tr(": not available to you")}</span>
           )}
         </a>
       ))}
@@ -99,7 +100,7 @@ export default function MessageItem({
     >
       {showHeader && (
         <div className="flex items-baseline gap-2 pt-1">
-          <span className="text-sm font-semibold">{m.author_name ?? 'Someone'}</span>
+          <span className="text-sm font-semibold">{m.author_name ?? tr("Someone")}</span>
           <span className="text-[0.6875rem] text-slate-400">{clockTime(m.created_at)}</span>
         </div>
       )}
@@ -115,15 +116,15 @@ export default function MessageItem({
           {replied ? (
             <>
               <span className="font-medium">{replied.author_name}: </span>
-              {replied.deleted_at ? 'Message deleted' : replied.body_text}
+              {replied.deleted_at ? tr("Message deleted") : replied.body_text}
             </>
           ) : (
-            'Reply to an earlier message'
+            tr("Reply to an earlier message")
           )}
         </button>
       )}
       {m.deleted_at ? (
-        <p className="text-sm text-slate-400 italic">Message deleted</p>
+        <p className="text-sm text-slate-400 italic">{tr("Message deleted")}</p>
       ) : (
         <div className="rich-text rich-text-readonly chat-body text-sm break-words" dangerouslySetInnerHTML={{ __html: html }} />
       )}
@@ -137,14 +138,14 @@ export default function MessageItem({
               onUnsend()
             }}
           >
-            Unsend ({left} s)
+            {tr("Unsend (")}{left} s)
           </button>
         </Can>
       )}
       <div className="flex flex-wrap items-center gap-x-2 text-[0.6875rem] text-slate-400">
         {!showHeader && <span className="opacity-0 group-hover:opacity-100">{clockTime(m.created_at)}</span>}
-        {m.edited_at && !m.deleted_at && <span>(edited)</span>}
-        {m.pinned_at && <span className="text-amber-700">Pinned{m.pinned_by ? ` by ${m.pinned_by}` : ''}</span>}
+        {m.edited_at && !m.deleted_at && <span>{tr("(edited)")}</span>}
+        {m.pinned_at && <span className="text-amber-700">{tr("Pinned")}{m.pinned_by ? tr(" by {{pinned_by}}", { pinned_by: m.pinned_by }) : ''}</span>}
       </div>
       {!m.deleted_at && m.links?.length > 0 && <LinkPreviews links={m.links} />}
 
@@ -188,32 +189,32 @@ export default function MessageItem({
           {canPost && (
             <>
               <Can permission="chat.send" level="edit">
-                <button type="button" className="rounded px-1.5 py-0.5 hover:bg-slate-100" onClick={() => setPicker((p) => !p)} aria-label="Add a reaction">
-                  React
+                <button type="button" className="rounded px-1.5 py-0.5 hover:bg-slate-100" onClick={() => setPicker((p) => !p)} aria-label={tr("Add a reaction")}>
+                  {tr("React")}
                 </button>
               </Can>
               <Can permission="chat.send" level="edit">
                 <button type="button" className="rounded px-1.5 py-0.5 hover:bg-slate-100" onClick={onReply}>
-                  Reply
+                  {tr("Reply")}
                 </button>
               </Can>
             </>
           )}
           <Can permission="chat.pin" level="edit">
             <button type="button" className="rounded px-1.5 py-0.5 hover:bg-slate-100" onClick={onPin}>
-              {m.pinned_at ? 'Unpin' : 'Pin'}
+              {m.pinned_at ? tr("Unpin") : tr("Pin")}
             </button>
           </Can>
           {mine && canPost && (
             <>
               <Can permission="chat.send" level="edit">
                 <button type="button" className="rounded px-1.5 py-0.5 hover:bg-slate-100" onClick={onEdit}>
-                  Edit
+                  {tr("Edit")}
                 </button>
               </Can>
               <Can permission="chat.send" level="edit">
                 <button type="button" className="rounded px-1.5 py-0.5 text-red-700 hover:bg-red-50" onClick={onDelete}>
-                  Delete
+                  {tr("Delete")}
                 </button>
               </Can>
             </>
@@ -227,7 +228,7 @@ export default function MessageItem({
               <button
                 type="button"
                 className="rounded px-1 text-lg hover:bg-slate-100"
-                aria-label={`React with ${r}`}
+                aria-label={tr("React with {{r}}", { r: r })}
                 onClick={() => {
                   setPicker(false)
                   onReact(r)

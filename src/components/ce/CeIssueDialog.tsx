@@ -12,6 +12,7 @@ import SerialNumber from '../SerialNumber'
 import SignatureInput, { type SignatureInputHandle } from '../SignatureInput'
 import { Field, Modal, buttonClass, inputClass, secondaryButtonClass } from '../form'
 import CeDeclarationsTable from './CeDeclarationsTable'
+import { tr } from '../../i18n'
 
 type Machine = { id: string; machine_type: string; serial_number: string | null }
 
@@ -93,7 +94,7 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
   }
 
   async function preview() {
-    if (!selected.length) return toast.error('Select at least one machine.')
+    if (!selected.length) return toast.error(tr("Select at least one machine."))
     setBusy('preview')
     try {
       const list = await dataFor()
@@ -101,7 +102,7 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
       const s = sig.current && !sig.current.isEmpty() ? await sig.current.get() : null
       const signature = s ? await blobToDataUrl(s.blob) : null
       const bytes = await previewDeclarations(list.map((x) => x.data), signature, settings?.paper ?? 'a4', company.logo)
-      if (!openPdf(bytes)) toast.error('The preview was blocked. Allow pop-ups for this site and try again.')
+      if (!openPdf(bytes)) toast.error(tr("The preview was blocked. Allow pop-ups for this site and try again."))
     } catch (e) {
       toast.error(friendlyError(e as Error))
     } finally {
@@ -111,13 +112,13 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
 
   async function issue() {
     if (!supabase) return
-    if (!selected.length) return toast.error('Select at least one machine.')
-    if (!signer.trim()) return toast.error('Enter the name and title of the person signing.')
-    if (!sig.current || sig.current.isEmpty()) return toast.error('Sign first: use your saved signature or draw it in the box.')
+    if (!selected.length) return toast.error(tr("Select at least one machine."))
+    if (!signer.trim()) return toast.error(tr("Enter the name and title of the person signing."))
+    if (!sig.current || sig.current.isEmpty()) return toast.error(tr("Sign first: use your saved signature or draw it in the box."))
     setBusy('issue')
     try {
       const s = await sig.current.get()
-      if (!s) return toast.error('The signature could not be read. Sign again.')
+      if (!s) return toast.error(tr("The signature could not be read. Sign again."))
       const path = `${crypto.randomUUID()}/signature.png`
       const up = await supabase.storage.from('ce-signatures').upload(path, s.blob, { contentType: 'image/png' })
       if (up.error) return toast.error(friendlyError(up.error))
@@ -127,7 +128,7 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
       })
       if (error) return toast.error(friendlyError(error))
       const issued = (data as CeDeclaration[]) ?? []
-      toast.success(`${issued.length} declaration${issued.length === 1 ? '' : 's'} issued.`)
+      toast.success(tr("{{length}} declaration{{value}} issued.", { length: issued.length, value: issued.length === 1 ? '' : 's' }))
       setIssued(issued)
       onIssued(issued)
     } finally {
@@ -146,18 +147,17 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
   if (issued)
     return (
       <Modal
-        title="CE Certificates Issued"
+        title={tr("CE Certificates Issued")}
         onClose={onClose}
         footer={
           <button type="button" className={buttonClass} onClick={onClose}>
-            Done
+            {tr("Done")}
           </button>
         }
       >
         <div className="space-y-3 text-sm">
           <p className="text-slate-600">
-            {issued.length} declaration{issued.length === 1 ? ' was' : 's were'} issued and locked. Download, print or email them here; they are also listed in the CE
-            Certificates section of the order.
+            {issued.length} {tr("declaration")}{issued.length === 1 ? tr(" was") : tr("s were")} {tr("issued and locked. Download, print or email them here; they are also listed in the CE Certificates section of the order.")}
           </p>
           <CeDeclarationsTable rows={issued} initiallySelected={issued.map((d) => d.id)} onSent={() => onIssued(issued)} />
         </div>
@@ -166,37 +166,36 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
 
   return (
     <Modal
-      title="CE Certificates"
+      title={tr("CE Certificates")}
       onClose={onClose}
       busy={busy !== null}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={busy !== null}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button type="button" className={secondaryButtonClass} onClick={preview} disabled={busy !== null || !selected.length}>
-            {busy === 'preview' ? 'Preparing…' : 'Preview'}
+            {busy === 'preview' ? tr("Preparing…") : tr("Preview")}
           </button>
           <button type="button" className={buttonClass} onClick={issue} disabled={busy !== null || !selected.length}>
-            {busy === 'issue' ? 'Generating…' : `Generate ${selected.length || ''} Declaration${selected.length === 1 ? '' : 's'}`}
+            {busy === 'issue' ? tr("Generating…") : tr("Generate {{value}} Declaration{{value2}}", { value: selected.length || '', value2: selected.length === 1 ? '' : 's' })}
           </button>
         </>
       }
     >
       <div className="space-y-4 text-sm">
         <p className="text-slate-600">
-          {settings?.declaration_type === 'eu_2023' ? 'EU Declaration of Conformity (Machinery Regulation (EU) 2023/1230)' : 'EC Declaration of Conformity (Machinery Directive 2006/42/EC)'}, one per
-          machine. Once generated, a declaration is locked; generating again makes a new version and keeps the old one.
+          {settings?.declaration_type === 'eu_2023' ? tr("EU Declaration of Conformity (Machinery Regulation (EU) 2023/1230)") : tr("EC Declaration of Conformity (Machinery Directive 2006/42/EC)")}{tr(", one per machine. Once generated, a declaration is locked; generating again makes a new version and keeps the old one.")}
         </p>
         <fieldset>
           <legend className="mb-1 flex w-full items-center justify-between font-medium">
-            <span>Machines</span>
+            <span>{tr("Machines")}</span>
             <span className="flex gap-3 text-xs font-normal">
               <button type="button" className="underline" onClick={() => setChosen(new Set(machines.filter((m) => m.serial_number).map((m) => m.id)))}>
-                Select All
+                {tr("Select All")}
               </button>
               <button type="button" className="underline" onClick={() => setChosen(new Set())}>
-                Clear Selection
+                {tr("Clear Selection")}
               </button>
             </span>
           </legend>
@@ -206,13 +205,13 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
                 <label className="flex flex-wrap items-center gap-2">
                   <input type="checkbox" className="h-4 w-4" checked={chosen.has(m.id)} disabled={!m.serial_number} onChange={() => toggle(m.id)} />
                   <span className="font-medium">{m.machine_type}</span>
-                  {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span className="text-xs text-amber-800">No serial number yet</span>}
-                  {existing.has(m.id) && <span className="text-xs text-slate-500">Issued: {existing.get(m.id)} (a new version will be made)</span>}
+                  {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span className="text-xs text-amber-800">{tr("No serial number yet")}</span>}
+                  {existing.has(m.id) && <span className="text-xs text-slate-500">{tr("Issued:")} {existing.get(m.id)} {tr("(a new version will be made)")}</span>}
                 </label>
                 {directives[m.id] && (
                   <p className="mt-1 text-xs text-slate-600">
-                    Directives: {directives[m.id].length ? directives[m.id].join(', ') : 'none chosen'}
-                    <span className="text-slate-400"> (set per machine type in Admin → Machine Types)</span>
+                    {tr("Directives:")} {directives[m.id].length ? directives[m.id].join(', ') : tr("none chosen")}
+                    <span className="text-slate-400"> {tr("(set per machine type in Admin → Machine Types)")}</span>
                   </p>
                 )}
                 {(problems[m.id] ?? []).map((p) => (
@@ -222,23 +221,23 @@ export default function CeIssueDialog({ orderId, machineIds, onClose, onIssued }
                 ))}
               </li>
             ))}
-            {machines.length === 0 && <li className="px-3 py-2 text-slate-500">This order has no machines.</li>}
+            {machines.length === 0 && <li className="px-3 py-2 text-slate-500">{tr("This order has no machines.")}</li>}
           </ul>
         </fieldset>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Place" htmlFor="ce-place">
+          <Field label={tr("Place")} htmlFor="ce-place">
             <input id="ce-place" className={inputClass} value={place} onChange={(e) => setPlace(e.target.value)} />
           </Field>
-          <Field label="Date" htmlFor="ce-date">
+          <Field label={tr("Date")} htmlFor="ce-date">
             <input id="ce-date" type="date" className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
           </Field>
-          <Field label="Name and title of the person signing" htmlFor="ce-signer" className="sm:col-span-2">
+          <Field label={tr("Name and title of the person signing")} htmlFor="ce-signer" className="sm:col-span-2">
             <input id="ce-signer" className={inputClass} value={signer} onChange={(e) => setSigner(e.target.value)} />
           </Field>
         </div>
         <Can permission="ce.issue" level="edit">
           <div>
-            <div className="mb-1 font-medium">Signature</div>
+            <div className="mb-1 font-medium">{tr("Signature")}</div>
             <SignatureInput ref={sig} disabled={busy !== null} />
           </div>
         </Can>

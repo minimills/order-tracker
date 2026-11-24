@@ -1,6 +1,7 @@
 // @permission-scope checklist.sign
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { MAX_SIGNATURE_BYTES } from '../../lib/checklists'
+import { tr } from '../../i18n'
 
 export type SignaturePadHandle = {
   isEmpty: () => boolean
@@ -98,7 +99,7 @@ const SignaturePad = forwardRef<SignaturePadHandle, { disabled?: boolean }>(func
       onPointerUp={up}
       onPointerCancel={up}
       onPointerLeave={up}
-      aria-label="Sign here"
+      aria-label={tr("Sign here")}
       className={`keep-light block h-40 w-full touch-none rounded-md border-2 border-dashed bg-white sm:h-48 ${
         disabled ? 'border-slate-200 opacity-60' : 'border-slate-400'
       }`}

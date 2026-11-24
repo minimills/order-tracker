@@ -8,6 +8,7 @@ import { fetchAll } from '../../lib/fetchAll'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { askText } from '../../lib/confirm'
+import { tr } from '../../i18n'
 
 const GENERAL = 'general'
 
@@ -112,8 +113,8 @@ export default function ChecklistTemplatesPage() {
 
   async function add() {
     if (!supabase) return
-    if (!newSection.trim()) return toast.error('Enter or select a section, for example Electrical.')
-    if (!newText.trim()) return toast.error('Type the item.')
+    if (!newSection.trim()) return toast.error(tr("Enter or select a section, for example Electrical."))
+    if (!newText.trim()) return toast.error(tr("Type the item."))
     const max = Math.max(0, ...inList.map((i) => i.sort_order))
     const { error } = await supabase
       .from('checklist_template_items')
@@ -125,7 +126,7 @@ export default function ChecklistTemplatesPage() {
 
   async function saveEdit() {
     if (!supabase || !editing) return
-    if (!editing.text.trim() || !editing.section.trim()) return toast.error('Section and item can’t be empty.')
+    if (!editing.text.trim() || !editing.section.trim()) return toast.error(tr("Section and item can’t be empty."))
     const { error } = await supabase
       .from('checklist_template_items')
       .update({ section: editing.section.trim(), item_text: editing.text.trim() })
@@ -139,13 +140,17 @@ export default function ChecklistTemplatesPage() {
     if (!supabase) return
     const { error } = await supabase.from('checklist_template_items').update({ archived }).eq('id', item.id)
     if (error) return toast.error(friendlyError(error))
-    toast.success(archived ? 'Archived. New final checks won’t include it.' : 'Brought back.')
+    toast.success(archived ? tr("Archived. New final checks won’t include it.") : tr("Brought back."))
     load()
   }
 
   async function renameSection(section: string) {
     if (!supabase) return
-    const name = await askText(`Enter a new name for the section “${section}”.`, { initial: section, label: 'Section name', confirmLabel: 'Rename Section' })
+    const name = await askText(tr("Enter a new name for the section “{{section}}”.", { section: section }), { initial: section, get label() {
+    return tr("Section name")
+  }, get confirmLabel() {
+    return tr("Rename Section")
+  } })
     if (!name || name === section) return
     let q = supabase.from('checklist_template_items').update({ section: name }).eq('section', section)
     q = typeId ? q.eq('machine_type_id', typeId) : q.is('machine_type_id', null)
@@ -156,16 +161,14 @@ export default function ChecklistTemplatesPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Checklists">
-        The final check for each machine is copied from these lists when it is started: the <strong>general</strong> list
-        (every machine) followed by the extra items for that <strong>machine type</strong>. Changes here only affect final
-        checks started afterwards.
+      <AdminPageHeader title={tr("Checklists")}>
+        {tr("The final check for each machine is copied from these lists when it is started: the")} <strong>{tr("general")}</strong> {tr("list (every machine) followed by the extra items for that")} <strong>{tr("machine type")}</strong>{tr(". Changes here only affect final checks started afterwards.")}
       </AdminPageHeader>
 
       <div className="grid gap-2 md:grid-cols-[18rem_1fr_auto]">
-        <select aria-label="Which list" className={inputClass} value={list} onChange={(e) => setList(e.target.value)}>
-          <option value={GENERAL}>General – every machine ({countFor(null)})</option>
-          <optgroup label="Extra items for one machine type">
+        <select aria-label={tr("Which list")} className={inputClass} value={list} onChange={(e) => setList(e.target.value)}>
+          <option value={GENERAL}>{tr("General – every machine (")}{countFor(null)})</option>
+          <optgroup label={tr("Extra items for one machine type")}>
             {types.map((t) => (
               <option key={t.id} value={t.id}>
                 {t.name} ({countFor(t.id)})
@@ -175,27 +178,27 @@ export default function ChecklistTemplatesPage() {
         </select>
         <input
           type="search"
-          aria-label="Search items"
+          aria-label={tr("Search items")}
           className={inputClass}
-          placeholder="Search this list"
+          placeholder={tr("Search this list")}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
         <label className="flex items-center gap-2 text-sm whitespace-nowrap text-slate-600">
           <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-          Show archived
+          {tr("Show archived")}
         </label>
       </div>
 
       {/* Add */}
       <section className="rounded-lg border border-slate-200 bg-white p-4">
-        <h2 className="mb-2 font-semibold">Add an Item</h2>
+        <h2 className="mb-2 font-semibold">{tr("Add an Item")}</h2>
         <div className="grid gap-2 md:grid-cols-[14rem_1fr_auto]">
           <input
-            aria-label="Section"
+            aria-label={tr("Section")}
             list="checklist-sections"
             className={inputClass}
-            placeholder="Section, for example Electrical"
+            placeholder={tr("Section, for example Electrical")}
             value={newSection}
             onChange={(e) => setNewSection(e.target.value)}
           />
@@ -205,15 +208,15 @@ export default function ChecklistTemplatesPage() {
             ))}
           </datalist>
           <input
-            aria-label="Item"
+            aria-label={tr("Item")}
             className={inputClass}
-            placeholder="What to check, for example Emergency stop works"
+            placeholder={tr("What to check, for example Emergency stop works")}
             value={newText}
             onChange={(e) => setNewText(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && add()}
           />
           <button type="button" className={buttonClass} onClick={add}>
-            Add
+            {tr("Add")}
           </button>
         </div>
       </section>
@@ -221,23 +224,23 @@ export default function ChecklistTemplatesPage() {
       {/* Sections */}
       <div className="flex items-center justify-between text-sm text-slate-600">
         <span>
-          {active.length} item{active.length === 1 ? '' : 's'} in {groupBySection(active).length} section
-          {groupBySection(active).length === 1 ? '' : 's'}. Drag ⠿ or use ↑ ↓ to change the order.
+          {tr("{{count}} item", { count: active.length })} {tr("in")} {groupBySection(active).length} {tr("section")}
+          {groupBySection(active).length === 1 ? '' : 's'}{tr(". Drag ⠿ or use ↑ ↓ to change the order.")}
         </span>
         <span className="flex gap-3">
           <button type="button" className="underline" onClick={() => setCollapsed(new Set())}>
-            Expand All
+            {tr("Expand All")}
           </button>
           <button type="button" className="underline" onClick={() => setCollapsed(new Set(sections.map((s) => s.section)))}>
-            Collapse All
+            {tr("Collapse All")}
           </button>
         </span>
       </div>
 
-      {loading && <p className="text-center text-slate-500">Loading…</p>}
+      {loading && <p className="text-center text-slate-500">{tr("Loading…")}</p>}
       {!loading && sections.length === 0 && (
         <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-slate-500">
-          {words.length ? 'No items match the search.' : 'There are no items yet. Add the first one above.'}
+          {words.length ? tr("No items match the search.") : tr("There are no items yet. Add the first one above.")}
         </p>
       )}
 
@@ -263,7 +266,7 @@ export default function ChecklistTemplatesPage() {
                 {section} <span className="text-sm font-normal text-slate-500">({items.filter((i) => !i.archived).length})</span>
               </button>
               <span className="flex items-center gap-2 text-xs">
-                <button type="button" className="rounded border border-slate-300 px-1.5" disabled={si === 0} onClick={() => moveSection(section, -1)} aria-label={`Move section ${section} up`}>
+                <button type="button" className="rounded border border-slate-300 px-1.5" disabled={si === 0} onClick={() => moveSection(section, -1)} aria-label={tr("Move section {{section}} up", { section: section })}>
                   ↑
                 </button>
                 <button
@@ -271,12 +274,12 @@ export default function ChecklistTemplatesPage() {
                   className="rounded border border-slate-300 px-1.5"
                   disabled={si === sections.length - 1}
                   onClick={() => moveSection(section, 1)}
-                  aria-label={`Move section ${section} down`}
+                  aria-label={tr("Move section {{section}} down", { section: section })}
                 >
                   ↓
                 </button>
                 <button type="button" className="underline" onClick={() => renameSection(section)}>
-                  Rename
+                  {tr("Rename")}
                 </button>
               </span>
             </div>
@@ -300,14 +303,14 @@ export default function ChecklistTemplatesPage() {
                     {editing?.id === item.id ? (
                       <div className="grid min-w-0 flex-1 gap-2 sm:grid-cols-[12rem_1fr_auto]">
                         <input
-                          aria-label="Section"
+                          aria-label={tr("Section")}
                           list="checklist-sections"
                           className={inputClass}
                           value={editing.section}
                           onChange={(e) => setEditing({ ...editing, section: e.target.value })}
                         />
                         <input
-                          aria-label="Item"
+                          aria-label={tr("Item")}
                           className={inputClass}
                           value={editing.text}
                           autoFocus
@@ -316,10 +319,10 @@ export default function ChecklistTemplatesPage() {
                         />
                         <span className="flex gap-2">
                           <button type="button" className={buttonClass} onClick={saveEdit}>
-                            Save Changes
+                            {tr("Save Changes")}
                           </button>
                           <button type="button" className={secondaryButtonClass} onClick={() => setEditing(null)}>
-                            Cancel
+                            {tr("Cancel")}
                           </button>
                         </span>
                       </div>
@@ -328,11 +331,11 @@ export default function ChecklistTemplatesPage() {
                         <span className="min-w-0 flex-1">{item.item_text}</span>
                         {item.archived ? (
                           <button type="button" className="text-xs underline" onClick={() => setArchived(item, false)}>
-                            Restore
+                            {tr("Restore")}
                           </button>
                         ) : (
                           <span className="flex items-center gap-2 text-xs">
-                            <button type="button" className="rounded border border-slate-300 px-1.5" disabled={ii === 0} onClick={() => moveItem(item, -1)} aria-label="Move up">
+                            <button type="button" className="rounded border border-slate-300 px-1.5" disabled={ii === 0} onClick={() => moveItem(item, -1)} aria-label={tr("Move up")}>
                               ↑
                             </button>
                             <button
@@ -340,7 +343,7 @@ export default function ChecklistTemplatesPage() {
                               className="rounded border border-slate-300 px-1.5"
                               disabled={ii === items.length - 1}
                               onClick={() => moveItem(item, 1)}
-                              aria-label="Move down"
+                              aria-label={tr("Move down")}
                             >
                               ↓
                             </button>
@@ -349,10 +352,10 @@ export default function ChecklistTemplatesPage() {
                               className="underline"
                               onClick={() => setEditing({ id: item.id, section: item.section, text: item.item_text })}
                             >
-                              Edit
+                              {tr("Edit")}
                             </button>
                             <button type="button" className="text-red-700 underline" onClick={() => setArchived(item, true)}>
-                              Archive
+                              {tr("Archive")}
                             </button>
                           </span>
                         )}

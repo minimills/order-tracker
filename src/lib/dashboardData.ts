@@ -1,3 +1,4 @@
+import { currentLang } from '../i18n'
 import { chartData } from './dashboardCharts'
 import { todayISO } from './dates'
 import { fetchAll } from './fetchAll'
@@ -109,5 +110,5 @@ export function dashData() {
 
 /** "Updated 2:35 p.m." (Halifax time). */
 export function updatedText(d: Date) {
-  return `Updated ${d.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' })}`
+  return `Updated ${d.toLocaleTimeString(currentLang(), { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' })}`
 }

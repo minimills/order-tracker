@@ -1,16 +1,33 @@
+import { tr } from '../i18n'
 /** Light, Dark, System (follows the computer or phone setting) or Glass. */
 export type Theme = 'light' | 'dark' | 'system' | 'glass'
 /** The colours Glass uses. */
 export type GlassBase = 'light' | 'dark' | 'system'
 
 export const THEMES: { value: Theme; label: string; hint: string }[] = [
-  { value: 'light', label: 'Light', hint: 'Dark text on a light background.' },
-  { value: 'dark', label: 'Dark', hint: 'Light text on a dark background, easier on the eyes at night.' },
-  { value: 'system', label: 'System', hint: 'Follows the setting of this computer or phone.' },
+  { value: 'light', get label() {
+    return tr("Light")
+  }, get hint() {
+    return tr("Dark text on a light background.")
+  } },
+  { value: 'dark', get label() {
+    return tr("Dark")
+  }, get hint() {
+    return tr("Light text on a dark background, easier on the eyes at night.")
+  } },
+  { value: 'system', get label() {
+    return tr("System")
+  }, get hint() {
+    return tr("Follows the setting of this computer or phone.")
+  } },
   {
     value: 'glass',
-    label: 'Glass',
-    hint: 'A frosted, see-through menu, top bar, dialogs and widget frames over a soft background. Text, tables and forms stay on solid backgrounds. It turns itself off on slow devices or when the device asks for less transparency or motion.',
+    get label() {
+    return tr("Glass")
+  },
+    get hint() {
+    return tr("A frosted, see-through menu, top bar, dialogs and widget frames over a soft background. Text, tables and forms stay on solid backgrounds. It turns itself off on slow devices or when the device asks for less transparency or motion.")
+  },
   },
 ]
 

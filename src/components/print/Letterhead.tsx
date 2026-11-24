@@ -1,3 +1,4 @@
+import { dtf, tr } from '../../i18n'
 import { useState } from 'react'
 import { useCompany } from '../../lib/company'
 
@@ -9,7 +10,7 @@ import { useCompany } from '../../lib/company'
 export default function Letterhead({ title, subtitle, printedBy }: { title: string; subtitle?: string; printedBy?: string }) {
   const company = useCompany()
   // The moment the preview opened.
-  const [when] = useState(() => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', dateStyle: 'long', timeStyle: 'short' }).format(new Date()))
+  const [when] = useState(() => dtf({ timeZone: 'America/Halifax', dateStyle: 'long', timeStyle: 'short' }).format(new Date()))
   return (
     <header className="print-letterhead mb-5 border-b-2 border-slate-900 pb-3">
       <div className="flex items-start justify-between gap-6">
@@ -23,8 +24,8 @@ export default function Letterhead({ title, subtitle, printedBy }: { title: stri
       <div className="mt-3 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
         <h1 className="text-lg font-semibold">{title}</h1>
         <div className="text-xs text-slate-600">
-          Printed {when}
-          {printedBy ? ` by ${printedBy}` : ''}
+          {tr("Printed")} {when}
+          {printedBy ? tr(" by {{printedBy}}", { printedBy: printedBy }) : ''}
         </div>
       </div>
       {subtitle && <p className="text-sm text-slate-700">{subtitle}</p>}

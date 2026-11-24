@@ -1,3 +1,4 @@
+import { dtf } from '../i18n'
 import { supabase } from './supabase'
 
 /** One row of machine_checklist_status. */
@@ -67,7 +68,7 @@ export const MAX_SIGNATURE_BYTES = 50 * 1024
 /** Suggested section headings for new template items. */
 export const SUGGESTED_SECTIONS = ['Electrical', 'Mechanical', 'Safety', 'Paint', 'Labels']
 
-const dateTime = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', dateStyle: 'medium', timeStyle: 'short' })
+const dateTime = dtf({ timeZone: 'America/Halifax', dateStyle: 'medium', timeStyle: 'short' })
 
 /** "Nov 4, 2026, 3:15 p.m." in Halifax time. */
 export function showDateTime(iso: string | null | undefined) {

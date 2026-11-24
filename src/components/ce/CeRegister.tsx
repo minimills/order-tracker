@@ -6,6 +6,7 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { inputClass } from '../form'
 import CeDeclarationsTable from './CeDeclarationsTable'
+import { tr } from '../../i18n'
 
 /**
  * Declarations of conformity for an order or a machine (the latest version of
@@ -38,7 +39,7 @@ export default function CeRegister({ orderId, machineId, refreshKey = 0 }: { ord
   }, [load, refreshKey])
 
   const types = useMemo(() => [...new Set((rows ?? []).map((r) => r.data.machine.type_name))].sort(), [rows])
-  if (!rows) return <p className="text-sm text-slate-500">Loading…</p>
+  if (!rows) return <p className="text-sm text-slate-500">{tr("Loading…")}</p>
 
   if (!full) {
     const latest = rows.filter((r) => r.status === 'issued')
@@ -46,14 +47,14 @@ export default function CeRegister({ orderId, machineId, refreshKey = 0 }: { ord
     return (
       <div className="space-y-3">
         {latest.length === 0 && older.length === 0 ? (
-          <p className="text-sm text-slate-500">No declarations of conformity have been issued yet.</p>
+          <p className="text-sm text-slate-500">{tr("No declarations of conformity have been issued yet.")}</p>
         ) : (
           <CeDeclarationsTable rows={latest} sends={sends} onSent={load} />
         )}
         {older.length > 0 && (
           <div>
             <button type="button" className="text-sm text-slate-700 underline" onClick={() => setShowHistory((v) => !v)} aria-expanded={showHistory}>
-              {showHistory ? '▾' : '▸'} History ({older.length} older version{older.length === 1 ? '' : 's'})
+              {showHistory ? '▾' : '▸'} {tr("History (")}{tr("{{count}} older version", { count: older.length })})
             </button>
             {showHistory && (
               <div className="mt-2">
@@ -84,17 +85,17 @@ export default function CeRegister({ orderId, machineId, refreshKey = 0 }: { ord
     <div className="space-y-3">
       <div className="grid gap-2 text-sm [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))]">
         <label className="block">
-          <span className="mb-1 block text-xs text-slate-500">Customer</span>
-          <input className={inputClass} value={f.customer} placeholder="Name or company" onChange={set('customer')} />
+          <span className="mb-1 block text-xs text-slate-500">{tr("Customer")}</span>
+          <input className={inputClass} value={f.customer} placeholder={tr("Name or company")} onChange={set('customer')} />
         </label>
         <label className="block">
-          <span className="mb-1 block text-xs text-slate-500">Order #</span>
-          <input className={inputClass} value={f.order} placeholder="For example 87" onChange={set('order')} />
+          <span className="mb-1 block text-xs text-slate-500">{tr("Order #")}</span>
+          <input className={inputClass} value={f.order} placeholder={tr("For example 87")} onChange={set('order')} />
         </label>
         <label className="block">
-          <span className="mb-1 block text-xs text-slate-500">Machine type</span>
+          <span className="mb-1 block text-xs text-slate-500">{tr("Machine type")}</span>
           <select className={inputClass} value={f.type} onChange={set('type')}>
-            <option value="">All machine types</option>
+            <option value="">{tr("All machine types")}</option>
             {types.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -103,23 +104,23 @@ export default function CeRegister({ orderId, machineId, refreshKey = 0 }: { ord
           </select>
         </label>
         <label className="block">
-          <span className="mb-1 block text-xs text-slate-500">Issued from</span>
+          <span className="mb-1 block text-xs text-slate-500">{tr("Issued from")}</span>
           <input type="date" className={inputClass} value={f.from} onChange={set('from')} />
         </label>
         <label className="block">
-          <span className="mb-1 block text-xs text-slate-500">Issued to</span>
+          <span className="mb-1 block text-xs text-slate-500">{tr("Issued to")}</span>
           <input type="date" className={inputClass} value={f.to} onChange={set('to')} />
         </label>
       </div>
       <div className="flex flex-wrap items-center gap-4 text-sm">
         <label className="flex items-center gap-2">
-          <input type="checkbox" checked={f.older} onChange={(e) => setF({ ...f, older: e.target.checked })} /> Include older versions
+          <input type="checkbox" checked={f.older} onChange={(e) => setF({ ...f, older: e.target.checked })} /> {tr("Include older versions")}
         </label>
         <span className="text-xs text-slate-500">
-          Showing {shown.length} of {rows.length}
+          {tr("Showing")} {shown.length} {tr("of")} {rows.length}
         </span>
         <button type="button" className="text-xs underline" onClick={() => setF({ customer: '', order: '', type: '', from: '', to: '', older: false })}>
-          Clear Filters
+          {tr("Clear Filters")}
         </button>
       </div>
       <CeDeclarationsTable key={JSON.stringify(f)} rows={shown} sends={sends} showOrder onSent={load} />

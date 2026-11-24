@@ -12,6 +12,7 @@ import { supabase } from '../lib/supabase'
 import { isoDow, showHours, STATUS_WORDS, TIME_OFF_KINDS, timeOffLabel, useTsPeople, type Balances } from '../lib/timesheets'
 import { ACTION } from '../lib/wording'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Request = {
   id: string
@@ -75,10 +76,12 @@ export default function TimeOffPage() {
 
   async function cancel(r: Request) {
     if (!supabase) return
-    if (!(await confirmAction(`Cancel the request for ${timeOffLabel(r.kind).toLowerCase()} on ${datesText(r)}?`, { confirmLabel: 'Cancel Request', danger: true }))) return
+    if (!(await confirmAction(tr("Cancel the request for {{value}} on {{datesText}}?", { value: timeOffLabel(r.kind).toLowerCase(), datesText: datesText(r) }), { get confirmLabel() {
+    return tr("Cancel Request")
+  }, danger: true }))) return
     const { error } = await supabase.rpc('cancel_time_off', { p_request: r.id })
     if (error) return toast.error(friendlyError(error))
-    toast.success('Request cancelled.')
+    toast.success(tr("Request cancelled."))
     load()
   }
   async function openWork(r: Request) {
@@ -86,7 +89,7 @@ export default function TimeOffPage() {
     const { data, error } = await supabase.rpc('time_off_affected_work', { p_request: r.id })
     if (error) return toast.error(friendlyError(error))
     const items = (data as Work[]) ?? []
-    if (items.length === 0) toast.success(`Nothing is assigned to ${name(r)} during this time off.`)
+    if (items.length === 0) toast.success(tr("Nothing is assigned to {{name}} during this time off.", { name: name(r) }))
     else setWork({ r, items })
   }
 
@@ -103,13 +106,13 @@ export default function TimeOffPage() {
             {STATUS_WORDS[r.status] ?? r.status}
             {r.decided_by_name && ` · ${r.decided_by_name}, ${showDate(r.decided_at?.slice(0, 10))}`}
             {r.decision_comment && `: “${r.decision_comment}”`}
-            {` · asked ${showDate(r.created_at.slice(0, 10))}`}
+            {tr(" · asked {{showDate}}", { showDate: showDate(r.created_at.slice(0, 10)) })}
           </p>
           {r.work_changes?.length > 0 && (
             <ul className="mt-1 text-xs text-slate-600">
               {r.work_changes.map((c, i) => (
                 <li key={i}>
-                  {c.title}: {c.action === 'reassign' ? `reassigned to ${c.to}` : `moved to ${showDate(c.new_date)}`} ({c.by})
+                  {c.title}: {c.action === 'reassign' ? tr("reassigned to {{to}}", { to: c.to }) : tr("moved to {{showDate}}", { showDate: showDate(c.new_date) })} ({c.by})
                 </li>
               ))}
             </ul>
@@ -125,33 +128,33 @@ export default function TimeOffPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h1 className="text-2xl font-semibold">Time Off</h1>
+            <h1 className="text-2xl font-semibold">{tr("Time Off")}</h1>
             <Can permission="timesheets.time_off.print">
-              <PrintButton title="Time Off" />
+              <PrintButton title={tr("Time Off")} />
             </Can>
           </div>
-          <p className="text-sm text-slate-600">Requests go to the department manager, who approves or declines them. Approved days are added to the timesheet.</p>
+          <p className="text-sm text-slate-600">{tr("Requests go to the department manager, who approves or declines them. Approved days are added to the timesheet.")}</p>
         </div>
         <Can permission="timesheets.time_off.request" level="edit">
           <button type="button" className={buttonClass} onClick={() => setAsking(true)}>
-            Request Time Off
+            {tr("Request Time Off")}
           </button>
         </Can>
       </div>
 
       {toDecide.length > 0 && (
         <section className="space-y-2">
-          <h2 className="font-semibold">Waiting for Your Decision</h2>
+          <h2 className="font-semibold">{tr("Waiting for Your Decision")}</h2>
           <ul className="space-y-2">
             {toDecide.map((r) =>
               card(
                 r,
                 <>
                   <button type="button" className={buttonClass} onClick={() => setDeciding({ r, decision: 'approved' })}>
-                    Approve
+                    {tr("Approve")}
                   </button>
                   <button type="button" className={secondaryButtonClass} onClick={() => setDeciding({ r, decision: 'declined' })}>
-                    Decline
+                    {tr("Decline")}
                   </button>
                 </>,
               ),
@@ -162,9 +165,9 @@ export default function TimeOffPage() {
 
       <Can permission="timesheets.time_off.request" level="edit">
         <section className="space-y-2">
-          <h2 className="font-semibold">My Requests</h2>
+          <h2 className="font-semibold">{tr("My Requests")}</h2>
           {mine.length === 0 ? (
-            <p className="text-sm text-slate-500">You have not asked for time off yet.</p>
+            <p className="text-sm text-slate-500">{tr("You have not asked for time off yet.")}</p>
           ) : (
             <ul className="space-y-2">
               {mine.map((r) =>
@@ -172,7 +175,7 @@ export default function TimeOffPage() {
                   r,
                   r.status === 'pending' && (
                     <button type="button" className={secondaryButtonClass} onClick={() => cancel(r)}>
-                      Cancel Request
+                      {tr("Cancel Request")}
                     </button>
                   ),
                 ),
@@ -184,7 +187,7 @@ export default function TimeOffPage() {
 
       {decided.length > 0 && (
         <section className="space-y-2">
-          <h2 className="font-semibold">Decided Requests</h2>
+          <h2 className="font-semibold">{tr("Decided Requests")}</h2>
           <ul className="space-y-2">
             {decided.map((r) =>
               card(
@@ -192,10 +195,10 @@ export default function TimeOffPage() {
                 r.status === 'approved' && r.end_date >= todayISO() && (
                   <>
                     <button type="button" className={secondaryButtonClass} onClick={() => openWork(r)}>
-                      Work During This Time
+                      {tr("Work During This Time")}
                     </button>
                     <button type="button" className={secondaryButtonClass} onClick={() => cancel(r)}>
-                      Cancel Time Off
+                      {tr("Cancel Time Off")}
                     </button>
                   </>
                 ),
@@ -268,13 +271,13 @@ function RequestDialog({ onClose, onDone }: { onClose: () => void; onDone: () =>
     })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Request sent to your manager.')
+    toast.success(tr("Request sent to your manager."))
     onDone()
   }
 
   return (
     <Modal
-      title="Request Time Off"
+      title={tr("Request Time Off")}
       onClose={onClose}
       busy={busy}
       footer={
@@ -283,13 +286,13 @@ function RequestDialog({ onClose, onDone }: { onClose: () => void; onDone: () =>
             {ACTION.cancel}
           </button>
           <button type="button" className={buttonClass} disabled={busy} onClick={send}>
-            Send Request
+            {tr("Send Request")}
           </button>
         </>
       }
     >
       <div className="space-y-3 text-sm">
-        <Field label="Type" htmlFor="to-kind">
+        <Field label={tr("Type")} htmlFor="to-kind">
           <select id="to-kind" className={inputClass} value={kind} onChange={(e) => setKind(e.target.value)}>
             {TIME_OFF_KINDS.map((k) => (
               <option key={k.key} value={k.key}>
@@ -300,33 +303,33 @@ function RequestDialog({ onClose, onDone }: { onClose: () => void; onDone: () =>
         </Field>
         {bal && (
           <p className="text-slate-600">
-            {kind === 'vacation' && `Vacation days left in ${bal.year}: ${showHours(bal.vacation.left)}.`}
-            {kind === 'sick' && `Paid sick days left in ${bal.year}: ${showHours(bal.sick.left)}.`}
-            {kind === 'banked' && `Banked hours balance: ${showHours(bal.banked.balance)} (${showHours(bal.banked.balance / (bal.hours_per_day || 8))} days).`}
-            {kind === 'unpaid' && 'Unpaid time off is not paid.'}
+            {kind === 'vacation' && tr("Vacation days left in {{year}}: {{showHours}}.", { year: bal.year, showHours: showHours(bal.vacation.left) })}
+            {kind === 'sick' && tr("Paid sick days left in {{year}}: {{showHours}}.", { year: bal.year, showHours: showHours(bal.sick.left) })}
+            {kind === 'banked' && tr("Banked hours balance: {{showHours}} ({{showHours2}} days).", { showHours: showHours(bal.banked.balance), showHours2: showHours(bal.banked.balance / (bal.hours_per_day || 8)) })}
+            {kind === 'unpaid' && tr("Unpaid time off is not paid.")}
           </p>
         )}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="First day" htmlFor="to-from">
+          <Field label={tr("First day")} htmlFor="to-from">
             <input id="to-from" type="date" className={inputClass} value={from} onChange={(e) => (setFrom(e.target.value), to < e.target.value && setTo(e.target.value))} />
           </Field>
-          <Field label="Last day" htmlFor="to-to">
+          <Field label={tr("Last day")} htmlFor="to-to">
             <input id="to-to" type="date" className={inputClass} min={from} value={to} onChange={(e) => setTo(e.target.value)} />
           </Field>
         </div>
         <label className="flex items-center gap-2">
           <input type="checkbox" checked={partial} onChange={(e) => setPartial(e.target.checked)} />
-          Only some hours a day
+          {tr("Only some hours a day")}
         </label>
         {partial && (
-          <Field label="Hours a day" htmlFor="to-hours">
+          <Field label={tr("Hours a day")} htmlFor="to-hours">
             <input id="to-hours" inputMode="decimal" className={`${narrowInputClass} w-24`} value={hours} onChange={(e) => setHours(e.target.value.replace(/[^0-9.]/g, ''))} />
           </Field>
         )}
-        <Field label="Note (optional)" htmlFor="to-note">
+        <Field label={tr("Note (optional)")} htmlFor="to-note">
           <textarea id="to-note" rows={2} className={inputClass} value={note} onChange={(e) => setNote(e.target.value)} />
         </Field>
-        <p className="text-xs text-slate-500">Weekends and company holidays are not counted.</p>
+        <p className="text-xs text-slate-500">{tr("Weekends and company holidays are not counted.")}</p>
       </div>
     </Modal>
   )
@@ -344,15 +347,15 @@ function DecideDialog({ r, who, decision, onClose, onDone }: { r: Request; who: 
     const res = data as { days_written: number; skipped_days: string[] } | null
     toast.success(
       decision === 'approved'
-        ? `Approved. ${res?.days_written ?? 0} day${res?.days_written === 1 ? '' : 's'} added to the timesheet.${res?.skipped_days?.length ? ` Not added (week already approved): ${res.skipped_days.join(', ')}.` : ''}`
-        : 'Declined.',
+        ? tr("Approved. {{value}} day{{value2}} added to the timesheet.{{value3}}", { value: res?.days_written ?? 0, value2: res?.days_written === 1 ? '' : 's', value3: res?.skipped_days?.length ? tr(" Not added (week already approved): {{value}}.", { value: res.skipped_days.join(', ') }) : '' })
+        : tr("Declined."),
       { duration: 8000 },
     )
     onDone(decision === 'approved')
   }
   return (
     <Modal
-      title={decision === 'approved' ? 'Approve Time Off' : 'Decline Time Off'}
+      title={decision === 'approved' ? tr("Approve Time Off") : tr("Decline Time Off")}
       onClose={onClose}
       busy={busy}
       footer={
@@ -361,7 +364,7 @@ function DecideDialog({ r, who, decision, onClose, onDone }: { r: Request; who: 
             {ACTION.cancel}
           </button>
           <button type="button" className={buttonClass} disabled={busy} onClick={go}>
-            {decision === 'approved' ? 'Approve' : 'Decline'}
+            {decision === 'approved' ? tr("Approve") : tr("Decline")}
           </button>
         </>
       }
@@ -370,10 +373,10 @@ function DecideDialog({ r, who, decision, onClose, onDone }: { r: Request; who: 
         <p>
           {who}: {timeOffLabel(r.kind)}, {datesText(r)}
         </p>
-        <Field label="Comment for the employee (optional)" htmlFor="decide-comment">
+        <Field label={tr("Comment for the employee (optional)")} htmlFor="decide-comment">
           <textarea id="decide-comment" rows={2} className={inputClass} value={comment} onChange={(e) => setComment(e.target.value)} />
         </Field>
-        {decision === 'approved' && <p className="text-xs text-slate-500">Next you see the cards, tasks and visits that fall during this time off, to reassign or move them.</p>}
+        {decision === 'approved' && <p className="text-xs text-slate-500">{tr("Next you see the cards, tasks and visits that fall during this time off, to reassign or move them.")}</p>}
       </div>
     </Modal>
   )
@@ -395,34 +398,36 @@ function WorkDialog({ r, who, items, onClose, onDone }: { r: Request; who: strin
       const c = choice[`${i.item_type}:${i.item_id}`]
       return { item_type: i.item_type, item_id: i.item_id, action: c.action, to_email: c.to, new_date: c.date }
     })
-    if (!(await confirmAction(`Apply ${changes.length} change${changes.length === 1 ? '' : 's'}?`, { confirmLabel: 'Apply Changes' }))) return
+    if (!(await confirmAction(tr("Apply {{length}} change{{value}}?", { length: changes.length, value: changes.length === 1 ? '' : 's' }), { get confirmLabel() {
+    return tr("Apply Changes")
+  } }))) return
     setBusy(true)
     const { error } = await supabase.rpc('apply_time_off_changes', { p_request: r.id, p_changes: changes })
     setBusy(false)
     if (error) return toast.error(friendlyError(error), { duration: 10000 })
-    toast.success('Changes applied.')
+    toast.success(tr("Changes applied."))
     onDone()
   }
 
   return (
     <Modal
-      title="Work During This Time Off"
+      title={tr("Work During This Time Off")}
       wide
       onClose={onClose}
       busy={busy}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose}>
-            Leave Everything as It Is
+            {tr("Leave Everything as It Is")}
           </button>
           <button type="button" className={buttonClass} disabled={busy || chosen.length === 0} onClick={apply}>
-            Apply Changes ({chosen.length})
+            {tr("Apply Changes (")}{chosen.length})
           </button>
         </>
       }
     >
       <p className="mb-3 text-sm text-slate-600">
-        {who} is off {datesText(r)}. These are assigned to them during that time. Choose what to do with each one; nothing changes until you select Apply Changes.
+        {who} {tr("is off")} {datesText(r)}{tr(". These are assigned to them during that time. Choose what to do with each one; nothing changes until you select Apply Changes.")}
       </p>
       <ul className="space-y-2">
         {items.map((i) => {
@@ -439,17 +444,17 @@ function WorkDialog({ r, who, items, onClose, onDone }: { r: Request; who: strin
                   </Link>
                   {i.context && <span className="text-slate-500"> · {i.context}</span>}
                 </div>
-                <span className="text-xs text-slate-600">{i.start_date === i.end_date ? `Due ${showDate(i.start_date)}` : `${showDate(i.start_date)} to ${showDate(i.end_date)}`}</span>
+                <span className="text-xs text-slate-600">{i.start_date === i.end_date ? tr("Due {{showDate}}", { showDate: showDate(i.start_date) }) : tr("{{showDate}} to {{showDate2}}", { showDate: showDate(i.start_date), showDate2: showDate(i.end_date) })}</span>
               </div>
               <div className="mt-2 flex flex-wrap items-center gap-2">
-                <select aria-label="What to do" className={narrowInputClass} value={c.action} onChange={(e) => setC({ action: e.target.value as typeof c.action })}>
-                  <option value="">Leave as it is</option>
-                  {i.can_reassign && <option value="reassign">Reassign</option>}
-                  {i.can_move && <option value="move">Move the date</option>}
+                <select aria-label={tr("What to do")} className={narrowInputClass} value={c.action} onChange={(e) => setC({ action: e.target.value as typeof c.action })}>
+                  <option value="">{tr("Leave as it is")}</option>
+                  {i.can_reassign && <option value="reassign">{tr("Reassign")}</option>}
+                  {i.can_move && <option value="move">{tr("Move the date")}</option>}
                 </select>
                 {c.action === 'reassign' && (
-                  <select aria-label="Reassign to" className={narrowInputClass} value={c.to} onChange={(e) => setC({ to: e.target.value })}>
-                    <option value="">Choose a person</option>
+                  <select aria-label={tr("Reassign to")} className={narrowInputClass} value={c.to} onChange={(e) => setC({ to: e.target.value })}>
+                    <option value="">{tr("Choose a person")}</option>
                     {people.map((p) => (
                       <option key={p.email} value={p.email}>
                         {p.name}
@@ -457,8 +462,8 @@ function WorkDialog({ r, who, items, onClose, onDone }: { r: Request; who: strin
                     ))}
                   </select>
                 )}
-                {c.action === 'move' && <input type="date" aria-label="New date" className={narrowInputClass} value={c.date} onChange={(e) => setC({ date: e.target.value })} />}
-                {!i.can_reassign && !i.can_move && <span className="text-xs text-slate-500">You cannot change this one; ask someone who can open it.</span>}
+                {c.action === 'move' && <input type="date" aria-label={tr("New date")} className={narrowInputClass} value={c.date} onChange={(e) => setC({ date: e.target.value })} />}
+                {!i.can_reassign && !i.can_move && <span className="text-xs text-slate-500">{tr("You cannot change this one; ask someone who can open it.")}</span>}
               </div>
             </li>
           )

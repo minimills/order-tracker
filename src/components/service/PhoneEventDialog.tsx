@@ -9,6 +9,7 @@ import { showDate } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { PHONE_EVENT_KINDS, showTime, type CalendarKind, type CalendarRow } from '../../lib/service'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Stored = { id: string; kind: CalendarKind; kind_set_by: string | null; customer_id: string | null; order_id: string | null }
 
@@ -59,16 +60,16 @@ export default function PhoneEventDialog({ entry, onClose, onSaved }: { entry: C
     let orderId: string | null = null
     if (orderText.trim()) {
       const { data } = await supabase.from('orders').select('id').eq('order_code', orderText.trim()).is('cancelled_code', null).maybeSingle()
-      if (!data) return toast.error(`Order ${orderText.trim()} was not found. Check the order number.`)
+      if (!data) return toast.error(tr("Order {{value}} was not found. Check the order number.", { value: orderText.trim() }))
       orderId = data.id as string
     }
     const customer = customers.find((c) => c.name.toLowerCase() === customerText.trim().toLowerCase())
-    if (customerText.trim() && !customer && !orderId) return toast.error('Pick the customer from the list, or leave it empty.')
+    if (customerText.trim() && !customer && !orderId) return toast.error(tr("Pick the customer from the list, or leave it empty."))
     setSaving(true)
     const { error } = await supabase.rpc('classify_phone_event', { p_id: stored.id, p_kind: kind, p_customer: customer?.id ?? null, p_order: orderId })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Entry updated.')
+    toast.success(tr("Entry updated."))
     onSaved()
   }
 
@@ -81,11 +82,11 @@ export default function PhoneEventDialog({ entry, onClose, onSaved }: { entry: C
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <Can permission="service.calendar.classify" level="edit">
             <button type="button" className={buttonClass} onClick={save} disabled={saving || !stored}>
-              {saving ? 'Saving…' : 'Save Changes'}
+              {saving ? tr("Saving…") : tr("Save Changes")}
             </button>
           </Can>
         </>
@@ -94,38 +95,38 @@ export default function PhoneEventDialog({ entry, onClose, onSaved }: { entry: C
       <div className="space-y-3 text-sm">
         <p className="flex items-center gap-2 rounded-md bg-slate-100 p-2 text-slate-700">
           <Icon name="phone" />
-          From {entry.tech_name ?? 'the technician'}’s phone calendar. Edit this on your phone; changes appear here within 5 minutes.
+          {tr("From")} {entry.tech_name ?? tr("the technician")}{tr("’s phone calendar. Edit this on your phone; changes appear here within 5 minutes.")}
         </p>
         <dl className="grid grid-cols-[6rem_1fr] gap-x-3 gap-y-1">
-          <dt className="text-slate-500">When</dt>
+          <dt className="text-slate-500">{tr("When")}</dt>
           <dd>
             {dates}
-            {entry.start_at ? `, ${showTime(entry.start_at)}` : ', all day'}
+            {entry.start_at ? `, ${showTime(entry.start_at)}` : tr(", all day")}
           </dd>
           {entry.location && (
             <>
-              <dt className="text-slate-500">Where</dt>
+              <dt className="text-slate-500">{tr("Where")}</dt>
               <dd className="whitespace-pre-line">{entry.location}</dd>
             </>
           )}
           {entry.notes && (
             <>
-              <dt className="text-slate-500">Notes</dt>
+              <dt className="text-slate-500">{tr("Notes")}</dt>
               <dd className="whitespace-pre-line">{entry.notes}</dd>
             </>
           )}
           {entry.customer && (
             <>
-              <dt className="text-slate-500">Customer</dt>
+              <dt className="text-slate-500">{tr("Customer")}</dt>
               <dd>{entry.customer}</dd>
             </>
           )}
           {entry.link && (
             <>
-              <dt className="text-slate-500">Order</dt>
+              <dt className="text-slate-500">{tr("Order")}</dt>
               <dd>
                 <Link to={entry.link} className="text-blue-700 underline">
-                  Open the service log
+                  {tr("Open the service log")}
                 </Link>
               </dd>
             </>
@@ -134,9 +135,9 @@ export default function PhoneEventDialog({ entry, onClose, onSaved }: { entry: C
         <Can permission="service.calendar.classify" level="edit">
           <div className="space-y-3 border-t border-slate-200 pt-3">
             <p className="text-slate-600">
-              The office can set the type and link a customer or order{stored?.kind_set_by ? '' : ' (the type is a guess from the title until someone sets it)'}.
+              {tr("The office can set the type and link a customer or order")}{stored?.kind_set_by ? '' : tr(" (the type is a guess from the title until someone sets it)")}.
             </p>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label="Type">
+            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={tr("Type")}>
               {PHONE_EVENT_KINDS.map((k) => (
                 <button
                   key={k.kind}
@@ -150,10 +151,10 @@ export default function PhoneEventDialog({ entry, onClose, onSaved }: { entry: C
                 </button>
               ))}
             </div>
-            <Field label="Order number" htmlFor="pe-order" hint="Links the order and its customer.">
-              <input id="pe-order" className={inputClass} placeholder="For example 76" value={orderText} onChange={(e) => setOrderText(e.target.value)} />
+            <Field label={tr("Order number")} htmlFor="pe-order" hint={tr("Links the order and its customer.")}>
+              <input id="pe-order" className={inputClass} placeholder={tr("For example 76")} value={orderText} onChange={(e) => setOrderText(e.target.value)} />
             </Field>
-            <Field label="Customer" htmlFor="pe-customer" hint="Only when there is no order.">
+            <Field label={tr("Customer")} htmlFor="pe-customer" hint={tr("Only when there is no order.")}>
               <input id="pe-customer" list="pe-customers" className={inputClass} value={customerText} onChange={(e) => setCustomerText(e.target.value)} />
               <datalist id="pe-customers">
                 {customers.map((c) => (

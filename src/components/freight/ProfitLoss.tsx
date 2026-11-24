@@ -10,14 +10,25 @@ import { formatMoney, friendlyError } from '../../lib/format'
 import type { Breakdown } from '../../lib/freight'
 import { supabase } from '../../lib/supabase'
 import { inputClass } from '../form'
+import { tr } from '../../i18n'
 
 type Group = 'day' | 'week' | 'month' | 'quarter' | 'year'
 const GROUPS: { key: Group; label: string }[] = [
-  { key: 'day', label: 'Day' },
-  { key: 'week', label: 'Week' },
-  { key: 'month', label: 'Month' },
-  { key: 'quarter', label: 'Quarter' },
-  { key: 'year', label: 'Year' },
+  { key: 'day', get label() {
+    return tr("Day")
+  } },
+  { key: 'week', get label() {
+    return tr("Week")
+  } },
+  { key: 'month', get label() {
+    return tr("Month")
+  } },
+  { key: 'quarter', get label() {
+    return tr("Quarter")
+  } },
+  { key: 'year', get label() {
+    return tr("Year")
+  } },
 ]
 type Row = Pick<Breakdown, 'id' | 'ship_date' | 'invoice_total' | 'invoice_total_cad' | 'breakdown_total_cad' | 'customer_name' | 'invoice_number'>
 type Totals = { shipments: number; invoiced: number; cost: number; profit: number; losses: number }
@@ -126,7 +137,7 @@ export default function ProfitLoss() {
     }
   }, [rows, from, to, group, compare])
 
-  if (!rows) return <p className="text-sm text-slate-500">Loading…</p>
+  if (!rows) return <p className="text-sm text-slate-500">{tr("Loading…")}</p>
   const max = Math.max(1, ...data.buckets.flatMap((b) => [Math.abs(b.now.profit), compare ? Math.abs(b.before.profit) : 0]))
   const HALF = 90
   const bar = (v: number, colour: string, label: string) => (
@@ -149,7 +160,7 @@ export default function ProfitLoss() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3 text-sm">
         <label className="flex flex-col gap-0.5">
-          <span className="text-xs text-slate-600">Group by</span>
+          <span className="text-xs text-slate-600">{tr("Group by")}</span>
           <select className={`${inputClass} w-32`} value={group} onChange={(e) => set('pgroup', e.target.value === 'month' ? '' : e.target.value)}>
             {GROUPS.map((g) => (
               <option key={g.key} value={g.key}>
@@ -159,20 +170,20 @@ export default function ProfitLoss() {
           </select>
         </label>
         <label className="flex flex-col gap-0.5">
-          <span className="text-xs text-slate-600">Ship date from</span>
+          <span className="text-xs text-slate-600">{tr("Ship date from")}</span>
           <input type="date" className={`${inputClass} w-40`} value={from} onChange={(e) => set('pfrom', e.target.value)} />
         </label>
         <label className="flex flex-col gap-0.5">
-          <span className="text-xs text-slate-600">To</span>
+          <span className="text-xs text-slate-600">{tr("To")}</span>
           <input type="date" className={`${inputClass} w-40`} value={to} min={from} onChange={(e) => set('pto', e.target.value)} />
         </label>
         <label className="flex items-center gap-2 pb-2">
           <input type="checkbox" checked={compare} onChange={(e) => set('pcompare', e.target.checked ? '1' : '')} />
-          Compare with the same dates last year
+          {tr("Compare with the same dates last year")}
         </label>
       </div>
 
-      <section aria-label="Profit and loss summary" data-print-section="Summary" className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))]">
+      <section aria-label={tr("Profit and loss summary")} data-print-section="Summary" className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,12rem),1fr))]">
         {card(words(data.now.profit), cad(data.now.profit), change(data.now.profit, data.before.profit), tone(data.now.profit))}
         {card('Invoiced for freight', cad(data.now.invoiced), change(data.now.invoiced, data.before.invoiced))}
         {card('Breakdown cost', cad(data.now.cost), change(data.now.cost, data.before.cost))}
@@ -180,44 +191,44 @@ export default function ProfitLoss() {
         {card('Shipments', String(data.now.shipments), `${data.now.losses} at a loss${compare ? ` · last year ${data.before.shipments} (${data.before.losses} at a loss)` : ''}`)}
       </section>
       <p className="text-xs text-slate-500">
-        In CAD, from cost breakdowns with a ship date in these dates and an invoice amount. Profit = invoice amount − breakdown cost.
-        {data.missing > 0 && ` ${data.missing} breakdown${data.missing === 1 ? ' has' : 's have'} no invoice amount and ${data.missing === 1 ? 'is' : 'are'} left out.`}
-        {data.noDate > 0 && ` ${data.noDate} without a ship date ${data.noDate === 1 ? 'is' : 'are'} left out.`}
+        {tr("In CAD, from cost breakdowns with a ship date in these dates and an invoice amount. Profit = invoice amount − breakdown cost.")}
+        {data.missing > 0 && tr(" {{missing}} breakdown{{value}} no invoice amount and {{value2}} left out.", { missing: data.missing, value: data.missing === 1 ? ' has' : tr("s have"), value2: data.missing === 1 ? 'is' : 'are' })}
+        {data.noDate > 0 && tr(" {{noDate}} without a ship date {{value}} left out.", { noDate: data.noDate, value: data.noDate === 1 ? 'is' : 'are' })}
       </p>
 
-      <section aria-label="Profit and loss by period" data-print-section="Chart" className="rounded-lg border border-slate-200 bg-white p-4">
+      <section aria-label={tr("Profit and loss by period")} data-print-section="Chart" className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-sm font-semibold">Profit and Loss by {GROUPS.find((g) => g.key === group)!.label}</h3>
+          <h3 className="text-sm font-semibold">{tr("Profit and Loss by")} {GROUPS.find((g) => g.key === group)!.label}</h3>
           <div className="flex items-center gap-3 text-xs">
             <span className="flex items-center gap-1">
-              <span className="h-3 w-3 rounded-sm bg-[#1baf7a]" aria-hidden="true" /> Profit
+              <span className="h-3 w-3 rounded-sm bg-[#1baf7a]" aria-hidden="true" /> {tr("Profit")}
             </span>
             <span className="flex items-center gap-1">
-              <span className="h-3 w-3 rounded-sm bg-[#e0453a]" aria-hidden="true" /> Loss
+              <span className="h-3 w-3 rounded-sm bg-[#e0453a]" aria-hidden="true" /> {tr("Loss")}
             </span>
             {compare && (
               <span className="flex items-center gap-1">
-                <span className="h-3 w-3 rounded-sm bg-[#9aa5b4]" aria-hidden="true" /> Last year
+                <span className="h-3 w-3 rounded-sm bg-[#9aa5b4]" aria-hidden="true" /> {tr("Last year")}
               </span>
             )}
             <button type="button" className="underline" onClick={() => setTable(!table)}>
-              {table ? 'Show as Chart' : 'Show as Table'}
+              {table ? tr("Show as Chart") : tr("Show as Table")}
             </button>
           </div>
         </div>
         {data.buckets.length === 0 ? (
-          <p className="py-6 text-center text-sm text-slate-500">No shipments with an invoice amount in these dates.</p>
+          <p className="py-6 text-center text-sm text-slate-500">{tr("No shipments with an invoice amount in these dates.")}</p>
         ) : table ? (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead className="text-left text-xs text-slate-600">
                 <tr>
-                  <th className="py-1 pr-3 font-semibold">Period</th>
-                  <th className="py-1 pr-3 text-right font-semibold">Shipments</th>
-                  <th className="py-1 pr-3 text-right font-semibold">Invoiced</th>
-                  <th className="py-1 pr-3 text-right font-semibold">Cost</th>
-                  <th className="py-1 pr-3 text-right font-semibold">Profit / loss</th>
-                  {compare && <th className="py-1 text-right font-semibold">Last year</th>}
+                  <th className="py-1 pr-3 font-semibold">{tr("Period")}</th>
+                  <th className="py-1 pr-3 text-right font-semibold">{tr("Shipments")}</th>
+                  <th className="py-1 pr-3 text-right font-semibold">{tr("Invoiced")}</th>
+                  <th className="py-1 pr-3 text-right font-semibold">{tr("Cost")}</th>
+                  <th className="py-1 pr-3 text-right font-semibold">{tr("Profit / loss")}</th>
+                  {compare && <th className="py-1 text-right font-semibold">{tr("Last year")}</th>}
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 tabular-nums">
@@ -243,7 +254,7 @@ export default function ProfitLoss() {
                     key={b.key}
                     type="button"
                     className={`flex min-w-8 flex-1 flex-col items-center rounded px-0.5 ${active === b.key ? 'bg-slate-100' : 'hover:bg-slate-50'}`}
-                    aria-label={`${bucketLabel(b.key, group, true)}: ${words(b.now.profit)} ${cad(b.now.profit)}${compare ? `, last year ${cad(b.before.profit)}` : ''}`}
+                    aria-label={`${bucketLabel(b.key, group, true)}: ${words(b.now.profit)} ${cad(b.now.profit)}${compare ? tr(", last year {{cad}}", { cad: cad(b.before.profit) }) : ''}`}
                     onMouseEnter={() => setActive(b.key)}
                     onFocus={() => setActive(b.key)}
                     onClick={() => setActive(b.key)}
@@ -260,8 +271,8 @@ export default function ProfitLoss() {
             </div>
             <p className="mt-2 min-h-5 text-sm" aria-live="polite">
               {shown
-                ? `${bucketLabel(shown.key, group, true)}: ${words(shown.now.profit)} ${cad(shown.now.profit)} on ${shown.now.shipments} shipment${shown.now.shipments === 1 ? '' : 's'} (invoiced ${cad(shown.now.invoiced)}, cost ${cad(shown.now.cost)})${compare ? ` · last year ${cad(shown.before.profit)}` : ''}`
-                : `Point at a ${group} for its numbers. ${showDate(from)} to ${showDate(to)}.`}
+                ? tr("{{bucketLabel}}: {{words}} {{cad}} on {{shipments}} shipment{{value}} (invoiced {{cad2}}, cost {{cad3}}){{value2}}", { bucketLabel: bucketLabel(shown.key, group, true), words: words(shown.now.profit), cad: cad(shown.now.profit), shipments: shown.now.shipments, value: shown.now.shipments === 1 ? '' : 's', cad2: cad(shown.now.invoiced), cad3: cad(shown.now.cost), value2: compare ? tr(" · last year {{cad}}", { cad: cad(shown.before.profit) }) : '' })
+                : tr("Point at a {{group}} for its numbers. {{showDate}} to {{showDate2}}.", { group: group, showDate: showDate(from), showDate2: showDate(to) })}
             </p>
           </>
         )}

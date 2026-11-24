@@ -4,6 +4,7 @@ import Can from '../Can'
 import SerialNumber from '../SerialNumber'
 import { countryFlag } from '../../lib/country'
 import { serviceDates, type ServiceCallInfo } from '../../lib/service'
+import { tr } from '../../i18n'
 
 /** In the card window of the Service Calls board: the call's details and a link to its service log. */
 export default function ServiceCallPanel({ call }: { call: ServiceCallInfo | null }) {
@@ -12,7 +13,7 @@ export default function ServiceCallPanel({ call }: { call: ServiceCallInfo | nul
       {call ? (
         <div className="space-y-1 rounded-md border border-violet-200 bg-violet-50 p-3 text-sm">
           <p className="font-semibold">
-            Service call {call.call_code}
+            {tr("Service call")} {call.call_code}
             {call.customer_name ? ` · ${call.customer_name}` : ''}
             {call.customer_country ? ` · ${countryFlag(call.customer_country)} ${call.customer_country}` : ''}
           </p>
@@ -29,17 +30,17 @@ export default function ServiceCallPanel({ call }: { call: ServiceCallInfo | nul
             </ul>
           )}
           <p className="text-xs text-slate-600">
-            {call.entries ? `${call.entries} day${call.entries === 1 ? '' : 's'} logged` : 'No days logged yet'}
-            {call.report_status === 'signed' ? ' · service report signed' : call.report_status === 'draft' ? ' · service report in draft' : ''}
+            {call.entries ? tr("{{entries}} day{{value}} logged", { entries: call.entries, value: call.entries === 1 ? '' : 's' }) : tr("No days logged yet")}
+            {call.report_status === 'signed' ? tr(" · service report signed") : call.report_status === 'draft' ? tr(" · service report in draft") : ''}
           </p>
           <Can permission="service">
             <Link to={`/service/calls/${call.card_id}`} className="font-medium text-blue-700 underline">
-              Open the Service Call (customer, machines, day log, report)
+              {tr("Open the Service Call (customer, machines, day log, report)")}
             </Link>
           </Can>
         </div>
       ) : (
-        <p className="text-sm text-slate-500">Loading the service call…</p>
+        <p className="text-sm text-slate-500">{tr("Loading the service call…")}</p>
       )}
     </Can>
   )

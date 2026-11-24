@@ -4,6 +4,7 @@ import { showDate, todayISO } from '../../lib/dates'
 import { supabase } from '../../lib/supabase'
 import { showHours, timeOffLabel } from '../../lib/timesheets'
 import Icon from '../Icon'
+import { tr } from '../../i18n'
 
 type Off = { employee_id: string; name: string; kind: string | null; start_date: string; end_date: string; back_on: string | null; hours: number | null }
 
@@ -15,26 +16,26 @@ export default function WhosOff({ bare = false }: { bare?: boolean }) {
   }, [])
   const body =
       list === null ? (
-        <p className="mt-3 text-sm text-slate-500">Loading…</p>
+        <p className="mt-3 text-sm text-slate-500">{tr("Loading…")}</p>
       ) : list.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">Everyone is in today.</p>
+        <p className="mt-3 text-sm text-slate-500">{tr("Everyone is in today.")}</p>
       ) : (
         <ul className="mt-2 divide-y divide-slate-100 text-sm">
           {list.map((o) => (
             <li key={o.employee_id} className="py-1.5">
               <span className="font-medium">{o.name}</span>
               {o.kind && <span className="text-slate-600"> · {timeOffLabel(o.kind)}</span>}
-              {o.hours != null && Number(o.hours) < 7 && <span className="text-slate-600"> · {showHours(Number(o.hours))} hours</span>}
-              <div className="text-xs text-slate-500">{o.back_on ? `Back ${showDate(o.back_on, 'EEE, MMM d')}` : ''}</div>
+              {o.hours != null && Number(o.hours) < 7 && <span className="text-slate-600"> · {showHours(Number(o.hours))} {tr("hours")}</span>}
+              <div className="text-xs text-slate-500">{o.back_on ? tr("Back {{showDate}}", { showDate: showDate(o.back_on, 'EEE, MMM d') }) : ''}</div>
             </li>
           ))}
         </ul>
       )
   if (bare) return body
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label="Who is off today">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label={tr("Who is off today")}>
       <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
-        <Icon name="user" /> Who’s Off Today
+        <Icon name="user" /> {tr("Who’s Off Today")}
       </h2>
       {body}
     </section>

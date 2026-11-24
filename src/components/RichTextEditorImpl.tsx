@@ -6,6 +6,7 @@ import { useEffect, useRef } from 'react'
 import { askText } from '../lib/confirm'
 import { cleanRichText, isEmptyRichText, safeLink } from '../lib/richText'
 import type { RichTextEditorProps } from './RichTextEditor'
+import { tr } from '../i18n'
 
 const toolbarButton = (active: boolean) =>
   `min-w-8 rounded px-2 py-1 text-sm ${active ? 'bg-slate-900 text-white' : 'text-slate-700 hover:bg-slate-100'} disabled:opacity-50`
@@ -111,7 +112,9 @@ export default function RichTextEditorImpl({ value, onChange, onBlur, disabled =
   }
   const editLink = async () => {
     const current = (editor.getAttributes('link').href as string | undefined) ?? ''
-    const typed = await askText('Link address (leave empty to remove the link)', { initial: current, label: 'Link address', confirmLabel: current ? 'Save Changes' : 'Add Link' })
+    const typed = await askText(tr("Link address (leave empty to remove the link)"), { initial: current, get label() {
+    return tr("Link address")
+  }, confirmLabel: current ? tr("Save Changes") : tr("Add Link") })
     const chain = editor.chain().focus().extendMarkRange('link')
     if (!typed) {
       chain.unsetLink().run()
@@ -127,39 +130,39 @@ export default function RichTextEditorImpl({ value, onChange, onBlur, disabled =
   return (
     <div className={`rounded-md border border-slate-300 bg-white focus-within:border-slate-500 ${disabled ? 'bg-slate-50' : ''}`}>
       {!disabled && (
-        <div className="flex flex-wrap gap-1 border-b border-slate-200 px-1 py-1" role="toolbar" aria-label="Formatting">
-          <button type="button" title="Bold (Ctrl+B)" aria-label="Bold" aria-pressed={state?.bold} className={`${toolbarButton(!!state?.bold)} font-bold`} onMouseDown={run(() => editor.chain().focus().toggleBold().run())}>
+        <div className="flex flex-wrap gap-1 border-b border-slate-200 px-1 py-1" role="toolbar" aria-label={tr("Formatting")}>
+          <button type="button" title={tr("Bold (Ctrl+B)")} aria-label={tr("Bold")} aria-pressed={state?.bold} className={`${toolbarButton(!!state?.bold)} font-bold`} onMouseDown={run(() => editor.chain().focus().toggleBold().run())}>
             B
           </button>
-          <button type="button" title="Italic (Ctrl+I)" aria-label="Italic" aria-pressed={state?.italic} className={`${toolbarButton(!!state?.italic)} italic`} onMouseDown={run(() => editor.chain().focus().toggleItalic().run())}>
+          <button type="button" title={tr("Italic (Ctrl+I)")} aria-label={tr("Italic")} aria-pressed={state?.italic} className={`${toolbarButton(!!state?.italic)} italic`} onMouseDown={run(() => editor.chain().focus().toggleItalic().run())}>
             I
           </button>
-          <button type="button" title="Underline (Ctrl+U)" aria-label="Underline" aria-pressed={state?.underline} className={`${toolbarButton(!!state?.underline)} underline`} onMouseDown={run(() => editor.chain().focus().toggleUnderline().run())}>
+          <button type="button" title={tr("Underline (Ctrl+U)")} aria-label={tr("Underline")} aria-pressed={state?.underline} className={`${toolbarButton(!!state?.underline)} underline`} onMouseDown={run(() => editor.chain().focus().toggleUnderline().run())}>
             U
           </button>
-          <button type="button" title="Strikethrough (Ctrl+Shift+S)" aria-label="Strikethrough" aria-pressed={state?.strike} className={`${toolbarButton(!!state?.strike)} line-through`} onMouseDown={run(() => editor.chain().focus().toggleStrike().run())}>
+          <button type="button" title={tr("Strikethrough (Ctrl+Shift+S)")} aria-label={tr("Strikethrough")} aria-pressed={state?.strike} className={`${toolbarButton(!!state?.strike)} line-through`} onMouseDown={run(() => editor.chain().focus().toggleStrike().run())}>
             S
           </button>
           {sep}
-          <button type="button" title="Heading" aria-pressed={state?.h2} className={`${toolbarButton(!!state?.h2)} font-semibold`} onMouseDown={run(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}>
-            Heading
+          <button type="button" title={tr("Heading")} aria-pressed={state?.h2} className={`${toolbarButton(!!state?.h2)} font-semibold`} onMouseDown={run(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}>
+            {tr("Heading")}
           </button>
-          <button type="button" title="Subheading" aria-pressed={state?.h3} className={toolbarButton(!!state?.h3)} onMouseDown={run(() => editor.chain().focus().toggleHeading({ level: 3 }).run())}>
-            Subheading
-          </button>
-          {sep}
-          <button type="button" title="Bullet list" aria-pressed={state?.bullet} className={toolbarButton(!!state?.bullet)} onMouseDown={run(() => editor.chain().focus().toggleBulletList().run())}>
-            Bullets
-          </button>
-          <button type="button" title="Numbered list" aria-pressed={state?.ordered} className={toolbarButton(!!state?.ordered)} onMouseDown={run(() => editor.chain().focus().toggleOrderedList().run())}>
-            Numbers
-          </button>
-          <button type="button" title="Checkbox list" aria-pressed={state?.task} className={toolbarButton(!!state?.task)} onMouseDown={run(() => editor.chain().focus().toggleTaskList().run())}>
-            Checklist
+          <button type="button" title={tr("Subheading")} aria-pressed={state?.h3} className={toolbarButton(!!state?.h3)} onMouseDown={run(() => editor.chain().focus().toggleHeading({ level: 3 }).run())}>
+            {tr("Subheading")}
           </button>
           {sep}
-          <button type="button" title="Add or change a link" aria-pressed={state?.link} className={toolbarButton(!!state?.link)} onMouseDown={run(() => void editLink())}>
-            Link
+          <button type="button" title={tr("Bullet list")} aria-pressed={state?.bullet} className={toolbarButton(!!state?.bullet)} onMouseDown={run(() => editor.chain().focus().toggleBulletList().run())}>
+            {tr("Bullets")}
+          </button>
+          <button type="button" title={tr("Numbered list")} aria-pressed={state?.ordered} className={toolbarButton(!!state?.ordered)} onMouseDown={run(() => editor.chain().focus().toggleOrderedList().run())}>
+            {tr("Numbers")}
+          </button>
+          <button type="button" title={tr("Checkbox list")} aria-pressed={state?.task} className={toolbarButton(!!state?.task)} onMouseDown={run(() => editor.chain().focus().toggleTaskList().run())}>
+            {tr("Checklist")}
+          </button>
+          {sep}
+          <button type="button" title={tr("Add or change a link")} aria-pressed={state?.link} className={toolbarButton(!!state?.link)} onMouseDown={run(() => void editLink())}>
+            {tr("Link")}
           </button>
         </div>
       )}

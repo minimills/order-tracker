@@ -9,6 +9,7 @@ import { useOptionList } from '../../lib/useOptionList'
 import Can from '../Can'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
 import { confirmAction } from '../../lib/confirm'
+import { tr } from '../../i18n'
 
 type Props = {
   order: OrderSummaryRow
@@ -47,9 +48,9 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
 
   async function save() {
     if (!supabase) return
-    if (!chosenType) return setError('Choose a payment type.')
+    if (!chosenType) return setError(tr("Choose a payment type."))
     if (!isBalance && (amountValue === null || Number.isNaN(amountValue)))
-      return setError('Enter the amount, for example 2500.')
+      return setError(tr("Enter the amount, for example 2500."))
     setSaving(true)
     const row = {
       payment_type: chosenType,
@@ -69,7 +70,9 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
 
   async function remove() {
     if (!supabase || !payment) return
-    if (!(await confirmAction(`Permanently delete this ${payment.payment_type} payment? This cannot be undone.`, { confirmLabel: 'Permanently Delete', danger: true }))) return
+    if (!(await confirmAction(tr("Permanently delete this {{payment_type}} payment? This cannot be undone.", { payment_type: payment.payment_type }), { get confirmLabel() {
+    return tr("Permanently Delete")
+  }, danger: true }))) return
     setSaving(true)
     const { error: e } = await supabase.from('payments').delete().eq('id', payment.id)
     setSaving(false)
@@ -79,7 +82,7 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
 
   return (
     <Modal
-      title={payment ? `Edit ${payment.payment_type}` : `Add a Payment to Order ${order.order_code}`}
+      title={payment ? tr("Edit {{payment_type}}", { payment_type: payment.payment_type }) : tr("Add a Payment to Order {{order_code}}", { order_code: order.order_code })}
       onClose={onClose}
       busy={saving}
       footer={
@@ -87,21 +90,21 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
           <Can permission="payments.action.delete" level="edit">
             {payment && (
               <button type="button" className="mr-auto text-sm text-red-700 underline" onClick={remove} disabled={saving}>
-                Permanently Delete Payment
+                {tr("Permanently Delete Payment")}
               </button>
             )}
           </Can>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? tr("Saving…") : tr("Save Changes")}
           </button>
         </>
       }
     >
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Payment type" htmlFor="pay-type">
+        <Field label={tr("Payment type")} htmlFor="pay-type">
           <select id="pay-type" className={inputClass} value={chosenType} onChange={(e) => setType(e.target.value)}>
             {choices.map((t) => (
               <option key={t}>{t}</option>
@@ -109,27 +112,27 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
           </select>
         </Field>
         {isBalance ? (
-          <Field label="Amount" hint="Order total − down payment, calculated automatically.">
+          <Field label={tr("Amount")} hint={tr("Order total − down payment, calculated automatically.")}>
             <p className="py-2 text-sm">
-              {order.order_total === null ? 'Calculated automatically' : formatMoney(total - (order.down_payment_amount ?? 0), order.currency)}
+              {order.order_total === null ? tr("Calculated automatically") : formatMoney(total - (order.down_payment_amount ?? 0), order.currency)}
             </p>
           </Field>
         ) : (
           <Field
-            label="Amount"
+            label={tr("Amount")}
             htmlFor="pay-amount"
             hint={
               amountMode === 'percent' && amountValue !== null && !Number.isNaN(amountValue)
                 ? `= ${formatMoney(amountValue, order.currency)}`
                 : chosenType === 'Down payment' && amountValue && total > 0
-                  ? `= ${Math.round((amountValue / total) * 1000) / 10}% of the total`
+                  ? tr("= {{value}}% of the total", { value: Math.round((amountValue / total) * 1000) / 10 })
                   : undefined
             }
           >
             <div className="flex gap-2">
               <input id="pay-amount" inputMode="decimal" className={inputClass} value={amount} onChange={(e) => setAmount(e.target.value)} />
               <select
-                aria-label="Amount as"
+                aria-label={tr("Amount as")}
                 className={`${inputClass} w-24`}
                 value={amountMode}
                 onChange={(e) => setAmountMode(e.target.value as 'amount' | 'percent')}
@@ -140,11 +143,11 @@ export default function PaymentDialog({ order, payment, existingTypes, onClose, 
             </div>
           </Field>
         )}
-        <Field label="Due date" htmlFor="pay-due">
+        <Field label={tr("Due date")} htmlFor="pay-due">
           <input id="pay-due" type="date" className={inputClass} value={due} onChange={(e) => setDue(e.target.value)} />
         </Field>
-        <Field label="Note" htmlFor="pay-notes">
-          <input id="pay-notes" className={inputClass} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="For example: wire transfer" />
+        <Field label={tr("Note")} htmlFor="pay-notes">
+          <input id="pay-notes" className={inputClass} value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={tr("For example: wire transfer")} />
         </Field>
       </div>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}

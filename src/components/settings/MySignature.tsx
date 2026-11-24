@@ -17,6 +17,7 @@ import {
 } from '../../lib/signatures'
 import Can from '../Can'
 import { buttonClass, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 /**
  * Settings → My Signature: upload a scanned signature (PNG, JPG or PDF), crop
@@ -61,7 +62,7 @@ export default function MySignature() {
       setCleaned(await cleanSignature(c, whole))
     } catch (e) {
       setSource(null)
-      setError((e as Error).message || 'The file could not be read.')
+      setError((e as Error).message || tr("The file could not be read."))
     } finally {
       setBusy(false)
       if (fileInput.current) fileInput.current.value = ''
@@ -85,7 +86,7 @@ export default function MySignature() {
     setBusy(true)
     try {
       await saveMySignature(me, cleaned, saved)
-      toast.success(saved ? 'Your signature was replaced. Documents already signed keep the old one.' : 'Your signature was saved.')
+      toast.success(saved ? tr("Your signature was replaced. Documents already signed keep the old one.") : tr("Your signature was saved."))
       setSource(null)
       setCleaned(null)
       await load()
@@ -97,11 +98,13 @@ export default function MySignature() {
   }
 
   async function remove() {
-    if (!(await confirmAction('Remove your saved signature? Documents you already signed keep their copy.', { confirmLabel: 'Remove Signature', danger: true }))) return
+    if (!(await confirmAction(tr("Remove your saved signature? Documents you already signed keep their copy."), { get confirmLabel() {
+    return tr("Remove Signature")
+  }, danger: true }))) return
     setBusy(true)
     try {
       await removeMySignature()
-      toast.success('Your saved signature was removed.')
+      toast.success(tr("Your saved signature was removed."))
       await load()
     } catch (e) {
       toast.error(friendlyError(e as Error))
@@ -113,34 +116,34 @@ export default function MySignature() {
   return (
     <div className="space-y-3 text-sm">
       <p className="text-slate-600">
-        Upload a scan or photo of your signature on white paper. Only you can see or use it; others only see it on documents you signed.
+        {tr("Upload a scan or photo of your signature on white paper. Only you can see or use it; others only see it on documents you signed.")}
       </p>
       {!source && (
         <div className="flex flex-wrap items-center gap-4">
           {savedUrl ? (
             <div className="keep-light flex h-20 w-56 items-center justify-center rounded border border-slate-200 bg-white p-1">
-              <img src={savedUrl} alt="Your saved signature" className="max-h-full max-w-full object-contain" />
+              <img src={savedUrl} alt={tr("Your saved signature")} className="max-h-full max-w-full object-contain" />
             </div>
           ) : (
-            <p className="text-slate-500">You have no saved signature.</p>
+            <p className="text-slate-500">{tr("You have no saved signature.")}</p>
           )}
           {saved && (
             <p className="text-xs text-slate-500">
-              Version {saved.version}, saved {showDate(saved.created_at.slice(0, 10))}
+              {tr("Version")} {saved.version}{tr(", saved")} {showDate(saved.created_at.slice(0, 10))}
             </p>
           )}
         </div>
       )}
       <Can permission="settings.signature" level="edit">
-        <input ref={fileInput} type="file" accept="image/png,image/jpeg,application/pdf,.pdf" className="hidden" onChange={(e) => pick(e.target.files?.[0])} aria-label="Signature file" />
+        <input ref={fileInput} type="file" accept="image/png,image/jpeg,application/pdf,.pdf" className="hidden" onChange={(e) => pick(e.target.files?.[0])} aria-label={tr("Signature file")} />
         {!source && (
           <div className="flex flex-wrap gap-2">
             <button type="button" className={buttonClass} disabled={busy} onClick={() => fileInput.current?.click()}>
-              {busy ? 'Reading…' : saved ? 'Replace Signature' : 'Upload Signature'}
+              {busy ? tr("Reading…") : saved ? tr("Replace Signature") : tr("Upload Signature")}
             </button>
             {saved && (
               <button type="button" className={secondaryButtonClass} disabled={busy} onClick={remove}>
-                Remove Signature
+                {tr("Remove Signature")}
               </button>
             )}
           </div>
@@ -148,29 +151,29 @@ export default function MySignature() {
         {source && crop && (
           <div className="space-y-3">
             <div>
-              <h3 className="font-medium">1. Select the signature</h3>
-              <p className="text-xs text-slate-500">Drag a box around your signature. The edges are trimmed and the white paper is removed automatically.</p>
+              <h3 className="font-medium">{tr("1. Select the signature")}</h3>
+              <p className="text-xs text-slate-500">{tr("Drag a box around your signature. The edges are trimmed and the white paper is removed automatically.")}</p>
               <Cropper source={source} crop={crop} onCrop={applyCrop} />
               <button type="button" className="mt-1 text-xs underline" onClick={() => applyCrop({ x: 0, y: 0, w: source.width, h: source.height })}>
-                Select the Whole Picture
+                {tr("Select the Whole Picture")}
               </button>
             </div>
             {error && <p className="text-sm text-red-700">{error}</p>}
             {cleaned && (
               <div>
-                <h3 className="font-medium">2. Check it on a sample document</h3>
+                <h3 className="font-medium">{tr("2. Check it on a sample document")}</h3>
                 <SampleDocument image={cleaned.dataUrl} />
                 <p className="mt-1 text-xs text-slate-500">
-                  {cleaned.width} × {cleaned.height} pixels, {Math.round(cleaned.blob.size / 1024)} KB.
+                  {cleaned.width} × {cleaned.height} {tr("pixels,")} {Math.round(cleaned.blob.size / 1024)} {tr("KB.")}
                 </p>
               </div>
             )}
             <div className="flex flex-wrap gap-2">
               <button type="button" className={buttonClass} disabled={busy || !cleaned} onClick={save}>
-                {busy ? 'Saving…' : 'Save Signature'}
+                {busy ? tr("Saving…") : tr("Save Signature")}
               </button>
               <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => { setSource(null); setCleaned(null); setError(null) }}>
-                Cancel
+                {tr("Cancel")}
               </button>
             </div>
           </div>
@@ -210,7 +213,7 @@ function Cropper({ source, crop, onCrop }: { source: HTMLCanvasElement; crop: Cr
         setDrag(null)
       }}
     >
-      <img src={url} alt="Uploaded signature" className="block w-full" draggable={false} />
+      <img src={url} alt={tr("Uploaded signature")} className="block w-full" draggable={false} />
       <div
         className="pointer-events-none absolute border-2 border-blue-600 bg-blue-500/10"
         style={{ left: `${(shown.x / source.width) * 100}%`, top: `${(shown.y / source.height) * 100}%`, width: `${(shown.w / source.width) * 100}%`, height: `${(shown.h / source.height) * 100}%` }}
@@ -224,7 +227,7 @@ function Cropper({ source, crop, onCrop }: { source: HTMLCanvasElement; crop: Cr
 function SampleDocument({ image }: { image: string }) {
   return (
     <div className="keep-light mt-1 max-w-md rounded border border-slate-300 bg-white p-4 font-serif text-[0.6875rem] text-slate-800 shadow-sm">
-      <div className="text-center text-sm font-bold">Sample Document</div>
+      <div className="text-center text-sm font-bold">{tr("Sample Document")}</div>
       <div className="mt-2 space-y-1">
         <div className="h-1.5 w-full rounded bg-slate-200" />
         <div className="h-1.5 w-11/12 rounded bg-slate-200" />
@@ -233,12 +236,12 @@ function SampleDocument({ image }: { image: string }) {
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div>
           <div className="flex h-14 items-end">
-            <img src={image} alt="Your signature on the sample document" className="max-h-14 max-w-full object-contain" />
+            <img src={image} alt={tr("Your signature on the sample document")} className="max-h-14 max-w-full object-contain" />
           </div>
-          <div className="border-t border-slate-800 pt-0.5">Signature</div>
+          <div className="border-t border-slate-800 pt-0.5">{tr("Signature")}</div>
         </div>
         <div className="self-end">
-          <div className="border-t border-slate-800 pt-0.5">Date: {showDate(todayISO())}</div>
+          <div className="border-t border-slate-800 pt-0.5">{tr("Date:")} {showDate(todayISO())}</div>
         </div>
       </div>
     </div>

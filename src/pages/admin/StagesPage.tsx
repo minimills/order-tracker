@@ -6,6 +6,7 @@ import { buttonClass, Field, inputClass } from '../../components/form'
 import { friendlyError } from '../../lib/format'
 import { saveStageLabels, STAGE_HINTS, useStageLabels, type StageLabels } from '../../lib/stages'
 import { STAGES } from '../../lib/types'
+import { tr } from '../../i18n'
 
 /** Rename what people see for each stage, for example "Ready" → "Ready / testing". */
 export default function StagesPage() {
@@ -23,18 +24,17 @@ export default function StagesPage() {
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
     setDraft(null)
-    toast.success('Stage names saved. Everyone sees them the next time a page is opened.')
+    toast.success(tr("Stage names saved. Everyone sees them the next time a page is opened."))
   }
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Stage Names">
-        Rename what people see for each stage. The order of the stages and what they do (shop queue, serial numbers,
-        alerts) stay the same. Leave a box empty to use the standard name.
+      <AdminPageHeader title={tr("Stage Names")}>
+        {tr("Rename what people see for each stage. The order of the stages and what they do (shop queue, serial numbers, alerts) stay the same. Leave a box empty to use the standard name.")}
       </AdminPageHeader>
       <form onSubmit={save} className="max-w-3xl space-y-4 rounded-lg border border-slate-200 bg-white p-4">
         {STAGES.map((s) => (
-          <Field key={s} label={`Standard name: ${s}`} htmlFor={`stage-${s}`} hint={STAGE_HINTS[s]}>
+          <Field key={s} label={tr("Standard name: {{s}}", { s: s })} htmlFor={`stage-${s}`} hint={STAGE_HINTS[s]}>
             <input
               id={`stage-${s}`}
               className={inputClass}
@@ -48,11 +48,11 @@ export default function StagesPage() {
         <div className="flex justify-end gap-3">
           {draft && (
             <button type="button" className="text-sm underline" onClick={() => setDraft(null)}>
-              Undo Changes
+              {tr("Undo Changes")}
             </button>
           )}
           <button type="submit" className={buttonClass} disabled={saving || !draft}>
-            {saving ? 'Saving…' : 'Save Names'}
+            {saving ? tr("Saving…") : tr("Save Names")}
           </button>
         </div>
       </form>

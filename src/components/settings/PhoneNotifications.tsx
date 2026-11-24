@@ -7,6 +7,7 @@ import { friendlyError } from '../../lib/format'
 import { currentSubscription, disablePushHere, enablePushHere, pushSupport } from '../../lib/push'
 import { supabase } from '../../lib/supabase'
 import { buttonClass, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 type Device = { id: string; endpoint: string; device_name: string | null; created_at: string; last_used_at: string | null }
 
@@ -47,48 +48,49 @@ export default function PhoneNotifications() {
     else toast.error(r.message, { duration: 10000 })
   }
   async function remove(d: Device) {
-    if (!(await confirmAction(`Stop phone notifications on ${d.device_name ?? 'this device'}?`, { confirmLabel: 'Disable' }))) return
+    if (!(await confirmAction(tr("Stop phone notifications on {{value}}?", { value: d.device_name ?? tr("this device") }), { get confirmLabel() {
+    return tr("Disable")
+  } }))) return
     if (d.endpoint === here) await disablePushHere()
     else {
       const { error } = await supabase!.from('push_subscriptions').delete().eq('id', d.id)
       if (error) return toast.error(friendlyError(error))
     }
-    toast.success('Phone notifications disabled on that device.')
+    toast.success(tr("Phone notifications disabled on that device."))
     load()
   }
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-      <h2 className="font-semibold">Phone Notifications</h2>
+      <h2 className="font-semibold">{tr("Phone Notifications")}</h2>
       <p className="mt-1 text-slate-600">
-        Free notifications on your phone, like a text message but without SMS costs. Choose which types arrive on your
-        phone in the Notifications table above (column “Phone push”).
+        {tr("Free notifications on your phone, like a text message but without SMS costs. Choose which types arrive on your phone in the Notifications table above (column “Phone push”).")}
       </p>
 
       <div className="mt-3 rounded-md bg-slate-50 p-3">
-        <div className="font-medium">This device</div>
+        <div className="font-medium">{tr("This device")}</div>
         {!support.supported ? (
           <p className="mt-1 text-slate-700">
             {support.ios && !support.installed
-              ? 'On an iPhone, phone notifications only work after the app is added to your Home Screen. Follow the iPhone steps below, then open the app from its Home Screen icon and return to this page.'
-              : 'This browser cannot receive notifications. Use Safari on an iPhone (added to the Home Screen) or Chrome on an Android phone.'}
+              ? tr("On an iPhone, phone notifications only work after the app is added to your Home Screen. Follow the iPhone steps below, then open the app from its Home Screen icon and return to this page.")
+              : tr("This browser cannot receive notifications. Use Safari on an iPhone (added to the Home Screen) or Chrome on an Android phone.")}
           </p>
         ) : enabledHere ? (
-          <p className="mt-1 text-green-800">Notifications are enabled on this device.</p>
+          <p className="mt-1 text-green-800">{tr("Notifications are enabled on this device.")}</p>
         ) : support.permission === 'denied' ? (
-          <p className="mt-1 text-amber-800">Notifications are blocked for this app. Allow them in your phone or browser settings, then reload this page.</p>
+          <p className="mt-1 text-amber-800">{tr("Notifications are blocked for this app. Allow them in your phone or browser settings, then reload this page.")}</p>
         ) : (
-          <p className="mt-1 text-slate-700">Notifications are not enabled on this device yet.</p>
+          <p className="mt-1 text-slate-700">{tr("Notifications are not enabled on this device yet.")}</p>
         )}
         <div className="mt-2 flex flex-wrap gap-2">
           {support.supported && !enabledHere && support.permission !== 'denied' && (
             <button type="button" className={buttonClass} disabled={busy} onClick={enable}>
-              Enable on This Device
+              {tr("Enable on This Device")}
             </button>
           )}
           {devices.length > 0 && (
             <button type="button" className={secondaryButtonClass} disabled={busy} onClick={test}>
-              Send a Test Notification
+              {tr("Send a Test Notification")}
             </button>
           )}
         </div>
@@ -96,16 +98,16 @@ export default function PhoneNotifications() {
 
       {devices.length > 0 && (
         <div className="mt-3">
-          <div className="text-xs font-medium text-slate-500">Devices with notifications enabled</div>
+          <div className="text-xs font-medium text-slate-500">{tr("Devices with notifications enabled")}</div>
           <ul className="mt-1 divide-y divide-slate-100">
             {devices.map((d) => (
               <li key={d.id} className="flex items-center justify-between gap-2 py-1.5">
                 <span>
-                  {d.device_name ?? 'Device'}
-                  {d.endpoint === here && <span className="text-slate-500"> (this device)</span>}
+                  {d.device_name ?? tr("Device")}
+                  {d.endpoint === here && <span className="text-slate-500"> {tr("(this device)")}</span>}
                 </span>
                 <button type="button" className="text-xs text-red-700 underline" onClick={() => remove(d)}>
-                  Disable
+                  {tr("Disable")}
                 </button>
               </li>
             ))}
@@ -114,37 +116,37 @@ export default function PhoneNotifications() {
       )}
 
       <div className="mt-4">
-        <div className="text-xs font-medium text-slate-500">How to set it up</div>
+        <div className="text-xs font-medium text-slate-500">{tr("How to set it up")}</div>
         <div className="mt-1 flex gap-2">
           <button type="button" className={secondaryButtonClass} aria-expanded={help === 'iphone'} onClick={() => setHelp(help === 'iphone' ? null : 'iphone')}>
-            iPhone Steps
+            {tr("iPhone Steps")}
           </button>
           <button type="button" className={secondaryButtonClass} aria-expanded={help === 'android'} onClick={() => setHelp(help === 'android' ? null : 'android')}>
-            Android Steps
+            {tr("Android Steps")}
           </button>
         </div>
         {help === 'iphone' && (
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-slate-700">
-            <li>Make sure the iPhone has iOS 16.4 or newer (Settings → General → About → iOS Version).</li>
-            <li>Open <strong>Safari</strong> and go to <strong>https://order.minimills.net</strong>. Sign in.</li>
-            <li>Tap the <strong>Share</strong> button (the square with an arrow pointing up) at the bottom of the screen.</li>
-            <li>Scroll down and tap <strong>Add to Home Screen</strong>, then tap <strong>Add</strong>.</li>
-            <li>Close Safari and open <strong>BMM Orders</strong> from your Home Screen. Sign in again if asked.</li>
-            <li>Go to <strong>Settings</strong> in the app and tap <strong>Enable on This Device</strong>.</li>
-            <li>When the iPhone asks, tap <strong>Allow</strong>.</li>
-            <li>Tap <strong>Send a Test Notification</strong> to check that it works.</li>
-            <li>If nothing arrives, check iPhone Settings → Notifications → BMM Orders and make sure notifications are allowed and Focus mode is off.</li>
+            <li>{tr("Make sure the iPhone has iOS 16.4 or newer (Settings → General → About → iOS Version).")}</li>
+            <li>{tr("Open")} <strong>Safari</strong> {tr("and go to")} <strong>https://order.minimills.net</strong>{tr(". Sign in.")}</li>
+            <li>{tr("Tap the")} <strong>{tr("Share")}</strong> {tr("button (the square with an arrow pointing up) at the bottom of the screen.")}</li>
+            <li>{tr("Scroll down and tap")} <strong>{tr("Add to Home Screen")}</strong>{tr(", then tap")} <strong>{tr("Add")}</strong>.</li>
+            <li>{tr("Close Safari and open")} <strong>{tr("BMM Orders")}</strong> {tr("from your Home Screen. Sign in again if asked.")}</li>
+            <li>{tr("Go to")} <strong>{tr("Settings")}</strong> {tr("in the app and tap")} <strong>{tr("Enable on This Device")}</strong>.</li>
+            <li>{tr("When the iPhone asks, tap")} <strong>{tr("Allow")}</strong>.</li>
+            <li>{tr("Tap")} <strong>{tr("Send a Test Notification")}</strong> {tr("to check that it works.")}</li>
+            <li>{tr("If nothing arrives, check iPhone Settings → Notifications → BMM Orders and make sure notifications are allowed and Focus mode is off.")}</li>
           </ol>
         )}
         {help === 'android' && (
           <ol className="mt-2 list-decimal space-y-1 pl-5 text-slate-700">
-            <li>Open <strong>Chrome</strong> and go to <strong>https://order.minimills.net</strong>. Sign in.</li>
-            <li>Tap the <strong>menu</strong> (three dots at the top right) and tap <strong>Add to Home screen</strong> or <strong>Install app</strong>, then <strong>Install</strong>.</li>
-            <li>Open <strong>BMM Orders</strong> from your Home Screen (optional, but it then works like an app).</li>
-            <li>Go to <strong>Settings</strong> in the app and tap <strong>Enable on This Device</strong>.</li>
-            <li>When Android asks, tap <strong>Allow</strong>.</li>
-            <li>Tap <strong>Send a Test Notification</strong> to check that it works.</li>
-            <li>If nothing arrives, check Android Settings → Apps → Chrome (or BMM Orders) → Notifications and make sure they are allowed.</li>
+            <li>{tr("Open")} <strong>Chrome</strong> {tr("and go to")} <strong>https://order.minimills.net</strong>{tr(". Sign in.")}</li>
+            <li>{tr("Tap the")} <strong>{tr("menu")}</strong> {tr("(three dots at the top right) and tap")} <strong>{tr("Add to Home screen")}</strong> {tr("or")} <strong>{tr("Install app")}</strong>{tr(", then")} <strong>{tr("Install")}</strong>.</li>
+            <li>{tr("Open")} <strong>{tr("BMM Orders")}</strong> {tr("from your Home Screen (optional, but it then works like an app).")}</li>
+            <li>{tr("Go to")} <strong>{tr("Settings")}</strong> {tr("in the app and tap")} <strong>{tr("Enable on This Device")}</strong>.</li>
+            <li>{tr("When Android asks, tap")} <strong>{tr("Allow")}</strong>.</li>
+            <li>{tr("Tap")} <strong>{tr("Send a Test Notification")}</strong> {tr("to check that it works.")}</li>
+            <li>{tr("If nothing arrives, check Android Settings → Apps → Chrome (or BMM Orders) → Notifications and make sure they are allowed.")}</li>
           </ol>
         )}
       </div>

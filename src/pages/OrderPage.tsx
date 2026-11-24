@@ -40,6 +40,7 @@ import OrderServiceSection from '../components/service/OrderServiceSection'
 import CeIssueDialog from '../components/ce/CeIssueDialog'
 import CeRegister from '../components/ce/CeRegister'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Machine = {
   id: string
@@ -54,10 +55,18 @@ type Machine = {
 
 /** Tabs; Details holds sections that each have their own permission. */
 const TABS = [
-  { key: 'details', label: 'Details', permission: 'order.page' },
-  { key: 'activity', label: 'Activity', permission: 'order.tab.activity' },
-  { key: 'emails', label: 'Emails', permission: 'order.tab.emails' },
-  { key: 'ai', label: 'AI notes', permission: 'order.tab.ai_notes' },
+  { key: 'details', get label() {
+    return tr("Details")
+  }, permission: 'order.page' },
+  { key: 'activity', get label() {
+    return tr("Activity")
+  }, permission: 'order.tab.activity' },
+  { key: 'emails', get label() {
+    return tr("Emails")
+  }, permission: 'order.tab.emails' },
+  { key: 'ai', get label() {
+    return tr("AI notes")
+  }, permission: 'order.tab.ai_notes' },
 ] as const
 type TabKey = (typeof TABS)[number]['key']
 
@@ -105,7 +114,9 @@ export default function OrderPage() {
   const seesChecks = can('checklist')
 
   const [order, setOrder] = useState<OrderSummaryRow | null>(null)
-  useBreadcrumbs(order && [{ label: 'Orders', to: '/orders' }, { label: `Order ${order.order_code}` }])
+  useBreadcrumbs(order && [{ get label() {
+    return tr("Orders")
+  }, to: '/orders' }, { label: `Order ${order.order_code}` }])
   const [customer, setCustomer] = useState<Customer | null>(null)
   const [machines, setMachines] = useState<Machine[]>([])
   // CE declarations: the dialog (all machines or one) and a counter to reload the register.
@@ -144,7 +155,7 @@ export default function OrderPage() {
     if (!supabase || !id) return
     const { data, error: e } = await supabase.from('order_summary').select('*').eq('id', id).maybeSingle()
     if (e || !data) {
-      setError(e ? friendlyError(e) : 'This order could not be found.')
+      setError(e ? friendlyError(e) : tr("This order could not be found."))
       setLoading(false)
       return
     }
@@ -207,7 +218,7 @@ export default function OrderPage() {
   if (loading)
     return (
       <Can permission="order.page">
-        <div className="p-8 text-center text-slate-500">Loading…</div>
+        <div className="p-8 text-center text-slate-500">{tr("Loading…")}</div>
       </Can>
     )
   if (error || !order) {
@@ -216,7 +227,7 @@ export default function OrderPage() {
         <div className="mx-auto max-w-4xl">
           <p className="text-slate-700">{error}</p>
           <Link to="/" className="mt-4 inline-block text-sm underline">
-            Back
+            {tr("Back")}
           </Link>
         </div>
       </Can>
@@ -229,7 +240,7 @@ export default function OrderPage() {
     if (!supabase) return
     const { error: e } = await supabase.rpc('create_production_board', { p_order: order!.id })
     if (e) return toast.error(friendlyError(e))
-    toast.success('Production board created.')
+    toast.success(tr("Production board created."))
     load()
   }
 
@@ -237,7 +248,7 @@ export default function OrderPage() {
     if (!supabase || !canTickBuilt) return
     if (m.ready) {
       const ok = await confirmAction(
-        `Mark ${m.serial_number ?? 'this machine'} as not built? Its serial number may then change to keep the shop queue order.`,
+        tr("Mark {{value}} as not built? Its serial number may then change to keep the shop queue order.", { value: m.serial_number ?? tr("this machine") }),
       )
       if (!ok) return
     }
@@ -248,10 +259,10 @@ export default function OrderPage() {
 
   async function undoReceived(p: PaymentRow) {
     if (!supabase) return
-    if (!(await confirmAction(`Clear the received amount and date for this ${p.payment_type}?`))) return
+    if (!(await confirmAction(tr("Clear the received amount and date for this {{payment_type}}?", { payment_type: p.payment_type })))) return
     const { error: e } = await supabase.from('payments').update({ received_date: null, received_amount: null }).eq('id', p.id)
     if (e) return toast.error(friendlyError(e))
-    toast.success('Received amount cleared.')
+    toast.success(tr("Received amount cleared."))
     refreshAlerts()
     load()
   }
@@ -262,7 +273,7 @@ export default function OrderPage() {
     const { error: e } = await supabase.from('orders').update({ notes: notes || null }).eq('id', order.id)
     setSavingNotes(false)
     if (e) return toast.error(friendlyError(e))
-    toast.success('Notes saved.')
+    toast.success(tr("Notes saved."))
     load()
   }
 
@@ -288,20 +299,20 @@ export default function OrderPage() {
         <div className="space-y-3">
           <Can permission="orders.list">
             <Link to="/orders" className="text-sm text-slate-600 underline">
-              ← Orders List
+              {tr("← Orders List")}
             </Link>
           </Can>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <h1 className="text-2xl font-semibold">Order {order.order_code}</h1>
+                  <h1 className="text-2xl font-semibold">{tr("Order")} {order.order_code}</h1>
                   <Can permission="order.print">
-                    <PrintButton title={`Order ${order.order_code}`} subtitle={[order.customer_company || order.customer_name, label(order.stage)].filter(Boolean).join(' · ')} />
+                    <PrintButton title={tr("Order {{order_code}}", { order_code: order.order_code })} subtitle={[order.customer_company || order.customer_name, label(order.stage)].filter(Boolean).join(' · ')} />
                   </Can>
                 </div>
                 <span className={`rounded px-2 py-0.5 text-sm font-medium ${stageTone[order.stage]}`}>{label(order.stage)}</span>
-                {order.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-sm">Archived</span>}
+                {order.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-sm">{tr("Archived")}</span>}
               </div>
               <Can permission="order.header.customer">
                 <div className="mt-1 text-slate-700">
@@ -353,22 +364,22 @@ export default function OrderPage() {
             <div className="flex flex-wrap items-center gap-2 lg:justify-end">
               <Can permission="reminders.send" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={() => setReminding(true)}>
-                  <Icon name="inbox" /> Send Reminder
+                  <Icon name="inbox" /> {tr("Send Reminder")}
                 </button>
               </Can>
               <Can permission="order.action.edit" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={() => setEditing(true)}>
-                  <Icon name="pencil" /> Edit
+                  <Icon name="pencil" /> {tr("Edit")}
                 </button>
               </Can>
               <Can permission="order.action.change_stage" level="edit">
                 <select
-                  aria-label="Change stage"
+                  aria-label={tr("Change stage")}
                   className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm focus:border-slate-500 focus:outline-none"
                   value=""
                   onChange={(e) => e.target.value && askMove(e.target.value as Stage)}
                 >
-                  <option value="">Change Stage…</option>
+                  <option value="">{tr("Change Stage…")}</option>
                   {STAGES.filter((s) => s !== order.stage).map((s) => (
                     <option key={s} value={s}>
                       {label(s)}
@@ -379,7 +390,7 @@ export default function OrderPage() {
               <Can permission="order.action.mark_shipped" level="edit">
                 {canShip && (
                   <button type="button" className={buttonClass} onClick={() => askMove('Shipped')}>
-                    <Icon name="truck" /> Mark as Shipped
+                    <Icon name="truck" /> {tr("Mark as Shipped")}
                   </button>
                 )}
               </Can>
@@ -389,7 +400,7 @@ export default function OrderPage() {
                   className={secondaryButtonClass}
                   onClick={() => navigate(`/orders/new?split=${order.order_number}`)}
                 >
-                  <Icon name="split" /> Split Shipment
+                  <Icon name="split" /> {tr("Split Shipment")}
                 </button>
               </Can>
             </div>
@@ -422,11 +433,11 @@ export default function OrderPage() {
         </Can>
         <Can permission="order.tab.emails">
           {tab === 'emails' && (
-            <Placeholder title="Emails" text="Emails with this customer will appear here automatically in a future update." />
+            <Placeholder title={tr("Emails")} text="Emails with this customer will appear here automatically in a future update." />
           )}
         </Can>
         <Can permission="order.tab.ai_notes">
-          {tab === 'ai' && <Placeholder title="AI notes" text="A short AI summary of this order and its emails will appear here in a future update." />}
+          {tab === 'ai' && <Placeholder title={tr("AI notes")} text="A short AI summary of this order and its emails will appear here in a future update." />}
         </Can>
 
         {tab === 'details' && (
@@ -435,22 +446,20 @@ export default function OrderPage() {
               {/* ---------- Machines ---------- */}
               <Can permission="order.section.machines">
                 <Section
-                  title={`Machines${can('order.machines.built') ? ` · ${order.machines_ready_count} of ${order.machines_count} built` : ''}${
-                    showCrating ? ` · ${machines.length - notCrated.length} of ${machines.length} crated` : ''
-                  }`}
+                  title={tr("Machines{{value}}{{value2}}", { value: can('order.machines.built') ? tr(" · {{machines_ready_count}} of {{machines_count}} built", { machines_ready_count: order.machines_ready_count, machines_count: order.machines_count }) : '', value2: showCrating ? tr(" · {{value}} of {{length}} crated", { value: machines.length - notCrated.length, length: machines.length }) : '' })}
                   aside={
                     <div className="flex flex-wrap items-center gap-2">
                       <OrderCrating orderId={order.id} crating={crating} onChanged={load} />
                       <Can permission="order.production_link">
                         {production ? (
                           <Link to={`/boards/${production.board}`} className={secondaryButtonClass}>
-                            Production Board
+                            {tr("Production Board")}
                           </Link>
                         ) : (
                           BOARD_STAGES.includes(order.stage) && (
                             <Can permission="production.create_board" level="edit">
                               <button type="button" className={secondaryButtonClass} onClick={createProductionBoard}>
-                                Create Production Board
+                                {tr("Create Production Board")}
                               </button>
                             </Can>
                           )
@@ -458,19 +467,19 @@ export default function OrderPage() {
                       </Can>
                       <Can permission="ce.issue" level="edit">
                         <button type="button" className={secondaryButtonClass} onClick={() => setCeFor([])}>
-                          CE Certificates
+                          {tr("CE Certificates")}
                         </button>
                       </Can>
                       <Can permission="order.machines.add" level="edit">
                         <button type="button" className={secondaryButtonClass} onClick={() => setMachineChange({ kind: 'add' })}>
-                          Add Machines
+                          {tr("Add Machines")}
                         </button>
                       </Can>
                     </div>
                   }
                 >
                   {machines.length === 0 ? (
-                    <p className="text-sm text-slate-500">This order has no machines.</p>
+                    <p className="text-sm text-slate-500">{tr("This order has no machines.")}</p>
                   ) : (
                     <ul className="divide-y divide-slate-100">
                       {machines.map((m) => (
@@ -485,7 +494,7 @@ export default function OrderPage() {
                                 onChange={() => toggleReady(m)}
                               />
                               <span className={m.ready ? 'font-medium text-green-700' : 'text-slate-500'}>
-                                {m.ready ? 'Built' : progress.has(m.id) && can('order.machines.progress') ? progressText(progress.get(m.id)!) : 'Not built'}
+                                {m.ready ? tr("Built") : progress.has(m.id) && can('order.machines.progress') ? progressText(progress.get(m.id)!) : tr("Not built")}
                               </span>
                             </label>
                           </Can>
@@ -493,30 +502,30 @@ export default function OrderPage() {
                             {(m.serial_number && <SerialNumber serial={m.serial_number} />) ??
                               (m.needs_serial ? (
                                 <span className="rounded bg-amber-100 px-1.5 py-0.5 font-sans text-xs font-medium text-amber-900">
-                                  Needs serial
+                                  {tr("Needs serial")}
                                 </span>
                               ) : (
-                                <span className="font-sans font-normal text-slate-400">No serial yet</span>
+                                <span className="font-sans font-normal text-slate-400">{tr("No serial yet")}</span>
                               ))}
                           </span>
                           <Can permission="machines">
                             <Link to={`/machines/${m.id}`} className="text-xs text-slate-600 underline">
-                              History
+                              {tr("History")}
                             </Link>
                           </Can>
                           <Can permission="ce.issue" level="edit">
                             {m.serial_number && (
                               <button type="button" className="text-xs text-slate-600 underline" onClick={() => setCeFor([m.id])}>
-                                CE Certificate
+                                {tr("CE Certificate")}
                               </button>
                             )}
                           </Can>
                           <span className="flex-1">{m.machine_types?.name}</span>
-                          {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">serial typed by hand</span>}
+                          {m.serial_manual && m.serial_number && <span className="text-xs text-slate-500">{tr("serial typed by hand")}</span>}
                           <Can permission="order.production_link">
                             {production?.cards[m.id] && (
                               <Link to={`/boards/${production.board}?card=${production.cards[m.id]}`} className="text-xs text-blue-700 underline">
-                                Production Card
+                                {tr("Production Card")}
                               </Link>
                             )}
                           </Can>
@@ -532,16 +541,16 @@ export default function OrderPage() {
                                         : 'text-slate-500'
                                   }
                                 >
-                                  Final check:{' '}
-                                  {checks.get(m.id) ? checklistStatusText(checks.get(m.id)!) : 'Not started'}
+                                  {tr("Final check:")}{' '}
+                                  {checks.get(m.id) ? checklistStatusText(checks.get(m.id)!) : tr("Not started")}
                                 </span>{' '}
                                 <Can permission="checklist">
                                   <Link to={`/checklists/${m.id}`} className="ml-1 inline-block rounded-md border border-slate-300 px-2 py-0.5 text-xs font-medium hover:bg-slate-50">
                                     {checks.get(m.id)?.status === 'signed'
-                                      ? 'View Final Check'
+                                      ? tr("View Final Check")
                                       : checks.get(m.id)?.status === 'in_progress'
-                                        ? 'Continue Final Check'
-                                        : 'Final Check'}
+                                        ? tr("Continue Final Check")
+                                        : tr("Final Check")}
                                   </Link>
                                 </Can>
                               </div>
@@ -574,7 +583,7 @@ export default function OrderPage() {
                                 })
                               }
                             >
-                              Remove
+                              {tr("Remove")}
                             </button>
                           </Can>
                         </li>
@@ -583,8 +592,7 @@ export default function OrderPage() {
                   )}
                   <Can permission="order.machines.built" level="edit">
                     <p className="mt-3 text-xs text-slate-500">
-                      Mark a machine as built when it is finished: its serial number is then fixed permanently. Serial numbers of machines not yet built
-                      can change when the order of the shop queue changes, or when machines are added or removed.
+                      {tr("Mark a machine as built when it is finished: its serial number is then fixed permanently. Serial numbers of machines not yet built can change when the order of the shop queue changes, or when machines are added or removed.")}
                     </p>
                   </Can>
                 </Section>
@@ -614,20 +622,20 @@ export default function OrderPage() {
               {/* ---------- Payments ---------- */}
               <Can permission="order.section.payments">
                 <Section
-                  title="Payments"
+                  title={tr("Payments")}
                   aside={
                     <Can permission="payments.action.add" level="edit">
                       <button type="button" className={secondaryButtonClass} onClick={() => setPaymentDialog({ payment: null })}>
-                        Add Payment
+                        {tr("Add Payment")}
                       </button>
                     </Can>
                   }
                 >
                   <dl className="mb-4 grid grid-cols-2 gap-4 rounded-md bg-slate-50 p-3 sm:grid-cols-4">
                     <Can permission="order.field.order_total">
-                      <Item label="Order total">{formatMoney(order.order_total, order.currency)}</Item>
+                      <Item label={tr("Order total")}>{formatMoney(order.order_total, order.currency)}</Item>
                     </Can>
-                    <Item label="Down payment">
+                    <Item label={tr("Down payment")}>
                       {order.down_payment_amount === null ? (
                         '—'
                       ) : (
@@ -639,9 +647,9 @@ export default function OrderPage() {
                         </>
                       )}
                     </Item>
-                    <Item label="Received">{formatMoney(order.total_paid, order.currency)}</Item>
+                    <Item label={tr("Received")}>{formatMoney(order.total_paid, order.currency)}</Item>
                     <Can permission="order.field.order_total">
-                      <Item label="Amount outstanding">
+                      <Item label={tr("Amount outstanding")}>
                         <span className={(order.amount_outstanding ?? 0) > 0 ? 'font-semibold' : 'text-green-700'}>
                           {formatMoney(order.amount_outstanding, order.currency)}
                         </span>
@@ -650,7 +658,7 @@ export default function OrderPage() {
                   </dl>
 
                   {payments.length === 0 ? (
-                    <p className="text-sm text-slate-500">No payments yet.</p>
+                    <p className="text-sm text-slate-500">{tr("No payments yet.")}</p>
                   ) : (
                     <ul className="divide-y divide-slate-100">
                       {payments.map((p) => (
@@ -663,12 +671,12 @@ export default function OrderPage() {
                             <div className="tabular-nums">{formatMoney(p.amount, p.currency)}</div>
                             <div className="space-y-0.5">
                               <div>
-                                <span className="text-slate-500">Due:</span> {showDate(p.due_date)} <PaymentStatus payment={p} />
+                                <span className="text-slate-500">{tr("Due:")}</span> {showDate(p.due_date)} <PaymentStatus payment={p} />
                               </div>
                               {p.received_amount > 0 && (
                                 <div className="text-xs text-slate-600">
-                                  Received {formatMoney(p.received_amount, p.currency)} on {showDate(p.received_date)}
-                                  {p.remaining > 0 && <> · {formatMoney(p.remaining, p.currency)} still owed</>}
+                                  {tr("Received")} {formatMoney(p.received_amount, p.currency)} {tr("on")} {showDate(p.received_date)}
+                                  {p.remaining > 0 && <> · {formatMoney(p.remaining, p.currency)} {tr("still owed")}</>}
                                 </div>
                               )}
                             </div>
@@ -677,19 +685,19 @@ export default function OrderPage() {
                             <Can permission="payments.action.mark_received" level="edit">
                               {p.remaining > 0 && (
                                 <button type="button" className={buttonClass} onClick={() => setReceiving(p)}>
-                                  Mark as Received
+                                  {tr("Mark as Received")}
                                 </button>
                               )}
                             </Can>
                             <Can permission="payments.action.edit" level="edit">
                               <button type="button" className={secondaryButtonClass} onClick={() => setPaymentDialog({ payment: p })}>
-                                Edit
+                                {tr("Edit")}
                               </button>
                             </Can>
                             <Can permission="payments.action.undo_received" level="edit">
                               {p.received_amount > 0 && (
                                 <button type="button" className="text-xs text-slate-600 underline" onClick={() => undoReceived(p)}>
-                                  Undo Receipt
+                                  {tr("Undo Receipt")}
                                 </button>
                               )}
                             </Can>
@@ -705,10 +713,10 @@ export default function OrderPage() {
             <div className="min-w-0 space-y-5 empty:hidden lg:flex-[1_1_0%]">
               {/* ---------- Shipping ---------- */}
               <Can permission="order.section.shipping">
-                <Section title="Shipping">
+                <Section title={tr("Shipping")}>
                   <dl className="grid grid-cols-2 gap-4">
                     <Can permission="order.field.expected_ship_date">
-                      <Item label={order.ship_date_revisions ? 'Revised ship date' : 'Expected ship date'}>
+                      <Item label={order.ship_date_revisions ? tr("Revised ship date") : tr("Expected ship date")}>
                         {showDate(order.expected_ship_date)}
                         <Can permission="order.ship_history">
                           <ShipDateHistory orderId={order.id} revisions={order.ship_date_revisions ?? 0} original={order.original_ship_date ?? null} />
@@ -716,45 +724,45 @@ export default function OrderPage() {
                       </Item>
                     </Can>
                     <Can permission="order.field.quote_number">
-                      <Item label="Quote #">{order.quote_number || '—'}</Item>
+                      <Item label={tr("Quote #")}>{order.quote_number || '—'}</Item>
                     </Can>
                     <Can permission="order.field.invoice_number">
-                      <Item label="Invoice #">{order.invoice_number || '—'}</Item>
+                      <Item label={tr("Invoice #")}>{order.invoice_number || '—'}</Item>
                     </Can>
                     <Can permission="order.field.actual_ship_date">
-                      <Item label="Actual ship date">{showDate(order.actual_ship_date)}</Item>
+                      <Item label={tr("Actual ship date")}>{showDate(order.actual_ship_date)}</Item>
                     </Can>
                     <Can permission="order.field.delay">
-                      <Item label="Delay">
+                      <Item label={tr("Delay")}>
                         {delay === null ? (
                           <span className="text-slate-400">—</span>
                         ) : (
                           <span className={`font-semibold ${delay > 0 ? 'text-red-700' : 'text-green-700'}`}>
                             {delay === 0
-                              ? 'On time'
+                              ? tr("On time")
                               : delay > 0
-                                ? `${delay} day${delay === 1 ? '' : 's'} late`
-                                : `${-delay} day${delay === -1 ? '' : 's'} early`}
+                                ? tr("{{delay}} day{{value}} late", { delay: delay, value: delay === 1 ? '' : 's' })
+                                : tr("{{value}} day{{value2}} early", { value: -delay, value2: delay === -1 ? '' : 's' })}
                           </span>
                         )}
                       </Item>
                     </Can>
                     <Can permission="order.field.voltage">
-                      <Item label="Voltage">
+                      <Item label={tr("Voltage")}>
                         <span className={order.voltage === 'Unknown' ? 'text-amber-700' : ''}>{order.voltage}</span>
                       </Item>
                     </Can>
                     <Can permission="order.field.delivery_equipment">
-                      <Item label="Delivery equipment">{order.delivery_equipment}</Item>
+                      <Item label={tr("Delivery equipment")}>{order.delivery_equipment}</Item>
                     </Can>
                     <Can permission="order.field.freight_type">
-                      <Item label="Freight type">{order.freight_type ?? '—'}</Item>
+                      <Item label={tr("Freight type")}>{order.freight_type ?? '—'}</Item>
                     </Can>
                     <Can permission="order.field.order_date">
-                      <Item label="Order date">{showDate(order.order_date)}</Item>
+                      <Item label={tr("Order date")}>{showDate(order.order_date)}</Item>
                     </Can>
                     <Can permission="order.field.currency">
-                      <Item label="Currency">{order.currency}</Item>
+                      <Item label={tr("Currency")}>{order.currency}</Item>
                     </Can>
                   </dl>
                 </Section>
@@ -762,7 +770,7 @@ export default function OrderPage() {
 
               {/* ---------- CE declarations of conformity ---------- */}
               <Can permission="ce">
-                <Section title="CE Certificates">
+                <Section title={tr("CE Certificates")}>
                   <CeRegister orderId={order.id} refreshKey={ceRefresh} />
                 </Section>
               </Can>
@@ -779,7 +787,7 @@ export default function OrderPage() {
 
               {/* ---------- Notes ---------- */}
               <Can permission="order.field.notes">
-                <Section title="Notes">
+                <Section title={tr("Notes")}>
                   <Can
                     permission="order.field.notes"
                     level="edit"
@@ -787,11 +795,11 @@ export default function OrderPage() {
                   >
                     <RichTextEditor
                       key={notesVersion}
-                      label="Notes"
+                      label={tr("Notes")}
                       value={order.notes}
                       disabled={!canEditNotes}
                       onChange={setNotes}
-                      placeholder="Anything worth recording about this order"
+                      placeholder={tr("Anything worth recording about this order")}
                       minHeight="7rem"
                     />
                     {notes !== (order.notes ?? '') && (
@@ -804,10 +812,10 @@ export default function OrderPage() {
                             setNotesVersion((v) => v + 1)
                           }}
                         >
-                          Undo
+                          {tr("Undo")}
                         </button>
                         <button type="button" className={buttonClass} onClick={saveNotes} disabled={savingNotes}>
-                          {savingNotes ? 'Saving…' : 'Save Notes'}
+                          {savingNotes ? tr("Saving…") : tr("Save Notes")}
                         </button>
                       </div>
                     )}
@@ -824,7 +832,7 @@ export default function OrderPage() {
             request={move}
             onClose={() => setMove(null)}
             onDone={(n) => {
-              toast.success(`Order ${order.order_code} moved.${n ? ` ${n} serial number${n === 1 ? '' : 's'} changed.` : ''}`)
+              toast.success(tr("Order {{order_code}} moved.{{value}}", { order_code: order.order_code, value: n ? tr(" {{n}} serial number{{value}} changed.", { n: n, value: n === 1 ? '' : 's' }) : '' }))
               setMove(null)
               load()
             }}
@@ -870,7 +878,7 @@ export default function OrderPage() {
             order={order}
             onClose={() => setEditing(false)}
             onDone={() => {
-              toast.success('Order saved.')
+              toast.success(tr("Order saved."))
               setEditing(false)
               load()
             }}
@@ -883,7 +891,7 @@ export default function OrderPage() {
             existingTypes={payments.map((p) => p.payment_type)}
             onClose={() => setPaymentDialog(null)}
             onDone={() => {
-              toast.success('Payment saved.')
+              toast.success(tr("Payment saved."))
               setPaymentDialog(null)
               load()
             }}
@@ -894,7 +902,7 @@ export default function OrderPage() {
             payment={receiving}
             onClose={() => setReceiving(null)}
             onDone={() => {
-              toast.success(`${receiving.payment_type} marked as received.`)
+              toast.success(tr("{{payment_type}} marked as received.", { payment_type: receiving.payment_type }))
               setReceiving(null)
               load()
             }}

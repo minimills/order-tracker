@@ -24,17 +24,42 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { Person } from '../../lib/boards'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 type Settings = { enabled: boolean; max_rules_per_user: number; max_actions_per_rule: number; runs_per_minute_rule: number; runs_per_minute_user: number; max_chain: number; keep_days: number }
 type Status = { cron: boolean; running: boolean; last_run?: string | null; settings: Settings; owner_removed: number }
 
 const LIMITS: { key: keyof Settings; label: string; hint: string }[] = [
-  { key: 'max_rules_per_user', label: 'Automations per person', hint: 'Archived automations do not count.' },
-  { key: 'max_actions_per_rule', label: 'Actions per automation', hint: 'The most “Then” steps in one automation.' },
-  { key: 'runs_per_minute_rule', label: 'Runs per minute, per automation', hint: 'More runs are refused and logged; the owner is told.' },
-  { key: 'runs_per_minute_user', label: 'Runs per minute, per person', hint: 'All automations of one owner together.' },
-  { key: 'max_chain', label: 'Automations that may follow one another', hint: 'A change made by an automation may start other automations, up to this many in a row. An automation never starts itself again.' },
-  { key: 'keep_days', label: 'Keep the run log for (days)', hint: 'Older lines are removed automatically.' },
+  { key: 'max_rules_per_user', get label() {
+    return tr("Automations per person")
+  }, get hint() {
+    return tr("Archived automations do not count.")
+  } },
+  { key: 'max_actions_per_rule', get label() {
+    return tr("Actions per automation")
+  }, get hint() {
+    return tr("The most “Then” steps in one automation.")
+  } },
+  { key: 'runs_per_minute_rule', get label() {
+    return tr("Runs per minute, per automation")
+  }, get hint() {
+    return tr("More runs are refused and logged; the owner is told.")
+  } },
+  { key: 'runs_per_minute_user', get label() {
+    return tr("Runs per minute, per person")
+  }, get hint() {
+    return tr("All automations of one owner together.")
+  } },
+  { key: 'max_chain', get label() {
+    return tr("Automations that may follow one another")
+  }, get hint() {
+    return tr("A change made by an automation may start other automations, up to this many in a row. An automation never starts itself again.")
+  } },
+  { key: 'keep_days', get label() {
+    return tr("Keep the run log for (days)")
+  }, get hint() {
+    return tr("Older lines are removed automatically.")
+  } },
 ]
 
 /** Admin → Automations: everyone's automations, limits, removed owners, templates, the minute job. */
@@ -102,7 +127,7 @@ export default function AutomationsAdminPage() {
   async function toggle(r: AutomationRow, on: boolean) {
     try {
       await setAutomationEnabled(r.id, on)
-      toast.success(on ? `“${r.name}” is on.` : `“${r.name}” is paused. Only an administrator can turn it on again.`)
+      toast.success(on ? tr("“{{name}}” is on.", { name: r.name }) : tr("“{{name}}” is paused. Only an administrator can turn it on again.", { name: r.name }))
       load()
     } catch (e) {
       toast.error(friendlyError(e as { message?: string }))
@@ -111,17 +136,16 @@ export default function AutomationsAdminPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Automations">
-        Everyone’s automations. Each automation runs with its owner’s permissions, checked every time it runs. Pausing someone else’s automation here
-        means only an administrator can turn it on again.
+      <AdminPageHeader title={tr("Automations")}>
+        {tr("Everyone’s automations. Each automation runs with its owner’s permissions, checked every time it runs. Pausing someone else’s automation here means only an administrator can turn it on again.")}
       </AdminPageHeader>
 
-      <Section title="Limits" aside={status && <span className="text-sm text-slate-500">Every minute: {status.running ? 'running' : 'not running'}</span>}>
+      <Section title={tr("Limits")} aside={status && <span className="text-sm text-slate-500">{tr("Every minute:")} {status.running ? tr("running") : tr("not running")}</span>}>
         {form && (
           <div className="space-y-4" data-setting="au-limits">
             <label className="flex items-center gap-3 text-sm">
-              <Switch checked={form.enabled} onChange={(on) => setForm({ ...form, enabled: on })} label="All automations on or off" />
-              {form.enabled ? 'Automations are running' : 'All automations are stopped (nothing runs until this is turned on again)'}
+              <Switch checked={form.enabled} onChange={(on) => setForm({ ...form, enabled: on })} label={tr("All automations on or off")} />
+              {form.enabled ? tr("Automations are running") : tr("All automations are stopped (nothing runs until this is turned on again)")}
             </label>
             <div className="grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(min(100%,16rem),1fr))]">
               {LIMITS.map((l) => (
@@ -149,26 +173,26 @@ export default function AutomationsAdminPage() {
               {status?.cron &&
                 (status.running ? (
                   <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => call('stop_automation_schedule', {}, 'Scheduled automations turned off.')}>
-                    Turn Off Scheduled Automations
+                    {tr("Turn Off Scheduled Automations")}
                   </button>
                 ) : (
                   <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => call('start_automation_schedule', {}, 'Scheduled automations turned on.')}>
-                    Turn On Scheduled Automations
+                    {tr("Turn On Scheduled Automations")}
                   </button>
                 ))}
             </div>
             <p className="text-xs text-slate-500">
-              Schedules, approaching or passed due dates and payment reminders are checked every minute{status?.last_run ? ` (last checked ${when(status.last_run)})` : ''}.
-              {!status?.cron && ' Turn on the pg_cron extension in Supabase → Database → Extensions first.'}
+              {tr("Schedules, approaching or passed due dates and payment reminders are checked every minute")}{status?.last_run ? tr(" (last checked {{when}})", { when: when(status.last_run) }) : ''}.
+              {!status?.cron && tr(" Turn on the pg_cron extension in Supabase → Database → Extensions first.")}
             </p>
           </div>
         )}
       </Section>
 
-      <Section title="Automations of People Who Were Removed">
+      <Section title={tr("Automations of People Who Were Removed")}>
         <div data-setting="au-removed">
           {removed.length === 0 ? (
-            <p className="text-sm text-slate-500">None. When a person is removed, their automations are paused and listed here.</p>
+            <p className="text-sm text-slate-500">{tr("None. When a person is removed, their automations are paused and listed here.")}</p>
           ) : (
             <ul className="space-y-2">
               {removed.map((r) => (
@@ -177,10 +201,10 @@ export default function AutomationsAdminPage() {
                     <Link to={`/automations/${r.id}`} className="font-medium hover:underline">
                       {r.name}
                     </Link>{' '}
-                    <span className="text-slate-500">(was {r.owner_name ?? r.removed_owner_email})</span>
+                    <span className="text-slate-500">{tr("(was")} {r.owner_name ?? r.removed_owner_email})</span>
                   </span>
-                  <select aria-label={`New owner of ${r.name}`} className={`${narrowInputClass} w-56`} value={reassign[r.id] ?? ''} onChange={(e) => setReassign({ ...reassign, [r.id]: e.target.value })}>
-                    <option value="">Give to…</option>
+                  <select aria-label={tr("New owner of {{name}}", { name: r.name })} className={`${narrowInputClass} w-56`} value={reassign[r.id] ?? ''} onChange={(e) => setReassign({ ...reassign, [r.id]: e.target.value })}>
+                    <option value="">{tr("Give to…")}</option>
                     {people.map((p) => (
                       <option key={p.email} value={p.email}>
                         {p.name}
@@ -193,13 +217,13 @@ export default function AutomationsAdminPage() {
                     disabled={busy || !reassign[r.id]}
                     onClick={() => call('admin_reassign_automation', { p_id: r.id, p_email: reassign[r.id] }, 'Automation given to the new owner (turned off until they check it).')}
                   >
-                    Give to Another Person
+                    {tr("Give to Another Person")}
                   </button>
                   <button
                     type="button"
                     className={secondaryButtonClass}
                     disabled={busy}
-                    onClick={async () => (await confirmAction(`Archive “${r.name}”?`, { confirmLabel: ACTION.archive })) && call('archive_automation', { p_id: r.id, p_archived: true }, 'Automation archived.')}
+                    onClick={async () => (await confirmAction(tr("Archive “{{name}}”?", { name: r.name }), { confirmLabel: ACTION.archive })) && call('archive_automation', { p_id: r.id, p_archived: true }, 'Automation archived.')}
                   >
                     {ACTION.archive}
                   </button>
@@ -210,38 +234,38 @@ export default function AutomationsAdminPage() {
         </div>
       </Section>
 
-      <Section title="All Automations" aside={<input aria-label="Search automations" className={`${inputClass} max-w-xs`} placeholder="Search name, owner or board" value={q} onChange={(e) => setQ(e.target.value)} />}>
+      <Section title={tr("All Automations")} aside={<input aria-label={tr("Search automations")} className={`${inputClass} max-w-xs`} placeholder={tr("Search name, owner or board")} value={q} onChange={(e) => setQ(e.target.value)} />}>
         {shown.length === 0 ? (
-          <p className="text-sm text-slate-500">No automations yet.</p>
+          <p className="text-sm text-slate-500">{tr("No automations yet.")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[44rem] text-left text-sm">
               <thead className="border-b border-slate-200 text-xs uppercase text-slate-500">
                 <tr>
-                  <th className="py-2 pr-3">On</th>
-                  <th className="py-2 pr-3">Automation</th>
-                  <th className="py-2 pr-3">Owner</th>
-                  <th className="py-2 pr-3">Last run</th>
-                  <th className="py-2 pr-3">Runs</th>
+                  <th className="py-2 pr-3">{tr("On")}</th>
+                  <th className="py-2 pr-3">{tr("Automation")}</th>
+                  <th className="py-2 pr-3">{tr("Owner")}</th>
+                  <th className="py-2 pr-3">{tr("Last run")}</th>
+                  <th className="py-2 pr-3">{tr("Runs")}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {shown.map((r) => (
                   <tr key={r.id} className={r.archived ? 'opacity-60' : ''}>
                     <td className="py-2 pr-3 align-top">
-                      {!r.archived && r.owner_email && <Switch checked={r.enabled} onChange={(on) => toggle(r, on)} label={`${r.name}: on or off`} />}
+                      {!r.archived && r.owner_email && <Switch checked={r.enabled} onChange={(on) => toggle(r, on)} label={tr("{{name}}: on or off", { name: r.name })} />}
                     </td>
                     <td className="py-2 pr-3 align-top">
                       <Link to={`/automations/${r.id}`} className="font-medium hover:underline">
                         {r.name}
                       </Link>
-                      {r.scope === 'board' && <span className="ml-2 text-xs text-blue-800">Board: {r.board_name}</span>}
-                      {r.paused_reason === 'admin' && <span className="ml-2 text-xs text-amber-800">Paused by an administrator</span>}
-                      {r.archived && <span className="ml-2 text-xs text-slate-500">Archived</span>}
+                      {r.scope === 'board' && <span className="ml-2 text-xs text-blue-800">{tr("Board:")} {r.board_name}</span>}
+                      {r.paused_reason === 'admin' && <span className="ml-2 text-xs text-amber-800">{tr("Paused by an administrator")}</span>}
+                      {r.archived && <span className="ml-2 text-xs text-slate-500">{tr("Archived")}</span>}
                       <p className="max-w-xl text-xs text-slate-600">{describeRule(r, cat, choices)}</p>
                     </td>
                     <td className="py-2 pr-3 align-top">{r.owner_name ?? r.removed_owner_email ?? '—'}</td>
-                    <td className="py-2 pr-3 align-top">{r.last_run_at ? `${when(r.last_run_at)} · ${RUN_STATUS[r.last_status ?? '']?.text ?? r.last_status}` : 'Not run yet'}</td>
+                    <td className="py-2 pr-3 align-top">{r.last_run_at ? `${when(r.last_run_at)} · ${RUN_STATUS[r.last_status ?? '']?.text ?? r.last_status}` : tr("Not run yet")}</td>
                     <td className="py-2 pr-3 align-top">{r.run_count}</td>
                   </tr>
                 ))}
@@ -251,9 +275,9 @@ export default function AutomationsAdminPage() {
         )}
       </Section>
 
-      <Section title="Templates">
+      <Section title={tr("Templates")}>
         <div data-setting="au-templates" className="space-y-3">
-          <p className="text-sm text-slate-600">The examples people can start from (each person only sees the ones they have access to).</p>
+          <p className="text-sm text-slate-600">{tr("The examples people can start from (each person only sees the ones they have access to).")}</p>
           <ul className="space-y-2">
             {templates.map((t) => (
               <li key={t.id} className={`flex flex-wrap items-start gap-2 rounded-md border border-slate-200 p-3 text-sm ${t.archived ? 'opacity-60' : ''}`}>
@@ -273,13 +297,13 @@ export default function AutomationsAdminPage() {
             ))}
           </ul>
           <div className="flex flex-wrap gap-2">
-            <select aria-label="Automation to save as a template" className={`${narrowInputClass} min-w-64`} value={tplFrom} onChange={(e) => setTplFrom(e.target.value)}>
-              <option value="">Choose an automation…</option>
+            <select aria-label={tr("Automation to save as a template")} className={`${narrowInputClass} min-w-64`} value={tplFrom} onChange={(e) => setTplFrom(e.target.value)}>
+              <option value="">{tr("Choose an automation…")}</option>
               {rows
                 .filter((r) => !r.archived)
                 .map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.name} ({r.owner_name ?? 'no owner'})
+                    {r.name} ({r.owner_name ?? tr("no owner")})
                   </option>
                 ))}
             </select>
@@ -294,10 +318,10 @@ export default function AutomationsAdminPage() {
                 if (await call('save_automation_template', { p: body }, `“${r.name}” saved as a template.`)) setTplFrom('')
               }}
             >
-              Save as Template
+              {tr("Save as Template")}
             </button>
           </div>
-          <p className="text-xs text-slate-500">People, groups and boards chosen in that automation are kept in the template.</p>
+          <p className="text-xs text-slate-500">{tr("People, groups and boards chosen in that automation are kept in the template.")}</p>
         </div>
       </Section>
     </div>

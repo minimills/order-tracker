@@ -6,6 +6,7 @@ import Can from '../Can'
 import SerialNumber from '../SerialNumber'
 import { inputClass, narrowInputClass } from '../form'
 import Icon from '../Icon'
+import { tr } from '../../i18n'
 
 type Kind = 'order' | 'customer' | 'machine' | 'text'
 type Hit = { id: string; text: string; serial?: string | null }
@@ -80,7 +81,7 @@ export default function LinkPicker({ card, editable, busy, onSave }: { card: Car
       <span className="flex-1">{label}</span>
       {editable && (
         <Can permission="boards.card.link" level="edit">
-          <button type="button" aria-label="Remove link" className="text-xs text-slate-400 hover:text-red-700" disabled={busy} onClick={() => clear(k)}>
+          <button type="button" aria-label={tr("Remove link")} className="text-xs text-slate-400 hover:text-red-700" disabled={busy} onClick={() => clear(k)}>
             ✕
           </button>
         </Can>
@@ -91,24 +92,24 @@ export default function LinkPicker({ card, editable, busy, onSave }: { card: Car
   return (
     <div className="space-y-2">
       <ul className="space-y-1">
-        {card.order_id && row('order', <><Icon name="box" /> Order {current.order ?? '…'}</>)}
+        {card.order_id && row('order', <><Icon name="box" /> {tr("Order")} {current.order ?? '…'}</>)}
         {card.customer_id && row('customer', <><Icon name="user" /> {current.customer ?? '…'}</>)}
         {card.machine_id &&
           row(
             'machine',
             <>
-              <Icon name="cog" /> {current.machineType ?? 'Machine'} {current.machine && <SerialNumber serial={current.machine} />}
+              <Icon name="cog" /> {current.machineType ?? tr("Machine")} {current.machine && <SerialNumber serial={current.machine} />}
             </>,
           )}
         {card.link_text && row('text', <><Icon name="pencil" /> {card.link_text}</>)}
-        {none && <li className="text-xs text-slate-500">Not linked.</li>}
+        {none && <li className="text-xs text-slate-500">{tr("Not linked.")}</li>}
       </ul>
       {editable && (
         <Can permission="boards.card.link" level="edit">
           <div className="space-y-1">
             <div className="flex gap-1">
               <select
-                aria-label="Link to"
+                aria-label={tr("Link to")}
                 className={`${narrowInputClass} w-28 py-1`}
                 value={kind}
                 onChange={(e) => {
@@ -117,16 +118,16 @@ export default function LinkPicker({ card, editable, busy, onSave }: { card: Car
                   setHits(null)
                 }}
               >
-                <option value="order">Order</option>
-                <option value="customer">Customer</option>
-                <option value="machine">Machine</option>
-                <option value="text">Free text</option>
+                <option value="order">{tr("Order")}</option>
+                <option value="customer">{tr("Customer")}</option>
+                <option value="machine">{tr("Machine")}</option>
+                <option value="text">{tr("Free text")}</option>
               </select>
               {kind === 'text' ? (
                 <input
-                  aria-label="Link text"
+                  aria-label={tr("Link text")}
                   className={`${inputClass} py-1`}
-                  placeholder="For example: old carder at the fair"
+                  placeholder={tr("For example: old carder at the fair")}
                   maxLength={200}
                   value={freeText}
                   onChange={(e) => setFreeText(e.target.value)}
@@ -139,9 +140,9 @@ export default function LinkPicker({ card, editable, busy, onSave }: { card: Car
                 />
               ) : (
                 <input
-                  aria-label="Search the list"
+                  aria-label={tr("Search the list")}
                   className={`${inputClass} py-1`}
-                  placeholder={kind === 'order' ? 'Search order # or customer' : kind === 'customer' ? 'Search name or company' : 'Search serial or machine'}
+                  placeholder={kind === 'order' ? tr("Search order # or customer") : kind === 'customer' ? tr("Search name or company") : tr("Search serial or machine")}
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
                 />
@@ -157,12 +158,12 @@ export default function LinkPicker({ card, editable, busy, onSave }: { card: Car
                   setFreeText('')
                 }}
               >
-                Save Changes
+                {tr("Save Changes")}
               </button>
             ) : (
               <ul className="max-h-48 overflow-y-auto rounded border border-slate-200 text-sm">
-                {hits === null && <li className="px-2 py-1 text-xs text-slate-500">Loading…</li>}
-                {hits?.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">No matches found. Choose “Free text” to type a link.</li>}
+                {hits === null && <li className="px-2 py-1 text-xs text-slate-500">{tr("Loading…")}</li>}
+                {hits?.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">{tr("No matches found. Choose “Free text” to type a link.")}</li>}
                 {hits?.map((h) => (
                   <li key={h.id}>
                     <button

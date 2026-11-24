@@ -25,6 +25,7 @@ import MoveCopyDialog from '../components/boards/MoveCopyDialog'
 import ReopenBoardDialog from '../components/boards/ReopenBoardDialog'
 import { boardNumberText, type Stage } from '../lib/boards'
 import { showDate } from '../lib/dates'
+import { tr } from '../i18n'
 
 type Drop = { stageId: string; cardId: string | null; place: 'before' | 'after' }
 type Dialog = 'share' | 'notify' | 'settings' | 'template' | 'reopen' | null
@@ -40,7 +41,9 @@ export default function BoardPage() {
   const me = session?.user.email?.toLowerCase() ?? ''
   const today = todayISO()
   const [data, setData] = useState<BoardData | null>(null)
-  useBreadcrumbs(data?.board && [{ label: 'Boards', to: '/boards' }, { label: data.board.name }])
+  useBreadcrumbs(data?.board && [{ get label() {
+    return tr("Boards")
+  }, to: '/boards' }, { label: data.board.name }])
   const [error, setError] = useState<string | null>(null)
   const [links, setLinks] = useState<Record<string, string>>({})
   const [dialog, setDialog] = useState<Dialog>(null)
@@ -63,7 +66,7 @@ export default function BoardPage() {
     try {
       const d = await loadBoard(id, { comments: seesComments, timing: seesTiming })
       if (!d.board) {
-        setError('This board could not be found, or it has not been shared with you.')
+        setError(tr("This board could not be found, or it has not been shared with you."))
         return
       }
       setData(d)
@@ -162,7 +165,7 @@ export default function BoardPage() {
         <div className="mx-auto max-w-3xl">
           <p className="text-slate-700">{error}</p>
           <Link to="/boards" className="mt-3 inline-block text-sm underline">
-            ← Boards
+            {tr("← Boards")}
           </Link>
         </div>
       </Can>
@@ -170,7 +173,7 @@ export default function BoardPage() {
   if (!data?.board)
     return (
       <Can permission="boards">
-        <p className="p-8 text-center text-slate-500">Loading…</p>
+        <p className="p-8 text-center text-slate-500">{tr("Loading…")}</p>
       </Can>
     )
   const board = data.board
@@ -233,14 +236,16 @@ export default function BoardPage() {
     if (
       !board.archived &&
       !(await confirmAction(
-        `Archive the board “${board.name}”? It is removed from the Boards page and can be restored later. While archived, only its creator and the people who can open it now will see it.`,
-        { confirmLabel: 'Archive' },
+        tr("Archive the board “{{name}}”? It is removed from the Boards page and can be restored later. While archived, only its creator and the people who can open it now will see it.", { name: board.name }),
+        { get confirmLabel() {
+    return tr("Archive")
+  } },
       ))
     )
       return
     const { error: err } = await supabase.from('boards').update({ archived: !board.archived }).eq('id', board.id)
     if (err) return toast.error(friendlyError(err))
-    toast.success(board.archived ? 'Board restored.' : 'Board archived.')
+    toast.success(board.archived ? tr("Board restored.") : tr("Board archived."))
     load()
   }
 
@@ -248,14 +253,16 @@ export default function BoardPage() {
     if (!supabase) return
     if (
       !(await confirmAction(
-        `Close the board “${board.name}”? Everything on it is kept as it is. It leaves the Boards page, can still be opened from “Closed Boards”, and cannot be changed until it is reopened.`,
-        { confirmLabel: 'Close Board' },
+        tr("Close the board “{{name}}”? Everything on it is kept as it is. It leaves the Boards page, can still be opened from “Closed Boards”, and cannot be changed until it is reopened.", { name: board.name }),
+        { get confirmLabel() {
+    return tr("Close Board")
+  } },
       ))
     )
       return
     const { error: err } = await supabase.rpc('close_board', { p_board: board.id })
     if (err) return toast.error(friendlyError(err))
-    toast.success('Board closed.')
+    toast.success(tr("Board closed."))
     load()
   }
 
@@ -263,11 +270,13 @@ export default function BoardPage() {
     if (!supabase) return
     setStageMenu(null)
     const n = data!.cards.filter((c) => c.stage_id === stage.id).length
-    if (!(await confirmAction(`Archive all ${n} card${n === 1 ? '' : 's'} in “${stage.name}”? Machine cards stay (they follow their machine). Archived cards can be restored from the card.`, { confirmLabel: 'Archive All Cards', danger: true }))) return
+    if (!(await confirmAction(tr("Archive all {{n}} card{{value}} in “{{name}}”? Machine cards stay (they follow their machine). Archived cards can be restored from the card.", { n: n, value: n === 1 ? '' : 's', name: stage.name }), { get confirmLabel() {
+    return tr("Archive All Cards")
+  }, danger: true }))) return
     const { data: res, error: err } = await supabase.rpc('archive_stage_cards', { p_stage: stage.id })
     if (err) return toast.error(friendlyError(err))
     const r = (res ?? { done: 0, skipped: 0 }) as { done: number; skipped: number }
-    toast.success(`${r.done} card${r.done === 1 ? '' : 's'} archived.${r.skipped ? ` ${r.skipped} machine card${r.skipped === 1 ? '' : 's'} stayed.` : ''}`)
+    toast.success(tr("{{done}} card{{value}} archived.{{value2}}", { done: r.done, value: r.done === 1 ? '' : 's', value2: r.skipped ? tr(" {{skipped}} machine card{{value}} stayed.", { skipped: r.skipped, value: r.skipped === 1 ? '' : 's' }) : '' }))
     load()
   }
 
@@ -278,20 +287,20 @@ export default function BoardPage() {
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
             <Link to="/boards" className="text-sm text-slate-600 underline">
-              ← Boards
+              {tr("← Boards")}
             </Link>
             <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
               <span className="inline-block h-4 w-4 shrink-0 rounded" style={{ backgroundColor: board.colour }} aria-hidden />
               {board.name}
-              {board.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">Archived</span>}
-              {closed && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">Closed</span>}
+              {board.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">{tr("Archived")}</span>}
+              {closed && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs font-medium text-slate-700">{tr("Closed")}</span>}
             </h1>
             {board.board_number ? <p className="text-xs text-slate-500">{boardNumberText(board)}</p> : null}
             {board.description && <p className="text-sm text-slate-600">{board.description}</p>}
             {board.purpose === 'production' && board.order_id && (
               <Can permission="order.page">
                 <Link to={`/orders/${board.order_id}`} className="text-sm text-blue-700 underline">
-                  Open the Order
+                  {tr("Open the Order")}
                 </Link>
               </Can>
             )}
@@ -303,14 +312,14 @@ export default function BoardPage() {
             {level >= 3 && !closed && (
               <Can permission="boards.close" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={closeBoard}>
-                  Close Board
+                  {tr("Close Board")}
                 </button>
               </Can>
             )}
             {closed && (
               <Can permission="boards.reopen" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={() => setDialog('reopen')}>
-                  Reopen Board
+                  {tr("Reopen Board")}
                 </button>
               </Can>
             )}
@@ -318,34 +327,34 @@ export default function BoardPage() {
               <>
                 <Can permission="boards.share" level="edit">
                   <button type="button" className={secondaryButtonClass} onClick={() => setDialog('share')}>
-                    <Icon name="share" /> Share
+                    <Icon name="share" /> {tr("Share")}
                   </button>
                 </Can>
                 <Can permission="boards.notifications">
                   <button type="button" className={secondaryButtonClass} onClick={() => setDialog('notify')}>
-                    <Icon name="bell" /> Notifications
+                    <Icon name="bell" /> {tr("Notifications")}
                   </button>
                 </Can>
                 <Can permission="boards.manage" level="edit">
                   <button type="button" className={secondaryButtonClass} onClick={() => setDialog('settings')}>
-                    <Icon name="settings" /> Stages and Labels
+                    <Icon name="settings" /> {tr("Stages and Labels")}
                   </button>
                 </Can>
                 <Can permission="boards.archive" level="edit">
                   <button type="button" className={secondaryButtonClass} onClick={archiveBoard}>
-                    {board.archived ? 'Restore Board' : 'Archive Board'}
+                    {board.archived ? tr("Restore Board") : tr("Archive Board")}
                   </button>
                 </Can>
               </>
             )}
             <Can permission="automations">
               <Link to={`/automations?tab=board&board=${board.id}`} className={secondaryButtonClass}>
-                <Icon name="bolt" /> Automations
+                <Icon name="bolt" /> {tr("Automations")}
               </Link>
             </Can>
             <Can permission="admin.board_templates" level="edit">
               <button type="button" className={secondaryButtonClass} onClick={() => setDialog('template')}>
-                Save as Template
+                {tr("Save as Template")}
               </button>
             </Can>
           </div>
@@ -357,18 +366,17 @@ export default function BoardPage() {
 
         {closed && (
           <p className="rounded-md border border-slate-300 bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            This board was closed{board.closed_at ? ` on ${showDate(board.closed_at.slice(0, 10))}` : ''}
-            {board.close_reason === 'shipped' ? ' when its order was shipped' : board.closed_by_name ? ` by ${board.closed_by_name}` : ''}. Everything is kept as it was; it can be
-            viewed but not changed until it is reopened.
+            {tr("This board was closed")}{board.closed_at ? tr(" on {{showDate}}", { showDate: showDate(board.closed_at.slice(0, 10)) }) : ''}
+            {board.close_reason === 'shipped' ? tr(" when its order was shipped") : board.closed_by_name ? tr(" by {{closed_by_name}}", { closed_by_name: board.closed_by_name }) : ''}{tr(". Everything is kept as it was; it can be viewed but not changed until it is reopened.")}
           </p>
         )}
 
         <Can permission="boards.filter">
           <div className="flex flex-wrap gap-2">
-            <input aria-label="Search cards" className={`${inputClass} max-w-xs`} placeholder="Search cards" value={q} onChange={(e) => setQ(e.target.value)} />
+            <input aria-label={tr("Search cards")} className={`${inputClass} max-w-xs`} placeholder={tr("Search cards")} value={q} onChange={(e) => setQ(e.target.value)} />
             <Can permission="boards.card.labels">
-              <select aria-label="Label" className={`${narrowInputClass} w-44`} value={labelFilter} onChange={(e) => setLabelFilter(e.target.value)}>
-                <option value="">All Labels</option>
+              <select aria-label={tr("Label")} className={`${narrowInputClass} w-44`} value={labelFilter} onChange={(e) => setLabelFilter(e.target.value)}>
+                <option value="">{tr("All Labels")}</option>
                 {data.labels
                   .filter((l) => !l.archived)
                   .map((l) => (
@@ -379,9 +387,9 @@ export default function BoardPage() {
               </select>
             </Can>
             <Can permission="boards.card.assignees">
-              <select aria-label="Person" className={`${narrowInputClass} w-48`} value={personFilter} onChange={(e) => setPersonFilter(e.target.value)}>
-                <option value="">Everyone</option>
-                <option value="me">My Cards</option>
+              <select aria-label={tr("Person")} className={`${narrowInputClass} w-48`} value={personFilter} onChange={(e) => setPersonFilter(e.target.value)}>
+                <option value="">{tr("Everyone")}</option>
+                <option value="me">{tr("My Cards")}</option>
                 {data.people.map((p) => (
                   <option key={p.email} value={p.email}>
                     {p.name}
@@ -394,8 +402,8 @@ export default function BoardPage() {
 
         {stages.length === 0 && (
           <p className="rounded-md border border-dashed border-slate-300 p-6 text-center text-sm text-slate-600">
-            This board has no stages yet.
-            {level >= 3 && can('boards.manage', 'edit') && ' Use “Stages and Labels” to add stages (for example To do, Doing, Done).'}
+            {tr("This board has no stages yet.")}
+            {level >= 3 && can('boards.manage', 'edit') && tr(" Use “Stages and Labels” to add stages (for example To do, Doing, Done).")}
           </p>
         )}
 
@@ -409,8 +417,8 @@ export default function BoardPage() {
                     type="button"
                     className="flex w-11 shrink-0 flex-col items-center gap-2 rounded-lg bg-slate-100 py-3 text-sm font-semibold hover:bg-slate-200"
                     onClick={() => toggleCollapsed(stage.id)}
-                    aria-label={`Expand ${stage.name} (${cards.length} cards)`}
-                    title={`Expand ${stage.name}`}
+                    aria-label={tr("Expand {{name}} ({{length}} cards)", { name: stage.name, length: cards.length })}
+                    title={tr("Expand {{name}}", { name: stage.name })}
                   >
                     <span className="rounded-full bg-white px-2 text-xs font-normal text-slate-600">{cards.length}</span>
                     <span className="[writing-mode:vertical-rl]">{stage.name}</span>
@@ -447,7 +455,7 @@ export default function BoardPage() {
                         <button
                           type="button"
                           className="rounded px-1.5 text-base leading-none text-slate-600 hover:bg-slate-200"
-                          aria-label={`Stage menu for ${stage.name}`}
+                          aria-label={tr("Stage menu for {{name}}", { name: stage.name })}
                           aria-expanded={stageMenu === stage.id}
                           onClick={() => setStageMenu(stageMenu === stage.id ? null : stage.id)}
                           data-print="hide"
@@ -458,27 +466,27 @@ export default function BoardPage() {
                           <span role="menu" className="absolute right-0 z-20 mt-1 flex w-60 flex-col rounded-md border border-slate-200 bg-white py-1 text-left text-sm font-normal shadow-lg">
                             <Can permission="boards.stage.collapse">
                               <button type="button" role="menuitem" className="px-3 py-1.5 text-left hover:bg-slate-50" onClick={() => toggleCollapsed(stage.id)}>
-                                Collapse Stage
+                                {tr("Collapse Stage")}
                               </button>
                             </Can>
                             {mayStageEdit && (
                               <Can permission="boards.stage.move_all" level="edit">
                                 <button type="button" role="menuitem" className="px-3 py-1.5 text-left hover:bg-slate-50 disabled:text-slate-400" disabled={cards.length === 0} onClick={() => { setStageMenu(null); setStageAction({ stage, mode: 'move' }) }}>
-                                  Move All Cards To…
+                                  {tr("Move All Cards To…")}
                                 </button>
                               </Can>
                             )}
                             {level >= 1 && (
                               <Can permission="boards.stage.move_all" level="edit">
                                 <button type="button" role="menuitem" className="px-3 py-1.5 text-left hover:bg-slate-50 disabled:text-slate-400" disabled={cards.length === 0} onClick={() => { setStageMenu(null); setStageAction({ stage, mode: 'copy' }) }}>
-                                  Copy All Cards To…
+                                  {tr("Copy All Cards To…")}
                                 </button>
                               </Can>
                             )}
                             {mayStageEdit && (
                               <Can permission="boards.stage.archive_all" level="edit">
                                 <button type="button" role="menuitem" className="px-3 py-1.5 text-left text-red-700 hover:bg-red-50 disabled:text-slate-400" disabled={cards.length === 0} onClick={() => archiveAll(stage)}>
-                                  Archive All Cards in This Stage
+                                  {tr("Archive All Cards in This Stage")}
                                 </button>
                               </Can>
                             )}
@@ -529,9 +537,9 @@ export default function BoardPage() {
                       {adding === stage.id ? (
                         <form onSubmit={(e) => addCard(e, stage.id)} className="space-y-1.5">
                           <input
-                            aria-label={`New card in ${stage.name}`}
+                            aria-label={tr("New card in {{name}}", { name: stage.name })}
                             className={inputClass}
-                            placeholder="Enter a card title, then press Enter"
+                            placeholder={tr("Enter a card title, then press Enter")}
                             value={newTitle}
                             autoFocus
                             onChange={(e) => setNewTitle(e.target.value)}
@@ -539,10 +547,10 @@ export default function BoardPage() {
                           />
                           <div className="flex gap-2">
                             <button type="submit" className="rounded-md bg-slate-900 px-3 py-1 text-xs font-medium text-white">
-                              Add Card
+                              {tr("Add Card")}
                             </button>
                             <button type="button" className="text-xs text-slate-600 underline" onClick={() => setAdding(null)}>
-                              Cancel
+                              {tr("Cancel")}
                             </button>
                           </div>
                         </form>
@@ -555,7 +563,7 @@ export default function BoardPage() {
                             setNewTitle('')
                           }}
                         >
-                          Add Card
+                          {tr("Add Card")}
                         </button>
                       )}
                     </div>
@@ -568,7 +576,7 @@ export default function BoardPage() {
         {canMove && (
           <Can permission="boards.card.move" level="edit">
             <p className="text-xs text-slate-500">
-              Drag cards between stages or up and down. A card can move to the next stage even when its checklist is not complete.
+              {tr("Drag cards between stages or up and down. A card can move to the next stage even when its checklist is not complete.")}
             </p>
           </Can>
         )}

@@ -5,6 +5,7 @@ import { friendlyError } from '../../lib/format'
 import { STEPS, stepTime, type StepKey, type StepStat, type TypeBuild } from '../../lib/schedule'
 import { supabase } from '../../lib/supabase'
 import { inputClass, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 type Row = TypeBuild & { archived: boolean }
 type Draft = Record<StepKey, string>
@@ -47,14 +48,14 @@ export default function BuildTimesSection() {
       const raw = d[s.key].trim()
       if (raw === '') continue
       const n = Number(raw)
-      if (!Number.isFinite(n) || n < 0 || n > 365) return toast.error(`${t.name}: ${s.label} must be between 0 and 365 days.`)
+      if (!Number.isFinite(n) || n < 0 || n > 365) return toast.error(tr("{{name}}: {{label}} must be between 0 and 365 days.", { name: t.name, label: s.label }))
       value[s.key] = Math.round(n)
     }
     setSaving(t.id)
     const { error } = await supabase.from('machine_types').update({ build_days: value }).eq('id', t.id)
     setSaving(null)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`Build times saved for ${t.name}.`)
+    toast.success(tr("Build times saved for {{name}}.", { name: t.name }))
     setRows((all) => all.map((r) => (r.id === t.id ? { ...r, build_days: value } : r)))
   }
 
@@ -62,15 +63,14 @@ export default function BuildTimesSection() {
 
   return (
     <section className="rounded-lg border border-slate-200 bg-white p-4" data-setting="build-times">
-      <h2 className="text-base font-semibold">Build Times (Working Days per Step)</h2>
+      <h2 className="text-base font-semibold">{tr("Build Times (Working Days per Step)")}</h2>
       <p className="mt-1 text-sm text-slate-600">
-        The default time each step takes for one machine. Once a type has at least 3 completed builds of a step, the
-        schedule uses the average of the last 5 instead; the line under each box shows which is used.
+        {tr("The default time each step takes for one machine. Once a type has at least 3 completed builds of a step, the schedule uses the average of the last 5 instead; the line under each box shows which is used.")}
       </p>
       <input
-        aria-label="Find a machine type"
+        aria-label={tr("Find a machine type")}
         className={`${inputClass} mt-3 max-w-xs`}
-        placeholder="Find a machine type"
+        placeholder={tr("Find a machine type")}
         value={filter}
         onChange={(e) => setFilter(e.target.value)}
       />
@@ -78,7 +78,7 @@ export default function BuildTimesSection() {
         <table className="min-w-full text-sm">
           <thead>
             <tr className="text-left text-xs text-slate-500">
-              <th className="py-1 pr-3 font-normal">Machine type</th>
+              <th className="py-1 pr-3 font-normal">{tr("Machine type")}</th>
               {STEPS.map((s) => (
                 <th key={s.key} className="px-1 py-1 font-normal">
                   {s.label}
@@ -99,7 +99,7 @@ export default function BuildTimesSection() {
                     return (
                       <td key={s.key} className="px-1 py-2">
                         <input
-                          aria-label={`${t.name} – ${s.label} (days)`}
+                          aria-label={tr("{{name}} – {{label}} (days)", { name: t.name, label: s.label })}
                           inputMode="numeric"
                           className={`${inputClass} w-20`}
                           value={d[s.key]}
@@ -107,14 +107,14 @@ export default function BuildTimesSection() {
                           onChange={(e) => setDrafts((all) => ({ ...all, [t.id]: { ...d, [s.key]: e.target.value } }))}
                         />
                         <div className={`mt-0.5 text-[0.6875rem] ${used.source === 'average' ? 'text-blue-700' : 'text-slate-500'}`}>
-                          {used.source === 'average' ? `average of ${used.builds}: ${used.days}` : 'default used'}
+                          {used.source === 'average' ? tr("average of {{builds}}: {{days}}", { builds: used.builds, days: used.days }) : tr("default used")}
                         </div>
                       </td>
                     )
                   })}
                   <td className="py-2 pl-2">
                     <button type="button" className={secondaryButtonClass} disabled={!changed || saving === t.id} onClick={() => save(t)}>
-                      {saving === t.id ? 'Saving…' : 'Save Changes'}
+                      {saving === t.id ? tr("Saving…") : tr("Save Changes")}
                     </button>
                   </td>
                 </tr>

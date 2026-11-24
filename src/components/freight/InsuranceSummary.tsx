@@ -10,6 +10,7 @@ import { FREIGHT_DEFAULTS, loadFreightSettings, type Breakdown, type FreightSett
 import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import { inputClass, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 type Line = { label: string; shipments: number; cargo: number; freight: number; insured: number; insurance: number }
 const empty = (label: string): Line => ({ label, shipments: 0, cargo: 0, freight: 0, insured: 0, insurance: 0 })
@@ -105,19 +106,19 @@ export default function InsuranceSummary() {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-600">
             <tr>
-              <th className="px-3 py-2 font-semibold">Group</th>
-              <th className="px-3 py-2 text-right font-semibold">Shipments</th>
-              <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">Cargo value</th>
-              <th className="px-3 py-2 text-right font-semibold">Freight</th>
-              <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">Insured value</th>
-              <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">Insurance paid</th>
+              <th className="px-3 py-2 font-semibold">{tr("Group")}</th>
+              <th className="px-3 py-2 text-right font-semibold">{tr("Shipments")}</th>
+              <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">{tr("Cargo value")}</th>
+              <th className="px-3 py-2 text-right font-semibold">{tr("Freight")}</th>
+              <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">{tr("Insured value")}</th>
+              <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">{tr("Insurance paid")}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {lines.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-slate-500">
-                  No shipments in these dates.
+                  {tr("No shipments in these dates.")}
                 </td>
               </tr>
             )}
@@ -141,27 +142,26 @@ export default function InsuranceSummary() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2">
         <label className="text-sm">
-          <span className="mb-1 block text-slate-600">Shipped from</span>
+          <span className="mb-1 block text-slate-600">{tr("Shipped from")}</span>
           <input type="date" className={inputClass} value={from} max={to} onChange={(e) => set('ifrom', e.target.value)} />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block text-slate-600">to</span>
+          <span className="mb-1 block text-slate-600">{tr("to")}</span>
           <input type="date" className={inputClass} value={to} min={from} onChange={(e) => set('ito', e.target.value)} />
         </label>
         <span className="flex-1" />
         <Can permission="freight.insurance.export">
           <button type="button" className={secondaryButtonClass} onClick={exportCsv} disabled={inRange.length === 0}>
-            Export CSV
+            {tr("Export CSV")}
           </button>
         </Can>
       </div>
       <p className="text-sm text-slate-600">
-        Saved cost breakdowns shipped {showDate(from)} to {showDate(to)}, in CAD. Ocean and air = {oceanTypes || 'none'}; everything else is inland. Insured value = cargo value +
-        freight, plus {uplift}%.
-        {noDate > 0 && ` ${noDate} ${noDate === 1 ? 'breakdown has' : 'breakdowns have'} no ship date and ${noDate === 1 ? 'is' : 'are'} left out.`}
+        {tr("Saved cost breakdowns shipped")} {showDate(from)} {tr("to")} {showDate(to)}{tr(", in CAD. Ocean and air =")} {oceanTypes || tr("none")}{tr("; everything else is inland. Insured value = cargo value + freight, plus")} {uplift}%.
+        {noDate > 0 && tr(" {{noDate}} {{value}} no ship date and {{value2}} left out.", { noDate: noDate, value: noDate === 1 ? tr("breakdown has") : tr("breakdowns have"), value2: noDate === 1 ? 'is' : 'are' })}
       </p>
       {loading ? (
-        <p className="py-8 text-center text-slate-500">Loading…</p>
+        <p className="py-8 text-center text-slate-500">{tr("Loading…")}</p>
       ) : (
         <>
           {table('Ocean and Air Compared With Inland', inRange.length ? groups : [], true)}

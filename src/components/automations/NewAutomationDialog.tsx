@@ -6,6 +6,7 @@ import { Modal, buttonClass, secondaryButtonClass } from '../form'
 import { loadTemplates, templateAllowed, type Catalog, type Choices, type Template } from '../../lib/automations'
 import { friendlyError } from '../../lib/format'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 /** New Automation: start from an example (only those the person may use) or from scratch. */
 export default function NewAutomationDialog({ catalog, choices, boardId, onClose }: { catalog: Catalog; choices: Choices; boardId: string | null; onClose: () => void }) {
@@ -31,7 +32,7 @@ export default function NewAutomationDialog({ catalog, choices, boardId, onClose
 
   return (
     <Modal
-      title="New Automation"
+      title={tr("New Automation")}
       wide
       onClose={onClose}
       footer={
@@ -40,7 +41,7 @@ export default function NewAutomationDialog({ catalog, choices, boardId, onClose
             {ACTION.cancel}
           </button>
           <button type="button" className={buttonClass} onClick={() => open()}>
-            Start from Scratch
+            {tr("Start from Scratch")}
           </button>
         </>
       }
@@ -48,23 +49,23 @@ export default function NewAutomationDialog({ catalog, choices, boardId, onClose
       {choices.can_board_rules && editableBoards.length > 0 && (
         <div className="mb-4 rounded-md bg-slate-50 p-3 text-sm">
           <label htmlFor="new-au-board" className="mb-1 block font-medium text-slate-700">
-            Who sees it
+            {tr("Who sees it")}
           </label>
           <select id="new-au-board" className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm" value={board} onChange={(e) => setBoard(e.target.value)}>
-            <option value="">Only me (My Automations; I can share it later)</option>
+            <option value="">{tr("Only me (My Automations; I can share it later)")}</option>
             {editableBoards.map((b) => (
               <option key={b.id} value={b.id}>
-                Board automation: everyone on {b.name}
+                {tr("Board automation: everyone on")} {b.name}
               </option>
             ))}
           </select>
         </div>
       )}
-      <h3 className="text-sm font-semibold text-slate-700">Start from an example</h3>
+      <h3 className="text-sm font-semibold text-slate-700">{tr("Start from an example")}</h3>
       {templates === null ? (
-        <p className="mt-2 text-sm text-slate-500">Loading…</p>
+        <p className="mt-2 text-sm text-slate-500">{tr("Loading…")}</p>
       ) : templates.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-500">No examples match what you have access to. Start from scratch instead.</p>
+        <p className="mt-2 text-sm text-slate-500">{tr("No examples match what you have access to. Start from scratch instead.")}</p>
       ) : (
         <ul className="mt-2 grid gap-2 [grid-template-columns:repeat(auto-fill,minmax(min(100%,18rem),1fr))]">
           {templates.map((t) => (

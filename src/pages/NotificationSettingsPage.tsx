@@ -12,6 +12,7 @@ import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { usePreferences } from '../lib/preferences'
 import { supabase } from '../lib/supabase'
+import { tr } from '../i18n'
 
 type Kind = {
   kind: string
@@ -25,17 +26,33 @@ type Setting = { kind: string; channel: string; mode: string }
 type Channel = 'app' | 'push' | 'email' | 'desktop'
 
 const COLUMNS: { channel: Channel; label: string; icon: IconName }[] = [
-  { channel: 'app', label: 'In-app', icon: 'bell' },
-  { channel: 'push', label: 'Phone push', icon: 'phone' },
-  { channel: 'email', label: 'Email', icon: 'inbox' },
-  { channel: 'desktop', label: 'Desktop', icon: 'monitor' },
+  { channel: 'app', get label() {
+    return tr("In-app")
+  }, icon: 'bell' },
+  { channel: 'push', get label() {
+    return tr("Phone push")
+  }, icon: 'phone' },
+  { channel: 'email', get label() {
+    return tr("Email")
+  }, icon: 'inbox' },
+  { channel: 'desktop', get label() {
+    return tr("Desktop")
+  }, icon: 'monitor' },
 ]
 /** Groups of events on the page, by the start of their type name. */
 const GROUPS: { title: string; match: (k: string) => boolean }[] = [
-  { title: 'Notice Board and Events', match: (k) => k.startsWith('notice_') || k.startsWith('note_') || k.startsWith('event_') },
-  { title: 'Chat', match: (k) => k.startsWith('chat_') },
-  { title: 'Boards', match: (k) => k.startsWith('board_') },
-  { title: 'Other', match: () => true },
+  { get title() {
+    return tr("Notice Board and Events")
+  }, match: (k) => k.startsWith('notice_') || k.startsWith('note_') || k.startsWith('event_') },
+  { get title() {
+    return tr("Chat")
+  }, match: (k) => k.startsWith('chat_') },
+  { get title() {
+    return tr("Boards")
+  }, match: (k) => k.startsWith('board_') },
+  { get title() {
+    return tr("Other")
+  }, match: () => true },
 ]
 const card = 'rounded-lg border border-slate-200 bg-white p-4 text-sm'
 
@@ -98,7 +115,7 @@ export default function NotificationSettingsPage() {
     const { error } = await supabase.rpc('send_me_test_notification')
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Test notification sent. It appears in the bell now; email and phone messages follow within a few minutes if they are on.')
+    toast.success(tr("Test notification sent. It appears in the bell now; email and phone messages follow within a few minutes if they are on."))
   }
 
   const shown = COLUMNS.filter((c) => channels.includes(c.channel) || c.channel === 'app')
@@ -112,10 +129,9 @@ export default function NotificationSettingsPage() {
       <div className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-semibold">Notifications</h1>
+            <h1 className="text-2xl font-semibold">{tr("Notifications")}</h1>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">
-              How you hear about each kind of event. Who is told about something is decided where it happens (for example a board’s notification rules or a
-              notice’s audience).
+              {tr("How you hear about each kind of event. Who is told about something is decided where it happens (for example a board’s notification rules or a notice’s audience).")}
             </p>
           </div>
           <SettingsSearch />
@@ -125,20 +141,20 @@ export default function NotificationSettingsPage() {
           <Can permission="settings.notifications">
             <section className={card} data-setting="desktop">
               <h2 className="mb-1 flex items-center gap-2 font-semibold">
-                <Icon name="monitor" /> Desktop Notifications
+                <Icon name="monitor" /> {tr("Desktop Notifications")}
               </h2>
               <div className="flex items-center justify-between gap-3">
-                <span className="text-slate-600">Show notifications on this computer while the app is open in a browser tab.</span>
-                <Switch checked={desktopNotifications} onChange={(on) => setLook({ desktopNotifications: on })} label="Desktop notifications" />
+                <span className="text-slate-600">{tr("Show notifications on this computer while the app is open in a browser tab.")}</span>
+                <Switch checked={desktopNotifications} onChange={(on) => setLook({ desktopNotifications: on })} label={tr("Desktop notifications")} />
               </div>
               {desktopNotifications && (
                 <p className="mt-2 text-xs text-slate-500">
-                  {permission === 'granted' && 'Allowed in this browser.'}
-                  {permission === 'denied' && 'Blocked in this browser. Allow notifications for this site in the browser settings.'}
-                  {permission === 'unsupported' && 'This browser cannot show desktop notifications.'}
+                  {permission === 'granted' && tr("Allowed in this browser.")}
+                  {permission === 'denied' && tr("Blocked in this browser. Allow notifications for this site in the browser settings.")}
+                  {permission === 'unsupported' && tr("This browser cannot show desktop notifications.")}
                   {permission === 'default' && (
                     <button type="button" className={`${secondaryButtonClass} mt-1`} onClick={async () => setPermission(await askNotificationPermission())}>
-                      Allow in This Browser
+                      {tr("Allow in This Browser")}
                     </button>
                   )}
                 </p>
@@ -149,10 +165,10 @@ export default function NotificationSettingsPage() {
           <Can permission="settings.notification_channels" level="edit">
             <section className={card} data-setting="email-mode">
               <h2 className="mb-1 flex items-center gap-2 font-semibold">
-                <Icon name="inbox" /> Email Timing
+                <Icon name="inbox" /> {tr("Email Timing")}
               </h2>
-              <p className="mb-3 text-slate-600">For every event with Email on.</p>
-              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Email timing">
+              <p className="mb-3 text-slate-600">{tr("For every event with Email on.")}</p>
+              <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={tr("Email timing")}>
                 {(
                   [
                     ['instant', 'Each time', 'Within a few minutes; quick changes are combined.'],
@@ -174,8 +190,8 @@ export default function NotificationSettingsPage() {
                 ))}
               </div>
               <p className="mt-2 text-xs text-slate-500">
-                {emailMode === 'mixed' && 'Some events are emailed each time and some once a day. Choose one to use it for all. '}
-                Urgent notices are always emailed straight away.
+                {emailMode === 'mixed' && tr("Some events are emailed each time and some once a day. Choose one to use it for all. ")}
+                {tr("Urgent notices are always emailed straight away.")}
               </p>
             </section>
           </Can>
@@ -185,16 +201,16 @@ export default function NotificationSettingsPage() {
           </Can>
         </div>
 
-        <section className={`${card} p-0`} aria-label="Events">
+        <section className={`${card} p-0`} aria-label={tr("Events")}>
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3">
-            <h2 className="font-semibold">Events</h2>
+            <h2 className="font-semibold">{tr("Events")}</h2>
             <button type="button" className={secondaryButtonClass} disabled={busy} onClick={sendTest}>
-              Send Me a Test Notification
+              {tr("Send Me a Test Notification")}
             </button>
           </div>
           {/* Column headings (wide screens); on phones each switch has its own label. */}
           <div className="hidden grid-cols-[minmax(0,1fr)_repeat(4,6rem)] gap-2 border-b border-slate-100 px-4 py-2 text-xs font-medium text-slate-500 md:grid">
-            <span>Event</span>
+            <span>{tr("Event")}</span>
             {shown.map((c) => (
               <span key={c.channel} className="flex items-center justify-center gap-1">
                 <Icon name={c.icon} className="h-3.5 w-3.5" /> {c.label}
@@ -221,10 +237,10 @@ export default function NotificationSettingsPage() {
                               checked={on}
                               disabled={locked || !editable || (c.channel === 'desktop' && !desktopNotifications)}
                               onChange={(v) => flip(k, c.channel, v)}
-                              label={`${k.label}: ${c.label}${locked ? ' (always on)' : ''}`}
+                              label={`${k.label}: ${c.label}${locked ? tr(" (always on)") : ''}`}
                             />
                             <span className="text-xs text-slate-600 md:hidden">{c.label}</span>
-                            {locked && <span className="text-[0.6875rem] text-slate-500">Always</span>}
+                            {locked && <span className="text-[0.6875rem] text-slate-500">{tr("Always")}</span>}
                           </div>
                         )
                       })}
@@ -234,7 +250,7 @@ export default function NotificationSettingsPage() {
               </ul>
             </div>
           ))}
-          {kinds.length === 0 && <p className="px-4 py-6 text-center text-slate-500">Loading…</p>}
+          {kinds.length === 0 && <p className="px-4 py-6 text-center text-slate-500">{tr("Loading…")}</p>}
         </section>
 
         <Can permission="settings.push" level="edit">

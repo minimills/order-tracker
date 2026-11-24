@@ -18,6 +18,7 @@ import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../
 import Can from '../Can'
 import UnitsSwitch from './UnitsSwitch'
 import { confirmAction } from '../../lib/confirm'
+import { tr } from '../../i18n'
 
 type Props = {
   orderId: string
@@ -34,10 +35,18 @@ type Props = {
 
 type MeasureKey = 'length' | 'width' | 'height' | 'weight'
 const MEASURES: { key: MeasureKey; label: string; kind: 'length' | 'weight' }[] = [
-  { key: 'length', label: 'Length', kind: 'length' },
-  { key: 'width', label: 'Width', kind: 'length' },
-  { key: 'height', label: 'Height', kind: 'length' },
-  { key: 'weight', label: 'Weight', kind: 'weight' },
+  { key: 'length', get label() {
+    return tr("Length")
+  }, kind: 'length' },
+  { key: 'width', get label() {
+    return tr("Width")
+  }, kind: 'length' },
+  { key: 'height', get label() {
+    return tr("Height")
+  }, kind: 'length' },
+  { key: 'weight', get label() {
+    return tr("Weight")
+  }, kind: 'weight' },
 ]
 
 /** What was typed, and in which units (so switching units converts the boxes). */
@@ -133,8 +142,10 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
     if (!supabase || !crate) return
     const shared = crate.machine_ids.length > 1
     const ok = await confirmAction(
-      `Archive crate ${crate.number} on order ${orderCode}?${shared ? ' It holds more than one machine, so it is archived for all of them.' : ''}`,
-      { confirmLabel: 'Archive' },
+      tr("Archive crate {{number}} on order {{orderCode}}?{{value}}", { number: crate.number, orderCode: orderCode, value: shared ? tr(" It holds more than one machine, so it is archived for all of them.") : '' }),
+      { get confirmLabel() {
+    return tr("Archive")
+  } },
     )
     if (!ok) return
     setSaving(true)
@@ -155,26 +166,26 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
         <>
           {crate && (
             <button type="button" className="mr-auto text-sm text-red-700 underline" onClick={remove} disabled={saving}>
-              Archive This Crate
+              {tr("Archive This Crate")}
             </button>
           )}
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Crate'}
+            {saving ? tr("Saving…") : tr("Save Crate")}
           </button>
         </>
       }
     >
       <div className="space-y-4">
         <p className="text-sm">
-          For <strong>{machine.label}</strong>
+          {tr("For")} <strong>{machine.label}</strong>
         </p>
 
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-            <span className="text-sm font-medium text-slate-700">Size and Weight</span>
+            <span className="text-sm font-medium text-slate-700">{tr("Size and Weight")}</span>
             <Can permission="crating.units">
               <UnitsSwitch />
             </Can>
@@ -193,7 +204,7 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
             ))}
           </div>
           <div className="mt-3 grid grid-cols-3 gap-3">
-            <Field label={`Weight (${weightUnit(units)})`} htmlFor="crate-weight" error={errors.weight}>
+            <Field label={tr("Weight ({{weightUnit}})", { weightUnit: weightUnit(units) })} htmlFor="crate-weight" error={errors.weight}>
               <input
                 id="crate-weight"
                 inputMode="decimal"
@@ -202,30 +213,30 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
                 onChange={(e) => type('weight', 'weight', e.target.value)}
               />
             </Field>
-            <Field label="Plywood sheets" htmlFor="crate-sheets" error={errors.sheets}>
+            <Field label={tr("Plywood sheets")} htmlFor="crate-sheets" error={errors.sheets}>
               <input id="crate-sheets" inputMode="decimal" className={inputClass} value={sheets} onChange={(e) => setSheets(e.target.value)} />
             </Field>
-            <Field label="Hours to build" htmlFor="crate-hours" error={errors.hours}>
+            <Field label={tr("Hours to build")} htmlFor="crate-hours" error={errors.hours}>
               <input id="crate-hours" inputMode="decimal" className={inputClass} value={hours} onChange={(e) => setHours(e.target.value)} />
             </Field>
           </div>
-          <p className="mt-1 text-xs text-slate-500">Leave a field empty if the value is not known yet; it can be filled in later.</p>
+          <p className="mt-1 text-xs text-slate-500">{tr("Leave a field empty if the value is not known yet; it can be filled in later.")}</p>
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="Date crated" htmlFor="crate-date" error={errors.cratedOn}>
+          <Field label={tr("Date crated")} htmlFor="crate-date" error={errors.cratedOn}>
             <input id="crate-date" type="date" className={inputClass} value={cratedOn} onChange={(e) => setCratedOn(e.target.value)} />
           </Field>
-          <Field label="Crated by" htmlFor="crate-by">
+          <Field label={tr("Crated by")} htmlFor="crate-by">
             <input id="crate-by" className={inputClass} value={cratedByValue} onChange={(e) => setCratedBy(e.target.value)} />
           </Field>
         </div>
 
         {others.length > 0 && (
           <fieldset>
-            <legend className="mb-1 text-sm font-medium text-slate-700">This Crate Also Holds…</legend>
+            <legend className="mb-1 text-sm font-medium text-slate-700">{tr("This Crate Also Holds…")}</legend>
             <p className="mb-2 text-xs text-slate-500">
-              Select other machines from this order that share this crate, so its weight and plywood are counted once.
+              {tr("Select other machines from this order that share this crate, so its weight and plywood are counted once.")}
             </p>
             <div className="space-y-1">
               {others.map((m) => (
@@ -243,7 +254,7 @@ export default function CrateDialog({ orderId, orderCode, machine, orderMachines
           </fieldset>
         )}
 
-        <Field label="Notes" htmlFor="crate-notes">
+        <Field label={tr("Notes")} htmlFor="crate-notes">
           <textarea id="crate-notes" rows={2} className={inputClass} value={notes} onChange={(e) => setNotes(e.target.value)} />
         </Field>
 

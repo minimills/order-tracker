@@ -9,6 +9,7 @@ import type { Person } from '../../lib/chat'
 import { friendlyError } from '../../lib/format'
 import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 /** Start a direct message (one person) or a group chat (a name and several people). */
 export default function NewChatDialog({ onClose, onCreated }: { onClose: () => void; onCreated: () => void }) {
@@ -41,8 +42,8 @@ export default function NewChatDialog({ onClose, onCreated }: { onClose: () => v
 
   async function createGroup() {
     if (!supabase) return
-    if (!name.trim()) return toast.error('Give the group chat a name.')
-    if (!picked.size) return toast.error('Pick at least one person.')
+    if (!name.trim()) return toast.error(tr("Give the group chat a name."))
+    if (!picked.size) return toast.error(tr("Pick at least one person."))
     setBusy(true)
     const { data, error } = await supabase.rpc('create_group_chat', { p_name: name.trim(), p_emails: [...picked] })
     setBusy(false)
@@ -53,18 +54,18 @@ export default function NewChatDialog({ onClose, onCreated }: { onClose: () => v
 
   return (
     <Modal
-      title="New Chat"
+      title={tr("New Chat")}
       onClose={onClose}
       busy={busy}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={busy}>
-            Cancel
+            {tr("Cancel")}
           </button>
           {mode === 'group' && (
             <Can permission="chat.groups" level="edit">
               <button type="button" className={buttonClass} onClick={createGroup} disabled={busy}>
-                Create Group Chat
+                {tr("Create Group Chat")}
               </button>
             </Can>
           )}
@@ -81,7 +82,7 @@ export default function NewChatDialog({ onClose, onCreated }: { onClose: () => v
               className={mode === 'direct' ? buttonClass : secondaryButtonClass}
               onClick={() => setMode('direct')}
             >
-              Direct Message
+              {tr("Direct Message")}
             </button>
           </Can>
           <Can permission="chat.groups" level="edit">
@@ -92,18 +93,18 @@ export default function NewChatDialog({ onClose, onCreated }: { onClose: () => v
               className={mode === 'group' ? buttonClass : secondaryButtonClass}
               onClick={() => setMode('group')}
             >
-              Group Chat
+              {tr("Group Chat")}
             </button>
           </Can>
         </div>
         {mode === 'group' && (
-          <Field label="Group chat name" htmlFor="nc-name">
-            <input id="nc-name" className={inputClass} value={name} placeholder="For example Calgary install" onChange={(e) => setName(e.target.value)} />
+          <Field label={tr("Group chat name")} htmlFor="nc-name">
+            <input id="nc-name" className={inputClass} value={name} placeholder={tr("For example Calgary install")} onChange={(e) => setName(e.target.value)} />
           </Field>
         )}
-        <input type="search" aria-label="Find a person" className={inputClass} placeholder="Find a person" value={q} onChange={(e) => setQ(e.target.value)} />
+        <input type="search" aria-label={tr("Find a person")} className={inputClass} placeholder={tr("Find a person")} value={q} onChange={(e) => setQ(e.target.value)} />
         <ul className="max-h-72 divide-y divide-slate-100 overflow-y-auto rounded-md border border-slate-200 text-sm">
-          {shown.length === 0 && <li className="p-3 text-slate-500">No one matches.</li>}
+          {shown.length === 0 && <li className="p-3 text-slate-500">{tr("No one matches.")}</li>}
           {shown.map((p) => (
             <li key={p.email}>
               {mode === 'direct' ? (
@@ -130,7 +131,7 @@ export default function NewChatDialog({ onClose, onCreated }: { onClose: () => v
             </li>
           ))}
         </ul>
-        {mode === 'group' && <p className="text-xs text-slate-500">{picked.size} selected. Only the people in a group chat can read it.</p>}
+        {mode === 'group' && <p className="text-xs text-slate-500">{picked.size} {tr("selected. Only the people in a group chat can read it.")}</p>}
       </div>
     </Modal>
   )

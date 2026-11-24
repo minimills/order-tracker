@@ -10,6 +10,7 @@ import { useDepartments } from '../../lib/useDepartments'
 import Can from '../Can'
 import SerialNumber from '../SerialNumber'
 import { buttonClass, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 /**
  * Production details on a machine or leftover card: the machine, the order,
@@ -38,20 +39,20 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
   return (
     <section className="rounded-md border border-teal-200 bg-teal-50/50 p-3 text-sm">
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-        <span className="font-semibold">{machine?.machine_type ?? 'Machine'}</span>
+        <span className="font-semibold">{machine?.machine_type ?? tr("Machine")}</span>
         {machine?.serial_number && <SerialNumber serial={machine.serial_number} />}
-        {card.card_kind === 'leftover' && <span className="rounded bg-amber-200 px-1.5 py-0.5 text-xs font-semibold text-amber-900">Leftover items</span>}
+        {card.card_kind === 'leftover' && <span className="rounded bg-amber-200 px-1.5 py-0.5 text-xs font-semibold text-amber-900">{tr("Leftover items")}</span>}
         <Can permission="order.page">
           {card.order_id && (
             <Link to={`/orders/${card.order_id}`} className="text-blue-700 underline">
-              Open the Order
+              {tr("Open the Order")}
             </Link>
           )}
         </Can>
       </div>
       {stage && (
         <p className="mt-1 text-slate-700">
-          Stage: <strong>{stage.name}</strong>
+          {tr("Stage:")} <strong>{stage.name}</strong>
           {stage.department_id && <> · {departments.find((d) => d.id === stage.department_id)?.name}</>}
         </p>
       )}
@@ -61,7 +62,7 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
           {machine?.checklist_status === 'in_progress' || machine?.checklist_status === 'signed' ? (
             <Can permission="checklist">
               <Link to={`/checklists/${card.machine_id}`} className={`${secondaryButtonClass} inline-block`}>
-                {machine.checklist_status === 'signed' ? 'View Final Check' : 'Continue Final Check'}
+                {machine.checklist_status === 'signed' ? tr("View Final Check") : tr("Continue Final Check")}
               </Link>
             </Can>
           ) : (
@@ -78,28 +79,27 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
                   navigate(`/checklists/${card.machine_id}`)
                 }}
               >
-                {starting ? 'Starting…' : 'Start Final Check'}
+                {starting ? tr("Starting…") : tr("Start Final Check")}
               </button>
             </Can>
           )}
-          <p className="mt-1 text-xs text-slate-600">When the final check is signed, the machine is marked as built automatically.</p>
+          <p className="mt-1 text-xs text-slate-600">{tr("When the final check is signed, the machine is marked as built automatically.")}</p>
         </div>
       )}
 
       {machineCard && (
         <p className="mt-2 text-slate-700">
-          These items were not finished when the machine moved on. They merge back into the machine card as completed when
-          they are all done, or when this card is moved to the machine’s stage.{' '}
+          {tr("These items were not finished when the machine moved on. They merge back into the machine card as completed when they are all done, or when this card is moved to the machine’s stage.")}{' '}
           {onOpenCard && (
             <button type="button" className="text-blue-700 underline" onClick={() => onOpenCard(machineCard.id)}>
-              Open the Machine Card
+              {tr("Open the Machine Card")}
             </button>
           )}
         </p>
       )}
       {leftovers.length > 0 && (
         <div className="mt-2">
-          <div className="text-xs font-medium text-amber-900">Leftover items still open</div>
+          <div className="text-xs font-medium text-amber-900">{tr("Leftover items still open")}</div>
           <ul className="mt-0.5 space-y-0.5">
             {leftovers.map((l) => (
               <li key={l.id}>
@@ -120,7 +120,7 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
         <Can permission="production.stage_times">
           {times.length > 0 && (
             <div className="mt-3">
-              <div className="text-xs font-medium text-slate-500">Time per stage</div>
+              <div className="text-xs font-medium text-slate-500">{tr("Time per stage")}</div>
               <div className="overflow-x-auto">
                 <table className="mt-1 w-full text-xs">
                   <tbody className="divide-y divide-teal-100">
@@ -131,11 +131,11 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
                         <tr key={t.id}>
                           <td className="py-1 pr-2 font-medium">{t.stage_name}</td>
                           <td className="py-1 pr-2 text-slate-600">
-                            {start ? activityTime.format(new Date(start)) : `arrived ${activityTime.format(new Date(t.entered_at))}`}
-                            {start && t.auto_started && ' (arrival)'}
+                            {start ? activityTime.format(new Date(start)) : tr("arrived {{value}}", { value: activityTime.format(new Date(t.entered_at)) })}
+                            {start && t.auto_started && tr(" (arrival)")}
                           </td>
                           <td className="py-1 pr-2 text-slate-600">
-                            {end ? <>to {activityTime.format(new Date(end))}{t.auto_finished && ' (when it moved on)'}</> : t.left_at ? '' : 'in progress'}
+                            {end ? <>{tr("to")} {activityTime.format(new Date(end))}{t.auto_finished && tr(" (when it moved on)")}</> : t.left_at ? '' : tr("in progress")}
                           </td>
                           <td className="py-1 text-right font-medium">{start && end ? formatDuration(secondsBetween(start, end)) : ''}</td>
                         </tr>
@@ -145,7 +145,7 @@ export default function ProductionPanel({ card, data, onOpenCard }: { card: Card
                 </table>
               </div>
               <p className="mt-1 text-[0.6875rem] text-slate-500">
-                Start and Finish are filled in automatically from when the card arrived and left if nobody pressed the buttons.
+                {tr("Start and Finish are filled in automatically from when the card arrived and left if nobody pressed the buttons.")}
               </p>
             </div>
           )}

@@ -1,3 +1,4 @@
+import { dtf, tr } from '../i18n'
 import { useCallback, useEffect, useState } from 'react'
 import { showDate } from './dates'
 import { fetchAll } from './fetchAll'
@@ -247,15 +248,33 @@ export type Certificate = {
 }
 
 export const PLACEHOLDERS: { key: string; label: string }[] = [
-  { key: 'tech_full_name', label: 'Technician’s full name' },
-  { key: 'company_name', label: 'Our company name' },
-  { key: 'customer_name', label: 'Customer name' },
-  { key: 'customer_company', label: 'Customer company' },
-  { key: 'order_number', label: 'Order number' },
-  { key: 'start_date', label: 'First on-site day' },
-  { key: 'end_date', label: 'Last on-site day' },
-  { key: 'site_address', label: 'Site address' },
-  { key: 'today', label: 'Today’s date (the signing date once signed)' },
+  { key: 'tech_full_name', get label() {
+    return tr("Technician’s full name")
+  } },
+  { key: 'company_name', get label() {
+    return tr("Our company name")
+  } },
+  { key: 'customer_name', get label() {
+    return tr("Customer name")
+  } },
+  { key: 'customer_company', get label() {
+    return tr("Customer company")
+  } },
+  { key: 'order_number', get label() {
+    return tr("Order number")
+  } },
+  { key: 'start_date', get label() {
+    return tr("First on-site day")
+  } },
+  { key: 'end_date', get label() {
+    return tr("Last on-site day")
+  } },
+  { key: 'site_address', get label() {
+    return tr("Site address")
+  } },
+  { key: 'today', get label() {
+    return tr("Today’s date (the signing date once signed)")
+  } },
 ]
 
 const escapeHtml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
@@ -351,23 +370,45 @@ export type CalendarRow = {
 }
 /** Colours (light background, dark text, solid dot) per kind, readable for colour-blind people (also labelled). */
 export const CALENDAR_KINDS: Record<CalendarKind, { label: string; chip: string; dot: string }> = {
-  training: { label: 'Training visit', chip: 'bg-blue-100 text-blue-900 ring-blue-300', dot: 'bg-blue-600' },
-  service: { label: 'Service call', chip: 'bg-violet-100 text-violet-900 ring-violet-300', dot: 'bg-violet-600' },
-  travel: { label: 'Travel day', chip: 'bg-amber-100 text-amber-900 ring-amber-300', dot: 'bg-amber-500' },
-  onsite: { label: 'Other on-site day', chip: 'bg-emerald-100 text-emerald-900 ring-emerald-300', dot: 'bg-emerald-600' },
-  other: { label: 'Appointment or other', chip: 'bg-slate-100 text-slate-800 ring-slate-300', dot: 'bg-slate-500' },
-  event: { label: 'Company event', chip: 'bg-rose-50 text-rose-900 ring-rose-300', dot: 'bg-rose-500' },
+  training: { get label() {
+    return tr("Training visit")
+  }, chip: 'bg-blue-100 text-blue-900 ring-blue-300', dot: 'bg-blue-600' },
+  service: { get label() {
+    return tr("Service call")
+  }, chip: 'bg-violet-100 text-violet-900 ring-violet-300', dot: 'bg-violet-600' },
+  travel: { get label() {
+    return tr("Travel day")
+  }, chip: 'bg-amber-100 text-amber-900 ring-amber-300', dot: 'bg-amber-500' },
+  onsite: { get label() {
+    return tr("Other on-site day")
+  }, chip: 'bg-emerald-100 text-emerald-900 ring-emerald-300', dot: 'bg-emerald-600' },
+  other: { get label() {
+    return tr("Appointment or other")
+  }, chip: 'bg-slate-100 text-slate-800 ring-slate-300', dot: 'bg-slate-500' },
+  event: { get label() {
+    return tr("Company event")
+  }, chip: 'bg-rose-50 text-rose-900 ring-rose-300', dot: 'bg-rose-500' },
 }
 
 /** Types the office can give an entry read from a phone calendar. */
 export const PHONE_EVENT_KINDS: { kind: CalendarKind; label: string }[] = [
-  { kind: 'travel', label: 'Travel day' },
-  { kind: 'onsite', label: 'On site' },
-  { kind: 'service', label: 'Service call' },
-  { kind: 'training', label: 'Training visit' },
-  { kind: 'other', label: 'Other' },
+  { kind: 'travel', get label() {
+    return tr("Travel day")
+  } },
+  { kind: 'onsite', get label() {
+    return tr("On site")
+  } },
+  { kind: 'service', get label() {
+    return tr("Service call")
+  } },
+  { kind: 'training', get label() {
+    return tr("Training visit")
+  } },
+  { kind: 'other', get label() {
+    return tr("Other")
+  } },
 ]
-const timeFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit' })
+const timeFmt = dtf({ timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit' })
 /** "9:30 a.m." in Halifax time. */
 export const showTime = (iso: string) => timeFmt.format(new Date(iso))
 

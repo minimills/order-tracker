@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 // Freight: shipment cost breakdowns, quote request emails, insurance summary.
 // The arithmetic matches the old Freight Multitool app.
@@ -196,7 +197,7 @@ export function evaluateExpression(input: string): number | null {
     if (peek() === '(') {
       next()
       const v = sum()
-      if (next() !== ')') throw new Error('bracket')
+      if (next() !== ')') throw new Error(tr("bracket"))
       return v
     }
     if (peek() === '-') {
@@ -204,7 +205,7 @@ export function evaluateExpression(input: string): number | null {
       return -factor()
     }
     const t = next()
-    if (t === undefined || Number.isNaN(Number(t))) throw new Error('token')
+    if (t === undefined || Number.isNaN(Number(t))) throw new Error(tr("token"))
     return Number(t)
   }
   function term(): number {

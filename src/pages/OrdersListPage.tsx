@@ -17,6 +17,7 @@ import { serviceDates, useServiceInfo, type ServiceInfo } from '../lib/service'
 import { useOptionList } from '../lib/useOptionList'
 import SerialNumber from '../components/SerialNumber'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Value = string | number | null
 /** An order, with its on-site training plan when a service column is shown. */
@@ -50,19 +51,33 @@ const COLUMNS: ColumnDef[] = [
   {
     key: 'order',
     permission: 'orders.list.column.order',
-    label: 'Order #',
+    get label() {
+    return tr("Order #")
+  },
     value: (o) => o.order_number * 1000 + (o.split_number ?? 0),
     render: /* @rendered-inside-can */ (o) => <span className="font-medium">{o.order_code}</span>,
   },
-  { key: 'quote', permission: 'orders.list.column.quote', label: 'Quote #', value: (o) => o.quote_number ?? null },
-  { key: 'invoice', permission: 'orders.list.column.invoice', label: 'Invoice #', value: (o) => o.invoice_number ?? null },
-  { key: 'stage', permission: 'orders.list.column.stage', label: 'Stage', value: (o) => stageLabel(o.stage) },
-  { key: 'customer', permission: 'orders.list.column.customer', label: 'Customer', value: (o) => o.customer_name },
-  { key: 'company', permission: 'orders.list.column.company', label: 'Company', value: (o) => o.customer_company },
+  { key: 'quote', permission: 'orders.list.column.quote', get label() {
+    return tr("Quote #")
+  }, value: (o) => o.quote_number ?? null },
+  { key: 'invoice', permission: 'orders.list.column.invoice', get label() {
+    return tr("Invoice #")
+  }, value: (o) => o.invoice_number ?? null },
+  { key: 'stage', permission: 'orders.list.column.stage', get label() {
+    return tr("Stage")
+  }, value: (o) => stageLabel(o.stage) },
+  { key: 'customer', permission: 'orders.list.column.customer', get label() {
+    return tr("Customer")
+  }, value: (o) => o.customer_name },
+  { key: 'company', permission: 'orders.list.column.company', get label() {
+    return tr("Company")
+  }, value: (o) => o.customer_company },
   {
     key: 'country',
     permission: 'orders.list.column.country',
-    label: 'Country',
+    get label() {
+    return tr("Country")
+  },
     value: (o) => o.customer_country,
     render: /* @rendered-inside-can */ (o) => (
       <>
@@ -70,12 +85,18 @@ const COLUMNS: ColumnDef[] = [
       </>
     ),
   },
-  { key: 'state', permission: 'orders.list.column.state', label: 'State / province', value: (o) => o.customer_state_province },
-  { key: 'machines', permission: 'orders.list.column.machines', label: 'Machines', value: (o) => o.machines_list },
+  { key: 'state', permission: 'orders.list.column.state', get label() {
+    return tr("State / province")
+  }, value: (o) => o.customer_state_province },
+  { key: 'machines', permission: 'orders.list.column.machines', get label() {
+    return tr("Machines")
+  }, value: (o) => o.machines_list },
   {
     key: 'serials',
     permission: 'orders.list.column.serials',
-    label: 'Serials',
+    get label() {
+    return tr("Serials")
+  },
     value: (o) => o.serials,
     render: /* @rendered-inside-can */ (o) => (
       <span className="flex gap-x-2 text-xs">
@@ -91,36 +112,48 @@ const COLUMNS: ColumnDef[] = [
   {
     key: 'ready',
     permission: 'orders.list.column.ready',
-    label: 'Ready',
+    get label() {
+    return tr("Ready")
+  },
     value: (o) => (o.machines_count ? `${o.machines_ready_count}/${o.machines_count}` : ''),
     align: 'right',
   },
   {
     key: 'expected',
     permission: 'orders.list.column.expected',
-    label: 'Expected ship',
+    get label() {
+    return tr("Expected ship")
+  },
     value: (o) => o.expected_ship_date,
     render: /* @rendered-inside-can */ (o) => showDate(o.expected_ship_date),
   },
   {
     key: 'original',
     permission: 'orders.list.column.original',
-    label: 'Original ship date',
+    get label() {
+    return tr("Original ship date")
+  },
     value: (o) => o.original_ship_date ?? null,
     render: /* @rendered-inside-can */ (o) => showDate(o.original_ship_date),
   },
-  { key: 'revisions', permission: 'orders.list.column.revisions', label: 'Ship date changes', value: (o) => o.ship_date_revisions ?? 0, align: 'right' },
+  { key: 'revisions', permission: 'orders.list.column.revisions', get label() {
+    return tr("Ship date changes")
+  }, value: (o) => o.ship_date_revisions ?? 0, align: 'right' },
   {
     key: 'actual',
     permission: 'orders.list.column.actual',
-    label: 'Actual ship',
+    get label() {
+    return tr("Actual ship")
+  },
     value: (o) => o.actual_ship_date,
     render: /* @rendered-inside-can */ (o) => showDate(o.actual_ship_date),
   },
   {
     key: 'delay',
     permission: 'orders.list.column.delay',
-    label: 'Delay (days)',
+    get label() {
+    return tr("Delay (days)")
+  },
     value: (o) => o.delay_days,
     align: 'right',
     render: /* @rendered-inside-can */ (o) =>
@@ -132,14 +165,24 @@ const COLUMNS: ColumnDef[] = [
         </span>
       ),
   },
-  { key: 'voltage', permission: 'orders.list.column.voltage', label: 'Voltage', value: (o) => o.voltage },
-  { key: 'delivery', permission: 'orders.list.column.delivery', label: 'Delivery equipment', value: (o) => o.delivery_equipment },
-  { key: 'freight', permission: 'orders.list.column.freight', label: 'Freight', value: (o) => o.freight_type },
-  { key: 'currency', permission: 'orders.list.column.currency', label: 'Cur.', value: (o) => o.currency },
+  { key: 'voltage', permission: 'orders.list.column.voltage', get label() {
+    return tr("Voltage")
+  }, value: (o) => o.voltage },
+  { key: 'delivery', permission: 'orders.list.column.delivery', get label() {
+    return tr("Delivery equipment")
+  }, value: (o) => o.delivery_equipment },
+  { key: 'freight', permission: 'orders.list.column.freight', get label() {
+    return tr("Freight")
+  }, value: (o) => o.freight_type },
+  { key: 'currency', permission: 'orders.list.column.currency', get label() {
+    return tr("Cur.")
+  }, value: (o) => o.currency },
   {
     key: 'total',
     permission: 'orders.list.column.total',
-    label: 'Total',
+    get label() {
+    return tr("Total")
+  },
     value: (o) => o.order_total,
     align: 'right',
     render: /* @rendered-inside-can */ (o) => money(o.order_total, o),
@@ -147,7 +190,9 @@ const COLUMNS: ColumnDef[] = [
   {
     key: 'downpct',
     permission: 'orders.list.column.downpct',
-    label: 'Down %',
+    get label() {
+    return tr("Down %")
+  },
     value: (o) => o.down_payment_percent,
     align: 'right',
     render: /* @rendered-inside-can */ (o) => (o.down_payment_percent === null ? '' : `${o.down_payment_percent}%`),
@@ -155,7 +200,9 @@ const COLUMNS: ColumnDef[] = [
   {
     key: 'paid',
     permission: 'orders.list.column.paid',
-    label: 'Paid',
+    get label() {
+    return tr("Paid")
+  },
     value: (o) => o.total_paid,
     align: 'right',
     render: /* @rendered-inside-can */ (o) => money(o.total_paid, o),
@@ -163,7 +210,9 @@ const COLUMNS: ColumnDef[] = [
   {
     key: 'outstanding',
     permission: 'orders.list.column.outstanding',
-    label: 'Outstanding',
+    get label() {
+    return tr("Outstanding")
+  },
     value: (o) => o.amount_outstanding,
     align: 'right',
     render: /* @rendered-inside-can */ (o) => money(o.amount_outstanding, o),
@@ -171,14 +220,18 @@ const COLUMNS: ColumnDef[] = [
   {
     key: 'nextdue',
     permission: 'orders.list.column.nextdue',
-    label: 'Next payment due',
+    get label() {
+    return tr("Next payment due")
+  },
     value: (o) => o.next_due_date,
     render: /* @rendered-inside-can */ (o) => showDate(o.next_due_date),
   },
   {
     key: 'payment',
     permission: 'orders.list.column.payment',
-    label: 'Payment',
+    get label() {
+    return tr("Payment")
+  },
     value: (o) => o.payment_status,
     render: /* @rendered-inside-can */ (o) => (
       <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${o.payment_status ? (paymentTone[o.payment_status] ?? '') : ''}`}>{o.payment_status}</span>
@@ -187,31 +240,47 @@ const COLUMNS: ColumnDef[] = [
   {
     key: 'training',
     permission: 'orders.list.column.training',
-    label: 'Training',
+    get label() {
+    return tr("Training")
+  },
     value: (o) => (o.service?.training_needed ? 'Needed' : ''),
   },
-  { key: 'technician', permission: 'orders.list.column.technician', label: 'Technician', value: (o) => o.service?.technician_name ?? null },
+  { key: 'technician', permission: 'orders.list.column.technician', get label() {
+    return tr("Technician")
+  }, value: (o) => o.service?.technician_name ?? null },
   {
     key: 'servicedates',
     permission: 'orders.list.column.service_dates',
-    label: 'Training dates',
+    get label() {
+    return tr("Training dates")
+  },
     value: (o) => o.service?.service_start ?? null,
     render: /* @rendered-inside-can */ (o) => serviceDates(o.service?.service_start ?? null, o.service?.service_end ?? null),
   },
   {
     key: 'servicedays',
     permission: 'orders.list.column.service_days',
-    label: 'Training / travel days',
+    get label() {
+    return tr("Training / travel days")
+  },
     value: (o) =>
       o.service && (o.service.training_days !== null || o.service.travel_days !== null)
         ? `${o.service.training_days ?? 0} / ${o.service.travel_days ?? 0}`
         : null,
     align: 'right',
   },
-  { key: 'downamount', permission: 'orders.list.column.downamount', label: 'Down payment', value: (o) => o.down_payment_amount, csvOnly: true },
-  { key: 'orderdate', permission: 'orders.list.column.orderdate', label: 'Order date', value: (o) => o.order_date, csvOnly: true },
-  { key: 'notes', permission: 'orders.list.column.notes', label: 'Notes', value: (o) => richTextToPlain(o.notes), csvOnly: true },
-  { key: 'archived', permission: 'orders.list.column.archived', label: 'Archived', value: (o) => (o.archived ? 'Archived' : ''), csvOnly: true },
+  { key: 'downamount', permission: 'orders.list.column.downamount', get label() {
+    return tr("Down payment")
+  }, value: (o) => o.down_payment_amount, csvOnly: true },
+  { key: 'orderdate', permission: 'orders.list.column.orderdate', get label() {
+    return tr("Order date")
+  }, value: (o) => o.order_date, csvOnly: true },
+  { key: 'notes', permission: 'orders.list.column.notes', get label() {
+    return tr("Notes")
+  }, value: (o) => richTextToPlain(o.notes), csvOnly: true },
+  { key: 'archived', permission: 'orders.list.column.archived', get label() {
+    return tr("Archived")
+  }, value: (o) => (o.archived ? 'Archived' : ''), csvOnly: true },
 ]
 
 type Filters = {
@@ -467,16 +536,16 @@ export default function OrdersListPage() {
       <div className="-m-4 flex flex-col p-4 md:-m-8 md:h-[calc(100%+4rem)] md:p-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h1 className="text-2xl font-semibold">Orders List</h1>
+            <h1 className="text-2xl font-semibold">{tr("Orders List")}</h1>
             <Can permission="orders.list.print">
-              <PrintButton title="Orders List" />
+              <PrintButton title={tr("Orders List")} />
             </Can>
           </div>
           <div className="flex gap-2">
             <Can permission="orders.list.columns">
               <div className="relative">
                 <button type="button" className={secondaryButtonClass} onClick={() => setChooser(!chooser)} aria-expanded={chooser}>
-                  Columns
+                  {tr("Columns")}
                 </button>
                 {chooser && (
                   <div className="absolute right-0 z-20 mt-1 max-h-96 w-64 overflow-y-auto rounded-md border border-slate-200 bg-white p-2 text-sm shadow-lg">
@@ -486,7 +555,7 @@ export default function OrdersListPage() {
                         <label key={c.key} className="flex items-center gap-2 rounded px-1.5 py-1 hover:bg-slate-50">
                           <input type="checkbox" className="h-4 w-4" checked={!hidden.includes(c.key)} onChange={() => toggleColumn(c.key)} />
                           {c.label}
-                          {c.csvOnly && <span className="text-xs text-slate-500">(CSV only)</span>}
+                          {c.csvOnly && <span className="text-xs text-slate-500">{tr("(CSV only)")}</span>}
                         </label>
                       ))}
                   </div>
@@ -495,12 +564,12 @@ export default function OrdersListPage() {
             </Can>
             <Can permission="orders.list.export_csv">
               <button type="button" className={secondaryButtonClass} onClick={exportCsv} disabled={rows.length === 0}>
-                Export CSV
+                {tr("Export CSV")}
               </button>
             </Can>
             <Can permission="orders.new" level="edit">
               <Link to="/orders/new" className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white hover:bg-slate-700">
-                New Order
+                {tr("New Order")}
               </Link>
             </Can>
           </div>
@@ -510,17 +579,17 @@ export default function OrdersListPage() {
           <Can permission="orders.list.filter.search">
             <input
               type="search"
-              aria-label="Search"
+              aria-label={tr("Search")}
               className={inputClass}
-              placeholder="Search by customer, company, country, serial or order #"
+              placeholder={tr("Search by customer, company, country, serial or order #")}
               value={q}
               onChange={(e) => setFilter('q', e.target.value)}
             />
           </Can>
           <Can permission="orders.list.filter.stage">
-            <select aria-label="Stage" className={inputClass} value={stage} onChange={(e) => setFilter('stage', e.target.value)}>
-              <option value="open">Open orders</option>
-              <option value="all">All stages</option>
+            <select aria-label={tr("Stage")} className={inputClass} value={stage} onChange={(e) => setFilter('stage', e.target.value)}>
+              <option value="open">{tr("Open orders")}</option>
+              <option value="all">{tr("All stages")}</option>
               {STAGES.map((s) => (
                 <option key={s} value={s}>
                   {stageLabel(s)}
@@ -529,8 +598,8 @@ export default function OrdersListPage() {
             </select>
           </Can>
           <Can permission="orders.list.filter.voltage">
-            <select aria-label="Voltage" className={inputClass} value={voltage} onChange={(e) => setFilter('voltage', e.target.value)}>
-              <option value="">Any voltage</option>
+            <select aria-label={tr("Voltage")} className={inputClass} value={voltage} onChange={(e) => setFilter('voltage', e.target.value)}>
+              <option value="">{tr("Any voltage")}</option>
               {voltageChoices.map((v) => (
                 <option key={v} value={v}>
                   {v}
@@ -539,8 +608,8 @@ export default function OrdersListPage() {
             </select>
           </Can>
           <Can permission="orders.list.filter.payment">
-            <select aria-label="Payment" className={inputClass} value={payment} onChange={(e) => setFilter('payment', e.target.value)}>
-              <option value="">Any payment status</option>
+            <select aria-label={tr("Payment")} className={inputClass} value={payment} onChange={(e) => setFilter('payment', e.target.value)}>
+              <option value="">{tr("Any payment status")}</option>
               {PAYMENT_STATUSES.map((s) => (
                 <option key={s} value={s}>
                   {s}
@@ -550,13 +619,13 @@ export default function OrdersListPage() {
           </Can>
           <Can anyOf={MORE_KEYS}>
             <button type="button" className={`${secondaryButtonClass} whitespace-nowrap`} onClick={() => setMore(!more)} aria-expanded={more}>
-              More Filters{stages.length + voltages.length + types.length + rangeCount ? ` (${stages.length + voltages.length + types.length + rangeCount})` : ''}
+              {tr("More Filters")}{stages.length + voltages.length + types.length + rangeCount ? ` (${stages.length + voltages.length + types.length + rangeCount})` : ''}
             </button>
           </Can>
           <Can permission="orders.list.filter.archived">
             <label className="flex items-center gap-2 text-sm whitespace-nowrap text-slate-600">
               <input type="checkbox" checked={showArchived} onChange={(e) => setFilter('archived', e.target.checked)} />
-              Show archived
+              {tr("Show archived")}
             </label>
           </Can>
         </div>
@@ -565,35 +634,35 @@ export default function OrdersListPage() {
             <div className="mb-3 grid gap-3 rounded-md border border-slate-200 bg-white p-3 text-sm [grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))]">
               <Can permission="orders.list.filter.ship_dates">
                 <fieldset>
-                  <legend className="mb-1 font-medium">Expected ship date</legend>
+                  <legend className="mb-1 font-medium">{tr("Expected ship date")}</legend>
                   <div className="grid gap-1">
-                    <input type="date" aria-label="Expected ship date from" className={inputClass} value={shipFrom} onChange={(e) => setFilter('shipFrom', e.target.value)} />
-                    <input type="date" aria-label="Expected ship date to" className={inputClass} value={shipTo} onChange={(e) => setFilter('shipTo', e.target.value)} />
+                    <input type="date" aria-label={tr("Expected ship date from")} className={inputClass} value={shipFrom} onChange={(e) => setFilter('shipFrom', e.target.value)} />
+                    <input type="date" aria-label={tr("Expected ship date to")} className={inputClass} value={shipTo} onChange={(e) => setFilter('shipTo', e.target.value)} />
                   </div>
                 </fieldset>
                 <fieldset>
-                  <legend className="mb-1 font-medium">Actual ship date</legend>
+                  <legend className="mb-1 font-medium">{tr("Actual ship date")}</legend>
                   <div className="grid gap-1">
-                    <input type="date" aria-label="Actual ship date from" className={inputClass} value={actFrom} onChange={(e) => setFilter('actFrom', e.target.value)} />
-                    <input type="date" aria-label="Actual ship date to" className={inputClass} value={actTo} onChange={(e) => setFilter('actTo', e.target.value)} />
+                    <input type="date" aria-label={tr("Actual ship date from")} className={inputClass} value={actFrom} onChange={(e) => setFilter('actFrom', e.target.value)} />
+                    <input type="date" aria-label={tr("Actual ship date to")} className={inputClass} value={actTo} onChange={(e) => setFilter('actTo', e.target.value)} />
                   </div>
                 </fieldset>
               </Can>
               <Can permission="orders.list.filter.delay">
                 <fieldset>
-                  <legend className="mb-1 font-medium">Delay (days)</legend>
+                  <legend className="mb-1 font-medium">{tr("Delay (days)")}</legend>
                   <div className="grid grid-cols-2 gap-1">
-                    <input inputMode="numeric" aria-label="Delay at least" placeholder="Lowest" className={inputClass} value={delayMin} onChange={(e) => setFilter('delayMin', e.target.value.replace(/[^0-9-]/g, ''))} />
-                    <input inputMode="numeric" aria-label="Delay at most" placeholder="Highest" className={inputClass} value={delayMax} onChange={(e) => setFilter('delayMax', e.target.value.replace(/[^0-9-]/g, ''))} />
+                    <input inputMode="numeric" aria-label={tr("Delay at least")} placeholder={tr("Lowest")} className={inputClass} value={delayMin} onChange={(e) => setFilter('delayMin', e.target.value.replace(/[^0-9-]/g, ''))} />
+                    <input inputMode="numeric" aria-label={tr("Delay at most")} placeholder={tr("Highest")} className={inputClass} value={delayMax} onChange={(e) => setFilter('delayMax', e.target.value.replace(/[^0-9-]/g, ''))} />
                   </div>
-                  <p className="mt-1 text-xs text-slate-500">Negative = shipped early. Only shipped orders have a delay.</p>
+                  <p className="mt-1 text-xs text-slate-500">{tr("Negative = shipped early. Only shipped orders have a delay.")}</p>
                 </fieldset>
               </Can>
               <Can permission="orders.list.filter.currency">
                 <fieldset>
-                  <legend className="mb-1 font-medium">Currency</legend>
-                  <select aria-label="Currency" className={inputClass} value={currency} onChange={(e) => setFilter('currency', e.target.value)}>
-                    <option value="">Any currency</option>
+                  <legend className="mb-1 font-medium">{tr("Currency")}</legend>
+                  <select aria-label={tr("Currency")} className={inputClass} value={currency} onChange={(e) => setFilter('currency', e.target.value)}>
+                    <option value="">{tr("Any currency")}</option>
                     {currencies.map((c) => (
                       <option key={c} value={c}>
                         {c}
@@ -604,11 +673,11 @@ export default function OrdersListPage() {
               </Can>
               <Can permission="orders.list.filter.training">
                 <fieldset>
-                  <legend className="mb-1 font-medium">On-site training</legend>
-                  <select aria-label="On-site training" className={inputClass} value={training} onChange={(e) => setFilter('training', e.target.value)}>
-                    <option value="">Any</option>
-                    <option value="yes">Training needed</option>
-                    <option value="no">No training</option>
+                  <legend className="mb-1 font-medium">{tr("On-site training")}</legend>
+                  <select aria-label={tr("On-site training")} className={inputClass} value={training} onChange={(e) => setFilter('training', e.target.value)}>
+                    <option value="">{tr("Any")}</option>
+                    <option value="yes">{tr("Training needed")}</option>
+                    <option value="no">{tr("No training")}</option>
                   </select>
                 </fieldset>
               </Can>
@@ -661,7 +730,7 @@ export default function OrdersListPage() {
                 {mayHideRows && (
                   <Can permission="orders.list.rows">
                     <th className="border-b border-slate-300 px-2 py-1.5 text-left font-semibold text-slate-700" data-print="hide">
-                      <span className="sr-only">Hide row</span>
+                      <span className="sr-only">{tr("Hide row")}</span>
                     </th>
                   </Can>
                 )}
@@ -671,14 +740,14 @@ export default function OrdersListPage() {
               {loading && (
                 <tr>
                   <td colSpan={visibleColumns.length} className="px-3 py-6 text-center text-slate-500">
-                    Loading…
+                    {tr("Loading…")}
                   </td>
                 </tr>
               )}
               {!loading && rows.length === 0 && (
                 <tr>
                   <td colSpan={visibleColumns.length} className="px-3 py-6 text-center text-slate-500">
-                    {orders.length === 0 ? 'No orders have been entered yet.' : 'No orders match these filters. Clear the filters to see all orders.'}
+                    {orders.length === 0 ? tr("No orders have been entered yet.") : tr("No orders match these filters. Clear the filters to see all orders.")}
                   </td>
                 </tr>
               )}
@@ -701,13 +770,13 @@ export default function OrdersListPage() {
                         <button
                           type="button"
                           className="text-xs text-slate-600 underline"
-                          aria-label={`${hiddenRows.includes(o.id) ? 'Show' : 'Hide'} order ${o.order_code}`}
+                          aria-label={tr("{{value}} order {{order_code}}", { value: hiddenRows.includes(o.id) ? tr("Show") : tr("Hide"), order_code: o.order_code })}
                           onClick={(e) => {
                             e.stopPropagation()
                             toggleRow(o.id)
                           }}
                         >
-                          {hiddenRows.includes(o.id) ? 'Show' : 'Hide'}
+                          {hiddenRows.includes(o.id) ? tr("Show") : tr("Hide")}
                         </button>
                       </td>
                     </Can>
@@ -720,11 +789,11 @@ export default function OrdersListPage() {
 
         <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-600">
           <span>
-            {rows.length} of {orders.length} order{orders.length === 1 ? '' : 's'}
+            {rows.length} {tr("of")} {tr("{{count}} order", { count: orders.length })}
             {hiddenCount > 0 && (
               <Can permission="orders.list.rows">
                 <button type="button" className="ml-3 underline" onClick={() => setShowHiddenRows(!showHiddenRows)}>
-                  {showHiddenRows ? `Leave Out Hidden Rows (${hiddenCount})` : `Show Hidden Rows (${hiddenCount})`}
+                  {showHiddenRows ? tr("Leave Out Hidden Rows ({{hiddenCount}})", { hiddenCount: hiddenCount }) : tr("Show Hidden Rows ({{hiddenCount}})", { hiddenCount: hiddenCount })}
                 </button>
               </Can>
             )}
@@ -738,14 +807,14 @@ export default function OrdersListPage() {
                     setFilters((f) => ({ ...defaultFilters, sort: f.sort, dir: f.dir, archived: f.archived }))
                   }}
                 >
-                  Clear Filters
+                  {tr("Clear Filters")}
                 </button>
               </Can>
             )}
           </span>
           <Can permission="orders.list.outstanding_total">
             <span>
-              Outstanding:{' '}
+              {tr("Outstanding:")}{' '}
               {Object.keys(outstandingByCurrency).length === 0
                 ? '—'
                 : Object.entries(outstandingByCurrency)

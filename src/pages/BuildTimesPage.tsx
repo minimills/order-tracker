@@ -11,6 +11,7 @@ import { friendlyError } from '../lib/format'
 import { addDays } from '../lib/schedule'
 import { supabase } from '../lib/supabase'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type StepRow = {
   id: string
@@ -52,10 +53,18 @@ const STEP_NAMES: Record<string, string> = {
 const STEP_ORDER = Object.keys(STEP_NAMES)
 
 const PERIODS = [
-  { value: '3', label: 'Last 3 months' },
-  { value: '6', label: 'Last 6 months' },
-  { value: '12', label: 'Last 12 months' },
-  { value: 'all', label: 'All time' },
+  { value: '3', get label() {
+    return tr("Last 3 months")
+  } },
+  { value: '6', get label() {
+    return tr("Last 6 months")
+  } },
+  { value: '12', get label() {
+    return tr("Last 12 months")
+  } },
+  { value: 'all', get label() {
+    return tr("All time")
+  } },
 ]
 
 const halifaxDay = new Intl.DateTimeFormat('en-CA', {
@@ -157,7 +166,7 @@ export default function BuildTimesPage() {
     const auto = rows.filter((r) => r.auto_started || r.auto_finished).length
     return (
       <span
-        title={`${rows.length} build${rows.length === 1 ? '' : 's'}; average ${formatDuration(avg(rows.map((r) => r.seconds)))} on the clock${auto ? `; ${auto} timed automatically when the card moved` : ''}`}
+        title={tr("{{length}} build{{value}}; average {{formatDuration}} on the clock{{value2}}", { length: rows.length, value: rows.length === 1 ? '' : 's', formatDuration: formatDuration(avg(rows.map((r) => r.seconds))), value2: auto ? tr("; {{auto}} timed automatically when the card moved", { auto: auto }) : '' })}
       >
         {oneDecimal(days)} <span className="text-xs text-slate-500">({rows.length})</span>
       </span>
@@ -170,39 +179,38 @@ export default function BuildTimesPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">Build Times</h1>
+              <h1 className="text-2xl font-semibold">{tr("Build Times")}</h1>
               <Can permission="reports.build_times.print">
-                <PrintButton title="Build Times" />
+                <PrintButton title={tr("Build Times")} />
               </Can>
             </div>
             <p className="text-sm text-slate-600">
-              How long each step really takes, from the production boards. A step starts when Start Stage is pressed (or when the card arrives in the stage) and
-              ends when Finish Stage is pressed (or when the card moves on).
+              {tr("How long each step really takes, from the production boards. A step starts when Start Stage is pressed (or when the card arrives in the stage) and ends when Finish Stage is pressed (or when the card moves on).")}
             </p>
             <Can permission="reports.department_delays">
               <p className="text-sm">
                 <Link to="/reports/department-delays" className="text-blue-700 underline">
-                  See department delays against deadlines
+                  {tr("See department delays against deadlines")}
                 </Link>
               </p>
             </Can>
             <Can permission="admin.machine_types" level="edit">
               <Link to="/admin/machine-types?find=build-times" className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium hover:bg-slate-50">
-                <Icon name="pencil" /> Edit Build Times
+                <Icon name="pencil" /> {tr("Edit Build Times")}
               </Link>
             </Can>
           </div>
           <Can permission="reports.build_times.filters">
             <div className="flex flex-wrap gap-2">
-              <select aria-label="Machine type" className={`${narrowInputClass} w-52`} value={typeFilter} onChange={(e) => set('type', e.target.value)}>
-                <option value="">All machine types</option>
+              <select aria-label={tr("Machine type")} className={`${narrowInputClass} w-52`} value={typeFilter} onChange={(e) => set('type', e.target.value)}>
+                <option value="">{tr("All machine types")}</option>
                 {types.map(([id, name]) => (
                   <option key={id} value={id}>
                     {name}
                   </option>
                 ))}
               </select>
-              <select aria-label="Period" className={`${narrowInputClass} w-44`} value={period} onChange={(e) => set('months', e.target.value)}>
+              <select aria-label={tr("Period")} className={`${narrowInputClass} w-44`} value={period} onChange={(e) => set('months', e.target.value)}>
                 {PERIODS.map((p) => (
                   <option key={p.value} value={p.value}>
                     {p.label}
@@ -214,24 +222,23 @@ export default function BuildTimesPage() {
         </div>
 
         {loading ? (
-          <p className="text-center text-slate-500">Loading…</p>
+          <p className="text-center text-slate-500">{tr("Loading…")}</p>
         ) : (
           <>
             <section className="rounded-lg border border-slate-200 bg-white p-4">
-              <h2 className="mb-1 font-semibold">Average Working Days per Step</h2>
+              <h2 className="mb-1 font-semibold">{tr("Average Working Days per Step")}</h2>
               <p className="mb-3 text-xs text-slate-500">
-                Number of builds in brackets. Point at a number to see the time on the clock. These real times also feed the build-time averages used by the
-                schedule (after 3 builds of a type).
-                {from && ` Showing steps finished since ${showDate(from)}.`}
+                {tr("Number of builds in brackets. Point at a number to see the time on the clock. These real times also feed the build-time averages used by the schedule (after 3 builds of a type).")}
+                {from && tr(" Showing steps finished since {{showDate}}.", { showDate: showDate(from) })}
               </p>
               {byType.length === 0 ? (
-                <p className="text-sm text-slate-500">No steps were finished on production boards in this period.</p>
+                <p className="text-sm text-slate-500">{tr("No steps were finished on production boards in this period.")}</p>
               ) : (
                 <div className="overflow-x-auto">
                   <table className="min-w-full text-sm">
                     <thead className="text-left text-xs text-slate-500">
                       <tr>
-                        <th className="py-1 pr-3 font-normal">Machine type</th>
+                        <th className="py-1 pr-3 font-normal">{tr("Machine type")}</th>
                         {usedSteps.map((s) => (
                           <th key={s} className="px-2 py-1 text-right font-normal">
                             {STEP_NAMES[s]}
@@ -258,16 +265,16 @@ export default function BuildTimesPage() {
 
             <Can permission="reports.build_times.trend">
               <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 className="mb-1 font-semibold">Trend by Month</h2>
-                <p className="mb-3 text-xs text-slate-500">Average working days per step, by the month the step was finished.</p>
+                <h2 className="mb-1 font-semibold">{tr("Trend by Month")}</h2>
+                <p className="mb-3 text-xs text-slate-500">{tr("Average working days per step, by the month the step was finished.")}</p>
                 {months.length === 0 ? (
-                  <p className="text-sm text-slate-500">No steps were finished in this period.</p>
+                  <p className="text-sm text-slate-500">{tr("No steps were finished in this period.")}</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead className="text-left text-xs text-slate-500">
                         <tr>
-                          <th className="py-1 pr-3 font-normal">Month</th>
+                          <th className="py-1 pr-3 font-normal">{tr("Month")}</th>
                           {usedSteps.map((s) => (
                             <th key={s} className="px-2 py-1 text-right font-normal">
                               {STEP_NAMES[s]}
@@ -295,24 +302,24 @@ export default function BuildTimesPage() {
 
             <Can permission="reports.build_times.tasks">
               <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 className="mb-1 font-semibold">Time per Task</h2>
+                <h2 className="mb-1 font-semibold">{tr("Time per Task")}</h2>
                 <p className="mb-3 text-xs text-slate-500">
-                  Build checklist tasks where both Start and Finish were pressed. Time on the clock between the two.
+                  {tr("Build checklist tasks where both Start and Finish were pressed. Time on the clock between the two.")}
                 </p>
                 {byTask.length === 0 ? (
-                  <p className="text-sm text-slate-500">No timed tasks in this period.</p>
+                  <p className="text-sm text-slate-500">{tr("No timed tasks in this period.")}</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead className="text-left text-xs text-slate-500">
                         <tr>
-                          <th className="py-1 pr-3 font-normal">Machine type</th>
-                          <th className="px-2 py-1 font-normal">Step</th>
-                          <th className="px-2 py-1 font-normal">Task</th>
-                          <th className="px-2 py-1 text-right font-normal">Times</th>
-                          <th className="px-2 py-1 text-right font-normal">Average</th>
-                          <th className="px-2 py-1 text-right font-normal">Fastest</th>
-                          <th className="px-2 py-1 text-right font-normal">Slowest</th>
+                          <th className="py-1 pr-3 font-normal">{tr("Machine type")}</th>
+                          <th className="px-2 py-1 font-normal">{tr("Step")}</th>
+                          <th className="px-2 py-1 font-normal">{tr("Task")}</th>
+                          <th className="px-2 py-1 text-right font-normal">{tr("Times")}</th>
+                          <th className="px-2 py-1 text-right font-normal">{tr("Average")}</th>
+                          <th className="px-2 py-1 text-right font-normal">{tr("Fastest")}</th>
+                          <th className="px-2 py-1 text-right font-normal">{tr("Slowest")}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">

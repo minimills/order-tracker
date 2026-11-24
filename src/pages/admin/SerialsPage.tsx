@@ -11,6 +11,7 @@ import { formatSerial, friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { MachineType } from '../../lib/types'
 import SerialNumber from '../../components/SerialNumber'
+import { tr } from '../../i18n'
 
 type Machine = {
   id: string
@@ -111,7 +112,7 @@ export default function SerialsPage() {
     const { error: e } = await supabase.rpc('admin_set_serial', { p_machine_id: editing.id, p_serial: serial })
     setBusy(false)
     if (e) return setError(friendlyError(e))
-    toast.success(serial.trim() ? `Serial set to ${serial.trim().toUpperCase()}.` : 'Serial will be given automatically again.')
+    toast.success(serial.trim() ? tr("Serial set to {{value}}.", { value: serial.trim().toUpperCase() }) : tr("Serial will be given automatically again."))
     setEditing(null)
     load()
   }
@@ -119,7 +120,7 @@ export default function SerialsPage() {
   async function runResequence(apply: boolean) {
     if (!supabase || !type) return
     const n = Number(start || suggestedStart)
-    if (!Number.isInteger(n) || n < 1) return toast.error('Enter a starting number of 1 or more.')
+    if (!Number.isInteger(n) || n < 1) return toast.error(tr("Enter a starting number of 1 or more."))
     setBusy(true)
     const { data, error: e } = await supabase.rpc('admin_resequence_serials', {
       p_machine_type_id: type.id,
@@ -129,7 +130,7 @@ export default function SerialsPage() {
     setBusy(false)
     if (e) return toast.error(friendlyError(e))
     if (!apply) return setPreview((data as ReseqRow[]) ?? [])
-    toast.success(`${type.code} serials re-sequenced.`)
+    toast.success(tr("{{code}} serials re-sequenced.", { code: type.code }))
     setPreview(null)
     load()
     // Refresh the next serial number shown.
@@ -141,14 +142,13 @@ export default function SerialsPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Serial Numbers">
-        Fix a single serial by hand (it then stays fixed), or re-sequence a machine type so its unbuilt machines get
-        consecutive serials in board order. Built machines and hand-typed serials are never changed by re-sequencing.
+      <AdminPageHeader title={tr("Serial Numbers")}>
+        {tr("Fix a single serial by hand (it then stays fixed), or re-sequence a machine type so its unbuilt machines get consecutive serials in board order. Built machines and hand-typed serials are never changed by re-sequencing.")}
       </AdminPageHeader>
 
       {needing.length > 0 && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-          <strong>{needing.length}</strong> machine{needing.length === 1 ? '' : 's'} imported without a serial need one:{' '}
+          <strong>{needing.length}</strong> {tr("machine")}{needing.length === 1 ? '' : 's'} {tr("imported without a serial need one:")}{' '}
           {[...needingByType].map(([id, t], i) => (
             <span key={id}>
               {i > 0 && ', '}
@@ -157,25 +157,25 @@ export default function SerialsPage() {
               </button>
             </span>
           ))}
-          . Use <em>Edit serial</em> to type one, or save it empty to give it the next automatic serial.
+          {tr(". Use")} <em>{tr("Edit serial")}</em> {tr("to type one, or save it empty to give it the next automatic serial.")}
         </div>
       )}
 
       <div className="flex flex-wrap items-end gap-3">
-        <Field label="Machine type" htmlFor="st-type">
+        <Field label={tr("Machine type")} htmlFor="st-type">
           <select id="st-type" className={inputClass} value={typeId} onChange={(e) => setTypeId(e.target.value)}>
             {types.map((t) => (
               <option key={t.id} value={t.id}>
-                {t.name} ({t.code ?? 'no code'})
+                {t.name} ({t.code ?? tr("no code")})
               </option>
             ))}
           </select>
         </Field>
         {type?.code && (
           <p className="pb-2 text-sm text-slate-600">
-            Next automatic serial: <strong className="font-mono">{formatSerial(type.code!, type.next_serial_number)}</strong>{' '}
+            {tr("Next automatic serial:")} <strong className="font-mono">{formatSerial(type.code!, type.next_serial_number)}</strong>{' '}
             <Link to="/admin/machine-types" className="underline">
-              change
+              {tr("change")}
             </Link>
           </p>
         )}
@@ -183,10 +183,9 @@ export default function SerialsPage() {
 
       {type && !type.code && (
         <p className="text-sm text-slate-600">
-          {type.name} has no code yet, so it gets no automatic serials. You can still type a serial by hand, or give it a
-          code in{' '}
+          {type.name} {tr("has no code yet, so it gets no automatic serials. You can still type a serial by hand, or give it a code in")}{' '}
           <Link to="/admin/machine-types" className="underline">
-            Machine Types
+            {tr("Machine Types")}
           </Link>
           .
         </p>
@@ -194,13 +193,12 @@ export default function SerialsPage() {
 
       {type?.code && (
         <section className="rounded-lg border border-slate-200 bg-white p-4">
-          <h2 className="font-semibold">Re-sequence {type.code} serials</h2>
+          <h2 className="font-semibold">{tr("Re-sequence")} {type.code} {tr("serials")}</h2>
           <p className="mt-1 text-sm text-slate-600">
-            {renumberable.length} unbuilt machine{renumberable.length === 1 ? '' : 's'} on the board would be numbered
-            from the starting number, in board order.
+            {tr("{{count}} unbuilt machine", { count: renumberable.length })} {tr("on the board would be numbered from the starting number, in board order.")}
           </p>
           <div className="mt-3 flex flex-wrap items-end gap-3">
-            <Field label="Start from number" htmlFor="st-start">
+            <Field label={tr("Start from number")} htmlFor="st-start">
               <input
                 id="st-start"
                 inputMode="numeric"
@@ -211,7 +209,7 @@ export default function SerialsPage() {
               />
             </Field>
             <button type="button" className={buttonClass} disabled={busy || renumberable.length === 0} onClick={() => runResequence(false)}>
-              Preview Changes
+              {tr("Preview Changes")}
             </button>
           </div>
         </section>
@@ -221,9 +219,9 @@ export default function SerialsPage() {
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-xs text-slate-500">
             <tr>
-              <th className="px-3 py-2 font-normal">Serial</th>
-              <th className="px-3 py-2 font-normal">Order</th>
-              <th className="px-3 py-2 font-normal">Built</th>
+              <th className="px-3 py-2 font-normal">{tr("Serial")}</th>
+              <th className="px-3 py-2 font-normal">{tr("Order")}</th>
+              <th className="px-3 py-2 font-normal">{tr("Built")}</th>
               <th />
             </tr>
           </thead>
@@ -231,14 +229,14 @@ export default function SerialsPage() {
             {loading && (
               <tr>
                 <td colSpan={5} className="px-3 py-4 text-center text-slate-500">
-                  Loading…
+                  {tr("Loading…")}
                 </td>
               </tr>
             )}
             {!loading && machines.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-3 py-4 text-center text-slate-500">
-                  There are no machines of this type yet.
+                  {tr("There are no machines of this type yet.")}
                 </td>
               </tr>
             )}
@@ -247,18 +245,18 @@ export default function SerialsPage() {
                 <td className="px-3 py-2 font-mono">
                   {(m.serial_number && <SerialNumber serial={m.serial_number} />) ??
                     (m.needs_serial ? (
-                      <span className="rounded bg-amber-100 px-1.5 py-0.5 font-sans text-xs font-medium text-amber-900">Needs serial</span>
+                      <span className="rounded bg-amber-100 px-1.5 py-0.5 font-sans text-xs font-medium text-amber-900">{tr("Needs serial")}</span>
                     ) : (
-                      <span className="font-sans text-slate-400">none ({stageLabel(m.orders?.stage)})</span>
+                      <span className="font-sans text-slate-400">{tr("none (")}{stageLabel(m.orders?.stage)})</span>
                     ))}
-                  {m.serial_manual && m.serial_number && <span className="ml-1 font-sans text-xs text-slate-500">(by hand)</span>}
+                  {m.serial_manual && m.serial_number && <span className="ml-1 font-sans text-xs text-slate-500">{tr("(by hand)")}</span>}
                 </td>
                 <td className="px-3 py-2">
                   <Link to={`/orders/${m.order_id}`} className="hover:underline">
                     {m.orders?.order_code}
                   </Link>
                 </td>
-                <td className="px-3 py-2">{m.ready ? 'Built' : ''}</td>
+                <td className="px-3 py-2">{m.ready ? tr("Built") : ''}</td>
                 <td className="px-3 py-2 text-right">
                   <button
                     type="button"
@@ -269,7 +267,7 @@ export default function SerialsPage() {
                       setError(null)
                     }}
                   >
-                    Edit serial
+                    {tr("Edit serial")}
                   </button>
                 </td>
               </tr>
@@ -280,24 +278,24 @@ export default function SerialsPage() {
 
       {editing && (
         <Modal
-          title={`Edit serial (order ${editing.orders?.order_code})`}
+          title={tr("Edit serial (order {{value}})", { value: editing.orders?.order_code })}
           onClose={() => setEditing(null)}
           busy={busy}
           footer={
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setEditing(null)} disabled={busy}>
-                Cancel
+                {tr("Cancel")}
               </button>
               <button type="button" className={buttonClass} onClick={saveSerial} disabled={busy}>
-                {busy ? 'Saving…' : 'Save Serial Number'}
+                {busy ? tr("Saving…") : tr("Save Serial Number")}
               </button>
             </>
           }
         >
           <Field
-            label="Serial number"
+            label={tr("Serial number")}
             htmlFor="edit-serial"
-            hint="It is checked for duplicates and then stays fixed. Leave empty to go back to an automatic serial."
+            hint={tr("It is checked for duplicates and then stays fixed. Leave empty to go back to an automatic serial.")}
           >
             <input
               id="edit-serial"
@@ -313,23 +311,23 @@ export default function SerialsPage() {
 
       {preview && type?.code && (
         <Modal
-          title={`Re-sequence ${type.code} serials?`}
+          title={tr("Re-sequence {{code}} serials?", { code: type.code })}
           onClose={() => setPreview(null)}
           busy={busy}
           footer={
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setPreview(null)} disabled={busy}>
-                Cancel
+                {tr("Cancel")}
               </button>
               <button type="button" className={buttonClass} onClick={() => runResequence(true)} disabled={busy || changes.length === 0}>
-                {busy ? 'Saving…' : `Change ${changes.length} serial${changes.length === 1 ? '' : 's'}`}
+                {busy ? tr("Saving…") : tr("Change {{length}} serial{{value}}", { length: changes.length, value: changes.length === 1 ? '' : 's' })}
               </button>
             </>
           }
         >
           <ChangeList serials={changes.map((r) => ({ order: r.order_code, old: r.old_serial, new: r.new_serial }))} />
           <p className="mt-3 text-xs text-slate-500">
-            Afterwards the next automatic serial is set just after the highest {type.code} serial in use.
+            {tr("Afterwards the next automatic serial is set just after the highest")} {type.code} {tr("serial in use.")}
           </p>
         </Modal>
       )}

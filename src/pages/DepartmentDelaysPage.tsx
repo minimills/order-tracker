@@ -10,6 +10,7 @@ import { addDays, STEP_LABEL, STEPS, type StepKey } from '../lib/schedule'
 import { supabase } from '../lib/supabase'
 import { BOARD_STAGES, type OrderSummaryRow } from '../lib/types'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Dept = StepKey | 'shipping'
 const DEPTS: Dept[] = [...STEPS.map((s) => s.key), 'shipping']
@@ -19,10 +20,18 @@ type Done = { machine_id: string; step: StepKey }
 type Ship = Pick<OrderSummaryRow, 'id' | 'stage' | 'archived' | 'expected_ship_date' | 'actual_ship_date' | 'delay_days'>
 
 const PERIODS = [
-  { value: '3', label: 'Last 3 months' },
-  { value: '6', label: 'Last 6 months' },
-  { value: '12', label: 'Last 12 months' },
-  { value: 'all', label: 'All time' },
+  { value: '3', get label() {
+    return tr("Last 3 months")
+  } },
+  { value: '6', get label() {
+    return tr("Last 6 months")
+  } },
+  { value: '12', get label() {
+    return tr("Last 12 months")
+  } },
+  { value: 'all', get label() {
+    return tr("All time")
+  } },
 ]
 
 function summarize(rows: Result[]) {
@@ -96,19 +105,18 @@ export default function DepartmentDelaysPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">Department Delays</h1>
+              <h1 className="text-2xl font-semibold">{tr("Department Delays")}</h1>
               <Can permission="reports.department_delays.print">
-                <PrintButton title="Department Delays" />
+                <PrintButton title={tr("Department Delays")} />
               </Can>
             </div>
             <p className="text-sm text-slate-600">
-              How often each department finishes by its deadline. A step counts when it is marked complete on the Order page;
-              Shipping compares the actual ship date with the expected one.
+              {tr("How often each department finishes by its deadline. A step counts when it is marked complete on the Order page; Shipping compares the actual ship date with the expected one.")}
             </p>
           </div>
           <Can permission="reports.department_delays.period">
             <select
-              aria-label="Period"
+              aria-label={tr("Period")}
               className={`${inputClass} w-44`}
               value={period}
               onChange={(e) => setParams((p) => {
@@ -126,32 +134,32 @@ export default function DepartmentDelaysPage() {
         </div>
 
         {loading ? (
-          <p className="text-center text-slate-500">Loading…</p>
+          <p className="text-center text-slate-500">{tr("Loading…")}</p>
         ) : (
           <>
             <Can permission="reports.department_delays.summary">
               <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,11rem),1fr))]">
-                <SummaryBox label="On time" value={summary.onTime === null ? '—' : `${summary.onTime}%`} hint={`${shown.length} finished in this period`} tone={summary.onTime !== null && summary.onTime < 80 ? 'bad' : 'good'} />
+                <SummaryBox label={tr("On time")} value={summary.onTime === null ? '—' : `${summary.onTime}%`} hint={tr("{{length}} finished in this period", { length: shown.length })} tone={summary.onTime !== null && summary.onTime < 80 ? 'bad' : 'good'} />
                 <SummaryBox
-                  label="Average days early"
+                  label={tr("Average days early")}
                   value={summary.avgEarly === null ? '—' : String(summary.avgEarly)}
-                  hint={summary.earlyCount ? `${summary.earlyCount} finished early` : 'Nothing finished early'}
+                  hint={summary.earlyCount ? tr("{{earlyCount}} finished early", { earlyCount: summary.earlyCount }) : tr("Nothing finished early")}
                 />
                 <SummaryBox
-                  label="Average days late"
+                  label={tr("Average days late")}
                   value={summary.avgLate === null ? '—' : String(summary.avgLate)}
-                  hint={summary.lateCount ? `${summary.lateCount} finished late` : 'Nothing finished late'}
+                  hint={summary.lateCount ? tr("{{lateCount}} finished late", { lateCount: summary.lateCount }) : tr("Nothing finished late")}
                   tone={summary.lateCount ? 'bad' : undefined}
                 />
                 <SummaryBox
-                  label="Worst department this month"
+                  label={tr("Worst department this month")}
                   value={summary.worst ? STEP_LABEL[summary.worst.dept] : '—'}
                   hint={
                     summary.worst
-                      ? `${summary.worst.onTime}% on time (${summary.worst.count} finished)`
+                      ? tr("{{onTime}}% on time ({{count}} finished)", { onTime: summary.worst.onTime, count: summary.worst.count })
                       : summary.allOnTimeThisMonth
-                        ? 'Every department was on time this month.'
-                        : 'No work finished this month yet.'
+                        ? tr("Every department was on time this month.")
+                        : tr("No work finished this month yet.")
                   }
                   tone={summary.worst ? 'bad' : undefined}
                 />
@@ -161,11 +169,11 @@ export default function DepartmentDelaysPage() {
               <table className="min-w-full text-sm">
                 <thead className="bg-slate-50 text-left text-xs text-slate-500">
                   <tr>
-                    <th className="px-3 py-2 font-normal">Department</th>
-                    <th className="px-3 py-2 text-right font-normal">Finished</th>
-                    <th className="px-3 py-2 text-right font-normal">On time</th>
-                    <th className="px-3 py-2 text-right font-normal">Average days late (when late)</th>
-                    <th className="px-3 py-2 text-right font-normal">Overdue now</th>
+                    <th className="px-3 py-2 font-normal">{tr("Department")}</th>
+                    <th className="px-3 py-2 text-right font-normal">{tr("Finished")}</th>
+                    <th className="px-3 py-2 text-right font-normal">{tr("On time")}</th>
+                    <th className="px-3 py-2 text-right font-normal">{tr("Average days late (when late)")}</th>
+                    <th className="px-3 py-2 text-right font-normal">{tr("Overdue now")}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -188,21 +196,20 @@ export default function DepartmentDelaysPage() {
               </table>
             </div>
             <p className="text-xs text-slate-500">
-              Days are calendar days. “Overdue now” means deadlines that have passed on orders in the shop queue and are
-              not yet marked complete. {from && `Showing work finished since ${showDate(from)}.`}
+              {tr("Days are calendar days. “Overdue now” means deadlines that have passed on orders in the shop queue and are not yet marked complete.")} {from && tr("Showing work finished since {{showDate}}.", { showDate: showDate(from) })}
             </p>
 
             <Can permission="reports.department_delays.by_month">
               <section className="rounded-lg border border-slate-200 bg-white p-4">
-                <h2 className="mb-2 font-semibold">By Month (On-Time %, Number Finished)</h2>
+                <h2 className="mb-2 font-semibold">{tr("By Month (On-Time %, Number Finished)")}</h2>
                 {months.length === 0 ? (
-                  <p className="text-sm text-slate-500">No work was finished in this period.</p>
+                  <p className="text-sm text-slate-500">{tr("No work was finished in this period.")}</p>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="min-w-full text-sm">
                       <thead className="text-left text-xs text-slate-500">
                         <tr>
-                          <th className="py-1 pr-3 font-normal">Month</th>
+                          <th className="py-1 pr-3 font-normal">{tr("Month")}</th>
                           {DEPTS.map((d) => (
                             <th key={d} className="px-2 py-1 text-right font-normal">
                               {STEP_LABEL[d]}
@@ -221,7 +228,7 @@ export default function DepartmentDelaysPage() {
                                   {sum.onTime === null ? (
                                     <span className="text-slate-300">—</span>
                                   ) : (
-                                    <span title={sum.avgLate !== null ? `Average ${sum.avgLate} days late when late` : 'All on time'}>
+                                    <span title={sum.avgLate !== null ? tr("Average {{avgLate}} days late when late", { avgLate: sum.avgLate }) : tr("All on time")}>
                                       <span className={sum.onTime < 80 ? 'font-medium text-red-700' : ''}>{sum.onTime}%</span>
                                       <span className="text-xs text-slate-500"> ({sum.count})</span>
                                     </span>

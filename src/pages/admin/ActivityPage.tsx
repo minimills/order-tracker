@@ -10,22 +10,45 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import Can from '../../components/Can'
 import PrintButton from '../../components/print/PrintButton'
+import { tr } from '../../i18n'
 
 type Entry = ActivityEntry & { order_id: string | null }
 
 const PAGE = 100
 const AREAS: { value: string; label: string }[] = [
-  { value: '', label: 'Everything' },
-  { value: 'orders', label: 'Orders' },
-  { value: 'order_machines', label: 'Machines' },
-  { value: 'payments', label: 'Payments' },
-  { value: 'customers', label: 'Customers' },
-  { value: 'machine_types', label: 'Machine types' },
-  { value: 'option_lists', label: 'Dropdown lists' },
-  { value: 'allowed_users', label: 'Users' },
-  { value: 'departments', label: 'Departments' },
-  { value: 'user_departments', label: 'Department memberships' },
-  { value: 'app_settings', label: 'Settings' },
+  { value: '', get label() {
+    return tr("Everything")
+  } },
+  { value: 'orders', get label() {
+    return tr("Orders")
+  } },
+  { value: 'order_machines', get label() {
+    return tr("Machines")
+  } },
+  { value: 'payments', get label() {
+    return tr("Payments")
+  } },
+  { value: 'customers', get label() {
+    return tr("Customers")
+  } },
+  { value: 'machine_types', get label() {
+    return tr("Machine types")
+  } },
+  { value: 'option_lists', get label() {
+    return tr("Dropdown lists")
+  } },
+  { value: 'allowed_users', get label() {
+    return tr("Users")
+  } },
+  { value: 'departments', get label() {
+    return tr("Departments")
+  } },
+  { value: 'user_departments', get label() {
+    return tr("Department memberships")
+  } },
+  { value: 'app_settings', get label() {
+    return tr("Settings")
+  } },
 ]
 
 /** Midnight at the start of a day in Halifax, for example "2026-11-03T00:00:00-04:00". */
@@ -84,7 +107,7 @@ export default function ActivityPage() {
           setEntries([])
           setMore(false)
           setLoading(false)
-          setError(`There is no order ${code}. (Permanently deleted orders can still be found by leaving this empty.)`)
+          setError(tr("There is no order {{code}}. (Permanently deleted orders can still be found by leaving this empty.)", { code: code }))
           return
         }
       }
@@ -136,13 +159,13 @@ export default function ActivityPage() {
   return (
     <div className="space-y-5">
       <AdminPageHeader
-        title="Activity"
+        title={tr("Activity")}
         print={
           <Can permission="admin.activity.print">
-            <PrintButton title="Activity" />
+            <PrintButton title={tr("Activity")} />
           </Can>
         }
-      >Every change anyone made, newest first. Times are Halifax time.</AdminPageHeader>
+      >{tr("Every change anyone made, newest first. Times are Halifax time.")}</AdminPageHeader>
 
       <form
         className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2 lg:grid-cols-[1.4fr_0.8fr_1fr_1.2fr_1fr_1fr_auto]"
@@ -151,21 +174,21 @@ export default function ActivityPage() {
           search(0)
         }}
       >
-        <Field label="Person" htmlFor="ac-person">
+        <Field label={tr("Person")} htmlFor="ac-person">
           <select id="ac-person" className={inputClass} value={person} onChange={(e) => setPerson(e.target.value)}>
-            <option value="">Everyone</option>
+            <option value="">{tr("Everyone")}</option>
             {people.map((p) => (
               <option key={p} value={p}>
                 {p}
               </option>
             ))}
-            <option value="__auto">Automatic / database</option>
+            <option value="__auto">{tr("Automatic / database")}</option>
           </select>
         </Field>
-        <Field label="Order #" htmlFor="ac-order">
-          <input id="ac-order" className={inputClass} placeholder="for example 76" value={orderCode} onChange={(e) => setOrderCode(e.target.value)} />
+        <Field label={tr("Order #")} htmlFor="ac-order">
+          <input id="ac-order" className={inputClass} placeholder={tr("for example 76")} value={orderCode} onChange={(e) => setOrderCode(e.target.value)} />
         </Field>
-        <Field label="Area" htmlFor="ac-area">
+        <Field label={tr("Area")} htmlFor="ac-area">
           <select id="ac-area" className={inputClass} value={area} onChange={(e) => setArea(e.target.value)}>
             {AREAS.map((a) => (
               <option key={a.value} value={a.value}>
@@ -174,9 +197,9 @@ export default function ActivityPage() {
             ))}
           </select>
         </Field>
-        <Field label="Department" htmlFor="ac-dept">
+        <Field label={tr("Department")} htmlFor="ac-dept">
           <select id="ac-dept" className={inputClass} value={department} onChange={(e) => setDepartment(e.target.value)}>
-            <option value="">All departments</option>
+            <option value="">{tr("All departments")}</option>
             {departmentNames.map((n) => (
               <option key={n} value={n}>
                 {n}
@@ -184,15 +207,15 @@ export default function ActivityPage() {
             ))}
           </select>
         </Field>
-        <Field label="From" htmlFor="ac-from">
+        <Field label={tr("From")} htmlFor="ac-from">
           <input id="ac-from" type="date" className={inputClass} value={from} onChange={(e) => setFrom(e.target.value)} />
         </Field>
-        <Field label="To" htmlFor="ac-to">
+        <Field label={tr("To")} htmlFor="ac-to">
           <input id="ac-to" type="date" className={inputClass} value={to} onChange={(e) => setTo(e.target.value)} />
         </Field>
         <div className="flex items-end">
           <button type="submit" className={buttonClass} disabled={loading}>
-            Search
+            {tr("Search")}
           </button>
         </div>
       </form>
@@ -211,10 +234,10 @@ export default function ActivityPage() {
                   {e.order_id &&
                     (code ? (
                       <Link to={`/orders/${e.order_id}`} className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs hover:underline">
-                        Order {code}
+                        {tr("Order")} {code}
                       </Link>
                     ) : (
-                      <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">deleted order</span>
+                      <span className="mr-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-500">{tr("deleted order")}</span>
                     ))}
                   {d.title}
                 </span>
@@ -229,19 +252,19 @@ export default function ActivityPage() {
                       {l}
                     </li>
                   ))}
-                  {d.lines.length > 12 && <li className="text-slate-500">…and {d.lines.length - 12} more</li>}
+                  {d.lines.length > 12 && <li className="text-slate-500">{tr("…and")} {d.lines.length - 12} {tr("more")}</li>}
                 </ul>
               )}
             </li>
           )
         })}
       </ol>
-      {!loading && entries.length === 0 && !error && <p className="text-center text-sm text-slate-500">No changes match these filters.</p>}
-      {loading && <p className="text-center text-sm text-slate-500">Loading…</p>}
+      {!loading && entries.length === 0 && !error && <p className="text-center text-sm text-slate-500">{tr("No changes match these filters.")}</p>}
+      {loading && <p className="text-center text-sm text-slate-500">{tr("Loading…")}</p>}
       {more && !loading && (
         <div className="text-center">
           <button type="button" className={secondaryButtonClass} onClick={() => search(entries.length)}>
-            Load More
+            {tr("Load More")}
           </button>
         </div>
       )}

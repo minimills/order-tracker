@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import { buttonClass, inputClass, secondaryButtonClass } from '../form'
 import FreightImportDialog from './FreightImportDialog'
+import { tr } from '../../i18n'
 
 type Row = Breakdown & { order_code?: string | null }
 
@@ -76,16 +77,16 @@ export default function BreakdownList() {
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-slate-600">One cost breakdown per shipment. Amounts are shown in the currency they were entered in.</p>
+        <p className="text-sm text-slate-600">{tr("One cost breakdown per shipment. Amounts are shown in the currency they were entered in.")}</p>
         <div className="flex flex-wrap gap-2">
           <Can permission="freight.breakdowns.import" level="edit">
             <button type="button" className={secondaryButtonClass} onClick={() => setImporting(true)}>
-              Import
+              {tr("Import")}
             </button>
           </Can>
           <Can permission="freight.breakdowns" level="edit">
             <Link to="/freight/breakdowns/new" className={buttonClass}>
-              New Cost Breakdown
+              {tr("New Cost Breakdown")}
             </Link>
           </Can>
         </div>
@@ -94,41 +95,41 @@ export default function BreakdownList() {
       <Can permission="freight.breakdowns.filters">
         <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))] sm:items-end">
           <label className="text-sm [grid-column:1/-1] md:[grid-column:auto]">
-            <span className="mb-1 block text-slate-600">Search</span>
-            <input className={inputClass} value={q} placeholder="Customer, invoice #, quote #, ref #, carrier" onChange={(e) => set('q', e.target.value)} />
+            <span className="mb-1 block text-slate-600">{tr("Search")}</span>
+            <input className={inputClass} value={q} placeholder={tr("Customer, invoice #, quote #, ref #, carrier")} onChange={(e) => set('q', e.target.value)} />
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-600">Shipping agent</span>
+            <span className="mb-1 block text-slate-600">{tr("Shipping agent")}</span>
             <select className={inputClass} value={agent} onChange={(e) => set('agent', e.target.value)}>
-              <option value="">All agents</option>
+              <option value="">{tr("All agents")}</option>
               {agents.map((a) => (
                 <option key={a}>{a}</option>
               ))}
             </select>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-600">Freight type</span>
+            <span className="mb-1 block text-slate-600">{tr("Freight type")}</span>
             <select className={inputClass} value={type} onChange={(e) => set('ftype', e.target.value)}>
-              <option value="">All types</option>
+              <option value="">{tr("All types")}</option>
               {FREIGHT_TYPES.map((t) => (
                 <option key={t}>{t}</option>
               ))}
             </select>
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-600">Shipped from</span>
+            <span className="mb-1 block text-slate-600">{tr("Shipped from")}</span>
             <input type="date" className={inputClass} value={from} onChange={(e) => set('from', e.target.value)} />
           </label>
           <label className="text-sm">
-            <span className="mb-1 block text-slate-600">to</span>
+            <span className="mb-1 block text-slate-600">{tr("to")}</span>
             <input type="date" className={inputClass} value={to} onChange={(e) => set('to', e.target.value)} />
           </label>
           <label className="flex items-center gap-2 text-sm sm:pb-2">
-            <input type="checkbox" checked={archived} onChange={(e) => set('archived', e.target.checked ? '1' : '')} /> Show archived
+            <input type="checkbox" checked={archived} onChange={(e) => set('archived', e.target.checked ? '1' : '')} /> {tr("Show archived")}
           </label>
           {filtersOn && (
             <button type="button" className="text-left text-sm underline sm:pb-2" onClick={() => setParams({ tab: 'breakdowns' }, { replace: true })}>
-              Clear Filters
+              {tr("Clear Filters")}
             </button>
           )}
         </div>
@@ -139,15 +140,15 @@ export default function BreakdownList() {
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs text-slate-600">
               <tr>
-                <th className="px-3 py-2 font-semibold">Ship date</th>
-                <th className="px-3 py-2 font-semibold">Customer</th>
-                <th className="px-3 py-2 font-semibold">Order #</th>
-                <th className="px-3 py-2 font-semibold">Invoice #</th>
-                <th className="px-3 py-2 font-semibold">Agent</th>
-                <th className="px-3 py-2 font-semibold">Type</th>
-                <th className="px-3 py-2 text-right font-semibold">Invoice total</th>
-                <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">Breakdown cost</th>
-                <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">Price difference</th>
+                <th className="px-3 py-2 font-semibold">{tr("Ship date")}</th>
+                <th className="px-3 py-2 font-semibold">{tr("Customer")}</th>
+                <th className="px-3 py-2 font-semibold">{tr("Order #")}</th>
+                <th className="px-3 py-2 font-semibold">{tr("Invoice #")}</th>
+                <th className="px-3 py-2 font-semibold">{tr("Agent")}</th>
+                <th className="px-3 py-2 font-semibold">{tr("Type")}</th>
+                <th className="px-3 py-2 text-right font-semibold">{tr("Invoice total")}</th>
+                <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">{tr("Breakdown cost")}</th>
+                <th className="px-3 py-2 text-right font-semibold whitespace-nowrap">{tr("Price difference")}</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>
@@ -155,14 +156,14 @@ export default function BreakdownList() {
               {loading && (
                 <tr>
                   <td colSpan={10} className="px-3 py-6 text-center text-slate-500">
-                    Loading…
+                    {tr("Loading…")}
                   </td>
                 </tr>
               )}
               {!loading && shown.length === 0 && (
                 <tr>
                   <td colSpan={10} className="px-3 py-6 text-center text-slate-500">
-                    {rows.length === 0 ? 'No cost breakdowns have been saved yet.' : 'No cost breakdowns match these filters.'}
+                    {rows.length === 0 ? tr("No cost breakdowns have been saved yet.") : tr("No cost breakdowns match these filters.")}
                   </td>
                 </tr>
               )}
@@ -176,7 +177,7 @@ export default function BreakdownList() {
                         {r.order_code}
                       </Link>
                     ) : (
-                      <span className="text-slate-500">Not linked</span>
+                      <span className="text-slate-500">{tr("Not linked")}</span>
                     )}
                   </td>
                   <td className="px-3 py-2">{r.invoice_number ?? '—'}</td>
@@ -189,7 +190,7 @@ export default function BreakdownList() {
                   </td>
                   <td className="px-3 py-2 text-right">
                     <Link to={`/freight/breakdowns/${r.id}`} className="text-blue-700 underline">
-                      Open
+                      {tr("Open")}
                     </Link>
                   </td>
                 </tr>
@@ -199,7 +200,7 @@ export default function BreakdownList() {
         </div>
         {!loading && (
           <p className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
-            Showing {shown.length} of {rows.filter((r) => r.archived === archived).length}
+            {tr("Showing")} {shown.length} {tr("of")} {rows.filter((r) => r.archived === archived).length}
           </p>
         )}
       </section>

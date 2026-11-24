@@ -6,6 +6,7 @@ import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import { narrowInputClass } from '../form'
+import { tr } from '../../i18n'
 
 /**
  * "Crated: Yes / No" on the Order page (0050). No = the production board has
@@ -20,15 +21,19 @@ export default function OrderCrating({ orderId, crating, onChanged }: { orderId:
     if (!supabase) return
     if (
       !next &&
-      !(await confirmAction('Set this order to not crated? The Crating stage is taken off the production board and every crating box is hidden for this order.', {
-        confirmLabel: 'Set to Not Crated',
+      !(await confirmAction(tr("Set this order to not crated? The Crating stage is taken off the production board and every crating box is hidden for this order."), {
+        get confirmLabel() {
+    return tr("Set to Not Crated")
+  },
       }))
     )
       return
     setBusy(true)
     let { error } = await supabase.rpc('set_order_crating', { p_order: orderId, p_crating: next, p_confirm: false })
     if (error && (error as { hint?: string }).hint === 'crates_exist') {
-      const go = await confirmAction(`${error.message} Continue?`, { confirmLabel: 'Set to Not Crated', danger: true })
+      const go = await confirmAction(tr("{{message}} Continue?", { message: error.message }), { get confirmLabel() {
+    return tr("Set to Not Crated")
+  }, danger: true })
       if (!go) {
         setBusy(false)
         return
@@ -37,7 +42,7 @@ export default function OrderCrating({ orderId, crating, onChanged }: { orderId:
     }
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(next ? 'The order is crated: the Crating stage and crating boxes are back.' : 'The order is not crated: crating is hidden for this order.')
+    toast.success(next ? tr("The order is crated: the Crating stage and crating boxes are back.") : tr("The order is not crated: crating is hidden for this order."))
     onChanged()
   }
 
@@ -45,14 +50,14 @@ export default function OrderCrating({ orderId, crating, onChanged }: { orderId:
     <Can permission="order.field.crating">
       {can('order.field.crating', 'edit') ? (
         <label className="flex items-center gap-1.5 text-sm text-slate-700">
-          Crated
-          <select aria-label="Will this order be crated?" className={`${narrowInputClass} py-1`} value={crating ? 'yes' : 'no'} disabled={busy} onChange={(e) => change(e.target.value === 'yes')}>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
+          {tr("Crated")}
+          <select aria-label={tr("Will this order be crated?")} className={`${narrowInputClass} py-1`} value={crating ? 'yes' : 'no'} disabled={busy} onChange={(e) => change(e.target.value === 'yes')}>
+            <option value="yes">{tr("Yes")}</option>
+            <option value="no">{tr("No")}</option>
           </select>
         </label>
       ) : (
-        <span className="text-sm text-slate-600">Crated: {crating ? 'Yes' : 'No'}</span>
+        <span className="text-sm text-slate-600">{tr("Crated:")} {crating ? tr("Yes") : tr("No")}</span>
       )}
     </Can>
   )

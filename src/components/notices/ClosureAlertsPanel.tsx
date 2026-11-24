@@ -9,6 +9,7 @@ import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import Icon from '../Icon'
 import ClosureAlertDialog from './ClosureAlertDialog'
+import { tr } from '../../i18n'
 
 const KIND_WORD: Record<ClosureUpdate['kind'], string> = { posted: 'Posted', update: 'Update', ended: 'Ended' }
 
@@ -35,21 +36,25 @@ export default function ClosureAlertsPanel({ highlightId, newAlert, onNewDone }:
 
   async function end(a: ClosureAlert) {
     if (!supabase) return
-    const msg = await askText(`End “${a.title}”? The banner disappears for everyone. Write a message to send everyone (for example “The office is open again”), or leave it empty to end it quietly.`, {
-      label: 'Message (optional)',
-      confirmLabel: 'End Alert',
+    const msg = await askText(tr("End “{{title}}”? The banner disappears for everyone. Write a message to send everyone (for example “The office is open again”), or leave it empty to end it quietly.", { title: a.title }), {
+      get label() {
+    return tr("Message (optional)")
+  },
+      get confirmLabel() {
+    return tr("End Alert")
+  },
     })
     if (msg === null) return
     const { error } = await supabase.rpc('end_closure_alert', { p_alert: a.id, p_message: msg.trim() || null })
     if (error) return toast.error(friendlyError(error))
-    toast.success(msg.trim() ? 'Alert ended. Everyone has been notified.' : 'Alert ended.')
+    toast.success(msg.trim() ? tr("Alert ended. Everyone has been notified.") : tr("Alert ended."))
     void refreshClosureAlerts()
   }
 
   return (
     <>
       {alerts.length > 0 && (
-        <section aria-label="Closure and delay alerts" className="space-y-3">
+        <section aria-label={tr("Closure and delay alerts")} className="space-y-3">
           {alerts.map((a) => (
             <article
               key={a.id}
@@ -65,15 +70,15 @@ export default function ClosureAlertsPanel({ highlightId, newAlert, onNewDone }:
                     {rangeText(a.start_date, a.end_date)}
                     {a.reason && ` · ${a.reason}`}
                   </p>
-                  <p className="text-xs text-slate-600">{a.next_update_at ? `Next update at ${showDateTime(a.next_update_at)}` : 'No further update planned'}</p>
+                  <p className="text-xs text-slate-600">{a.next_update_at ? tr("Next update at {{showDateTime}}", { showDateTime: showDateTime(a.next_update_at) }) : tr("No further update planned")}</p>
                 </div>
                 <Can permission="notices.closures.post" level="edit">
                   <div className="flex gap-2">
                     <button type="button" className="rounded-md bg-slate-900 px-3 py-1.5 text-xs font-medium text-white" onClick={() => setEditing(a)}>
-                      Post Update
+                      {tr("Post Update")}
                     </button>
                     <button type="button" className="rounded-md border border-slate-400 bg-white px-3 py-1.5 text-xs font-medium" onClick={() => end(a)}>
-                      End Alert
+                      {tr("End Alert")}
                     </button>
                   </div>
                 </Can>

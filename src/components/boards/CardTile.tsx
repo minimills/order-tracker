@@ -25,6 +25,7 @@ import Can from '../Can'
 import Icon from '../Icon'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Props = {
   card: Card
@@ -84,8 +85,8 @@ export default function CardTile(p: Props) {
           p.onToggleComplete?.()
         }}
         onKeyDown={stop}
-        aria-label={done ? `Mark incomplete: ${card.title}` : `Mark complete: ${card.title}`}
-        title={done ? 'Mark Incomplete' : 'Mark Complete'}
+        aria-label={done ? tr("Mark incomplete: {{title}}", { title: card.title }) : tr("Mark complete: {{title}}", { title: card.title })}
+        title={done ? tr("Mark Incomplete") : tr("Mark Complete")}
         data-print={done ? 'keep' : undefined}
         className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-opacity ${
           done
@@ -110,7 +111,7 @@ export default function CardTile(p: Props) {
       className={`group relative rounded-md border p-2.5 text-sm shadow-sm ${
         card.card_kind === 'leftover' ? 'border-dashed border-amber-400 bg-amber-50' : 'border-slate-200 bg-white'
       } ${p.canOpen ? 'cursor-pointer hover:border-slate-400' : ''} ${p.dragging ? 'opacity-40' : ''}`}
-      aria-label={`Card: ${card.title}`}
+      aria-label={tr("Card: {{title}}", { title: card.title })}
     >
       {p.dropHint === 'before' && <div className="absolute -top-1.5 right-0 left-0 h-1 rounded bg-blue-500" />}
       {p.dropHint === 'after' && <div className="absolute right-0 -bottom-1.5 left-0 h-1 rounded bg-blue-500" />}
@@ -127,7 +128,7 @@ export default function CardTile(p: Props) {
       </Can>
       {card.card_kind === 'leftover' && (
         <div className="mb-1">
-          <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[0.6875rem] font-semibold text-amber-900">Leftover</span>
+          <span className="rounded bg-amber-200 px-1.5 py-0.5 text-[0.6875rem] font-semibold text-amber-900">{tr("Leftover")}</span>
         </div>
       )}
       <div className="flex items-start gap-1.5">
@@ -138,7 +139,7 @@ export default function CardTile(p: Props) {
             {p.machine.serial_number ? (
               <SerialNumber serial={p.machine.serial_number} className="text-xs" />
             ) : (
-              <span className="text-xs text-slate-500">No serial number yet</span>
+              <span className="text-xs text-slate-500">{tr("No serial number yet")}</span>
             )}
           </div>
         ) : (
@@ -163,7 +164,7 @@ export default function CardTile(p: Props) {
               {p.serviceCall.customer_name ? (
                 <span className="rounded bg-violet-100 px-1.5 py-0.5 font-medium text-violet-900">{p.serviceCall.customer_name}</span>
               ) : (
-                <span className="text-amber-800">No customer yet</span>
+                <span className="text-amber-800">{tr("No customer yet")}</span>
               )}
             </div>
             {p.serviceCall.machines.length > 0 && (
@@ -193,19 +194,19 @@ export default function CardTile(p: Props) {
           )}
         </Can>
         <Can permission="boards.card.timing">
-          {card.started_at && !card.finished_at && !paused && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-800 ring-1 ring-blue-200">Started</span>}
+          {card.started_at && !card.finished_at && !paused && <span className="rounded bg-blue-50 px-1.5 py-0.5 text-blue-800 ring-1 ring-blue-200">{tr("Started")}</span>}
           {paused && (
             <span className="rounded bg-amber-50 px-1.5 py-0.5 text-amber-900 ring-1 ring-amber-300" title={paused.note ?? undefined}>
-              Paused
+              {tr("Paused")}
             </span>
           )}
-          {card.finished_at && <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-800 ring-1 ring-green-200">Finished</span>}
+          {card.finished_at && <span className="rounded bg-green-50 px-1.5 py-0.5 text-green-800 ring-1 ring-green-200">{tr("Finished")}</span>}
         </Can>
-        <Can permission="boards.card.link">{p.linkText && <span className="rounded bg-slate-100 px-1.5 py-0.5">Linked: {p.linkText}</span>}</Can>
+        <Can permission="boards.card.link">{p.linkText && <span className="rounded bg-slate-100 px-1.5 py-0.5">{tr("Linked:")} {p.linkText}</span>}</Can>
         <Can permission="boards.card.comments">
           {p.comments > 0 && (
             <span>
-              {p.comments} comment{p.comments === 1 ? '' : 's'}
+              {tr("{{count}} comment", { count: p.comments })}
             </span>
           )}
         </Can>
@@ -213,12 +214,12 @@ export default function CardTile(p: Props) {
       {card.card_kind === 'machine' && p.stageStep === 'final_check' && p.machine && (
         <Can permission="order.machines.checklist">
           <div className="mt-2 text-[0.6875rem] text-slate-600">
-            Final check:{' '}
+            {tr("Final check:")}{' '}
             {p.machine.checklist_status === 'signed'
-              ? 'complete'
+              ? tr("complete")
               : p.machine.checklist_status === 'in_progress'
-                ? `${p.machine.checklist_completed ?? 0} of ${p.machine.checklist_total ?? 0} items`
-                : 'not started'}
+                ? tr("{{value}} of {{value2}} items", { value: p.machine.checklist_completed ?? 0, value2: p.machine.checklist_total ?? 0 })
+                : tr("not started")}
           </div>
           {p.machine.checklist_status === 'in_progress' || p.machine.checklist_status === 'signed' ? (
             <Can permission="checklist">
@@ -228,7 +229,7 @@ export default function CardTile(p: Props) {
                 onClick={(e) => e.stopPropagation()}
                 className="mt-1 block rounded border border-slate-300 bg-white px-2 py-1 text-center text-xs font-medium hover:bg-slate-50"
               >
-                {p.machine.checklist_status === 'signed' ? 'View Final Check' : 'Continue Final Check'}
+                {p.machine.checklist_status === 'signed' ? tr("View Final Check") : tr("Continue Final Check")}
               </Link>
             </Can>
           ) : (
@@ -241,7 +242,7 @@ export default function CardTile(p: Props) {
                 onKeyDown={stop}
                 className="mt-1 w-full rounded bg-slate-900 px-2 py-1 text-xs font-medium text-white hover:bg-slate-700 disabled:opacity-50"
               >
-                {starting ? 'Starting…' : 'Start Final Check'}
+                {starting ? tr("Starting…") : tr("Start Final Check")}
               </button>
             </Can>
           )}
@@ -249,10 +250,10 @@ export default function CardTile(p: Props) {
       )}
       <Can permission="boards.card.checklists">
         {prog.total > 0 && (
-          <div className="mt-2" title={`${prog.done} of ${prog.total} tasks completed`}>
+          <div className="mt-2" title={tr("{{done}} of {{total}} tasks completed", { done: prog.done, total: prog.total })}>
             <div className="flex justify-between text-[0.6875rem] text-slate-500">
               <span>
-                {prog.done} of {prog.total} task{prog.total === 1 ? '' : 's'}
+                {prog.done} {tr("of")} {tr("{{count}} task", { count: prog.total })}
               </span>
               <span>{prog.percent}%</span>
             </div>

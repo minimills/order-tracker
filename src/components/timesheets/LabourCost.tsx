@@ -13,6 +13,7 @@ import { supabase } from '../../lib/supabase'
 import { showHours, usePayrollSettings } from '../../lib/timesheets'
 import { useDepartments } from '../../lib/useDepartments'
 import PrintButton from '../print/PrintButton'
+import { tr } from '../../i18n'
 
 type CostRow = {
   employee_id: string
@@ -145,28 +146,28 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
         <thead className="bg-slate-50 text-xs text-slate-600">
           <tr>
             <th className={th}>{first}</th>
-            {first === 'Employee' && <th className={th}>Pay rate</th>}
-            <th className={`${th} text-right`}>Hours worked</th>
-            <th className={`${th} text-right`}>Regular</th>
-            <th className={`${th} text-right`}>Overtime</th>
-            <th className={`${th} text-right`}>Vacation</th>
-            <th className={`${th} text-right`}>Sick</th>
-            <th className={`${th} text-right`}>Stat holiday</th>
-            <th className={`${th} text-right`}>Salary</th>
-            <th className={`${th} text-right`}>Employer costs</th>
-            <th className={`${th} text-right`}>Total</th>
-            <th className={`${th} text-right`}>Per hour</th>
-            <th className={`${th} text-right`}>Per day</th>
-            <th className={`${th} text-right`}>Per week</th>
-            <th className={`${th} text-right`}>Per month</th>
-            <th className={`${th} text-right`}>Per year</th>
+            {first === 'Employee' && <th className={th}>{tr("Pay rate")}</th>}
+            <th className={`${th} text-right`}>{tr("Hours worked")}</th>
+            <th className={`${th} text-right`}>{tr("Regular")}</th>
+            <th className={`${th} text-right`}>{tr("Overtime")}</th>
+            <th className={`${th} text-right`}>{tr("Vacation")}</th>
+            <th className={`${th} text-right`}>{tr("Sick")}</th>
+            <th className={`${th} text-right`}>{tr("Stat holiday")}</th>
+            <th className={`${th} text-right`}>{tr("Salary")}</th>
+            <th className={`${th} text-right`}>{tr("Employer costs")}</th>
+            <th className={`${th} text-right`}>{tr("Total")}</th>
+            <th className={`${th} text-right`}>{tr("Per hour")}</th>
+            <th className={`${th} text-right`}>{tr("Per day")}</th>
+            <th className={`${th} text-right`}>{tr("Per week")}</th>
+            <th className={`${th} text-right`}>{tr("Per month")}</th>
+            <th className={`${th} text-right`}>{tr("Per year")}</th>
           </tr>
         </thead>
         <tbody>
           {list.length === 0 && (
             <tr>
               <td className={`${td} text-slate-500`} colSpan={16}>
-                {loading ? 'Loading…' : 'No hours or salaries in this year.'}
+                {loading ? tr("Loading…") : tr("No hours or salaries in this year.")}
               </td>
             </tr>
           )}
@@ -203,7 +204,7 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-2 text-sm print:hidden">
         <label className="flex flex-col">
-          <span className="text-xs text-slate-600">Year</span>
+          <span className="text-xs text-slate-600">{tr("Year")}</span>
           <select className={narrowInputClass} value={year} onChange={(e) => set('year', e.target.value)}>
             {years.map((y) => (
               <option key={y} value={y}>
@@ -213,9 +214,9 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
           </select>
         </label>
         <label className="flex flex-col">
-          <span className="text-xs text-slate-600">Compare with</span>
+          <span className="text-xs text-slate-600">{tr("Compare with")}</span>
           <select className={narrowInputClass} value={compare ?? 'none'} onChange={(e) => set('compare', e.target.value)}>
-            <option value="none">No comparison</option>
+            <option value="none">{tr("No comparison")}</option>
             {years
               .filter((y) => y !== year)
               .map((y) => (
@@ -226,9 +227,9 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
           </select>
         </label>
         <label className="flex flex-col">
-          <span className="text-xs text-slate-600">Department</span>
+          <span className="text-xs text-slate-600">{tr("Department")}</span>
           <select className={narrowInputClass} value={dept} onChange={(e) => set('dept', e.target.value)}>
-            <option value="">All</option>
+            <option value="">{tr("All")}</option>
             {departments.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
@@ -239,21 +240,21 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
         <div className="ml-auto flex gap-2">
           <Can permission="timesheets.reports.export">
             <button type="button" className={secondaryButtonClass} onClick={exportCsv}>
-              Export CSV
+              {tr("Export CSV")}
             </button>
           </Can>
           <Can permission="timesheets.labour_cost.print">
             {!print && (
-              <PrintButton title="Labour Cost" to={`/timesheets/labour-cost/print?${params.toString()}`} className="py-2" />
+              <PrintButton title={tr("Labour Cost")} to={`/timesheets/labour-cost/print?${params.toString()}`} className="py-2" />
             )}
           </Can>
         </div>
       </div>
 
-      {missing.length > 0 && <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">No pay rate for {missing.join(', ')}: their cost is shown as zero. Add a rate in Admin → Users → Employee Setup.</p>}
+      {missing.length > 0 && <p className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">{tr("No pay rate for")} {missing.join(', ')}{tr(": their cost is shown as zero. Add a rate in Admin → Users → Employee Setup.")}</p>}
       {assumed.length > 0 && (
         <p className="rounded-md border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-          Some weeks are before the first pay rate of {assumed.join(', ')}: the earliest rate is used for them. Add the older rates (with their effective dates) to compare years exactly.
+          {tr("Some weeks are before the first pay rate of")} {assumed.join(', ')}{tr(": the earliest rate is used for them. Add the older rates (with their effective dates) to compare years exactly.")}
         </p>
       )}
 
@@ -274,25 +275,23 @@ export default function LabourCost({ print = false }: { print?: boolean }) {
       </div>
 
       <section className="space-y-2">
-        <h2 className="font-semibold">Per Employee</h2>
+        <h2 className="font-semibold">{tr("Per Employee")}</h2>
         {table(byEmp, 'Employee', company)}
       </section>
       <section className="space-y-2 break-inside-avoid">
-        <h2 className="font-semibold">Per Department</h2>
+        <h2 className="font-semibold">{tr("Per Department")}</h2>
         {table(byDept, 'Department', company)}
       </section>
 
       <div className="grid gap-4 [grid-template-columns:repeat(auto-fit,minmax(min(100%,24rem),1fr))] print:grid-cols-2">
-        <CompareChart title="Labour Cost by Month (CAD)" points={points} nameA={String(year)} nameB={compare ? String(compare) : 'No comparison'} unit="CAD" />
+        <CompareChart title={tr("Labour Cost by Month (CAD)")} points={points} nameA={String(year)} nameB={compare ? String(compare) : 'No comparison'} unit="CAD" />
         <section className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 break-inside-avoid">
-          <h3 className="mb-2 font-semibold">Labour Cost by Department ({year})</h3>
-          <ChartView title="Labour cost by department" type="bar" print={print} result={{ points: byDept.map((d) => ({ label: d.name, value: Math.round(d.cost_total) })), unit: 'CAD', headline: null }} />
+          <h3 className="mb-2 font-semibold">{tr("Labour Cost by Department (")}{year})</h3>
+          <ChartView title={tr("Labour cost by department")} type="bar" print={print} result={{ points: byDept.map((d) => ({ label: d.name, value: Math.round(d.cost_total) })), unit: 'CAD', headline: null }} />
         </section>
       </div>
       <p className="text-xs text-slate-500">
-        Hourly: paid regular hours (banked time used included) × the rate in force that week, overtime × {settings.overtime_rate}, vacation, paid sick days and statutory holidays (for eligible employees,
-        from Admin → Company Holidays) × the rate. Salaried: the annual salary ÷ 52 for every week employed. Employer costs: {settings.employer_cost_pct} % (Admin → Payroll Settings). Hours put in the bank cost
-        nothing until they are used. Weeks count in the month they start in. Per year = per week × 52. Printed {showDate(todayISO())}.
+        {tr("Hourly: paid regular hours (banked time used included) × the rate in force that week, overtime ×")} {settings.overtime_rate}{tr(", vacation, paid sick days and statutory holidays (for eligible employees, from Admin → Company Holidays) × the rate. Salaried: the annual salary ÷ 52 for every week employed. Employer costs:")} {settings.employer_cost_pct} {tr("% (Admin → Payroll Settings). Hours put in the bank cost nothing until they are used. Weeks count in the month they start in. Per year = per week × 52. Printed")} {showDate(todayISO())}.
       </p>
     </div>
   )

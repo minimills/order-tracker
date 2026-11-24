@@ -1,3 +1,4 @@
+import { currentLang, tr } from '../../i18n'
 // @permission-scope freight.dashboard
 import { useState } from 'react'
 
@@ -18,7 +19,7 @@ const A = '#2a78d6'
 const B = '#c9772a'
 const HEIGHT = 140
 
-const show = (n: number) => (Math.round(n * 10) / 10).toLocaleString('en-CA')
+const show = (n: number) => (Math.round(n * 10) / 10).toLocaleString(currentLang())
 
 /**
  * Columns by month: the chosen period next to the same months one year earlier.
@@ -42,7 +43,7 @@ export default function CompareChart({ title, points, nameA, nameB, unit }: { ti
           </p>
         </div>
         <button type="button" className="text-xs underline" aria-pressed={table} onClick={() => setTable(!table)}>
-          {table ? 'Show as Chart' : 'Show as Table'}
+          {table ? tr("Show as Chart") : tr("Show as Table")}
         </button>
       </div>
       <div className="mt-2 flex flex-wrap gap-4 text-xs text-slate-600">
@@ -59,7 +60,7 @@ export default function CompareChart({ title, points, nameA, nameB, unit }: { ti
           <table className="min-w-full text-sm">
             <thead className="text-left text-xs text-slate-600">
               <tr>
-                <th className="py-1 pr-3 font-semibold">Month</th>
+                <th className="py-1 pr-3 font-semibold">{tr("Month")}</th>
                 <th className="py-1 pr-3 text-right font-semibold">{nameA}</th>
                 <th className="py-1 text-right font-semibold">{nameB}</th>
               </tr>
@@ -76,7 +77,7 @@ export default function CompareChart({ title, points, nameA, nameB, unit }: { ti
           </table>
         </div>
       ) : (
-        <div className="relative mt-3" role="img" aria-label={`${title} by month: ${nameA} compared with ${nameB}`}>
+        <div className="relative mt-3" role="img" aria-label={tr("{{title}} by month: {{nameA}} compared with {{nameB}}", { title: title, nameA: nameA, nameB: nameB })}>
           <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-between text-[0.625rem] text-slate-400">
             <span>{show(max)}</span>
           </div>
@@ -105,7 +106,7 @@ export default function CompareChart({ title, points, nameA, nameB, unit }: { ti
             ))}
           </div>
           <p className="mt-1 h-4 text-xs text-slate-700" aria-live="polite">
-            {hit ? `${hit.long}: ${nameA} ${show(hit.a)} ${unit} · ${nameB} ${show(hit.b)} ${unit}` : 'Point at a month for its numbers.'}
+            {hit ? `${hit.long}: ${nameA} ${show(hit.a)} ${unit} · ${nameB} ${show(hit.b)} ${unit}` : tr("Point at a month for its numbers.")}
           </p>
         </div>
       )}

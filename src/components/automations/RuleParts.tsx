@@ -21,6 +21,7 @@ import {
   type TriggerDef,
 } from '../../lib/automations'
 import { stageLabel } from '../../lib/stages'
+import { tr } from '../../i18n'
 
 type Opt = { value: string; label: string }
 
@@ -32,10 +33,10 @@ export function MultiPick({ id, options, value, onChange, disabled }: { id: stri
   return (
     <div className="min-w-0 flex-1">
       {options.length > 8 && (
-        <input aria-label="Search the list" className={`${inputClass} mb-1 py-1`} placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} disabled={disabled} />
+        <input aria-label={tr("Search the list")} className={`${inputClass} mb-1 py-1`} placeholder={tr("Search…")} value={q} onChange={(e) => setQ(e.target.value)} disabled={disabled} />
       )}
       <div id={id} className="max-h-40 overflow-y-auto rounded-md border border-slate-200 bg-white p-2">
-        {shown.length === 0 && <p className="text-xs text-slate-500">Nothing to choose from.</p>}
+        {shown.length === 0 && <p className="text-xs text-slate-500">{tr("Nothing to choose from.")}</p>}
         {shown.map((o) => (
           <label key={o.value} className="flex items-center gap-2 py-0.5 text-sm">
             <input
@@ -48,7 +49,7 @@ export function MultiPick({ id, options, value, onChange, disabled }: { id: stri
           </label>
         ))}
       </div>
-      {value.length > 0 && <p className="mt-1 text-xs text-slate-500">{value.length} selected</p>}
+      {value.length > 0 && <p className="mt-1 text-xs text-slate-500">{value.length} {tr("selected")}</p>}
     </div>
   )
 }
@@ -65,10 +66,10 @@ export function TriggerSettings({ def, rule, choices, onChange, disabled }: { de
       {conf.includes('to_stage') && (
         <div>
           <label htmlFor="tr-stage" className="mb-1 block text-sm font-medium text-slate-700">
-            {def.key === 'service_call_status' ? 'New status' : 'To the stage'}
+            {def.key === 'service_call_status' ? tr("New status") : tr("To the stage")}
           </label>
           <select id="tr-stage" className={`${narrowInputClass} min-w-48`} value={(cfg.stage_name as string) ?? ''} onChange={(e) => set('stage_name', e.target.value)} disabled={disabled}>
-            <option value="">Any stage</option>
+            <option value="">{tr("Any stage")}</option>
             {stageNames(choices, def.key === 'service_call_status' ? choices.boards.filter((b) => b.purpose === 'service').map((b) => b.id) : boards).map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -80,10 +81,10 @@ export function TriggerSettings({ def, rule, choices, onChange, disabled }: { de
       {conf.includes('label') && (
         <div>
           <label htmlFor="tr-label" className="mb-1 block text-sm font-medium text-slate-700">
-            The label
+            {tr("The label")}
           </label>
           <select id="tr-label" className={`${narrowInputClass} min-w-48`} value={(cfg.label as string) ?? ''} onChange={(e) => set('label', e.target.value)} disabled={disabled}>
-            <option value="">Any label</option>
+            <option value="">{tr("Any label")}</option>
             {labelNames(choices, boards).map((s) => (
               <option key={s} value={s}>
                 {s}
@@ -95,7 +96,7 @@ export function TriggerSettings({ def, rule, choices, onChange, disabled }: { de
       {conf.includes('days') && (
         <div>
           <label htmlFor="tr-days" className="mb-1 block text-sm font-medium text-slate-700">
-            Days ahead
+            {tr("Days ahead")}
           </label>
           <input
             id="tr-days"
@@ -103,7 +104,7 @@ export function TriggerSettings({ def, rule, choices, onChange, disabled }: { de
             min={0}
             max={365}
             className={`${narrowInputClass} w-28`}
-            placeholder={def.key === 'payment_due' ? '7' : 'Board setting'}
+            placeholder={def.key === 'payment_due' ? '7' : tr("Board setting")}
             value={(cfg.days as string | number | undefined) ?? ''}
             onChange={(e) => set('days', e.target.value === '' ? '' : Number(e.target.value))}
             disabled={disabled}
@@ -113,10 +114,10 @@ export function TriggerSettings({ def, rule, choices, onChange, disabled }: { de
       {conf.includes('order_stage') && (
         <div>
           <label htmlFor="tr-ostage" className="mb-1 block text-sm font-medium text-slate-700">
-            To the stage
+            {tr("To the stage")}
           </label>
           <select id="tr-ostage" className={`${narrowInputClass} min-w-48`} value={(cfg.stage as string) ?? ''} onChange={(e) => set('stage', e.target.value)} disabled={disabled}>
-            <option value="">Any stage</option>
+            <option value="">{tr("Any stage")}</option>
             {choices.order_stages.map((s) => (
               <option key={s} value={s}>
                 {stageLabel(s)}
@@ -129,23 +130,23 @@ export function TriggerSettings({ def, rule, choices, onChange, disabled }: { de
         <>
           <div>
             <label htmlFor="tr-freq" className="mb-1 block text-sm font-medium text-slate-700">
-              How often
+              {tr("How often")}
             </label>
             <select id="tr-freq" className={`${narrowInputClass} w-48`} value={(cfg.frequency as string) ?? 'daily'} onChange={(e) => set('frequency', e.target.value)} disabled={disabled}>
-              <option value="daily">Every day</option>
-              <option value="weekdays">Every weekday (Monday to Friday)</option>
-              <option value="weekly">On chosen days of the week</option>
+              <option value="daily">{tr("Every day")}</option>
+              <option value="weekdays">{tr("Every weekday (Monday to Friday)")}</option>
+              <option value="weekly">{tr("On chosen days of the week")}</option>
             </select>
           </div>
           <div>
             <label htmlFor="tr-time" className="mb-1 block text-sm font-medium text-slate-700">
-              At (Halifax time)
+              {tr("At (Halifax time)")}
             </label>
             <input id="tr-time" type="time" className={`${narrowInputClass} w-32`} value={(cfg.time as string) ?? '08:00'} onChange={(e) => set('time', e.target.value)} disabled={disabled} />
           </div>
           {cfg.frequency === 'weekly' && (
             <fieldset className="w-full">
-              <legend className="mb-1 text-sm font-medium text-slate-700">Days</legend>
+              <legend className="mb-1 text-sm font-medium text-slate-700">{tr("Days")}</legend>
               <div className="flex flex-wrap gap-3">
                 {WEEKDAYS.map((d, i) => {
                   const days = (cfg.days as number[] | undefined) ?? []
@@ -197,9 +198,9 @@ export function ConditionRow({
   const boards = ruleBoards(rule)
   const fields = catalog.fields[subject] ?? []
   const field = fields.find((f) => f.key === cond.field)
-  if (!def) return <p className="text-sm text-red-700">This condition is not available to you. Remove it.</p>
+  if (!def) return <p className="text-sm text-red-700">{tr("This condition is not available to you. Remove it.")}</p>
   const opSelect = (ops: string[]) => (
-    <select aria-label="How" className={`${narrowInputClass} w-44`} value={cond.op ?? ops[0]} onChange={(e) => onChange({ ...cond, op: e.target.value })} disabled={disabled}>
+    <select aria-label={tr("How")} className={`${narrowInputClass} w-44`} value={cond.op ?? ops[0]} onChange={(e) => onChange({ ...cond, op: e.target.value })} disabled={disabled}>
       {ops.map((o) => (
         <option key={o} value={o}>
           {OPS[o] ?? o}
@@ -220,9 +221,9 @@ export function ConditionRow({
       break
     case 'yes_no':
       body = (
-        <select aria-label="Is it" className={`${narrowInputClass} w-28`} value={cond.value === false ? 'no' : 'yes'} onChange={(e) => onChange({ ...cond, value: e.target.value === 'yes' })} disabled={disabled}>
-          <option value="yes">Yes</option>
-          <option value="no">No</option>
+        <select aria-label={tr("Is it")} className={`${narrowInputClass} w-28`} value={cond.value === false ? 'no' : 'yes'} onChange={(e) => onChange({ ...cond, value: e.target.value === 'yes' })} disabled={disabled}>
+          <option value="yes">{tr("Yes")}</option>
+          <option value="no">{tr("No")}</option>
         </select>
       )
       break
@@ -241,7 +242,9 @@ export function ConditionRow({
           {cond.op !== 'nobody' && (
             <MultiPick
               id={id}
-              options={[{ value: 'actor', label: 'The person who made the change' }, ...choices.people.map((p) => ({ value: p.email, label: p.name }))]}
+              options={[{ value: 'actor', get label() {
+    return tr("The person who made the change")
+  } }, ...choices.people.map((p) => ({ value: p.email, label: p.name }))]}
               value={values}
               onChange={setValues}
               disabled={disabled}
@@ -267,7 +270,7 @@ export function ConditionRow({
         <input
           id={id}
           className={`${inputClass} min-w-0 flex-1`}
-          placeholder="For example Canada, United States"
+          placeholder={tr("For example Canada, United States")}
           defaultValue={values.join(', ')}
           onBlur={(e) => setValues(e.target.value.split(',').map((x) => x.trim()).filter(Boolean))}
           disabled={disabled}
@@ -286,8 +289,8 @@ export function ConditionRow({
       const ops = (def.ops ?? []).filter((o) => (field?.type === 'text' ? o !== 'gt' && o !== 'lt' : o !== 'contains'))
       body = (
         <>
-          <select aria-label="Field" className={`${narrowInputClass} w-48`} value={cond.field ?? ''} onChange={(e) => onChange({ ...cond, field: e.target.value })} disabled={disabled}>
-            <option value="">Choose a field…</option>
+          <select aria-label={tr("Field")} className={`${narrowInputClass} w-48`} value={cond.field ?? ''} onChange={(e) => onChange({ ...cond, field: e.target.value })} disabled={disabled}>
+            <option value="">{tr("Choose a field…")}</option>
             {fields.map((f) => (
               <option key={f.key} value={f.key}>
                 {f.label}
@@ -297,7 +300,7 @@ export function ConditionRow({
           {opSelect(ops.length ? ops : ['equals'])}
           {cond.op !== 'is_empty' && cond.op !== 'is_not_empty' && (
             <input
-              aria-label="Value"
+              aria-label={tr("Value")}
               type={field?.type === 'number' ? 'number' : field?.type === 'date' ? 'date' : 'text'}
               className={`${narrowInputClass} min-w-36 flex-1`}
               value={(cond.value as string | number | undefined) ?? ''}
@@ -313,7 +316,7 @@ export function ConditionRow({
   return (
     <div className="min-w-0 flex-1">
       <p className="mb-1 text-sm font-medium text-slate-700">{def.label}</p>
-      {!def.subjects.includes(subject) && <p className="mb-1 text-xs text-red-700">This condition does not apply to the chosen trigger.</p>}
+      {!def.subjects.includes(subject) && <p className="mb-1 text-xs text-red-700">{tr("This condition does not apply to the chosen trigger.")}</p>}
       <div className="flex min-w-0 flex-wrap items-start gap-2">{body}</div>
     </div>
   )
@@ -338,7 +341,7 @@ export function TargetsEditor({ value, onChange, choices, subject, disabled }: {
   return (
     <div className="space-y-2">
       <div className="flex flex-wrap gap-2">
-        <select aria-label="Who" className={`${narrowInputClass} w-60`} value={kind} onChange={(e) => setKind(e.target.value)} disabled={disabled}>
+        <select aria-label={tr("Who")} className={`${narrowInputClass} w-60`} value={kind} onChange={(e) => setKind(e.target.value)} disabled={disabled}>
           {kinds.map((k) => (
             <option key={k.value} value={k.value}>
               {k.label}
@@ -346,8 +349,8 @@ export function TargetsEditor({ value, onChange, choices, subject, disabled }: {
           ))}
         </select>
         {['user', 'group', 'department'].includes(kind) ? (
-          <select aria-label="Which" className={`${narrowInputClass} min-w-48 flex-1`} value="" onChange={(e) => e.target.value && add({ type: kind, target: e.target.value })} disabled={disabled}>
-            <option value="">Select…</option>
+          <select aria-label={tr("Which")} className={`${narrowInputClass} min-w-48 flex-1`} value="" onChange={(e) => e.target.value && add({ type: kind, target: e.target.value })} disabled={disabled}>
+            <option value="">{tr("Select…")}</option>
             {list.map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
@@ -356,7 +359,7 @@ export function TargetsEditor({ value, onChange, choices, subject, disabled }: {
           </select>
         ) : (
           <button type="button" className="rounded-md border border-slate-300 bg-white px-3 py-2 text-sm hover:bg-slate-50" onClick={() => add({ type: kind })} disabled={disabled}>
-            Add
+            {tr("Add")}
           </button>
         )}
       </div>
@@ -365,15 +368,15 @@ export function TargetsEditor({ value, onChange, choices, subject, disabled }: {
           <li key={`${t.type}:${t.target ?? ''}`} className="flex items-center gap-1 rounded-full bg-slate-100 px-2.5 py-0.5 text-sm">
             {targetText(t, choices)}
             {!disabled && (
-              <button type="button" aria-label={`Remove ${targetText(t, choices)}`} className="text-xs text-slate-500 hover:text-red-700" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+              <button type="button" aria-label={tr("Remove {{targetText}}", { targetText: targetText(t, choices) })} className="text-xs text-slate-500 hover:text-red-700" onClick={() => onChange(value.filter((_, j) => j !== i))}>
                 ✕
               </button>
             )}
           </li>
         ))}
-        {value.length === 0 && <li className="text-sm text-slate-500">Nobody chosen yet.</li>}
+        {value.length === 0 && <li className="text-sm text-slate-500">{tr("Nobody chosen yet.")}</li>}
       </ul>
-      <p className="text-xs text-slate-500">Only people you are allowed to message are offered. People who cannot see the card or order are left out when it runs.</p>
+      <p className="text-xs text-slate-500">{tr("Only people you are allowed to message are offered. People who cannot see the card or order are left out when it runs.")}</p>
     </div>
   )
 }
@@ -404,7 +407,7 @@ export function ActionRow({
   const boards = ruleBoards(rule)
   const editable = useMemo(() => choices.boards.filter((b) => b.level >= 2), [choices])
   const target = choices.boards.find((b) => b.id === action.board_id)
-  if (!def) return <p className="text-sm text-red-700">This action is not available to you (the owner may have lost access). Remove it.</p>
+  if (!def) return <p className="text-sm text-red-700">{tr("This action is not available to you (the owner may have lost access). Remove it.")}</p>
   const field = (label: string, el: ReactNode, key: string, grow = false) => (
     <div className={grow ? 'min-w-0 flex-1 basis-64' : ''} key={key}>
       <label htmlFor={`${id}-${key}`} className="mb-1 block text-xs font-medium text-slate-600">
@@ -416,7 +419,7 @@ export function ActionRow({
   const boardPicker = field(
     'Board',
     <select id={`${id}-board`} className={`${narrowInputClass} min-w-48`} value={action.board_id ?? ''} onChange={(e) => set({ board_id: e.target.value, stage_id: undefined, stage_name: undefined })} disabled={disabled}>
-      <option value="">Choose a board…</option>
+      <option value="">{tr("Choose a board…")}</option>
       {editable.map((b) => (
         <option key={b.id} value={b.id}>
           {b.name}
@@ -428,7 +431,7 @@ export function ActionRow({
   const stageOnTarget = field(
     'Stage',
     <select id={`${id}-stage`} className={`${narrowInputClass} min-w-40`} value={action.stage_id ?? ''} onChange={(e) => set({ stage_id: e.target.value, stage_name: target?.stages.find((s) => s.id === e.target.value)?.name })} disabled={disabled || !target}>
-      <option value="">First stage</option>
+      <option value="">{tr("First stage")}</option>
       {(target?.stages ?? []).map((s) => (
         <option key={s.id} value={s.id}>
           {s.name}
@@ -467,8 +470,8 @@ export function ActionRow({
           onChange={(e) => (e.target.value === '__next' ? set({ stage: 'next', stage_name: undefined }) : set({ stage: undefined, stage_name: e.target.value }))}
           disabled={disabled}
         >
-          <option value="">Choose a stage…</option>
-          <option value="__next">The next stage</option>
+          <option value="">{tr("Choose a stage…")}</option>
+          <option value="__next">{tr("The next stage")}</option>
           {stageNames(choices, boards).map((s) => (
             <option key={s} value={s}>
               {s}
@@ -512,10 +515,10 @@ export function ActionRow({
       body = field(
         'Person',
         <select id={`${id}-person`} className={`${narrowInputClass} min-w-48`} value={action.person ?? ''} onChange={(e) => set({ person: e.target.value })} disabled={disabled}>
-          <option value="">Choose a person…</option>
-          <option value="actor">The person who made the change</option>
-          <option value="owner">Me (the owner)</option>
-          {action.type === 'unassign' && <option value="all">Everyone on the card</option>}
+          <option value="">{tr("Choose a person…")}</option>
+          <option value="actor">{tr("The person who made the change")}</option>
+          <option value="owner">{tr("Me (the owner)")}</option>
+          {action.type === 'unassign' && <option value="all">{tr("Everyone on the card")}</option>}
           {choices.people.map((p) => (
             <option key={p.email} value={p.email}>
               {p.name}
@@ -531,8 +534,8 @@ export function ActionRow({
           {field(
             'Due date',
             <select id={`${id}-clear`} className={`${narrowInputClass} w-56`} value={action.clear ? 'clear' : 'days'} onChange={(e) => set({ clear: e.target.value === 'clear' })} disabled={disabled}>
-              <option value="days">A number of days from today</option>
-              <option value="clear">No due date (clear it)</option>
+              <option value="days">{tr("A number of days from today")}</option>
+              <option value="clear">{tr("No due date (clear it)")}</option>
             </select>,
             'clear',
           )}
@@ -566,7 +569,7 @@ export function ActionRow({
           {days('Due in days (optional)', 'due_days')}
           {subject !== 'none' && (
             <label className="flex items-center gap-2 self-end pb-2 text-sm">
-              <input type="checkbox" checked={!!action.link} onChange={(e) => set({ link: e.target.checked })} disabled={disabled} /> Link the new card to the same order or machine
+              <input type="checkbox" checked={!!action.link} onChange={(e) => set({ link: e.target.checked })} disabled={disabled} /> {tr("Link the new card to the same order or machine")}
             </label>
           )}
         </>
@@ -576,7 +579,7 @@ export function ActionRow({
       body = field(
         'New stage',
         <select id={`${id}-ostage`} className={`${narrowInputClass} min-w-48`} value={action.stage ?? ''} onChange={(e) => set({ stage: e.target.value })} disabled={disabled}>
-          <option value="">Choose a stage…</option>
+          <option value="">{tr("Choose a stage…")}</option>
           {choices.order_stages.map((s) => (
             <option key={s} value={s}>
               {stageLabel(s)}
@@ -601,12 +604,12 @@ export function ActionRow({
             'channel',
           )}
           <div className="w-full">
-            <p className="mb-1 text-xs font-medium text-slate-600">To</p>
+            <p className="mb-1 text-xs font-medium text-slate-600">{tr("To")}</p>
             <TargetsEditor value={action.targets ?? []} onChange={(t) => set({ targets: t })} choices={choices} subject={subject} disabled={disabled} />
           </div>
           {text('Title', 'title')}
           {text('Message', 'message', true, true)}
-          <p className="w-full text-xs text-slate-500">People still choose in Settings → Notifications whether they get automation messages in the app, on the phone or by email.</p>
+          <p className="w-full text-xs text-slate-500">{tr("People still choose in Settings → Notifications whether they get automation messages in the app, on the phone or by email.")}</p>
         </>
       )
       break
@@ -618,16 +621,16 @@ export function ActionRow({
           {field(
             'Priority',
             <select id={`${id}-priority`} className={`${narrowInputClass} w-36`} value={action.priority ?? 'normal'} onChange={(e) => set({ priority: e.target.value as Action['priority'] })} disabled={disabled}>
-              <option value="normal">Normal</option>
-              <option value="important">Important</option>
+              <option value="normal">{tr("Normal")}</option>
+              <option value="important">{tr("Important")}</option>
             </select>,
             'priority',
           )}
           {field(
             'For',
             <select id={`${id}-audience`} className={`${narrowInputClass} w-56`} value={action.audience ?? (choices.can_post_everyone ? 'everyone' : 'departments')} onChange={(e) => set({ audience: e.target.value as Action['audience'] })} disabled={disabled}>
-              {choices.can_post_everyone && <option value="everyone">Everyone</option>}
-              <option value="departments">Chosen departments</option>
+              {choices.can_post_everyone && <option value="everyone">{tr("Everyone")}</option>}
+              <option value="departments">{tr("Chosen departments")}</option>
             </select>,
             'audience',
           )}
@@ -652,9 +655,9 @@ export function ActionRow({
           {field(
             'Whose calendar',
             <select id={`${id}-tech`} className={`${narrowInputClass} min-w-48`} value={action.tech ?? 'owner'} onChange={(e) => set({ tech: e.target.value })} disabled={disabled}>
-              <option value="owner">Mine</option>
-              {choices.can_calendar_others && subject === 'time_off' && <option value="person">The person who is off</option>}
-              {choices.can_calendar_others && <option value="technician">The order’s technician</option>}
+              <option value="owner">{tr("Mine")}</option>
+              {choices.can_calendar_others && subject === 'time_off' && <option value="person">{tr("The person who is off")}</option>}
+              {choices.can_calendar_others && <option value="technician">{tr("The order’s technician")}</option>}
               {choices.can_calendar_others &&
                 choices.people.map((p) => (
                   <option key={p.email} value={p.email}>
@@ -667,8 +670,8 @@ export function ActionRow({
           {field(
             'When',
             <select id={`${id}-when`} className={`${narrowInputClass} w-60`} value={action.when ?? 'days'} onChange={(e) => set({ when: e.target.value as Action['when'] })} disabled={disabled}>
-              <option value="days">A number of days from today</option>
-              {subject !== 'none' && <option value="subject">The dates of what started it</option>}
+              <option value="days">{tr("A number of days from today")}</option>
+              {subject !== 'none' && <option value="subject">{tr("The dates of what started it")}</option>}
             </select>,
             'when',
           )}
@@ -677,10 +680,10 @@ export function ActionRow({
           {field(
             'Kind',
             <select id={`${id}-kind`} className={`${narrowInputClass} w-44`} value={action.kind ?? 'other'} onChange={(e) => set({ kind: e.target.value as Action['kind'] })} disabled={disabled}>
-              <option value="other">Appointment</option>
-              {choices.can_service && <option value="onsite">On-site day</option>}
-              {choices.can_service && <option value="travel">Travel day</option>}
-              {choices.can_service && <option value="training">Training</option>}
+              <option value="other">{tr("Appointment")}</option>
+              {choices.can_service && <option value="onsite">{tr("On-site day")}</option>}
+              {choices.can_service && <option value="travel">{tr("Travel day")}</option>}
+              {choices.can_service && <option value="training">{tr("Training")}</option>}
             </select>,
             'kind',
           )}
@@ -690,12 +693,12 @@ export function ActionRow({
       )
       break
     default:
-      body = <p className="text-sm text-slate-500">Nothing to choose for this action.</p>
+      body = <p className="text-sm text-slate-500">{tr("Nothing to choose for this action.")}</p>
   }
   return (
     <div className="min-w-0 flex-1">
       <p className="mb-1 text-sm font-medium text-slate-700">{def.label}</p>
-      {!def.subjects.includes(subject) && <p className="mb-1 text-xs text-red-700">This action cannot be used with the chosen trigger.</p>}
+      {!def.subjects.includes(subject) && <p className="mb-1 text-xs text-red-700">{tr("This action cannot be used with the chosen trigger.")}</p>}
       <div className="flex min-w-0 flex-wrap items-end gap-3">{body}</div>
     </div>
   )

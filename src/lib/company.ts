@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 /** Company details for printouts (app_settings key 'company'). */
 export type Company = {
@@ -47,7 +48,7 @@ export function shrinkImage(file: File): Promise<string> {
     }
     img.onerror = () => {
       URL.revokeObjectURL(url)
-      reject(new Error('That file could not be read as a picture.'))
+      reject(new Error(tr("That file could not be read as a picture.")))
     }
     img.src = url
   })

@@ -25,6 +25,7 @@ import Can from '../Can'
 import Icon from '../Icon'
 import RichText from '../RichText'
 import { narrowInputClass } from '../form'
+import { tr } from '../../i18n'
 
 type Props = {
   notice: Notice
@@ -151,13 +152,13 @@ export default function NoticeCard(props: Props) {
         {n.category && <span className="rounded bg-black/5 px-1.5 py-0.5 text-slate-700">{n.category}</span>}
         {n.pinned && (
           <span className="flex items-center gap-1 text-slate-600">
-            <Icon name="pin" className="h-3 w-3" /> Pinned
+            <Icon name="pin" className="h-3 w-3" /> {tr("Pinned")}
           </span>
         )}
-        {isNew && <span className="rounded-full bg-blue-100 px-1.5 py-0.5 normal-case tracking-normal text-blue-800 ring-1 ring-blue-200">New</span>}
-        {scheduled && <span className="rounded bg-slate-700 px-1.5 py-0.5 text-white">Scheduled · shows from {showDate(n.show_from, 'MMM d')}</span>}
-        {n.archived && <span className="rounded bg-slate-500 px-1.5 py-0.5 text-white">Archived</span>}
-        {!n.archived && expired && <span className="rounded bg-slate-500 px-1.5 py-0.5 text-white">Expired</span>}
+        {isNew && <span className="rounded-full bg-blue-100 px-1.5 py-0.5 normal-case tracking-normal text-blue-800 ring-1 ring-blue-200">{tr("New")}</span>}
+        {scheduled && <span className="rounded bg-slate-700 px-1.5 py-0.5 text-white">{tr("Scheduled · shows from")} {showDate(n.show_from, 'MMM d')}</span>}
+        {n.archived && <span className="rounded bg-slate-500 px-1.5 py-0.5 text-white">{tr("Archived")}</span>}
+        {!n.archived && expired && <span className="rounded bg-slate-500 px-1.5 py-0.5 text-white">{tr("Expired")}</span>}
       </div>
 
       <h3 className="mt-2 text-base font-semibold leading-snug text-slate-900">{n.title}</h3>
@@ -168,19 +169,19 @@ export default function NoticeCard(props: Props) {
       )}
       {long && (
         <button type="button" className="mt-1 self-start text-xs font-medium text-slate-700 underline" onClick={() => setExpanded(!expanded)}>
-          {expanded ? 'Show Less' : 'Read More'}
+          {expanded ? tr("Show Less") : tr("Read More")}
         </button>
       )}
 
       <div className="mt-3 space-y-0.5 border-t border-black/10 pt-2 text-xs text-slate-600">
         <div>
-          Posted by {n.author_name ?? 'someone who has left'} · {showDay(n.created_at)}
+          {tr("Posted by")} {n.author_name ?? tr("someone who has left")} · {showDay(n.created_at)}
           {n.edited_at && (
-            <span title={`Updated ${showDateTime(n.edited_at)}${n.edited_by ? ` by ${n.edited_by}` : ''}`}> · Updated {showDay(n.edited_at)}</span>
+            <span title={tr("Updated {{showDateTime}}{{value}}", { showDateTime: showDateTime(n.edited_at), value: n.edited_by ? ` by ${n.edited_by}` : '' })}> {tr("· Updated")} {showDay(n.edited_at)}</span>
           )}
         </div>
-        <div>For: {props.audienceText}</div>
-        {n.show_until && <div>{expired ? 'Showed' : 'Shows'} until {showDate(n.show_until, 'MMM d, yyyy')}</div>}
+        <div>{tr("For:")} {props.audienceText}</div>
+        {n.show_until && <div>{expired ? tr("Showed") : tr("Shows")} {tr("until")} {showDate(n.show_until, 'MMM d, yyyy')}</div>}
       </div>
 
       {/* Acknowledge */}
@@ -189,7 +190,7 @@ export default function NoticeCard(props: Props) {
           <div className="mt-2">
             {read?.acknowledged_at ? (
               <span className="flex items-center gap-1 text-xs font-medium text-green-800">
-                <Icon name="check" className="h-3.5 w-3.5" /> Acknowledged {showDateTime(read.acknowledged_at)}
+                <Icon name="check" className="h-3.5 w-3.5" /> {tr("Acknowledged")} {showDateTime(read.acknowledged_at)}
               </span>
             ) : (
               <button
@@ -198,7 +199,7 @@ export default function NoticeCard(props: Props) {
                 onClick={acknowledge}
                 className={`rounded-md px-3 py-1.5 text-sm font-medium text-white disabled:opacity-60 ${n.priority === 'urgent' ? 'bg-red-700 hover:bg-red-800' : 'bg-slate-900 hover:bg-slate-700'}`}
               >
-                Acknowledge
+                {tr("Acknowledge")}
               </button>
             )}
           </div>
@@ -236,12 +237,12 @@ export default function NoticeCard(props: Props) {
                 onClick={() => setPicker(!picker)}
                 aria-expanded={picker}
               >
-                + React
+                {tr("+ React")}
               </button>
               {picker && (
                 <span className="absolute left-0 top-7 z-10 flex gap-1 rounded-md border border-slate-200 bg-white p-1 shadow-lg">
                   {REACTIONS.map((e) => (
-                    <button key={e} type="button" className="rounded px-1.5 py-1 text-base hover:bg-slate-100" onClick={() => react(e)} aria-label={`React with ${e}`}>
+                    <button key={e} type="button" className="rounded px-1.5 py-1 text-base hover:bg-slate-100" onClick={() => react(e)} aria-label={tr("React with {{e}}", { e: e })}>
                       {e}
                     </button>
                   ))}
@@ -259,7 +260,7 @@ export default function NoticeCard(props: Props) {
               onClick={() => setShowComments(!showComments)}
               aria-expanded={showComments}
             >
-              <Icon name="comment" className="h-3 w-3" /> {comments.length ? `Comments (${comments.length})` : 'Comment'}
+              <Icon name="comment" className="h-3 w-3" /> {comments.length ? tr("Comments ({{length}})", { length: comments.length }) : tr("Comment")}
             </button>
           </Can>
         )}
@@ -268,7 +269,7 @@ export default function NoticeCard(props: Props) {
           {canManage && n.priority !== 'normal' && (
             <Can permission="notices.acks">
               <button type="button" className="text-slate-700 underline" onClick={props.onAcks}>
-                Who Has Acknowledged
+                {tr("Who Has Acknowledged")}
               </button>
             </Can>
           )}
@@ -289,7 +290,7 @@ export default function NoticeCard(props: Props) {
               {!n.archived && (
                 <Can permission="notices.pin" level="edit">
                   <button type="button" disabled={busy} className="text-slate-700 underline" onClick={pin}>
-                    {n.pinned ? 'Unpin' : 'Pin to Top'}
+                    {n.pinned ? tr("Unpin") : tr("Pin to Top")}
                   </button>
                 </Can>
               )}
@@ -306,11 +307,11 @@ export default function NoticeCard(props: Props) {
       {showComments && n.comments_enabled && (
         <Can permission="notices.comments">
           <div className="mt-2 space-y-1.5 rounded bg-white/70 p-2 text-sm">
-            {comments.length === 0 && <p className="text-xs text-slate-500">No comments yet.</p>}
+            {comments.length === 0 && <p className="text-xs text-slate-500">{tr("No comments yet.")}</p>}
             {comments.map((c) => (
               <div key={c.id} className="group">
                 <div className="text-xs text-slate-500">
-                  <span className="font-medium text-slate-700">{c.author_name ?? 'Former user'}</span> · {showDateTime(c.created_at)}
+                  <span className="font-medium text-slate-700">{c.author_name ?? tr("Former user")}</span> · {showDateTime(c.created_at)}
                   {(c.author_email === me || canManage) && (
                     <button type="button" className="ml-2 text-red-700 underline" onClick={() => deleteComment(c.id)}>
                       {ACTION.remove}
@@ -330,15 +331,15 @@ export default function NoticeCard(props: Props) {
                   }}
                 >
                   <input
-                    aria-label="Write a comment"
+                    aria-label={tr("Write a comment")}
                     className={`${narrowInputClass} min-w-0 flex-1 py-1`}
                     maxLength={1000}
-                    placeholder="Write a comment…"
+                    placeholder={tr("Write a comment…")}
                     value={comment}
                     onChange={(e) => setComment(e.target.value)}
                   />
                   <button type="submit" disabled={busy || !comment.trim()} className="rounded-md bg-slate-900 px-3 py-1 text-xs font-medium text-white disabled:opacity-50">
-                    Post
+                    {tr("Post")}
                   </button>
                 </form>
               </Can>

@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import CrateDialog from './CrateDialog'
 import { confirmAction } from '../../lib/confirm'
+import { tr } from '../../i18n'
 
 type Props = {
   orderId: string
@@ -42,14 +43,14 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
   async function markNotCrated() {
     if (!supabase) return
     const ok = await confirmAction(
-      `Mark ${machine.label} as not crated? Its crating details (${mine.length} crate${mine.length === 1 ? '' : 's'}) are removed. A crate it shares with other machines is kept for them.`,
+      tr("Mark {{label}} as not crated? Its crating details ({{length}} crate{{value}}) are removed. A crate it shares with other machines is kept for them.", { label: machine.label, length: mine.length, value: mine.length === 1 ? '' : 's' }),
     )
     if (!ok) return
     setBusy(true)
     const { error } = await supabase.rpc('uncrate_machine', { p_machine_id: machine.id })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`${machine.label} marked not crated.`)
+    toast.success(tr("{{label}} marked not crated.", { label: machine.label }))
     onChanged()
   }
 
@@ -63,7 +64,7 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
           disabled={busy || !canEdit}
           onChange={() => (crated ? markNotCrated() : setDialog({ crate: null }))}
         />
-        <span className={crated ? 'font-medium text-teal-800' : 'text-slate-500'}>{crated ? 'Crated' : 'Mark as crated'}</span>
+        <span className={crated ? 'font-medium text-teal-800' : 'text-slate-500'}>{crated ? tr("Crated") : tr("Mark as crated")}</span>
       </label>
 
       {crated && (
@@ -72,19 +73,19 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
             const shared = c.machine_ids.filter((id) => id !== machine.id)
             return (
               <li key={c.id} className="text-slate-700">
-                <span className="font-medium">Crate {c.number}:</span> {crateLine(c, units)}
+                <span className="font-medium">{tr("Crate")} {c.number}:</span> {crateLine(c, units)}
                 <span className="text-slate-500">
                   {' '}
                   · {showDate(c.crated_on)}
-                  {c.crated_by && <> by {c.crated_by}</>}
+                  {c.crated_by && <> {tr("by")} {c.crated_by}</>}
                 </span>
                 {shared.length > 0 && (
-                  <span className="text-slate-500"> · also holds {shared.map(labelOf).join(', ')}</span>
+                  <span className="text-slate-500"> {tr("· also holds")} {shared.map(labelOf).join(', ')}</span>
                 )}
                 {c.notes && <span className="text-slate-500"> · {c.notes}</span>}{' '}
                 <Can permission="crating" level="edit">
                   <button type="button" className="text-blue-700 underline print:hidden" onClick={() => setDialog({ crate: c })}>
-                    Edit
+                    {tr("Edit")}
                   </button>
                 </Can>
               </li>
@@ -93,7 +94,7 @@ export default function MachineCrating({ orderId, orderCode, machine, orderMachi
           <Can permission="crating" level="edit">
             <li className="print:hidden">
               <button type="button" className="text-blue-700 underline" onClick={() => setDialog({ crate: null })}>
-                Add Another Crate
+                {tr("Add Another Crate")}
               </button>
             </li>
           </Can>

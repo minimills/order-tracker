@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { addDaysISO } from './dates'
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 /** Timesheets (migrations 0044–0047). The weekly arithmetic is the same as `timesheet_week_rows()` in SQL: keep the two in step. */
 
@@ -105,20 +106,38 @@ export function minimumFor(s: PayrollSettings, kind: 'vacation' | 'sick', years:
 // Weeks and hours
 // ---------------------------------------------------------------------------
 export const KINDS = [
-  { key: 'work', label: 'Worked' },
-  { key: 'vacation', label: 'Vacation' },
-  { key: 'sick', label: 'Sick' },
-  { key: 'banked', label: 'Banked time used' },
-  { key: 'unpaid', label: 'Unpaid time off' },
+  { key: 'work', get label() {
+    return tr("Worked")
+  } },
+  { key: 'vacation', get label() {
+    return tr("Vacation")
+  } },
+  { key: 'sick', get label() {
+    return tr("Sick")
+  } },
+  { key: 'banked', get label() {
+    return tr("Banked time used")
+  } },
+  { key: 'unpaid', get label() {
+    return tr("Unpaid time off")
+  } },
 ] as const
 export type EntryKind = (typeof KINDS)[number]['key']
 export const kindLabel = (k: string) => KINDS.find((x) => x.key === k)?.label ?? k
 
 export const TIME_OFF_KINDS = [
-  { key: 'vacation', label: 'Vacation' },
-  { key: 'sick', label: 'Sick' },
-  { key: 'banked', label: 'Banked time' },
-  { key: 'unpaid', label: 'Unpaid time off' },
+  { key: 'vacation', get label() {
+    return tr("Vacation")
+  } },
+  { key: 'sick', get label() {
+    return tr("Sick")
+  } },
+  { key: 'banked', get label() {
+    return tr("Banked time")
+  } },
+  { key: 'unpaid', get label() {
+    return tr("Unpaid time off")
+  } },
 ] as const
 export const timeOffLabel = (k: string) => TIME_OFF_KINDS.find((x) => x.key === k)?.label ?? k
 

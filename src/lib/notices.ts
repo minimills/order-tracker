@@ -1,3 +1,4 @@
+import { dtf, tr } from '../i18n'
 import { useCallback, useEffect, useState } from 'react'
 import { showDate, todayISO } from './dates'
 import { supabase } from './supabase'
@@ -69,22 +70,48 @@ export type Holiday = {
 // ---------------------------------------------------------------------------
 /** Sticky note colours: the paper and a slightly darker edge. */
 export const NOTE_COLOURS: { value: NoteColour; label: string; paper: string; edge: string }[] = [
-  { value: 'yellow', label: 'Yellow', paper: '#fdf5b8', edge: '#efe08a' },
-  { value: 'blue', label: 'Blue', paper: '#dcebfd', edge: '#b9d4f6' },
-  { value: 'green', label: 'Green', paper: '#dcf5e3', edge: '#b5e3c3' },
-  { value: 'pink', label: 'Pink', paper: '#fde3ea', edge: '#f5c3d1' },
-  { value: 'orange', label: 'Orange', paper: '#fde6cc', edge: '#f4c99b' },
-  { value: 'purple', label: 'Purple', paper: '#ebe4fb', edge: '#d3c6f3' },
-  { value: 'white', label: 'White card', paper: '#ffffff', edge: '#e2e8f0' },
+  { value: 'yellow', get label() {
+    return tr("Yellow")
+  }, paper: '#fdf5b8', edge: '#efe08a' },
+  { value: 'blue', get label() {
+    return tr("Blue")
+  }, paper: '#dcebfd', edge: '#b9d4f6' },
+  { value: 'green', get label() {
+    return tr("Green")
+  }, paper: '#dcf5e3', edge: '#b5e3c3' },
+  { value: 'pink', get label() {
+    return tr("Pink")
+  }, paper: '#fde3ea', edge: '#f5c3d1' },
+  { value: 'orange', get label() {
+    return tr("Orange")
+  }, paper: '#fde6cc', edge: '#f4c99b' },
+  { value: 'purple', get label() {
+    return tr("Purple")
+  }, paper: '#ebe4fb', edge: '#d3c6f3' },
+  { value: 'white', get label() {
+    return tr("White card")
+  }, paper: '#ffffff', edge: '#e2e8f0' },
 ]
 export const colourOf = (c: string) => NOTE_COLOURS.find((x) => x.value === c) ?? NOTE_COLOURS[0]
 
 export const PRIORITY: Record<Priority, { label: string; hint: string; badge: string }> = {
-  normal: { label: 'Normal', hint: 'Shows on the board.', badge: 'bg-slate-100 text-slate-700' },
-  important: { label: 'Important', hint: 'Board, in-app notification and phone push.', badge: 'bg-amber-100 text-amber-900' },
+  normal: { get label() {
+    return tr("Normal")
+  }, get hint() {
+    return tr("Shows on the board.")
+  }, badge: 'bg-slate-100 text-slate-700' },
+  important: { get label() {
+    return tr("Important")
+  }, get hint() {
+    return tr("Board, in-app notification and phone push.")
+  }, badge: 'bg-amber-100 text-amber-900' },
   urgent: {
-    label: 'Urgent',
-    hint: 'All of that, plus email, a red banner on every page until acknowledged, and pinned at the top.',
+    get label() {
+    return tr("Urgent")
+  },
+    get hint() {
+    return tr("All of that, plus email, a red banner on every page until acknowledged, and pinned at the top.")
+  },
     badge: 'bg-red-600 text-white',
   },
 }
@@ -132,10 +159,10 @@ export function boardOrder(a: Notice, b: Notice) {
   return rank(a) - rank(b) || b.created_at.localeCompare(a.created_at)
 }
 
-const timeFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+const timeFmt = dtf({ timeZone: 'America/Halifax', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 /** "Nov 12, 9:00 a.m." in Halifax time. */
 export const showDateTime = (iso: string) => timeFmt.format(new Date(iso))
-const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', month: 'short', day: 'numeric', year: 'numeric' })
+const dayFmt = dtf({ timeZone: 'America/Halifax', month: 'short', day: 'numeric', year: 'numeric' })
 export const showDay = (iso: string) => dayFmt.format(new Date(iso))
 
 /** A date-time input value ("2026-11-12T09:00") from a stored time, in this computer's time. */
@@ -339,10 +366,24 @@ export const holidayApiUrl = (province: string, year: number) => `https://canada
 // ---------------------------------------------------------------------------
 export type ClosureKind = 'closed_weather' | 'delayed_opening' | 'closed_on_date' | 'other'
 export const CLOSURE_KINDS: { value: ClosureKind; label: string; title: string }[] = [
-  { value: 'closed_weather', label: 'Office closed due to weather', title: 'Office closed due to weather' },
-  { value: 'delayed_opening', label: 'Delayed opening', title: 'Delayed opening' },
-  { value: 'closed_on_date', label: 'Office closed on a date', title: 'Office closed' },
-  { value: 'other', label: 'Other closure or delay', title: '' },
+  { value: 'closed_weather', get label() {
+    return tr("Office closed due to weather")
+  }, get title() {
+    return tr("Office closed due to weather")
+  } },
+  { value: 'delayed_opening', get label() {
+    return tr("Delayed opening")
+  }, get title() {
+    return tr("Delayed opening")
+  } },
+  { value: 'closed_on_date', get label() {
+    return tr("Office closed on a date")
+  }, get title() {
+    return tr("Office closed")
+  } },
+  { value: 'other', get label() {
+    return tr("Other closure or delay")
+  }, title: '' },
 ]
 export type ClosureAlert = {
   id: string

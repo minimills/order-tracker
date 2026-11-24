@@ -27,6 +27,7 @@ import {
   type SchedOrder,
 } from '../lib/schedule'
 import { useSchedule } from '../lib/useSchedule'
+import { tr } from '../i18n'
 
 /** Stages a brand-new order can start in. */
 const NEW_ORDER_STAGES: Stage[] = ['Quote', ...BOARD_STAGES]
@@ -335,7 +336,7 @@ export default function NewOrderPage() {
     const blocking = Object.keys(e).filter((k) => k !== 'balanceDue')
     setTriedToSave(true)
     if (blocking.length) {
-      toast.error('Correct the fields marked in red, then save again.')
+      toast.error(tr("Correct the fields marked in red, then save again."))
       setTimeout(() => document.querySelector('.text-red-600')?.scrollIntoView({ behavior: 'smooth', block: 'center' }))
       return
     }
@@ -391,10 +392,10 @@ export default function NewOrderPage() {
     if (invoiceNumber.trim() && can('order.field.invoice_number', 'edit')) refs.invoice_number = invoiceNumber.trim()
     if (Object.keys(refs).length) {
       const { error: refError } = await supabase.from('orders').update(refs).eq('id', result.id)
-      if (refError) toast.error(`The order was saved, but the quote / invoice number was not: ${friendlyError(refError)}`)
+      if (refError) toast.error(tr("The order was saved, but the quote / invoice number was not: {{friendlyError}}", { friendlyError: friendlyError(refError) }))
     }
     if (plan) await saveFirstSchedule(result.id)
-    toast.success(`Order ${result.order_code} saved.`)
+    toast.success(tr("Order {{order_code}} saved.", { order_code: result.order_code }))
     navigate(`/orders/${result.id}`)
   }
 
@@ -418,7 +419,7 @@ export default function NewOrderPage() {
       p_deadlines: deadlinesOf(p),
       p_initial: true,
     })
-    if (error) toast.error(`The order was saved, but its department deadlines were not: ${friendlyError(error)}`)
+    if (error) toast.error(tr("The order was saved, but its department deadlines were not: {{friendlyError}}", { friendlyError: friendlyError(error) }))
   }
 
   const errors: Record<string, string> = triedToSave ? validate() : {}
@@ -428,15 +429,15 @@ export default function NewOrderPage() {
     <Can permission="orders.new" level="edit">
       <form onSubmit={onSubmit} className="mx-auto max-w-4xl space-y-6 pb-24" noValidate>
         <div className="flex items-center justify-between gap-3">
-          <h1 className="text-2xl font-semibold">New Order</h1>
-          <Can permission="orders.list" fallback={<Link to="/" className="text-sm text-slate-600 underline">Cancel</Link>}>
+          <h1 className="text-2xl font-semibold">{tr("New Order")}</h1>
+          <Can permission="orders.list" fallback={<Link to="/" className="text-sm text-slate-600 underline">{tr("Cancel")}</Link>}>
             <Link to="/orders" className="text-sm text-slate-600 underline">
-              Cancel
+              {tr("Cancel")}
             </Link>
           </Can>
         </div>
 
-        <Section title="Customer">
+        <Section title={tr("Customer")}>
           <CustomerPicker
             value={customer}
             onChange={setCustomer}
@@ -444,20 +445,20 @@ export default function NewOrderPage() {
           />
         </Section>
 
-        <Section title="Order">
+        <Section title={tr("Order")}>
           <div className="grid gap-4 md:grid-cols-2">
             {!isSplit ? (
               <Can
                 permission="orders.new.field.order_number"
                 level="edit"
                 fallback={
-                  <Field label="Order number">
-                    <p className="py-2 text-sm text-slate-700">{nextNumber ? `${nextNumber} (the next number)` : 'The next number'}</p>
+                  <Field label={tr("Order number")}>
+                    <p className="py-2 text-sm text-slate-700">{nextNumber ? tr("{{nextNumber}} (the next number)", { nextNumber: nextNumber }) : tr("The next number")}</p>
                   </Field>
                 }
               >
                 <Field
-                  label="Order number"
+                  label={tr("Order number")}
                   htmlFor="order-number"
                   error={
                     err('orderNumber') ??
@@ -465,7 +466,7 @@ export default function NewOrderPage() {
                       ? `Order ${orderNumberInt} already exists.${nextNumber ? ` The next free number is ${nextNumber}.` : ''}`
                       : undefined)
                   }
-                  hint={nextNumber ? `The next number is ${nextNumber}.` : undefined}
+                  hint={nextNumber ? tr("The next number is {{nextNumber}}.", { nextNumber: nextNumber }) : undefined}
                 >
                   <input
                     id="order-number"
@@ -479,17 +480,17 @@ export default function NewOrderPage() {
             ) : (
               <Can permission="orders.new.split" level="edit">
                 <Field
-                  label="Split shipment of order #"
+                  label={tr("Split shipment of order #")}
                   htmlFor="split-of"
                   error={err('splitOf') ?? (activeSplitInfo === 'not-found' ? `There is no order ${splitOfInt}.` : undefined)}
-                  hint={splitPreview ?? 'The new order receives the next suffix, for example 76-2.'}
+                  hint={splitPreview ?? tr("The new order receives the next suffix, for example 76-2.")}
                 >
                   <input
                     id="split-of"
                     inputMode="numeric"
                     className={inputClass}
                     value={splitOf}
-                    placeholder="For example 76"
+                    placeholder={tr("For example 76")}
                     onChange={(e) => setSplitOf(e.target.value)}
                   />
                 </Field>
@@ -499,12 +500,12 @@ export default function NewOrderPage() {
               permission="orders.new.field.stage"
               level="edit"
               fallback={
-                <Field label="Stage">
+                <Field label={tr("Stage")}>
                   <p className="py-2 text-sm text-slate-700">{label(stage)}</p>
                 </Field>
               }
             >
-              <Field label="Stage" htmlFor="stage" hint={getsSerials ? 'Added at the end of the shop queue.' : undefined}>
+              <Field label={tr("Stage")} htmlFor="stage" hint={getsSerials ? tr("Added at the end of the shop queue.") : undefined}>
                 <select id="stage" className={inputClass} value={stage} onChange={(e) => setStage(e.target.value as Stage)}>
                   {NEW_ORDER_STAGES.map((s) => (
                     <option key={s} value={s}>
@@ -515,28 +516,28 @@ export default function NewOrderPage() {
               </Field>
             </Can>
             <Can permission="order.field.quote_number" level="edit">
-              <Field label="Quote # (optional)" htmlFor="quote-number">
+              <Field label={tr("Quote # (optional)")} htmlFor="quote-number">
                 <input id="quote-number" className={inputClass} maxLength={60} value={quoteNumber} onChange={(e) => setQuoteNumber(e.target.value)} />
               </Field>
             </Can>
             <Can permission="order.field.invoice_number" level="edit">
-              <Field label="Invoice # (optional)" htmlFor="invoice-number">
+              <Field label={tr("Invoice # (optional)")} htmlFor="invoice-number">
                 <input id="invoice-number" className={inputClass} maxLength={60} value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} />
               </Field>
             </Can>
             <Can permission="orders.new.split" level="edit">
               <label className="flex items-center gap-2 text-sm md:col-span-2">
                 <input type="checkbox" checked={isSplit} onChange={(e) => setIsSplit(e.target.checked)} className="h-4 w-4" />
-                This is a split shipment of another order
+                {tr("This is a split shipment of another order")}
               </label>
             </Can>
           </div>
         </Section>
 
-        <Section title="Machines">
+        <Section title={tr("Machines")}>
           <Can permission="orders.new.crating" level="edit">
             <fieldset className="mb-4" data-setting="new-order-crating">
-              <legend className="mb-1 text-sm font-medium text-slate-700">Will this order be crated?</legend>
+              <legend className="mb-1 text-sm font-medium text-slate-700">{tr("Will this order be crated?")}</legend>
               <div className="flex flex-wrap gap-4 text-sm">
                 <label className="flex items-center gap-2">
                   <input
@@ -549,7 +550,7 @@ export default function NewOrderPage() {
                       setRows((rs) => rs.map((r) => ({ ...r, needsCrate: true })))
                     }}
                   />
-                  Yes, crated
+                  {tr("Yes, crated")}
                 </label>
                 <label className="flex items-center gap-2">
                   <input
@@ -562,10 +563,10 @@ export default function NewOrderPage() {
                       setRows((rs) => rs.map((r) => ({ ...r, needsCrate: false })))
                     }}
                   />
-                  No, not crated
+                  {tr("No, not crated")}
                 </label>
               </div>
-              <p className="mt-1 text-xs text-slate-500">Not crated: the production board has no Crating stage and the order shows no crating boxes. It can be changed later on the order.</p>
+              <p className="mt-1 text-xs text-slate-500">{tr("Not crated: the production board has no Crating stage and the order shows no crating boxes. It can be changed later on the order.")}</p>
               {triedToSave && errors.crated && <p className="mt-1 text-sm font-medium text-red-600">{errors.crated}</p>}
             </fieldset>
           </Can>
@@ -591,10 +592,10 @@ export default function NewOrderPage() {
           ]}
           level="edit"
         >
-          <Section title="Shipping">
+          <Section title={tr("Shipping")}>
             <div className="grid gap-4 md:grid-cols-2">
               <Can permission="order.field.voltage" level="edit">
-                <Field label="Voltage" htmlFor="voltage">
+                <Field label={tr("Voltage")} htmlFor="voltage">
                   <select id="voltage" className={inputClass} value={voltage} onChange={(e) => setVoltage(e.target.value)}>
                     {voltageOptions.options.map((o) => (
                       <option key={o}>{o}</option>
@@ -603,7 +604,7 @@ export default function NewOrderPage() {
                 </Field>
               </Can>
               <Can permission="order.field.delivery_equipment" level="edit">
-                <Field label="Delivery equipment" htmlFor="delivery">
+                <Field label={tr("Delivery equipment")} htmlFor="delivery">
                   <select
                     id="delivery"
                     className={inputClass}
@@ -617,9 +618,9 @@ export default function NewOrderPage() {
                 </Field>
               </Can>
               <Can permission="order.field.freight_type" level="edit">
-                <Field label="Freight type" htmlFor="freight">
+                <Field label={tr("Freight type")} htmlFor="freight">
                   <select id="freight" className={inputClass} value={freightType} onChange={(e) => setFreightType(e.target.value)}>
-                    <option value="">Not decided yet</option>
+                    <option value="">{tr("Not decided yet")}</option>
                     {freightOptions.options.map((o) => (
                       <option key={o}>{o}</option>
                     ))}
@@ -628,15 +629,15 @@ export default function NewOrderPage() {
               </Can>
               <Can permission="order.field.expected_ship_date" level="edit">
                 <Field
-                  label="Expected ship date"
+                  label={tr("Expected ship date")}
                   htmlFor="ship-date"
                   hint={
                     shipHand !== null && plan
-                      ? `Entered manually. Calculated date: ${showDate(plan.ship_date)}.`
+                      ? tr("Entered manually. Calculated date: {{showDate}}.", { showDate: showDate(plan.ship_date) })
                       : plan
-                        ? 'Calculated from the shop queue (see Schedule below).'
+                        ? tr("Calculated from the shop queue (see Schedule below).")
                         : getsSerials
-                          ? 'Calculated once machines are added.'
+                          ? tr("Calculated once machines are added.")
                           : undefined
                   }
                 >
@@ -650,15 +651,15 @@ export default function NewOrderPage() {
                     />
                     {shipHand !== null && plan && (
                       <button type="button" className="shrink-0 text-xs text-slate-600 underline" onClick={() => setExpectedShipDate(null)}>
-                        Use Calculated Date
+                        {tr("Use Calculated Date")}
                       </button>
                     )}
                   </div>
                 </Field>
               </Can>
               <Can permission="order.field.notes" level="edit">
-                <Field label="Notes" htmlFor="notes" className="md:col-span-2">
-                  <RichTextEditor label="Notes" value="" onChange={setNotes} placeholder="Anything worth recording about this order" />
+                <Field label={tr("Notes")} htmlFor="notes" className="md:col-span-2">
+                  <RichTextEditor label={tr("Notes")} value="" onChange={setNotes} placeholder={tr("Anything worth recording about this order")} />
                 </Field>
               </Can>
             </div>
@@ -667,21 +668,20 @@ export default function NewOrderPage() {
 
         {plan && (
           <Can permission="orders.new.schedule">
-            <Section title="Schedule">
+            <Section title={tr("Schedule")}>
               <p className="text-sm">
-                Expected ship date <strong>{showDate(plan.ship_date, 'EEE, MMM d, yyyy')}</strong>
-                <span className="text-slate-600"> · {workingText(plan)} · starts {showDate(plan.start)}</span>
+                {tr("Expected ship date")} <strong>{showDate(plan.ship_date, 'EEE, MMM d, yyyy')}</strong>
+                <span className="text-slate-600"> · {workingText(plan)} {tr("· starts")} {showDate(plan.start)}</span>
               </p>
               {plan.averages.length > 0 && (
-                <p className="mt-1 text-xs text-slate-500">Uses the average of recent builds for: {plan.averages.join(', ')}.</p>
+                <p className="mt-1 text-xs text-slate-500">{tr("Uses the average of recent builds for:")} {plan.averages.join(', ')}.</p>
               )}
               <div className="mt-3">
                 <Timeline items={plan.steps} />
               </div>
               {shipHand !== null && shipHand !== plan.ship_date && (
                 <p className="mt-2 text-xs text-amber-800">
-                  You typed {showDate(shipHand)} as the ship date; the department deadlines above still follow the shop
-                  queue. {STEP_LABEL.shipping} will be promised for {showDate(shipHand)}.
+                  {tr("You typed")} {showDate(shipHand)} {tr("as the ship date; the department deadlines above still follow the shop queue.")} {STEP_LABEL.shipping} {tr("will be promised for")} {showDate(shipHand)}.
                 </p>
               )}
             </Section>
@@ -689,29 +689,29 @@ export default function NewOrderPage() {
         )}
 
         <Can anyOf={['order.field.order_total', 'payments']} level="edit">
-          <Section title="Payments">
+          <Section title={tr("Payments")}>
             {(autoFull || planHand) && (
               <Can permission="payments" level="edit">
                 <div className={`mb-4 rounded-md px-3 py-2 text-sm ${fullPayment ? 'bg-blue-50 text-blue-900' : 'bg-slate-50 text-slate-700'}`}>
                   {fullPayment ? (
                     <>
-                      <strong>Full payment.</strong>{' '}
+                      <strong>{tr("Full payment.")}</strong>{' '}
                       {autoFull
-                        ? `The expected ship date is ${daysToShip} days away (less than ${defaults.full_payment_within_days}), so the whole order total is due ${defaults.full_payment_due_days} days from the order date, with no separate down payment.`
-                        : 'The whole order total is due at once, with no separate down payment.'}
+                        ? tr("The expected ship date is {{daysToShip}} days away (less than {{full_payment_within_days}}), so the whole order total is due {{full_payment_due_days}} days from the order date, with no separate down payment.", { daysToShip: daysToShip, full_payment_within_days: defaults.full_payment_within_days, full_payment_due_days: defaults.full_payment_due_days })
+                        : tr("The whole order total is due at once, with no separate down payment.")}
                     </>
                   ) : (
-                    'A down payment and a balance are used for this order.'
+                    tr("A down payment and a balance are used for this order.")
                   )}{' '}
                   <button type="button" className="font-medium underline" onClick={() => setPlan(fullPayment ? 'split' : 'full')}>
-                    {fullPayment ? 'Use a Down Payment Instead' : 'Use Full Payment'}
+                    {fullPayment ? tr("Use a Down Payment Instead") : tr("Use Full Payment")}
                   </button>
                 </div>
               </Can>
             )}
             <div className="grid gap-4 md:grid-cols-2">
               <Can permission="order.field.order_total" level="edit">
-                <Field label="Order total" htmlFor="total" error={err('total')}>
+                <Field label={tr("Order total")} htmlFor="total" error={err('total')}>
                   <div className="flex gap-2">
                     <input
                       id="total"
@@ -723,7 +723,7 @@ export default function NewOrderPage() {
                     />
                     <Can permission="order.field.currency" level="edit">
                       <select
-                        aria-label="Currency"
+                        aria-label={tr("Currency")}
                         className={`${inputClass} w-24`}
                         value={currency}
                         onChange={(e) => setCurrency(e.target.value as Currency)}
@@ -740,7 +740,7 @@ export default function NewOrderPage() {
                 {!fullPayment && (
                   <>
                 <Field
-                  label="Down payment"
+                  label={tr("Down payment")}
                   htmlFor="down"
                   error={err('down')}
                   hint={
@@ -749,7 +749,7 @@ export default function NewOrderPage() {
                         ? `= ${formatMoney(downAmount, currency)}`
                         : undefined
                       : downPercent !== null
-                        ? `= ${downPercent}% of the total`
+                        ? tr("= {{downPercent}}% of the total", { downPercent: downPercent })
                         : undefined
                   }
                 >
@@ -759,11 +759,11 @@ export default function NewOrderPage() {
                       inputMode="decimal"
                       className={inputClass}
                       value={downValue}
-                      placeholder={downMode === 'percent' ? 'For example 30' : '0.00'}
+                      placeholder={downMode === 'percent' ? tr("For example 30") : '0.00'}
                       onChange={(e) => setDownValue(e.target.value)}
                     />
                     <select
-                      aria-label="Down payment as"
+                      aria-label={tr("Down payment as")}
                       className={`${inputClass} w-24`}
                       value={downMode}
                       onChange={(e) => {
@@ -780,25 +780,25 @@ export default function NewOrderPage() {
                   </div>
                 </Field>
                 <Field
-                  label="Down payment due"
+                  label={tr("Down payment due")}
                   htmlFor="down-due"
-                  hint={downDueHand === null ? `${defaults.down_payment_days} days from today.` : undefined}
+                  hint={downDueHand === null ? tr("{{down_payment_days}} days from today.", { down_payment_days: defaults.down_payment_days }) : undefined}
                 >
                   <input id="down-due" type="date" className={inputClass} value={downDue} onChange={(e) => setDownDue(e.target.value)} />
                 </Field>
                   </>
                 )}
                 <Field
-                  label={fullPayment ? 'Full payment due' : 'Balance due'}
+                  label={fullPayment ? tr("Full payment due") : tr("Balance due")}
                   htmlFor="balance-due"
                   error={err('balanceDue') ?? (balanceSuggestion ? 'The balance would be due before the down payment.' : undefined)}
                   hint={
                     balanceDueHand === null && fullPayment
-                      ? `${defaults.full_payment_due_days} days from the order date.`
+                      ? tr("{{full_payment_due_days}} days from the order date.", { full_payment_due_days: defaults.full_payment_due_days })
                       : balanceDueHand === null && expectedShipDate
-                      ? `${defaults.balance_days_before_ship} days before the expected ship date.`
+                      ? tr("{{balance_days_before_ship}} days before the expected ship date.", { balance_days_before_ship: defaults.balance_days_before_ship })
                       : !expectedShipDate
-                        ? 'Filled in once the order has an expected ship date.'
+                        ? tr("Filled in once the order has an expected ship date.")
                         : undefined
                   }
                 >
@@ -815,7 +815,7 @@ export default function NewOrderPage() {
                       className="mt-1 text-xs font-medium text-blue-700 underline"
                       onClick={() => setBalanceDue(balanceSuggestion)}
                     >
-                      Use {showDate(balanceSuggestion)} instead (halfway to the ship date)
+                      {tr("Use")} {showDate(balanceSuggestion)} {tr("instead (halfway to the ship date)")}
                     </button>
                   )}
                 </Field>
@@ -824,8 +824,8 @@ export default function NewOrderPage() {
             <Can permission="payments" level="edit">
               <Can permission="order.field.order_total" level="edit">
                 <div className="mt-4 rounded-md bg-slate-50 px-3 py-2 text-sm">
-                  {fullPayment ? 'Full payment' : 'Balance'}: <strong>{formatMoney(balance, currency)}</strong>
-                  <span className="text-slate-500">{fullPayment ? ' (the whole order total)' : ' (order total − down payment, calculated automatically)'}</span>
+                  {fullPayment ? tr("Full payment") : tr("Balance")}: <strong>{formatMoney(balance, currency)}</strong>
+                  <span className="text-slate-500">{fullPayment ? tr(" (the whole order total)") : tr(" (order total − down payment, calculated automatically)")}</span>
                 </div>
               </Can>
             </Can>
@@ -834,7 +834,7 @@ export default function NewOrderPage() {
 
         <div className="sticky bottom-0 -mx-4 flex justify-end gap-3 border-t border-slate-200 bg-slate-50/95 px-4 py-3 md:static md:mx-0 md:border-0 md:bg-transparent md:p-0">
           <button type="submit" className={buttonClass} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Order'}
+            {saving ? tr("Saving…") : tr("Save Order")}
           </button>
         </div>
       </form>

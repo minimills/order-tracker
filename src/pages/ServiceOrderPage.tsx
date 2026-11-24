@@ -30,13 +30,20 @@ import TrainingDoneButton from '../components/service/TrainingDoneButton'
 import ServiceCallHeader from '../components/service/ServiceCallHeader'
 import type { ServiceCallInfo } from '../lib/service'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Machine = { id: string; serial_number: string | null; archived: boolean; machine_types: { name: string } | null }
 type Tab = 'log' | 'machines' | 'certificate'
 const TABS: { key: Tab; label: string; callLabel?: string; permission: string }[] = [
-  { key: 'log', label: 'Day Log', permission: 'service.log' },
-  { key: 'machines', label: 'By Machine', permission: 'service.log.by_machine' },
-  { key: 'certificate', label: 'Certificate', callLabel: 'Service Report', permission: 'service.certificate' },
+  { key: 'log', get label() {
+    return tr("Day Log")
+  }, permission: 'service.log' },
+  { key: 'machines', get label() {
+    return tr("By Machine")
+  }, permission: 'service.log.by_machine' },
+  { key: 'certificate', get label() {
+    return tr("Certificate")
+  }, callLabel: 'Service Report', permission: 'service.certificate' },
 ]
 
 /** A day as shown in the timeline: saved, or still waiting on this phone. */
@@ -83,8 +90,12 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
   const [call, setCall] = useState<ServiceCallInfo | null>(null)
   useBreadcrumbs(
     isCall
-      ? call && [{ label: 'Service / Training', to: '/service' }, { label: `Service Call S-${call.call_number}` }]
-      : info && [{ label: 'Service / Training', to: '/service' }, { label: `Order ${info.order_code}` }],
+      ? call && [{ get label() {
+    return tr("Service / Training")
+  }, to: '/service' }, { label: `Service Call S-${call.call_number}` }]
+      : info && [{ get label() {
+    return tr("Service / Training")
+  }, to: '/service' }, { label: `Order ${info.order_code}` }],
   )
   const [machines, setMachines] = useState<Machine[]>([])
   const [entries, setEntries] = useState<SavedEntry[]>([])
@@ -160,27 +171,29 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
 
   async function saveDay() {
     if (!form) return
-    if (!form.entry_date) return toast.error('Enter the date.')
+    if (!form.entry_date) return toast.error(tr("Enter the date."))
     if (form.hours.trim() !== '' && (!Number.isFinite(Number(form.hours)) || Number(form.hours) < 0 || Number(form.hours) > 24)) {
-      return toast.error('Hours must be between 0 and 24.')
+      return toast.error(tr("Hours must be between 0 and 24."))
     }
     setSaving(true)
     const saved = await queueEntry(form)
     setSaving(false)
     setForm(null)
     if (saved) {
-      toast.success('Day saved.')
+      toast.success(tr("Day saved."))
       load()
     } else {
-      toast.warning('Not yet saved: the entry is kept on this device and will be sent automatically when the connection is back.', { duration: 8000 })
+      toast.warning(tr("Not yet saved: the entry is kept on this device and will be sent automatically when the connection is back."), { duration: 8000 })
     }
   }
 
   async function archiveDay(d: Day) {
     if (!supabase || !d.saved) return
     if (
-      !(await confirmAction(`Archive the ${KIND_LABEL[d.draft.kind].toLowerCase()} on ${showDate(d.draft.entry_date)}?`, {
-        confirmLabel: 'Archive',
+      !(await confirmAction(tr("Archive the {{value}} on {{showDate}}?", { value: KIND_LABEL[d.draft.kind].toLowerCase(), showDate: showDate(d.draft.entry_date) }), {
+        get confirmLabel() {
+    return tr("Archive")
+  },
         danger: true,
       }))
     )
@@ -211,7 +224,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
   if (isCall ? !call : !info)
     return (
       <Can permission="service">
-        <p className="p-6 text-center text-slate-500">Loading…</p>
+        <p className="p-6 text-center text-slate-500">{tr("Loading…")}</p>
       </Can>
     )
 
@@ -220,16 +233,16 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
       <div className="mx-auto max-w-3xl space-y-4">
         <div>
           <Link to="/service" className="text-sm text-slate-600 underline">
-            ← Service / Training
+            {tr("← Service / Training")}
           </Link>
           {isCall && call ? (
             <ServiceCallHeader call={call} onChanged={load} />
           ) : info ? (
             <>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-              <h1 className="mt-1 text-2xl font-semibold">Order {info.order_code}</h1>
+              <h1 className="mt-1 text-2xl font-semibold">{tr("Order")} {info.order_code}</h1>
               <Can permission="service.print">
-                <PrintButton title={`Service / Training – Order ${info.order_code}`} subtitle={info.customer_company || info.customer_name || undefined} />
+                <PrintButton title={tr("Service / Training – Order {{order_code}}", { order_code: info.order_code })} subtitle={info.customer_company || info.customer_name || undefined} />
               </Can>
             </div>
             <p className="text-sm text-slate-700">
@@ -238,14 +251,14 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
               {info.customer_country ? ` · ${countryFlag(info.customer_country)} ${info.customer_country}` : ''}
             </p>
             <p className="mt-1 text-sm text-slate-600">
-              {serviceDates(info.service_start, info.service_end) || 'Dates not set'}
-              {info.technician_name ? ` · Technician: ${info.technician_name}` : ''}
-              {info.training_days !== null ? ` · ${Number(info.training_days)} on-site day${Number(info.training_days) === 1 ? '' : 's'}` : ''}
-              {info.travel_days !== null ? ` · ${Number(info.travel_days)} travel day${Number(info.travel_days) === 1 ? '' : 's'}` : ''}
+              {serviceDates(info.service_start, info.service_end) || tr("Dates not set")}
+              {info.technician_name ? tr(" · Technician: {{technician_name}}", { technician_name: info.technician_name }) : ''}
+              {info.training_days !== null ? tr(" · {{Number}} on-site day{{value}}", { Number: Number(info.training_days), value: Number(info.training_days) === 1 ? '' : 's' }) : ''}
+              {info.travel_days !== null ? tr(" · {{Number}} travel day{{value}}", { Number: Number(info.travel_days), value: Number(info.travel_days) === 1 ? '' : 's' }) : ''}
             </p>
             <Can permission="order.page">
               <Link to={`/orders/${orderId}`} className="text-sm text-blue-700 underline">
-                Open the Order
+                {tr("Open the Order")}
               </Link>
             </Can>
             <Can permission="service.training.done" level="edit">
@@ -282,9 +295,9 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
               <Can permission="service.log" level="edit">
                 {form ? (
                   <section className="space-y-3 rounded-lg border border-slate-300 bg-white p-4">
-                    <h2 className="font-semibold">{entries.some((e) => e.client_id === form.client_id) ? 'Change Day' : 'Add a Day'}</h2>
+                    <h2 className="font-semibold">{entries.some((e) => e.client_id === form.client_id) ? tr("Change Day") : tr("Add a Day")}</h2>
                     <div className="grid grid-cols-2 gap-3">
-                      <Field label="Date" htmlFor="day-date">
+                      <Field label={tr("Date")} htmlFor="day-date">
                         <input
                           id="day-date"
                           type="date"
@@ -293,7 +306,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                           onChange={(e) => setForm({ ...form, entry_date: e.target.value })}
                         />
                       </Field>
-                      <Field label="Hours" htmlFor="day-hours">
+                      <Field label={tr("Hours")} htmlFor="day-hours">
                         <input
                           id="day-hours"
                           inputMode="decimal"
@@ -304,7 +317,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                         />
                       </Field>
                     </div>
-                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Kind of day">
+                    <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={tr("Kind of day")}>
                       {(['onsite', 'travel'] as const).map((k) => (
                         <button
                           key={k}
@@ -318,12 +331,12 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                         </button>
                       ))}
                     </div>
-                    <Field label="General notes">
-                      <RichTextEditor key={`day-${form.client_id}`} label="General notes" minHeight="5rem" value={form.notes} onChange={(notes) => setForm((f) => (f ? { ...f, notes } : f))} />
+                    <Field label={tr("General notes")}>
+                      <RichTextEditor key={`day-${form.client_id}`} label={tr("General notes")} minHeight="5rem" value={form.notes} onChange={(notes) => setForm((f) => (f ? { ...f, notes } : f))} />
                     </Field>
                     <div>
-                      <p className="mb-1 text-sm font-medium text-slate-700">Machines worked on</p>
-                      {liveMachines.length === 0 && <p className="text-sm text-slate-500">{isCall ? 'No machines are on this service call yet. Add them with Edit Details.' : 'This order has no machines.'}</p>}
+                      <p className="mb-1 text-sm font-medium text-slate-700">{tr("Machines worked on")}</p>
+                      {liveMachines.length === 0 && <p className="text-sm text-slate-500">{isCall ? tr("No machines are on this service call yet. Add them with Edit Details.") : tr("This order has no machines.")}</p>}
                       <div className="flex flex-wrap gap-2">
                         {liveMachines.map((m) => {
                           const on = form.machines.some((x) => x.machine_id === m.id)
@@ -337,7 +350,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                               {m.serial_number ? (
                                 <SerialNumber serial={m.serial_number} className="text-xs" />
                               ) : (
-                                <span className="text-xs text-slate-500">no serial</span>
+                                <span className="text-xs text-slate-500">{tr("no serial")}</span>
                               )}
                             </label>
                           )
@@ -347,10 +360,10 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                     {form.machines.map((fm) => {
                       const m = machineById.get(fm.machine_id)
                       return (
-                        <Field key={fm.machine_id} label={`Notes for ${machineName(m)} ${m?.serial_number ?? ''}`}>
+                        <Field key={fm.machine_id} label={tr("Notes for {{machineName}} {{value}}", { machineName: machineName(m), value: m?.serial_number ?? '' })}>
                           <RichTextEditor
                             key={`m-${form.client_id}-${fm.machine_id}`}
-                            label={`Notes for ${machineName(m)}`}
+                            label={tr("Notes for {{machineName}}", { machineName: machineName(m) })}
                             minHeight="4rem"
                             value={fm.notes}
                             onChange={(notes) =>
@@ -362,23 +375,23 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                     })}
                     <div className="flex justify-end gap-2">
                       <button type="button" className={secondaryButtonClass} onClick={() => setForm(null)} disabled={saving}>
-                        Cancel
+                        {tr("Cancel")}
                       </button>
                       <button type="button" className={buttonClass} onClick={saveDay} disabled={saving}>
-                        {saving ? 'Saving…' : 'Save Day'}
+                        {saving ? tr("Saving…") : tr("Save Day")}
                       </button>
                     </div>
                   </section>
                 ) : (
                   <button type="button" className={`${buttonClass} w-full py-3`} onClick={() => setForm(blankDraft({ order_id: isCall ? null : orderId, service_call_id: isCall ? callId : null }))}>
-                    Add a Day
+                    {tr("Add a Day")}
                   </button>
                 )}
               </Can>
 
               {days.length === 0 && (
                 <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-                  No days have been logged yet.
+                  {tr("No days have been logged yet.")}
                 </p>
               )}
               <ol className="relative space-y-3 border-l-2 border-slate-200 pl-4">
@@ -401,26 +414,26 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                       {d.draft.hours && <span className="text-slate-600">{Number(d.draft.hours)} h</span>}
                       {d.waiting && (
                         <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900" role="status">
-                          Not yet saved
+                          {tr("Not yet saved")}
                         </span>
                       )}
                       <span className="ml-auto flex gap-3 text-xs">
                         <Can permission="service.log" level="edit">
                           <button type="button" className="underline" onClick={() => setForm(d.draft)}>
-                            Edit
+                            {tr("Edit")}
                           </button>
                         </Can>
                         {d.waiting && d.error && (
                           <Can permission="service.log" level="edit">
                             <button type="button" className="text-red-700 underline" onClick={() => discardQueued(d.draft.client_id)}>
-                              Discard
+                              {tr("Discard")}
                             </button>
                           </Can>
                         )}
                         {d.saved && !d.waiting && (
                           <Can permission="service.log.archive" level="edit">
                             <button type="button" className="text-red-700 underline" onClick={() => archiveDay(d)}>
-                              Archive
+                              {tr("Archive")}
                             </button>
                           </Can>
                         )}
@@ -428,7 +441,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                     </div>
                     {d.waiting && (
                       <p className="mt-1 text-xs text-amber-800">
-                        {d.error ? `Could not be saved: ${d.error}` : 'Kept on this device. It is sent automatically when the connection is back.'}
+                        {d.error ? tr("Could not be saved: {{error}}", { error: d.error }) : tr("Kept on this device. It is sent automatically when the connection is back.")}
                       </p>
                     )}
                     {d.draft.notes && <RichText value={d.draft.notes} className="mt-1 text-slate-700" />}
@@ -446,14 +459,14 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                         })}
                       </ul>
                     )}
-                    {d.saved && <p className="mt-1 text-xs text-slate-500">By {d.saved.updated_by_name ?? d.saved.created_by_name ?? 'unknown'}</p>}
+                    {d.saved && <p className="mt-1 text-xs text-slate-500">{tr("By")} {d.saved.updated_by_name ?? d.saved.created_by_name ?? tr("unknown")}</p>}
                   </li>
                 ))}
               </ol>
 
               <Can permission="service.photos">
                 <p className="rounded-lg border border-dashed border-slate-300 bg-white p-4 text-center text-sm text-slate-500">
-                  Photos for each day and machine will be available in a future update.
+                  {tr("Photos for each day and machine will be available in a future update.")}
                 </p>
               </Can>
             </div>
@@ -464,7 +477,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
         {tab === 'machines' && (
           <Can permission="service.log.by_machine">
             <div className="space-y-3">
-              {liveMachines.length === 0 && <p className="text-sm text-slate-500">{isCall ? 'No machines are on this service call yet. Add them with Edit Details.' : 'This order has no machines.'}</p>}
+              {liveMachines.length === 0 && <p className="text-sm text-slate-500">{isCall ? tr("No machines are on this service call yet. Add them with Edit Details.") : tr("This order has no machines.")}</p>}
               {liveMachines.map((m) => {
                 const notes = days.filter((d) => d.draft.machines.some((x) => x.machine_id === m.id))
                 return (
@@ -473,7 +486,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                       {machineName(m)} {m.serial_number && <SerialNumber serial={m.serial_number} className="text-sm font-normal" />}
                     </h2>
                     {notes.length === 0 ? (
-                      <p className="mt-1 text-sm text-slate-500">No notes for this machine yet.</p>
+                      <p className="mt-1 text-sm text-slate-500">{tr("No notes for this machine yet.")}</p>
                     ) : (
                       <ul className="mt-2 space-y-2 text-sm">
                         {notes.map((d) => {
@@ -482,8 +495,8 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
                             <li key={d.draft.client_id} className="border-l-2 border-slate-200 pl-3">
                               <span className="font-medium">{showDate(d.draft.entry_date)}</span>{' '}
                               <span className="text-xs text-slate-500">{KIND_LABEL[d.draft.kind]}</span>
-                              {d.waiting && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">Not yet saved</span>}
-                              {n.notes ? <RichText value={n.notes} className="text-slate-700" /> : <p className="text-slate-400">Worked on, no notes.</p>}
+                              {d.waiting && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-xs font-semibold text-amber-900">{tr("Not yet saved")}</span>}
+                              {n.notes ? <RichText value={n.notes} className="text-slate-700" /> : <p className="text-slate-400">{tr("Worked on, no notes.")}</p>}
                             </li>
                           )
                         })}
@@ -500,16 +513,16 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
         {tab === 'certificate' && (
           <Can permission="service.certificate">
             <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-              <h2 className="font-semibold">{isCall ? 'Service Report' : 'Commissioning Certificate'}</h2>
-              {certs.length === 0 && <p className="text-sm text-slate-500">{isCall ? 'No service report has been created for this call yet.' : 'No certificate has been created for this order yet.'}</p>}
+              <h2 className="font-semibold">{isCall ? tr("Service Report") : tr("Commissioning Certificate")}</h2>
+              {certs.length === 0 && <p className="text-sm text-slate-500">{isCall ? tr("No service report has been created for this call yet.") : tr("No certificate has been created for this order yet.")}</p>}
               <ul className="divide-y divide-slate-100 text-sm">
                 {certs.map((c) => (
                   <li key={c.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                     <Link to={`/service/certificates/${c.id}`} className="font-medium text-blue-700 underline">
-                      Version {c.version}
+                      {tr("Version")} {c.version}
                     </Link>
                     <span className="text-slate-600">
-                      {c.status === 'signed' ? `Signed ${showDate(c.locked_at)}` : c.status === 'superseded' ? 'Replaced by a corrected version' : 'Draft'}
+                      {c.status === 'signed' ? tr("Signed {{showDate}}", { showDate: showDate(c.locked_at) }) : c.status === 'superseded' ? tr("Replaced by a corrected version") : tr("Draft")}
                     </span>
                   </li>
                 ))}
@@ -517,7 +530,7 @@ export default function ServiceOrderPage({ kind = 'order' }: { kind?: 'order' | 
               {!certs.some((c) => c.status === 'draft') && (
                 <Can permission="service.certificate.create" level="edit">
                   <button type="button" className={buttonClass} onClick={createCertificate}>
-                    {isCall ? 'Create Service Report' : 'Create Certificate'}
+                    {isCall ? tr("Create Service Report") : tr("Create Certificate")}
                   </button>
                 </Can>
               )}

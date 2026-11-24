@@ -5,6 +5,7 @@ import { Modal, buttonClass, narrowInputClass, secondaryButtonClass } from '../f
 import { shareAutomation, type AutomationRow, type Choices, type Share } from '../../lib/automations'
 import { friendlyError } from '../../lib/format'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 /** Share with chosen people, groups or departments: they can see and use it, and edit it only if allowed. */
 export default function ShareAutomationDialog({ automation, choices, onClose, onSaved }: { automation: AutomationRow; choices: Choices; onClose: () => void; onSaved: () => void }) {
@@ -28,7 +29,7 @@ export default function ShareAutomationDialog({ automation, choices, onClose, on
     setBusy(true)
     try {
       await shareAutomation(automation.id, shares)
-      toast.success('Sharing saved.')
+      toast.success(tr("Sharing saved."))
       onSaved()
       onClose()
     } catch (e) {
@@ -39,7 +40,7 @@ export default function ShareAutomationDialog({ automation, choices, onClose, on
 
   return (
     <Modal
-      title={`Share: ${automation.name}`}
+      title={tr("Share: {{name}}", { name: automation.name })}
       onClose={onClose}
       busy={busy}
       footer={
@@ -54,17 +55,16 @@ export default function ShareAutomationDialog({ automation, choices, onClose, on
       }
     >
       <p className="text-sm text-slate-600">
-        People you share with can see this automation, test it and copy it. Allow editing only for people you trust: it keeps running with your
-        permissions. You can share with people, groups and departments you are allowed to message.
+        {tr("People you share with can see this automation, test it and copy it. Allow editing only for people you trust: it keeps running with your permissions. You can share with people, groups and departments you are allowed to message.")}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <select aria-label="Share with" className={`${narrowInputClass} w-40`} value={type} onChange={(e) => setType(e.target.value as Share['type'])}>
-          <option value="user">A person</option>
-          <option value="group">A group</option>
-          <option value="department">A department</option>
+        <select aria-label={tr("Share with")} className={`${narrowInputClass} w-40`} value={type} onChange={(e) => setType(e.target.value as Share['type'])}>
+          <option value="user">{tr("A person")}</option>
+          <option value="group">{tr("A group")}</option>
+          <option value="department">{tr("A department")}</option>
         </select>
         <select
-          aria-label="Which"
+          aria-label={tr("Which")}
           className={`${narrowInputClass} min-w-48 flex-1`}
           value=""
           onChange={(e) => {
@@ -72,7 +72,7 @@ export default function ShareAutomationDialog({ automation, choices, onClose, on
             if (v && !shares.some((s) => s.type === type && s.target === v)) setShares([...shares, { type, target: v, can_edit: false }])
           }}
         >
-          <option value="">Select…</option>
+          <option value="">{tr("Select…")}</option>
           {options.map((o) => (
             <option key={o.id} value={o.id}>
               {o.name}
@@ -85,14 +85,14 @@ export default function ShareAutomationDialog({ automation, choices, onClose, on
           <li key={`${s.type}:${s.target}`} className="flex flex-wrap items-center gap-3 rounded-md border border-slate-200 px-3 py-2 text-sm">
             <span className="min-w-0 flex-1 break-words">{nameOf(s)}</span>
             <label className="flex items-center gap-1.5 text-slate-600">
-              <input type="checkbox" checked={s.can_edit} onChange={(e) => setShares(shares.map((x, j) => (j === i ? { ...x, can_edit: e.target.checked } : x)))} /> Allowed to edit
+              <input type="checkbox" checked={s.can_edit} onChange={(e) => setShares(shares.map((x, j) => (j === i ? { ...x, can_edit: e.target.checked } : x)))} /> {tr("Allowed to edit")}
             </label>
-            <button type="button" aria-label={`Remove ${nameOf(s)}`} className="text-slate-500 hover:text-red-700" onClick={() => setShares(shares.filter((_, j) => j !== i))}>
+            <button type="button" aria-label={tr("Remove {{nameOf}}", { nameOf: nameOf(s) })} className="text-slate-500 hover:text-red-700" onClick={() => setShares(shares.filter((_, j) => j !== i))}>
               ✕
             </button>
           </li>
         ))}
-        {shares.length === 0 && <li className="text-sm text-slate-500">Not shared with anyone.</li>}
+        {shares.length === 0 && <li className="text-sm text-slate-500">{tr("Not shared with anyone.")}</li>}
       </ul>
     </Modal>
   )

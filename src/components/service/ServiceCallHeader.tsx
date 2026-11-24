@@ -11,6 +11,7 @@ import { showDate } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { serviceDates, type ServiceCallInfo } from '../../lib/service'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Stage = { id: string; name: string; sort_order: number }
 
@@ -33,32 +34,32 @@ export default function ServiceCallHeader({ call, onChanged }: { call: ServiceCa
     if (!supabase || stageId === call.stage_id) return
     const { error } = await supabase.rpc('move_board_card', { p_card: call.card_id, p_stage: stageId, p_index: 0 })
     if (error) return toast.error(friendlyError(error))
-    toast.success('Stage changed.')
+    toast.success(tr("Stage changed."))
     onChanged()
   }
 
   return (
     <div className="space-y-2">
       <h1 className="mt-1 text-2xl font-semibold">
-        Service Call {call.call_code}
+        {tr("Service Call")} {call.call_code}
         <span className="ml-2 rounded bg-violet-100 px-2 py-0.5 align-middle text-sm font-medium text-violet-900">{call.stage_name}</span>
       </h1>
       <p className="font-medium">{call.title}</p>
       <p className="text-sm text-slate-700">
-        {call.customer_name ?? <span className="text-amber-800">No customer chosen yet</span>}
+        {call.customer_name ?? <span className="text-amber-800">{tr("No customer chosen yet")}</span>}
         {call.customer_company ? ` · ${call.customer_company}` : ''}
         {call.customer_country ? ` · ${countryFlag(call.customer_country)} ${call.customer_country}` : ''}
       </p>
       <p className="text-sm text-slate-600">
-        {serviceDates(call.planned_start, call.planned_end) || 'Dates not set'}
-        {call.technician_name ? ` · Technician: ${call.technician_name}` : ' · No technician'}
+        {serviceDates(call.planned_start, call.planned_end) || tr("Dates not set")}
+        {call.technician_name ? tr(" · Technician: {{technician_name}}", { technician_name: call.technician_name }) : tr(" · No technician")}
       </p>
       {call.machines.length > 0 && (
         <ul className="flex flex-wrap gap-2 text-sm">
           {call.machines.map((m) => (
             <li key={m.machine_id} className="rounded-full border border-slate-300 bg-white px-3 py-1">
               {m.machine} {m.serial && <SerialNumber serial={m.serial} className="text-xs" />}
-              <span className="text-xs text-slate-500"> · Order {m.order_code}</span>
+              <span className="text-xs text-slate-500"> {tr("· Order")} {m.order_code}</span>
             </li>
           ))}
         </ul>
@@ -66,7 +67,7 @@ export default function ServiceCallHeader({ call, onChanged }: { call: ServiceCa
       <Can permission="boards.card.description">
         {call.description && (
           <div className="rounded-md border border-slate-200 bg-white p-3">
-            <p className="mb-1 text-xs text-slate-500">Problem description</p>
+            <p className="mb-1 text-xs text-slate-500">{tr("Problem description")}</p>
             <RichText value={call.description} className="text-sm" />
           </div>
         )}
@@ -74,12 +75,12 @@ export default function ServiceCallHeader({ call, onChanged }: { call: ServiceCa
       <div className="flex flex-wrap items-center gap-2">
         <Can permission="service.calls.edit" level="edit">
           <button type="button" className={secondaryButtonClass} onClick={() => setEditing(true)}>
-            Edit Details
+            {tr("Edit Details")}
           </button>
         </Can>
         {stages.length > 0 && (
           <Can permission="boards.card.move" level="edit">
-            <select aria-label="Stage" className={`${narrowInputClass} w-48`} value={call.stage_id} onChange={(e) => moveTo(e.target.value)}>
+            <select aria-label={tr("Stage")} className={`${narrowInputClass} w-48`} value={call.stage_id} onChange={(e) => moveTo(e.target.value)}>
               {stages.map((s) => (
                 <option key={s.id} value={s.id}>
                   {s.name}
@@ -90,7 +91,7 @@ export default function ServiceCallHeader({ call, onChanged }: { call: ServiceCa
         )}
         <Can permission="boards.card.open">
           <Link to={`/boards/${call.board_id}?card=${call.card_id}`} className="text-sm text-blue-700 underline">
-            Open the Board Card
+            {tr("Open the Board Card")}
           </Link>
         </Can>
       </div>
@@ -162,7 +163,7 @@ function ServiceCallDialog({ call, onClose, onSaved }: { call: ServiceCallInfo; 
 
   async function save() {
     if (!supabase) return
-    if (start && end && end < start) return toast.error('The end date must be on or after the start date.')
+    if (start && end && end < start) return toast.error(tr("The end date must be on or after the start date."))
     setSaving(true)
     const { error } = await supabase.rpc('update_service_call', {
       p_card: call.card_id,
@@ -176,28 +177,28 @@ function ServiceCallDialog({ call, onClose, onSaved }: { call: ServiceCallInfo; 
     })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Service call saved.')
+    toast.success(tr("Service call saved."))
     onSaved()
   }
 
   return (
     <Modal
-      title={`Service Call ${call.call_code}`}
+      title={tr("Service Call {{call_code}}", { call_code: call.call_code })}
       onClose={onClose}
       busy={saving}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? tr("Saving…") : tr("Save Changes")}
           </button>
         </>
       }
     >
       <div className="space-y-4">
-        <Field label="Customer" htmlFor="sc-customer">
+        <Field label={tr("Customer")} htmlFor="sc-customer">
           {customer ? (
             <div className="flex items-center justify-between gap-2 rounded-md border border-slate-300 px-3 py-2 text-sm">
               <span>
@@ -213,7 +214,7 @@ function ServiceCallDialog({ call, onClose, onSaved }: { call: ServiceCallInfo; 
                   setPicked(new Set())
                 }}
               >
-                Change
+                {tr("Change")}
               </button>
             </div>
           ) : (
@@ -222,13 +223,13 @@ function ServiceCallDialog({ call, onClose, onSaved }: { call: ServiceCallInfo; 
                 id="sc-customer"
                 type="search"
                 className={inputClass}
-                placeholder="Type a name or company"
+                placeholder={tr("Type a name or company")}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
               />
               {cleaned && (
                 <ul className="mt-1 divide-y divide-slate-100 rounded-md border border-slate-200 text-sm">
-                  {hits.length === 0 && <li className="px-3 py-2 text-slate-500">No customers match.</li>}
+                  {hits.length === 0 && <li className="px-3 py-2 text-slate-500">{tr("No customers match.")}</li>}
                   {hits.map((h) => (
                     <li key={h.id}>
                       <button type="button" className="w-full px-3 py-2 text-left hover:bg-slate-50" onClick={() => setCustomer(h)}>
@@ -244,16 +245,16 @@ function ServiceCallDialog({ call, onClose, onSaved }: { call: ServiceCallInfo; 
         </Field>
         {customer && (
           <div>
-            <p className="mb-1 text-sm font-medium text-slate-700">Machines involved (from this customer’s orders)</p>
-            {shownMachines.length === 0 && <p className="text-sm text-slate-500">This customer has no machines on their orders.</p>}
+            <p className="mb-1 text-sm font-medium text-slate-700">{tr("Machines involved (from this customer’s orders)")}</p>
+            {shownMachines.length === 0 && <p className="text-sm text-slate-500">{tr("This customer has no machines on their orders.")}</p>}
             <ul className="max-h-60 space-y-1 overflow-y-auto">
               {shownMachines.map((m) => (
                 <li key={m.machine_id}>
                   <label className="flex items-center gap-2 text-sm">
                     <input type="checkbox" checked={picked.has(m.machine_id)} onChange={() => toggle(m.machine_id)} />
-                    {m.machine} {m.serial ? <SerialNumber serial={m.serial} className="text-xs" /> : <span className="text-xs text-slate-500">no serial</span>}
+                    {m.machine} {m.serial ? <SerialNumber serial={m.serial} className="text-xs" /> : <span className="text-xs text-slate-500">{tr("no serial")}</span>}
                     <span className="text-xs text-slate-500">
-                      · Order {m.order_code}
+                      {tr("· Order")} {m.order_code}
                       {m.order_date ? ` · ${showDate(m.order_date)}` : ''}
                     </span>
                   </label>
@@ -262,9 +263,9 @@ function ServiceCallDialog({ call, onClose, onSaved }: { call: ServiceCallInfo; 
             </ul>
           </div>
         )}
-        <Field label="Technician" htmlFor="sc-tech">
+        <Field label={tr("Technician")} htmlFor="sc-tech">
           <select id="sc-tech" className={inputClass} value={tech} onChange={(e) => setTech(e.target.value)}>
-            <option value="">Not assigned</option>
+            <option value="">{tr("Not assigned")}</option>
             {tech && !people.some((p) => p.email === tech) && <option value={tech}>{call.technician_name ?? tech}</option>}
             {people.map((p) => (
               <option key={p.email} value={p.email}>
@@ -274,10 +275,10 @@ function ServiceCallDialog({ call, onClose, onSaved }: { call: ServiceCallInfo; 
           </select>
         </Field>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Planned start" htmlFor="sc-start">
+          <Field label={tr("Planned start")} htmlFor="sc-start">
             <input id="sc-start" type="date" className={inputClass} value={start} onChange={(e) => setStart(e.target.value)} />
           </Field>
-          <Field label="Planned end" htmlFor="sc-end">
+          <Field label={tr("Planned end")} htmlFor="sc-end">
             <input id="sc-end" type="date" className={inputClass} value={end} min={start || undefined} onChange={(e) => setEnd(e.target.value)} />
           </Field>
         </div>

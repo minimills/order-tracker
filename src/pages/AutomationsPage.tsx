@@ -28,6 +28,7 @@ import { confirmAction } from '../lib/confirm'
 import { friendlyError } from '../lib/format'
 import { useStageLabels } from '../lib/stages'
 import { ACTION } from '../lib/wording'
+import { tr } from '../i18n'
 
 type Tab = 'mine' | 'shared' | 'board'
 
@@ -43,7 +44,9 @@ export default function AutomationsPage() {
   const [choices, setChoices] = useState<Choices | null>(null)
   const [showArchived, setShowArchived] = useState(false)
   const [dialog, setDialog] = useState<null | { kind: 'new' | 'test' | 'log' | 'share'; row?: AutomationRow }>(null)
-  useBreadcrumbs([{ label: 'Automations' }])
+  useBreadcrumbs([{ get label() {
+    return tr("Automations")
+  } }])
 
   const load = useCallback(async () => {
     try {
@@ -82,17 +85,17 @@ export default function AutomationsPage() {
   async function toggle(r: AutomationRow, on: boolean) {
     try {
       await setAutomationEnabled(r.id, on)
-      toast.success(on ? `“${r.name}” is on.` : `“${r.name}” is paused.`)
+      toast.success(on ? tr("“{{name}}” is on.", { name: r.name }) : tr("“{{name}}” is paused.", { name: r.name }))
       load()
     } catch (e) {
       toast.error(friendlyError(e as { message?: string }))
     }
   }
   async function archive(r: AutomationRow) {
-    if (!r.archived && !(await confirmAction(`Archive the automation “${r.name}”? It stops running. It can be restored later.`, { confirmLabel: ACTION.archive }))) return
+    if (!r.archived && !(await confirmAction(tr("Archive the automation “{{name}}”? It stops running. It can be restored later.", { name: r.name }), { confirmLabel: ACTION.archive }))) return
     try {
       await archiveAutomation(r.id, !r.archived)
-      toast.success(r.archived ? 'Automation restored.' : 'Automation archived.')
+      toast.success(r.archived ? tr("Automation restored.") : tr("Automation archived."))
       load()
     } catch (e) {
       toast.error(friendlyError(e as { message?: string }))
@@ -101,7 +104,7 @@ export default function AutomationsPage() {
   async function copy(r: AutomationRow) {
     try {
       const id = await copyAutomation(r.id)
-      toast.success('A copy was added to My Automations (turned off until you check it).')
+      toast.success(tr("A copy was added to My Automations (turned off until you check it)."))
       navigate(`/automations/${id}`)
     } catch (e) {
       toast.error(friendlyError(e as { message?: string }))
@@ -109,30 +112,35 @@ export default function AutomationsPage() {
   }
 
   const tabs: { key: Tab; label: string }[] = [
-    { key: 'mine', label: 'My Automations' },
-    { key: 'shared', label: 'Shared with Me' },
-    { key: 'board', label: 'Board Automations' },
+    { key: 'mine', get label() {
+    return tr("My Automations")
+  } },
+    { key: 'shared', get label() {
+    return tr("Shared with Me")
+  } },
+    { key: 'board', get label() {
+    return tr("Board Automations")
+  } },
   ]
 
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold">Automations</h1>
+          <h1 className="text-2xl font-semibold">{tr("Automations")}</h1>
           <p className="max-w-3xl text-sm text-slate-600">
-            Rules that work for you: <strong>When</strong> something happens, <strong>If</strong> optional conditions are true, <strong>Then</strong> do one or more
-            actions. An automation always runs with its owner’s permissions, so it can only do what the owner could do.
+            {tr("Rules that work for you:")} <strong>{tr("When")}</strong> {tr("something happens,")} <strong>{tr("If")}</strong> {tr("optional conditions are true,")} <strong>{tr("Then")}</strong> {tr("do one or more actions. An automation always runs with its owner’s permissions, so it can only do what the owner could do.")}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <Can permission="admin.automations" level="edit">
             <Link to="/admin/automations" className={secondaryButtonClass}>
-              Manage All Automations
+              {tr("Manage All Automations")}
             </Link>
           </Can>
           <Can permission="automations" level="edit">
             <button type="button" className={buttonClass} onClick={() => setDialog({ kind: 'new' })}>
-              <Icon name="plus" /> New Automation
+              <Icon name="plus" /> {tr("New Automation")}
             </button>
           </Can>
         </div>
@@ -160,7 +168,7 @@ export default function AutomationsPage() {
         {tab === 'board' && (
           <div className="flex flex-wrap items-center gap-2 text-sm">
             <label htmlFor="au-board" className="text-slate-600">
-              Board
+              {tr("Board")}
             </label>
             <select
               id="au-board"
@@ -174,7 +182,7 @@ export default function AutomationsPage() {
                 setParams(next, { replace: true })
               }}
             >
-              <option value="">All boards</option>
+              <option value="">{tr("All boards")}</option>
               {(choices?.boards ?? []).map((b) => (
                 <option key={b.id} value={b.id}>
                   {b.name}
@@ -183,23 +191,23 @@ export default function AutomationsPage() {
             </select>
             {boardFilter && (
               <Link to={`/boards/${boardFilter}`} className="text-blue-700 underline">
-                Open {boardName ?? 'the board'}
+                {tr("Open")} {boardName ?? tr("the board")}
               </Link>
             )}
           </div>
         )}
 
         {rows === null ? (
-          <p className="text-sm text-slate-500">Loading…</p>
+          <p className="text-sm text-slate-500">{tr("Loading…")}</p>
         ) : shown.length === 0 ? (
           <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-600">
             {tab === 'mine'
-              ? 'You have no automations yet. Choose New Automation to start from an example or from scratch.'
+              ? tr("You have no automations yet. Choose New Automation to start from an example or from scratch.")
               : tab === 'shared'
-                ? 'No automations are shared with you.'
+                ? tr("No automations are shared with you.")
                 : boardFilter
-                  ? `No automations on ${boardName ?? 'this board'} yet.`
-                  : 'No board automations on the boards you can open.'}
+                  ? tr("No automations on {{value}} yet.", { value: boardName ?? tr("this board") })
+                  : tr("No board automations on the boards you can open.")}
           </div>
         ) : (
           <ul className="space-y-3">
@@ -208,7 +216,7 @@ export default function AutomationsPage() {
                 <div className="flex flex-wrap items-start gap-3">
                   <Can permission="automations" level="edit" fallback={<StatusDot on={r.enabled} />}>
                     {r.level >= 2 && !r.archived ? (
-                      <Switch checked={r.enabled} onChange={(on) => toggle(r, on)} label={`${r.name}: on or off`} />
+                      <Switch checked={r.enabled} onChange={(on) => toggle(r, on)} label={tr("{{name}}: on or off", { name: r.name })} />
                     ) : (
                       <StatusDot on={r.enabled} />
                     )}
@@ -222,33 +230,33 @@ export default function AutomationsPage() {
                     </div>
                     <p className="mt-1 text-sm text-slate-700">{describeRule(r, cat, choices)}</p>
                     <p className="mt-1 text-xs text-slate-500">
-                      {r.mine ? 'Yours' : `Owner: ${r.owner_name ?? r.removed_owner_email ?? 'nobody'}`}
-                      {r.last_run_at ? ` · Last run ${when(r.last_run_at)} (${RUN_STATUS[r.last_status ?? '']?.text ?? r.last_status})` : ' · Not run yet'}
-                      {` · ${r.run_count} ${r.run_count === 1 ? 'run' : 'runs'}`}
-                      {r.runs_today ? `, ${r.runs_today} today` : ''}
+                      {r.mine ? tr("Yours") : tr("Owner: {{value}}", { value: r.owner_name ?? r.removed_owner_email ?? 'nobody' })}
+                      {r.last_run_at ? tr(" · Last run {{when}} ({{value}})", { when: when(r.last_run_at), value: RUN_STATUS[r.last_status ?? '']?.text ?? r.last_status }) : tr(" · Not run yet")}
+                      {` · ${r.run_count} ${r.run_count === 1 ? tr("run") : tr("runs")}`}
+                      {r.runs_today ? tr(", {{runs_today}} today", { runs_today: r.runs_today }) : ''}
                     </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <Link to={`/automations/${r.id}`} className={secondaryButtonClass}>
-                      {r.level >= 2 ? ACTION.edit : 'View'}
+                      {r.level >= 2 ? ACTION.edit : tr("View")}
                     </Link>
                     <button type="button" className={secondaryButtonClass} onClick={() => setDialog({ kind: 'test', row: r })} disabled={r.archived}>
-                      Test
+                      {tr("Test")}
                     </button>
                     <button type="button" className={secondaryButtonClass} onClick={() => setDialog({ kind: 'log', row: r })}>
-                      <Icon name="history" /> Run Log
+                      <Icon name="history" /> {tr("Run Log")}
                     </button>
                     {r.level >= 3 && r.scope === 'personal' && (
                       <Can permission="automations.share" level="edit">
                         <button type="button" className={secondaryButtonClass} onClick={() => setDialog({ kind: 'share', row: r })}>
-                          <Icon name="share" /> Share
+                          <Icon name="share" /> {tr("Share")}
                         </button>
                       </Can>
                     )}
                     {!r.mine && (
                       <Can permission="automations" level="edit">
                         <button type="button" className={secondaryButtonClass} onClick={() => copy(r)}>
-                          Copy to Mine
+                          {tr("Copy to Mine")}
                         </button>
                       </Can>
                     )}
@@ -283,7 +291,7 @@ export default function AutomationsPage() {
 function StatusDot({ on }: { on: boolean }) {
   return (
     <span className={`mt-1 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${on ? 'bg-green-100 text-green-800' : 'bg-slate-200 text-slate-700'}`}>
-      {on ? 'On' : 'Off'}
+      {on ? tr("On") : tr("Off")}
     </span>
   )
 }
@@ -292,12 +300,12 @@ function StatusDot({ on }: { on: boolean }) {
 export function Badges({ row }: { row: AutomationRow }) {
   return (
     <>
-      {row.scope === 'board' && <span className="rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-800">Board: {row.board_name ?? 'archived board'}</span>}
-      {row.shared_with_me && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Shared with you{row.level >= 2 ? ' (can edit)' : ''}</span>}
-      {row.mine && row.shares.length > 0 && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">Shared with {row.shares.length}</span>}
-      {row.paused_reason === 'admin' && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">Paused by an administrator</span>}
-      {row.paused_reason === 'owner_removed' && <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-800">Owner removed</span>}
-      {row.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs text-slate-700">Archived</span>}
+      {row.scope === 'board' && <span className="rounded bg-blue-50 px-2 py-0.5 text-xs text-blue-800">{tr("Board:")} {row.board_name ?? tr("archived board")}</span>}
+      {row.shared_with_me && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{tr("Shared with you")}{row.level >= 2 ? tr(" (can edit)") : ''}</span>}
+      {row.mine && row.shares.length > 0 && <span className="rounded bg-slate-100 px-2 py-0.5 text-xs text-slate-700">{tr("Shared with")} {row.shares.length}</span>}
+      {row.paused_reason === 'admin' && <span className="rounded bg-amber-100 px-2 py-0.5 text-xs text-amber-800">{tr("Paused by an administrator")}</span>}
+      {row.paused_reason === 'owner_removed' && <span className="rounded bg-red-100 px-2 py-0.5 text-xs text-red-800">{tr("Owner removed")}</span>}
+      {row.archived && <span className="rounded bg-slate-200 px-2 py-0.5 text-xs text-slate-700">{tr("Archived")}</span>}
     </>
   )
 }

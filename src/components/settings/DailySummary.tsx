@@ -7,6 +7,7 @@ import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import { inputClass, narrowInputClass, secondaryButtonClass, Switch } from '../form'
+import { tr } from '../../i18n'
 
 type Settings = {
   morning_enabled: boolean
@@ -24,27 +25,61 @@ const DEFAULTS: Settings = {
 
 /** What a summary can hold, and the permission each part needs (parts a person may not see are left out by the database too). */
 const ITEMS: { key: string; label: string; needs?: string[] }[] = [
-  { key: 'tasks_due', label: 'My tasks due today', needs: ['boards'] },
-  { key: 'overdue', label: 'My overdue items', needs: ['boards'] },
-  { key: 'ship_dates', label: 'Ship dates in the next 7 days', needs: ['orders.list', 'orders.board'] },
-  { key: 'payments_due', label: 'Payments due', needs: ['payments'] },
-  { key: 'new_orders', label: 'New orders', needs: ['orders.list', 'orders.board'] },
-  { key: 'notices', label: 'Notices not read yet', needs: ['notices'] },
-  { key: 'events', label: 'Events', needs: ['notices.events'] },
-  { key: 'holidays', label: 'Holidays' },
-  { key: 'board_activity', label: 'My board activity', needs: ['boards'] },
-  { key: 'time_logged', label: 'Time logged', needs: ['boards'] },
+  { key: 'tasks_due', get label() {
+    return tr("My tasks due today")
+  }, needs: ['boards'] },
+  { key: 'overdue', get label() {
+    return tr("My overdue items")
+  }, needs: ['boards'] },
+  { key: 'ship_dates', get label() {
+    return tr("Ship dates in the next 7 days")
+  }, needs: ['orders.list', 'orders.board'] },
+  { key: 'payments_due', get label() {
+    return tr("Payments due")
+  }, needs: ['payments'] },
+  { key: 'new_orders', get label() {
+    return tr("New orders")
+  }, needs: ['orders.list', 'orders.board'] },
+  { key: 'notices', get label() {
+    return tr("Notices not read yet")
+  }, needs: ['notices'] },
+  { key: 'events', get label() {
+    return tr("Events")
+  }, needs: ['notices.events'] },
+  { key: 'holidays', get label() {
+    return tr("Holidays")
+  } },
+  { key: 'board_activity', get label() {
+    return tr("My board activity")
+  }, needs: ['boards'] },
+  { key: 'time_logged', get label() {
+    return tr("Time logged")
+  }, needs: ['boards'] },
 ]
 const PRESETS: { key: string; label: string; items: string[] | null }[] = [
-  { key: 'agenda', label: 'What is ahead (tasks, dates, notices)', items: DEFAULTS.morning_items },
-  { key: 'recap', label: 'What I did (activity, time, open tasks)', items: DEFAULTS.evening_items },
-  { key: 'all', label: 'Everything', items: ITEMS.map((i) => i.key) },
-  { key: 'custom', label: 'Choose items', items: null },
+  { key: 'agenda', get label() {
+    return tr("What is ahead (tasks, dates, notices)")
+  }, items: DEFAULTS.morning_items },
+  { key: 'recap', get label() {
+    return tr("What I did (activity, time, open tasks)")
+  }, items: DEFAULTS.evening_items },
+  { key: 'all', get label() {
+    return tr("Everything")
+  }, items: ITEMS.map((i) => i.key) },
+  { key: 'custom', get label() {
+    return tr("Choose items")
+  }, items: null },
 ]
 const CHANNELS = [
-  { key: 'email', label: 'Email', on: 'instant' },
-  { key: 'app', label: 'In the app', on: 'on' },
-  { key: 'push', label: 'Phone push', on: 'on' },
+  { key: 'email', get label() {
+    return tr("Email")
+  }, on: 'instant' },
+  { key: 'app', get label() {
+    return tr("In the app")
+  }, on: 'on' },
+  { key: 'push', get label() {
+    return tr("Phone push")
+  }, on: 'on' },
 ]
 const KIND = { morning: 'daily_agenda', evening: 'daily_recap' } as const
 const same = (a: string[], b: string[]) => a.length === b.length && a.every((x) => b.includes(x))
@@ -101,10 +136,10 @@ export default function DailySummary() {
     const { error } = await supabase.rpc('send_my_summary', { p_kind: which })
     setSending(null)
     if (error) return toast.error(friendlyError(error))
-    toast.success('A sample is on its way by the ways you chose. In the app it is under Notifications.')
+    toast.success(tr("A sample is on its way by the ways you chose. In the app it is under Notifications."))
   }
 
-  if (!s) return <p className="text-sm text-slate-500">Loading…</p>
+  if (!s) return <p className="text-sm text-slate-500">{tr("Loading…")}</p>
   const allowed = ITEMS.filter((i) => !i.needs || canAny(i.needs))
 
   const part = (which: 'morning' | 'evening', title: string, text: string, sampleKind: 'agenda' | 'recap') => {
@@ -124,11 +159,11 @@ export default function DailySummary() {
           <>
             <div className="flex flex-wrap items-end gap-3">
               <label>
-                <span className="mb-1 block text-slate-600">Time (Halifax)</span>
+                <span className="mb-1 block text-slate-600">{tr("Time (Halifax)")}</span>
                 <input type="time" step={300} className={`${narrowInputClass} w-32`} value={s[`${which}_time`]} onChange={(e) => e.target.value && save({ [`${which}_time`]: e.target.value })} />
               </label>
               <label className="min-w-0 flex-1">
-                <span className="mb-1 block text-slate-600">What is included</span>
+                <span className="mb-1 block text-slate-600">{tr("What is included")}</span>
                 <select
                   className={inputClass}
                   value={preset}
@@ -157,7 +192,7 @@ export default function DailySummary() {
               </div>
             )}
             <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-              <span className="text-slate-600">Send it by</span>
+              <span className="text-slate-600">{tr("Send it by")}</span>
               {CHANNELS.map((c) => (
                 <label key={c.key} className="flex items-center gap-2">
                   <input type="checkbox" checked={(modes[`${KIND[which]}:${c.key}`] ?? 'off') !== 'off'} onChange={(e) => setChannel(KIND[which], c, e.target.checked)} />
@@ -165,7 +200,7 @@ export default function DailySummary() {
                 </label>
               ))}
               <button type="button" className={`${secondaryButtonClass} ml-auto`} disabled={sending !== null} onClick={() => sample(sampleKind)}>
-                {sending === sampleKind ? 'Sending…' : 'Send Me a Sample Now'}
+                {sending === sampleKind ? tr("Sending…") : tr("Send Me a Sample Now")}
               </button>
             </div>
           </>
@@ -176,7 +211,7 @@ export default function DailySummary() {
 
   return (
     <div className="space-y-3 text-sm">
-      <p className="text-slate-600">Sent on working days at the time you choose. Each summary only holds what you are allowed to see.</p>
+      <p className="text-slate-600">{tr("Sent on working days at the time you choose. Each summary only holds what you are allowed to see.")}</p>
       {part('morning', 'Today’s Agenda', 'A morning summary of what is ahead.', 'agenda')}
       {part('evening', 'What I Did Today', 'An end-of-day summary of your work.', 'recap')}
       {/* Administrators only (owner's decision; also enforced by set_my_summary and a trigger, migration 0049). */}
@@ -185,8 +220,8 @@ export default function DailySummary() {
           <label className="flex items-start gap-2">
             <input type="checkbox" className="mt-1" checked={s.business} onChange={(e) => save({ business: e.target.checked })} />
             <span>
-              <span className="font-medium">Add the business summary</span>
-              <span className="block text-slate-600">New orders, money received and outstanding, shipments and orders past their ship date, at the end of each summary.</span>
+              <span className="font-medium">{tr("Add the business summary")}</span>
+              <span className="block text-slate-600">{tr("New orders, money received and outstanding, shipments and orders past their ship date, at the end of each summary.")}</span>
             </span>
           </label>
         </Can>

@@ -6,6 +6,7 @@ import { askNotificationPermission, notificationPermission } from '../../lib/bro
 import { showDate } from '../../lib/dates'
 import Can from '../Can'
 import Icon from '../Icon'
+import { tr } from '../../i18n'
 
 const smallButton = 'rounded border border-slate-300 bg-white px-2 py-0.5 text-xs hover:bg-slate-50'
 
@@ -33,22 +34,22 @@ function AlertItem({ alert, onOpen }: { alert: AlertRow; onOpen: () => void }) {
         {alert.hidden ? (
           <>
             <span className="text-xs text-slate-500">
-              {alert.dismissed_at ? 'Dismissed' : `Snoozed until ${showDate(alert.snoozed_until?.slice(0, 10))}`}
+              {alert.dismissed_at ? tr("Dismissed") : tr("Snoozed until {{showDate}}", { showDate: showDate(alert.snoozed_until?.slice(0, 10)) })}
             </span>
             <button type="button" className={smallButton} onClick={() => restore(alert)}>
-              Restore
+              {tr("Restore")}
             </button>
           </>
         ) : (
           <>
             <button type="button" className={smallButton} onClick={() => snooze(alert, 1)}>
-              Snooze 1 Day
+              {tr("Snooze 1 Day")}
             </button>
             <button type="button" className={smallButton} onClick={() => snooze(alert, 7)}>
-              Snooze 1 Week
+              {tr("Snooze 1 Week")}
             </button>
             <button type="button" className={smallButton} onClick={() => dismiss(alert)}>
-              Dismiss
+              {tr("Dismiss")}
             </button>
           </>
         )}
@@ -86,11 +87,11 @@ export default function AlertsBell() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="relative flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm leading-none hover:bg-slate-50"
-        aria-label={`Alerts: ${visible.length}`}
+        aria-label={tr("Alerts: {{length}}", { length: visible.length })}
         aria-expanded={open}
       >
         <Icon name="bell" />
-        <span className="hidden sm:inline">Alerts</span>
+        <span className="hidden sm:inline">{tr("Alerts")}</span>
         {visible.length > 0 && (
           <span
             className={`absolute -top-2 -right-2 min-w-5 rounded-full px-1.5 py-0.5 text-center text-xs font-bold text-white ${
@@ -105,18 +106,18 @@ export default function AlertsBell() {
       {open && (
         <div className="absolute right-0 z-30 mt-2 w-[min(26rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
-            <span className="font-semibold">Alerts</span>
+            <span className="font-semibold">{tr("Alerts")}</span>
             <Can permission="admin.alerts" level="edit">
               <Link to="/admin/alerts" onClick={() => setOpen(false)} className="text-xs text-slate-600 underline">
-                Alert Settings
+                {tr("Alert Settings")}
               </Link>
             </Can>
           </div>
 
           <div className="max-h-[60vh] overflow-y-auto">
-            {loading && <p className="px-3 py-4 text-sm text-slate-500">Loading…</p>}
+            {loading && <p className="px-3 py-4 text-sm text-slate-500">{tr("Loading…")}</p>}
             {!loading && visible.length === 0 && (
-              <p className="px-3 py-6 text-center text-sm text-slate-500">There are no alerts at this time.</p>
+              <p className="px-3 py-6 text-center text-sm text-slate-500">{tr("There are no alerts at this time.")}</p>
             )}
             <ul className="divide-y divide-slate-100">
               {visible.map((a) => (
@@ -130,7 +131,7 @@ export default function AlertsBell() {
                   onClick={() => setShowHidden((s) => !s)}
                   className="w-full px-3 py-2 text-left text-xs text-slate-600 hover:bg-slate-50"
                 >
-                  {showHidden ? '▾' : '▸'} Snoozed and dismissed ({hidden.length})
+                  {showHidden ? '▾' : '▸'} {tr("Snoozed and dismissed (")}{hidden.length})
                 </button>
                 {showHidden && (
                   <ul className="divide-y divide-slate-100 bg-slate-50">
@@ -145,16 +146,16 @@ export default function AlertsBell() {
 
           <Can permission="alerts.popups">
           <div className="border-t border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-            {permission === 'granted' && 'Desktop notifications are enabled for new overdue items.'}
-            {permission === 'denied' && 'Desktop notifications are blocked. Allow them in your browser’s site settings.'}
-            {permission === 'unsupported' && 'This browser can’t show desktop notifications.'}
+            {permission === 'granted' && tr("Desktop notifications are enabled for new overdue items.")}
+            {permission === 'denied' && tr("Desktop notifications are blocked. Allow them in your browser’s site settings.")}
+            {permission === 'unsupported' && tr("This browser can’t show desktop notifications.")}
             {permission === 'default' && (
               <button
                 type="button"
                 className="underline"
                 onClick={async () => setPermission(await askNotificationPermission())}
               >
-                Enable Desktop Notifications for New Overdue Items
+                {tr("Enable Desktop Notifications for New Overdue Items")}
               </button>
             )}
           </div>

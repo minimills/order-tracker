@@ -6,6 +6,7 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { buttonClass, Field, inputClass, narrowInputClass, Modal, secondaryButtonClass } from '../form'
 import ColourPicker from './ColourPicker'
+import { tr } from '../../i18n'
 
 const small = 'rounded border border-slate-300 bg-white px-2 py-0.5 text-xs hover:bg-slate-50 disabled:opacity-40'
 
@@ -44,8 +45,8 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
   async function saveBoard(e: FormEvent) {
     e.preventDefault()
     const n = Number(soon)
-    if (!name.trim()) return toast.error('Enter a name for the board.')
-    if (!Number.isInteger(n) || n < 0 || n > 60) return toast.error('“Due soon” must be between 0 and 60 days.')
+    if (!name.trim()) return toast.error(tr("Enter a name for the board."))
+    if (!Number.isInteger(n) || n < 0 || n > 60) return toast.error(tr("“Due soon” must be between 0 and 60 days."))
     await run(
       () => supabase!.from('boards').update({ name: name.trim(), description: description.trim() || null, colour, due_soon_days: n }).eq('id', board.id),
       'Board saved.',
@@ -65,50 +66,50 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
 
   return (
     <Modal
-      title="Board Settings"
+      title={tr("Board Settings")}
       onClose={onClose}
       busy={busy}
       footer={
         <button type="button" className={secondaryButtonClass} onClick={onClose}>
-          Close
+          {tr("Close")}
         </button>
       }
     >
       <form onSubmit={saveBoard} className="space-y-3" noValidate>
-        <Field label="Name" htmlFor="bs-name">
+        <Field label={tr("Name")} htmlFor="bs-name">
           <input id="bs-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
-        <Field label="Description" htmlFor="bs-desc">
+        <Field label={tr("Description")} htmlFor="bs-desc">
           <input id="bs-desc" className={inputClass} value={description} onChange={(e) => setDescription(e.target.value)} />
         </Field>
-        <Field label="Colour">
-          <ColourPicker colours={BOARD_COLOURS} value={colour} onChange={setColour} label="Board colour" />
+        <Field label={tr("Colour")}>
+          <ColourPicker colours={BOARD_COLOURS} value={colour} onChange={setColour} label={tr("Board colour")} />
         </Field>
-        <Field label="Number of days before the due date that cards turn amber" htmlFor="bs-soon">
+        <Field label={tr("Number of days before the due date that cards turn amber")} htmlFor="bs-soon">
           <input id="bs-soon" type="number" min={0} max={60} className={`${narrowInputClass} w-24`} value={soon} onChange={(e) => setSoon(e.target.value)} />
         </Field>
         <button type="submit" className={buttonClass} disabled={busy}>
-          Save Changes
+          {tr("Save Changes")}
         </button>
       </form>
 
       <label className="mt-5 flex items-center gap-2 text-xs text-slate-600">
-        <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Show archived stages and labels
+        <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> {tr("Show archived stages and labels")}
       </label>
 
-      <h3 className="mt-3 font-semibold">Stages (Columns, Left to Right)</h3>
+      <h3 className="mt-3 font-semibold">{tr("Stages (Columns, Left to Right)")}</h3>
       <ul className="mt-2 space-y-1.5">
         {stages.map((s) => {
           const i = active.findIndex((x) => x.id === s.id)
           return (
             <li key={s.id} className={`flex items-center gap-1.5 ${s.archived ? 'opacity-60' : ''}`}>
-              <input aria-label={`Stage name ${s.name}`} className={`${inputClass} py-1`} defaultValue={s.name} disabled={s.archived} onBlur={(e) => renameStage(s, e.target.value)} />
+              <input aria-label={tr("Stage name {{name}}", { name: s.name })} className={`${inputClass} py-1`} defaultValue={s.name} disabled={s.archived} onBlur={(e) => renameStage(s, e.target.value)} />
               {!s.archived && (
                 <>
-                  <button type="button" className={small} aria-label={`Move ${s.name} left`} disabled={busy || i === 0} onClick={() => moveStage(s, -1)}>
+                  <button type="button" className={small} aria-label={tr("Move {{name}} left", { name: s.name })} disabled={busy || i === 0} onClick={() => moveStage(s, -1)}>
                     ←
                   </button>
-                  <button type="button" className={small} aria-label={`Move ${s.name} right`} disabled={busy || i === active.length - 1} onClick={() => moveStage(s, 1)}>
+                  <button type="button" className={small} aria-label={tr("Move {{name}} right", { name: s.name })} disabled={busy || i === active.length - 1} onClick={() => moveStage(s, 1)}>
                     →
                   </button>
                 </>
@@ -119,7 +120,7 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
                 disabled={busy}
                 onClick={() => run(() => supabase!.from('board_stages').update({ archived: !s.archived }).eq('id', s.id))}
               >
-                {s.archived ? 'Restore' : 'Archive'}
+                {s.archived ? tr("Restore") : tr("Archive")}
               </button>
             </li>
           )
@@ -133,22 +134,22 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
           if (await run(() => supabase!.from('board_stages').insert({ board_id: board.id, name: newStage.trim(), sort_order: active.length + 1 }))) setNewStage('')
         }}
       >
-        <input aria-label="New stage" className={`${inputClass} py-1`} placeholder="New stage, for example Waiting for parts" value={newStage} onChange={(e) => setNewStage(e.target.value)} />
+        <input aria-label={tr("New stage")} className={`${inputClass} py-1`} placeholder={tr("New stage, for example Waiting for parts")} value={newStage} onChange={(e) => setNewStage(e.target.value)} />
         <button type="submit" className={small} disabled={busy}>
-          Add Stage
+          {tr("Add Stage")}
         </button>
       </form>
 
-      <h3 className="mt-5 font-semibold">Labels</h3>
+      <h3 className="mt-5 font-semibold">{tr("Labels")}</h3>
       <ul className="mt-2 space-y-1.5">
         {labels.map((l) => (
           <li key={l.id} className={`flex flex-wrap items-center gap-1.5 ${l.archived ? 'opacity-60' : ''}`}>
             <span className="rounded px-2 py-0.5 text-xs font-medium" style={{ backgroundColor: l.colour, color: textOn(l.colour) }}>
               {l.name}
             </span>
-            <input aria-label={`Label name ${l.name}`} className={`${narrowInputClass} w-40 py-1`} defaultValue={l.name} disabled={l.archived} onBlur={(e) => renameLabel(l, e.target.value)} />
+            <input aria-label={tr("Label name {{name}}", { name: l.name })} className={`${narrowInputClass} w-40 py-1`} defaultValue={l.name} disabled={l.archived} onBlur={(e) => renameLabel(l, e.target.value)} />
             <select
-              aria-label={`Colour of ${l.name}`}
+              aria-label={tr("Colour of {{name}}", { name: l.name })}
               className={`${narrowInputClass} w-28 py-1`}
               value={l.colour}
               disabled={l.archived || busy}
@@ -161,7 +162,7 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
               ))}
             </select>
             <button type="button" className={small} disabled={busy} onClick={() => run(() => supabase!.from('board_labels').update({ archived: !l.archived }).eq('id', l.id))}>
-              {l.archived ? 'Restore' : 'Archive'}
+              {l.archived ? tr("Restore") : tr("Archive")}
             </button>
           </li>
         ))}
@@ -175,24 +176,24 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
         }}
       >
         <div className="flex gap-2">
-          <input aria-label="New label" className={`${inputClass} py-1`} placeholder="New label, for example Urgent" value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
+          <input aria-label={tr("New label")} className={`${inputClass} py-1`} placeholder={tr("New label, for example Urgent")} value={newLabel} onChange={(e) => setNewLabel(e.target.value)} />
           <button type="submit" className={small} disabled={busy}>
-            Add Label
+            {tr("Add Label")}
           </button>
         </div>
-        <ColourPicker colours={LABEL_COLOURS} value={labelColour} onChange={setLabelColour} label="New label colour" />
+        <ColourPicker colours={LABEL_COLOURS} value={labelColour} onChange={setLabelColour} label={tr("New label colour")} />
       </form>
 
-      <h3 className="mt-5 font-semibold">Ready-Made Checklists</h3>
-      <p className="text-xs text-slate-500">Offered when someone adds a checklist to a card on this board.</p>
+      <h3 className="mt-5 font-semibold">{tr("Ready-Made Checklists")}</h3>
+      <p className="text-xs text-slate-500">{tr("Offered when someone adds a checklist to a card on this board.")}</p>
       <ul className="mt-2 space-y-1 text-sm">
         {board.checklist_presets.map((p, i) => (
           <li key={`${p.title}-${i}`} className="flex items-start gap-2">
             <span className="flex-1">
-              <strong>{p.title}</strong> <span className="text-slate-500">· {p.items.join(', ') || 'no tasks'}</span>
+              <strong>{p.title}</strong> <span className="text-slate-500">· {p.items.join(', ') || tr("no tasks")}</span>
             </span>
             <button type="button" className={small} disabled={busy} onClick={() => savePresets(board.checklist_presets.filter((_, j) => j !== i))}>
-              Remove
+              {tr("Remove")}
             </button>
           </li>
         ))}
@@ -209,10 +210,10 @@ export default function BoardSettingsDialog({ data, onClose, onChanged }: { data
           }
         }}
       >
-        <input aria-label="Checklist name" className={`${inputClass} py-1`} placeholder="Checklist name, for example Before shipping" value={presetTitle} onChange={(e) => setPresetTitle(e.target.value)} />
-        <textarea aria-label="Checklist tasks" className={inputClass} rows={3} placeholder="One task per line" value={presetItems} onChange={(e) => setPresetItems(e.target.value)} />
+        <input aria-label={tr("Checklist name")} className={`${inputClass} py-1`} placeholder={tr("Checklist name, for example Before shipping")} value={presetTitle} onChange={(e) => setPresetTitle(e.target.value)} />
+        <textarea aria-label={tr("Checklist tasks")} className={inputClass} rows={3} placeholder={tr("One task per line")} value={presetItems} onChange={(e) => setPresetItems(e.target.value)} />
         <button type="submit" className={small} disabled={busy}>
-          Add Ready-Made Checklist
+          {tr("Add Ready-Made Checklist")}
         </button>
       </form>
     </Modal>

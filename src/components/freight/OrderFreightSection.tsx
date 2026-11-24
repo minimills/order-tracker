@@ -8,6 +8,7 @@ import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import { Section, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 type Row = Pick<Breakdown, 'id' | 'ship_date' | 'agent_name' | 'freight_type' | 'currency' | 'breakdown_total' | 'price_difference' | 'archived'>
 
@@ -30,32 +31,32 @@ export default function OrderFreightSection({ orderId }: { orderId: string }) {
 
   return (
     <Section
-      title="Freight"
+      title={tr("Freight")}
       aside={
         <div className="flex flex-wrap justify-end gap-2">
           <Can permission="freight.quote">
             <Link to={`/freight/quote?order=${orderId}`} className={secondaryButtonClass}>
-              Freight Quote Request
+              {tr("Freight Quote Request")}
             </Link>
           </Can>
           <Can permission="freight.breakdowns" level="edit">
             <Link to={`/freight/breakdowns/new?order=${orderId}`} className={secondaryButtonClass}>
-              New Cost Breakdown
+              {tr("New Cost Breakdown")}
             </Link>
           </Can>
         </div>
       }
     >
-      <Can permission="freight.breakdowns" fallback={<p className="text-sm text-slate-500">Ask a shipping agent for a quote with the details of this order.</p>}>
+      <Can permission="freight.breakdowns" fallback={<p className="text-sm text-slate-500">{tr("Ask a shipping agent for a quote with the details of this order.")}</p>}>
         {rows.length === 0 ? (
-          <p className="text-sm text-slate-500">No shipment cost breakdown has been saved for this order.</p>
+          <p className="text-sm text-slate-500">{tr("No shipment cost breakdown has been saved for this order.")}</p>
         ) : (
           <ul className="divide-y divide-slate-100 text-sm">
             {rows.map((r) => (
               <li key={r.id} className="flex flex-wrap items-center justify-between gap-2 py-2">
                 <span className="min-w-0">
                   <Link to={`/freight/breakdowns/${r.id}`} className="font-medium text-blue-700 underline">
-                    Shipment Cost Breakdown
+                    {tr("Shipment Cost Breakdown")}
                   </Link>{' '}
                   <span className="text-slate-600">
                     {[r.freight_type, r.agent_name, r.ship_date ? `shipped ${showDate(r.ship_date)}` : null].filter(Boolean).join(' · ')}
@@ -63,7 +64,7 @@ export default function OrderFreightSection({ orderId }: { orderId: string }) {
                 </span>
                 <span className="tabular-nums">
                   {formatMoney(Number(r.breakdown_total), r.currency)}{' '}
-                  <span className={Number(r.price_difference) >= 0 ? 'text-green-700' : 'text-red-700'}>({formatMoney(Number(r.price_difference), r.currency)} price difference)</span>
+                  <span className={Number(r.price_difference) >= 0 ? 'text-green-700' : 'text-red-700'}>({formatMoney(Number(r.price_difference), r.currency)} {tr("price difference)")}</span>
                 </span>
               </li>
             ))}

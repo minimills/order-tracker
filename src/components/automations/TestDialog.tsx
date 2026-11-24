@@ -6,6 +6,7 @@ import { Modal, buttonClass, inputClass, secondaryButtonClass } from '../form'
 import { ACTION_STATUS, testAutomation, testSubjects, type Rule, type TestResult } from '../../lib/automations'
 import { friendlyError } from '../../lib/format'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 const TONE: Record<string, string> = { ok: 'text-green-800', skipped: 'text-amber-800', failed: 'text-red-700' }
 
@@ -60,7 +61,7 @@ export default function TestDialog({ automation, rule, onClose }: { automation?:
 
   return (
     <Modal
-      title={`Test: ${automation?.name ?? (rule?.name || 'New automation')}`}
+      title={tr("Test: {{value}}", { value: automation?.name ?? (rule?.name || tr("New automation")) })}
       wide
       onClose={onClose}
       busy={busy}
@@ -70,19 +71,18 @@ export default function TestDialog({ automation, rule, onClose }: { automation?:
             {ACTION.close}
           </button>
           <button type="button" className={buttonClass} disabled={busy || subjects === null} onClick={run}>
-            {busy ? 'Testing…' : 'Run Test'}
+            {busy ? tr("Testing…") : tr("Run Test")}
           </button>
         </>
       }
     >
       <p className="text-sm text-slate-600">
-        The test runs the automation with its owner’s permissions on the example you choose, then undoes everything. Nothing is changed and no
-        notification is sent.
+        {tr("The test runs the automation with its owner’s permissions on the example you choose, then undoes everything. Nothing is changed and no notification is sent.")}
       </p>
       {subjects && subjects.length > 0 && subjects[0].id !== null && (
         <div className="mt-3">
           <label htmlFor="test-subject" className="mb-1 block text-sm font-medium text-slate-700">
-            Test it on
+            {tr("Test it on")}
           </label>
           <select id="test-subject" className={inputClass} value={subject} onChange={(e) => setSubject(e.target.value)}>
             {subjects.map((s) => (
@@ -93,12 +93,12 @@ export default function TestDialog({ automation, rule, onClose }: { automation?:
           </select>
         </div>
       )}
-      {subjects && subjects.length === 0 && <p className="mt-3 text-sm text-slate-500">There is nothing yet that this automation could be tested on.</p>}
+      {subjects && subjects.length === 0 && <p className="mt-3 text-sm text-slate-500">{tr("There is nothing yet that this automation could be tested on.")}</p>}
       {result && (
         <div className="mt-4 space-y-2 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm" aria-live="polite">
           {result.subject && (
             <p>
-              Example:{' '}
+              {tr("Example:")}{' '}
               {result.link ? (
                 <Link to={result.link} className="text-blue-700 underline">
                   {result.subject}
@@ -118,7 +118,7 @@ export default function TestDialog({ automation, rule, onClose }: { automation?:
           )}
           {result.conditions?.length > 0 && (
             <p className="text-slate-600">
-              Conditions: {result.conditions.filter((c) => c.ok).length} of {result.conditions.length} met.
+              {tr("Conditions:")} {result.conditions.filter((c) => c.ok).length} {tr("of")} {result.conditions.length} met.
             </p>
           )}
           {result.actions?.length > 0 && (
@@ -127,13 +127,13 @@ export default function TestDialog({ automation, rule, onClose }: { automation?:
                 <li key={i}>
                   <span className="font-medium">{a.label}</span> –{' '}
                   <span className={TONE[a.status]}>
-                    {a.status === 'ok' ? 'Would be done' : `Would be ${ACTION_STATUS[a.status].toLowerCase()}`}: {a.message}
+                    {a.status === 'ok' ? tr("Would be done") : tr("Would be {{value}}", { value: ACTION_STATUS[a.status].toLowerCase() })}: {a.message}
                   </span>
                 </li>
               ))}
             </ol>
           )}
-          <p className="text-xs text-slate-500">Test only: nothing was changed.</p>
+          <p className="text-xs text-slate-500">{tr("Test only: nothing was changed.")}</p>
         </div>
       )}
     </Modal>

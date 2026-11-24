@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase'
 import type { Department } from '../../lib/types'
 import { useDepartments } from '../../lib/useDepartments'
 import { useTsPeople } from '../../lib/timesheets'
+import { tr } from '../../i18n'
 
 const small = 'rounded border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40'
 
@@ -39,7 +40,7 @@ export default function DepartmentsPage() {
   async function save(promise: PromiseLike<{ error: { message: string; code?: string } | null }>, ok: string) {
     const { error } = await promise
     if (error) {
-      toast.error(error.code === '23505' ? 'There is already a department with that name.' : friendlyError(error))
+      toast.error(error.code === '23505' ? tr("There is already a department with that name.") : friendlyError(error))
       return false
     }
     toast.success(ok)
@@ -51,7 +52,7 @@ export default function DepartmentsPage() {
     if (!supabase) return
     const name = (drafts[d.id] ?? d.name).trim()
     if (!name || name === d.name) return
-    if (taken(name, d.id)) return toast.error('There is already a department with that name.')
+    if (taken(name, d.id)) return toast.error(tr("There is already a department with that name."))
     if (await save(supabase.from('departments').update({ name }).eq('id', d.id), `Renamed to “${name}”.`)) {
       setDrafts((all) => {
         const next = { ...all }
@@ -85,24 +86,23 @@ export default function DepartmentsPage() {
     if (!supabase) return
     const name = newName.trim()
     if (!name) return
-    if (taken(name)) return toast.error('There is already a department with that name (it may be archived: select "Show archived").')
+    if (taken(name)) return toast.error(tr("There is already a department with that name (it may be archived: select \"Show archived\")."))
     const sort = Math.max(0, ...departments.map((d) => d.sort_order)) + 1
     if (await save(supabase.from('departments').insert({ name, sort_order: sort }), `Added “${name}”.`)) setNewName('')
   }
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Departments">
-        The departments people belong to. A person can be in more than one (set that in Users). Archiving hides a
-        department from lists but keeps it on past activity. The manager approves the department’s timesheets and time off requests.
+      <AdminPageHeader title={tr("Departments")}>
+        {tr("The departments people belong to. A person can be in more than one (set that in Users). Archiving hides a department from lists but keeps it on past activity. The manager approves the department’s timesheets and time off requests.")}
       </AdminPageHeader>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="font-semibold">Departments</h2>
+          <h2 className="font-semibold">{tr("Departments")}</h2>
           <label className="flex items-center gap-1.5 text-xs text-slate-600">
             <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-            Show archived
+            {tr("Show archived")}
           </label>
         </div>
         <ul className="space-y-2">
@@ -112,7 +112,7 @@ export default function DepartmentsPage() {
             return (
               <li key={d.id} className={`flex flex-wrap items-center gap-2 ${d.archived ? 'opacity-60' : ''}`}>
                 <input
-                  aria-label="Department name"
+                  aria-label={tr("Department name")}
                   className={`${inputClass} min-w-0 flex-1`}
                   value={draft}
                   disabled={d.archived}
@@ -121,31 +121,31 @@ export default function DepartmentsPage() {
                 />
                 {draft.trim() !== d.name && (
                   <button type="button" className={buttonClass} onClick={() => rename(d)}>
-                    Save Changes
+                    {tr("Save Changes")}
                   </button>
                 )}
                 {!d.archived && (
                   <select
-                    aria-label={`Manager of ${d.name}`}
+                    aria-label={tr("Manager of {{name}}", { name: d.name })}
                     data-setting={idx === 0 ? 'dept-managers' : undefined}
                     className="rounded border border-slate-300 bg-white px-2 py-1 text-xs"
                     value={d.manager_email ?? ''}
                     onChange={(e) => setManager(d, e.target.value)}
                   >
-                    <option value="">No manager</option>
+                    <option value="">{tr("No manager")}</option>
                     {people.map((p) => (
                       <option key={p.email} value={p.email}>
-                        Manager: {p.name}
+                        {tr("Manager:")} {p.name}
                       </option>
                     ))}
                   </select>
                 )}
                 <span className="w-20 text-xs text-slate-500">
-                  {counts[d.id] ?? 0} {counts[d.id] === 1 ? 'person' : 'people'}
+                  {counts[d.id] ?? 0} {counts[d.id] === 1 ? tr("person") : tr("people")}
                 </span>
                 {!d.archived && (
                   <>
-                    <button type="button" className={small} disabled={idx <= 0} onClick={() => move(d, -1)} aria-label={`Move ${d.name} up`}>
+                    <button type="button" className={small} disabled={idx <= 0} onClick={() => move(d, -1)} aria-label={tr("Move {{name}} up", { name: d.name })}>
                       ↑
                     </button>
                     <button
@@ -153,7 +153,7 @@ export default function DepartmentsPage() {
                       className={small}
                       disabled={idx >= active.length - 1}
                       onClick={() => move(d, 1)}
-                      aria-label={`Move ${d.name} down`}
+                      aria-label={tr("Move {{name}} down", { name: d.name })}
                     >
                       ↓
                     </button>
@@ -170,11 +170,11 @@ export default function DepartmentsPage() {
                     )
                   }
                 >
-                  {d.archived ? 'Restore' : 'Archive'}
+                  {d.archived ? tr("Restore") : tr("Archive")}
                 </button>
                 <p className="w-full pl-1 text-xs text-slate-500">
-                  Default permissions:{' '}
-                  {Object.keys(d.default_permissions ?? {}).length ? 'set' : 'none yet (set up in a later step)'}
+                  {tr("Default permissions:")}{' '}
+                  {Object.keys(d.default_permissions ?? {}).length ? tr("set") : tr("none yet (set up in a later step)")}
                 </p>
               </li>
             )
@@ -182,14 +182,14 @@ export default function DepartmentsPage() {
         </ul>
         <form onSubmit={add} className="mt-4 flex gap-2">
           <input
-            aria-label="New department"
+            aria-label={tr("New department")}
             className={inputClass}
-            placeholder="Add a department"
+            placeholder={tr("Add a department")}
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
           />
           <button type="submit" className={buttonClass} disabled={!newName.trim()}>
-            Add
+            {tr("Add")}
           </button>
         </form>
       </section>

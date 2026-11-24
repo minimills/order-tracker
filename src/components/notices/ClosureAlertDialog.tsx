@@ -7,6 +7,7 @@ import { CLOSURE_KINDS, refreshClosureAlerts, toLocalInput, type ClosureAlert, t
 import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 /**
  * Post a closure / delay alert, or an update to one. Either way everyone is
@@ -26,11 +27,11 @@ export default function ClosureAlertDialog({ alert, onClose, onSaved }: { alert:
 
   async function save() {
     if (!supabase) return
-    if (!title.trim()) return setError('Enter a title, for example “Office closed due to weather”.')
-    if (end < start) return setError('The last affected date cannot be before the first.')
-    if (alert && !message.trim()) return setError('Write the update for everyone.')
+    if (!title.trim()) return setError(tr("Enter a title, for example “Office closed due to weather”."))
+    if (end < start) return setError(tr("The last affected date cannot be before the first."))
+    if (alert && !message.trim()) return setError(tr("Write the update for everyone."))
     const nextAt = next ? new Date(next) : null
-    if (nextAt && Number.isNaN(nextAt.getTime())) return setError('Enter the time of the next update.')
+    if (nextAt && Number.isNaN(nextAt.getTime())) return setError(tr("Enter the time of the next update."))
     setBusy(true)
     setError(null)
     const { error: e } = await supabase.rpc('save_closure_alert', {
@@ -38,14 +39,14 @@ export default function ClosureAlertDialog({ alert, onClose, onSaved }: { alert:
     })
     setBusy(false)
     if (e) return setError(friendlyError(e))
-    toast.success(alert ? 'Update posted. Everyone has been notified.' : 'Alert posted. Everyone has been notified.')
+    toast.success(alert ? tr("Update posted. Everyone has been notified.") : tr("Alert posted. Everyone has been notified."))
     void refreshClosureAlerts()
     onSaved()
   }
 
   return (
     <Modal
-      title={alert ? 'Post an Update' : 'Post a Closure or Delay Alert'}
+      title={alert ? tr("Post an Update") : tr("Post a Closure or Delay Alert")}
       onClose={onClose}
       busy={busy}
       footer={
@@ -54,16 +55,16 @@ export default function ClosureAlertDialog({ alert, onClose, onSaved }: { alert:
             {ACTION.cancel}
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={busy}>
-            {busy ? 'Sending…' : alert ? 'Post Update and Notify Everyone' : 'Post Alert and Notify Everyone'}
+            {busy ? tr("Sending…") : alert ? tr("Post Update and Notify Everyone") : tr("Post Alert and Notify Everyone")}
           </button>
         </>
       }
     >
       <div className="space-y-4">
         <p className="rounded bg-amber-50 p-2 text-sm text-amber-900">
-          Everyone receives this in the app, by phone push (even during quiet hours) and by email. It shows as a banner at the top of every page until you end it or its last date has passed.
+          {tr("Everyone receives this in the app, by phone push (even during quiet hours) and by email. It shows as a banner at the top of every page until you end it or its last date has passed.")}
         </p>
-        <Field label="Type" htmlFor="ca-kind">
+        <Field label={tr("Type")} htmlFor="ca-kind">
           <select
             id="ca-kind"
             className={inputClass}
@@ -82,31 +83,31 @@ export default function ClosureAlertDialog({ alert, onClose, onSaved }: { alert:
             ))}
           </select>
         </Field>
-        <Field label="Title" htmlFor="ca-title">
-          <input id="ca-title" className={inputClass} maxLength={120} value={title} placeholder="For example Office closed due to weather" onChange={(e) => setTitle(e.target.value)} />
+        <Field label={tr("Title")} htmlFor="ca-title">
+          <input id="ca-title" className={inputClass} maxLength={120} value={title} placeholder={tr("For example Office closed due to weather")} onChange={(e) => setTitle(e.target.value)} />
         </Field>
-        <Field label="Reason" htmlFor="ca-reason">
-          <textarea id="ca-reason" rows={2} className={inputClass} maxLength={2000} value={reason} placeholder="For example Snow storm; roads are closed" onChange={(e) => setReason(e.target.value)} />
+        <Field label={tr("Reason")} htmlFor="ca-reason">
+          <textarea id="ca-reason" rows={2} className={inputClass} maxLength={2000} value={reason} placeholder={tr("For example Snow storm; roads are closed")} onChange={(e) => setReason(e.target.value)} />
         </Field>
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="First affected date" htmlFor="ca-start">
+          <Field label={tr("First affected date")} htmlFor="ca-start">
             <input id="ca-start" type="date" className={inputClass} value={start} onChange={(e) => setStart(e.target.value)} />
           </Field>
-          <Field label="Last affected date" htmlFor="ca-end">
+          <Field label={tr("Last affected date")} htmlFor="ca-end">
             <input id="ca-end" type="date" className={inputClass} value={end} onChange={(e) => setEnd(e.target.value)} />
           </Field>
         </div>
-        <Field label="Next update at (optional)" htmlFor="ca-next">
+        <Field label={tr("Next update at (optional)")} htmlFor="ca-next">
           <input id="ca-next" type="datetime-local" className={inputClass} value={next} onChange={(e) => setNext(e.target.value)} />
         </Field>
-        <Field label={alert ? 'Update for everyone' : 'Message (optional)'} htmlFor="ca-message">
+        <Field label={alert ? tr("Update for everyone") : tr("Message (optional)")} htmlFor="ca-message">
           <textarea
             id="ca-message"
             rows={3}
             className={inputClass}
             maxLength={2000}
             value={message}
-            placeholder={alert ? 'For example The office stays closed tomorrow.' : 'Anything people should know or do'}
+            placeholder={alert ? tr("For example The office stays closed tomorrow.") : tr("Anything people should know or do")}
             onChange={(e) => setMessage(e.target.value)}
           />
         </Field>

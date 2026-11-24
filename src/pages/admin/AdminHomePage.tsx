@@ -4,6 +4,7 @@ import Can from '../../components/Can'
 import Icon from '../../components/Icon'
 import SettingsSearch from '../../components/SettingsSearch'
 import { ADMIN_PAGES, ADMIN_VIEW_ONLY } from '../../lib/adminPages'
+import { tr } from '../../i18n'
 
 /** The Admin home: every admin page this person may open, in a grid that fills the width. */
 export default function AdminHomePage() {
@@ -11,8 +12,8 @@ export default function AdminHomePage() {
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Admin</h1>
-          <p className="mt-1 text-sm text-slate-600">Company-wide settings. Every change here is recorded in Activity.</p>
+          <h1 className="text-2xl font-semibold">{tr("Admin")}</h1>
+          <p className="mt-1 text-sm text-slate-600">{tr("Company-wide settings. Every change here is recorded in Activity.")}</p>
         </div>
         <SettingsSearch />
       </div>

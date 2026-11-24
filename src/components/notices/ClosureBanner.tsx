@@ -3,6 +3,7 @@ import { rangeText, showDateTime, useClosureAlerts } from '../../lib/notices'
 import { usePermissions } from '../../lib/permissions'
 import Can from '../Can'
 import Icon from '../Icon'
+import { tr } from '../../i18n'
 
 /**
  * Closure and delay alerts: a full-width warning at the top of every page
@@ -25,11 +26,11 @@ export default function ClosureBanner() {
               </div>
               {(a.last_message || a.reason) && <div className="break-words">{a.last_message || a.reason}</div>}
               <div className="text-xs text-slate-800">
-                {a.next_update_at ? `Next update at ${showDateTime(a.next_update_at)}` : 'No further update planned'} · Updated {showDateTime(a.updated_at)}
+                {a.next_update_at ? tr("Next update at {{showDateTime}}", { showDateTime: showDateTime(a.next_update_at) }) : tr("No further update planned")} {tr("· Updated")} {showDateTime(a.updated_at)}
               </div>
             </div>
             <Link to={`/notices?closure=${a.id}`} className="shrink-0 rounded-md border border-slate-900/40 px-3 py-1 font-medium hover:bg-amber-300">
-              Details
+              {tr("Details")}
             </Link>
           </div>
         ))}

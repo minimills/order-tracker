@@ -16,6 +16,7 @@ import { useStageLabels } from '../lib/stages'
 import CeIssueDialog from '../components/ce/CeIssueDialog'
 import CeRegister from '../components/ce/CeRegister'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Owner = {
   customer_id: string
@@ -121,7 +122,11 @@ export default function MachinePage() {
       return words.every((w) => text.includes(w))
     })
   }, [all, q])
-  useBreadcrumbs(id ? m && [{ label: 'Machines', to: '/machines' }, { label: [m.machine_type, m.serial].filter(Boolean).join(' ') }] : [{ label: 'Machines' }])
+  useBreadcrumbs(id ? m && [{ get label() {
+    return tr("Machines")
+  }, to: '/machines' }, { label: [m.machine_type, m.serial].filter(Boolean).join(' ') }] : [{ get label() {
+    return tr("Machines")
+  } }])
 
   function search(e: React.FormEvent) {
     e.preventDefault()
@@ -137,39 +142,39 @@ export default function MachinePage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">{m && id ? `${m.machine_type}` : 'Machines'}</h1>
+              <h1 className="text-2xl font-semibold">{m && id ? `${m.machine_type}` : tr("Machines")}</h1>
               <Can permission="machines.print">
-                <PrintButton title={m && id ? `${m.machine_type}${m.serial ? ` ${m.serial}` : ''}` : 'Machines'} />
+                <PrintButton title={m && id ? `${m.machine_type}${m.serial ? ` ${m.serial}` : ''}` : tr("Machines")} />
               </Can>
             </div>
             {m && id ? (
               <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-slate-600">
-                {m.serial ? <SerialNumber serial={m.serial} /> : <span>No serial yet</span>}
-                <span>· {m.built ? 'Built' : 'Not built'}</span>
+                {m.serial ? <SerialNumber serial={m.serial} /> : <span>{tr("No serial yet")}</span>}
+                <span>· {m.built ? tr("Built") : tr("Not built")}</span>
                 <span>
-                  · first sold on{' '}
+                  {tr("· first sold on")}{' '}
                   <Link to={`/orders/${m.order_id}`} className="underline">
-                    order {m.order_code}
+                    {tr("order")} {m.order_code}
                   </Link>
                 </span>
               </div>
             ) : (
-              <p className="mt-1 text-sm text-slate-600">Every machine. Type to narrow the list; open a machine to see its owners and its whole history.</p>
+              <p className="mt-1 text-sm text-slate-600">{tr("Every machine. Type to narrow the list; open a machine to see its owners and its whole history.")}</p>
             )}
           </div>
           <Can permission="machines.search">
             <form onSubmit={search} className="flex w-full gap-2 sm:w-auto" role="search">
               <input
                 type="search"
-                aria-label="Search machines"
+                aria-label={tr("Search machines")}
                 className={`${inputClass} sm:w-72`}
-                placeholder="Serial, model, customer, country or order #"
+                placeholder={tr("Serial, model, customer, country or order #")}
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
               {id && (
                 <button type="submit" className={buttonClass}>
-                  Find
+                  {tr("Find")}
                 </button>
               )}
             </form>
@@ -177,28 +182,28 @@ export default function MachinePage() {
         </div>
 
         {!id && (
-          <section className="min-w-0 rounded-lg border border-slate-200 bg-white text-sm" aria-label="Machines" data-print-section="Machines">
+          <section className="min-w-0 rounded-lg border border-slate-200 bg-white text-sm" aria-label={tr("Machines")} data-print-section="Machines">
             {all === null ? (
-              <p className="p-4 text-slate-500">Loading…</p>
+              <p className="p-4 text-slate-500">{tr("Loading…")}</p>
             ) : shown.length === 0 ? (
-              <p className="p-4 text-slate-500">{all.length === 0 ? 'No machines have been entered yet.' : `No machine matches “${q}”.`}</p>
+              <p className="p-4 text-slate-500">{all.length === 0 ? tr("No machines have been entered yet.") : tr("No machine matches “{{q}}”.", { q: q })}</p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[40rem] border-collapse text-left">
                   <thead className="bg-slate-50 text-xs text-slate-600">
                     <tr>
-                      <th className="px-3 py-2 font-semibold">Serial number</th>
-                      <th className="px-3 py-2 font-semibold">Model</th>
-                      <th className="px-3 py-2 font-semibold">Customer</th>
-                      <th className="px-3 py-2 font-semibold">Order</th>
-                      <th className="px-3 py-2 font-semibold">Status</th>
+                      <th className="px-3 py-2 font-semibold">{tr("Serial number")}</th>
+                      <th className="px-3 py-2 font-semibold">{tr("Model")}</th>
+                      <th className="px-3 py-2 font-semibold">{tr("Customer")}</th>
+                      <th className="px-3 py-2 font-semibold">{tr("Order")}</th>
+                      <th className="px-3 py-2 font-semibold">{tr("Status")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {shown.map((r) => (
                       <tr key={r.machine_id} className="cursor-pointer hover:bg-slate-50" onClick={() => navigate(`/machines/${r.machine_id}`)}>
                         <td className="px-3 py-2 whitespace-nowrap">
-                          {r.serial ? <SerialNumber serial={r.serial} className="font-semibold" /> : <span className="text-slate-500">No serial yet</span>}
+                          {r.serial ? <SerialNumber serial={r.serial} className="font-semibold" /> : <span className="text-slate-500">{tr("No serial yet")}</span>}
                         </td>
                         <td className="px-3 py-2">
                           <Link to={`/machines/${r.machine_id}`} className="hover:underline" onClick={(e) => e.stopPropagation()}>
@@ -220,7 +225,7 @@ export default function MachinePage() {
                   </tbody>
                 </table>
                 <p className="border-t border-slate-100 px-3 py-2 text-xs text-slate-500">
-                  {shown.length === all.length ? `${all.length} machines` : `${shown.length} of ${all.length} machines`}
+                  {shown.length === all.length ? tr("{{length}} machines", { length: all.length }) : tr("{{length}} of {{length2}} machines", { length: shown.length, length2: all.length })}
                 </p>
               </div>
             )}
@@ -231,12 +236,12 @@ export default function MachinePage() {
 
         {m && id && (
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start">
-            <section className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 text-sm lg:w-80 lg:shrink-0" aria-label="Owners">
+            <section className="min-w-0 rounded-lg border border-slate-200 bg-white p-4 text-sm lg:w-80 lg:shrink-0" aria-label={tr("Owners")}>
               <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="font-semibold">Owners</h2>
+                <h2 className="font-semibold">{tr("Owners")}</h2>
                 <Can permission="machines.transfer" level="edit">
                   <button type="button" className={secondaryButtonClass} onClick={() => setTransfer(true)}>
-                    Transfer / Resold
+                    {tr("Transfer / Resold")}
                   </button>
                 </Can>
               </div>
@@ -250,12 +255,12 @@ export default function MachinePage() {
                       </div>
                       {o.company && <div className="text-xs text-slate-500">{o.name}</div>}
                       <div className="text-xs text-slate-600">
-                        From {showDate(o.from)} · {o.how}
-                        {current && ' · current owner'}
+                        {tr("From")} {showDate(o.from)} · {o.how}
+                        {current && tr(" · current owner")}
                       </div>
                       {o.order_id && (
                         <Link to={`/orders/${o.order_id}`} className="text-xs underline">
-                          Order {o.order_code}
+                          {tr("Order")} {o.order_code}
                         </Link>
                       )}
                       {o.notes && <p className="mt-1 text-xs text-slate-700">{o.notes}</p>}
@@ -265,10 +270,10 @@ export default function MachinePage() {
               </ol>
             </section>
 
-            <section className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white p-4 text-sm" aria-label="History">
-              <h2 className="mb-3 font-semibold">History</h2>
+            <section className="min-w-0 flex-1 rounded-lg border border-slate-200 bg-white p-4 text-sm" aria-label={tr("History")}>
+              <h2 className="mb-3 font-semibold">{tr("History")}</h2>
               {m.timeline.length === 0 ? (
-                <p className="text-slate-500">Nothing recorded yet.</p>
+                <p className="text-slate-500">{tr("Nothing recorded yet.")}</p>
               ) : (
                 <ol className="relative space-y-4 border-l-2 border-slate-200 pl-6">
                   {m.timeline.map((t, i) => {
@@ -300,13 +305,13 @@ export default function MachinePage() {
 
         {m && id && (
           <Can permission="ce">
-            <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm" aria-label="CE declarations">
+            <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm" aria-label={tr("CE declarations")}>
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h2 className="font-semibold">CE Declarations of Conformity</h2>
+                <h2 className="font-semibold">{tr("CE Declarations of Conformity")}</h2>
                 <Can permission="ce.issue" level="edit">
                   {m.serial && (
                     <button type="button" className={secondaryButtonClass} onClick={() => setCeOpen(true)}>
-                      CE Certificate
+                      {tr("CE Certificate")}
                     </button>
                   )}
                 </Can>
@@ -370,12 +375,12 @@ function TransferDialog({ machine, onClose, onDone }: { machine: Details; onClos
   async function save() {
     if (!supabase) return
     setError(null)
-    if (!isNew && !customerId) return setError('Choose the new owner.')
-    if (isNew && !nw.name.trim()) return setError('Enter the new owner’s name.')
+    if (!isNew && !customerId) return setError(tr("Choose the new owner."))
+    if (isNew && !nw.name.trim()) return setError(tr("Enter the new owner’s name."))
     let orderId: string | null = null
     if (orderCode.trim()) {
       const { data } = await supabase.from('order_summary').select('id').eq('order_code', orderCode.trim()).maybeSingle()
-      if (!data) return setError(`There is no order ${orderCode.trim()}.`)
+      if (!data) return setError(tr("There is no order {{value}}.", { value: orderCode.trim() }))
       orderId = (data as { id: string }).id
     }
     setBusy(true)
@@ -391,14 +396,14 @@ function TransferDialog({ machine, onClose, onDone }: { machine: Details; onClos
     })
     setBusy(false)
     if (e) return setError(friendlyError(e))
-    toast.success('New owner saved. Service calls for that customer now list this machine.')
+    toast.success(tr("New owner saved. Service calls for that customer now list this machine."))
     onDone()
   }
 
   return (
     <Can permission="machines.transfer" level="edit">
       <Modal
-        title={`Transfer / Resold: ${machine.serial ?? machine.machine_type}`}
+        title={tr("Transfer / Resold: {{value}}", { value: machine.serial ?? machine.machine_type })}
         onClose={onClose}
         busy={busy}
         footer={
@@ -408,47 +413,47 @@ function TransferDialog({ machine, onClose, onDone }: { machine: Details; onClos
             </button>
             <Can permission="machines.transfer" level="edit">
               <button type="button" className={buttonClass} onClick={save} disabled={busy}>
-                {busy ? ACTION.saving : 'Save New Owner'}
+                {busy ? ACTION.saving : tr("Save New Owner")}
               </button>
             </Can>
           </>
         }
       >
         <div className="space-y-4 text-sm">
-          <p className="text-slate-600">Current owner: {machine.current_owner ? ownerName(machine.current_owner) : '—'}</p>
+          <p className="text-slate-600">{tr("Current owner:")} {machine.current_owner ? ownerName(machine.current_owner) : '—'}</p>
           <div className="flex gap-4">
             <label className="flex items-center gap-2">
-              <input type="radio" name="tr-who" className="h-4 w-4" checked={!isNew} onChange={() => setIsNew(false)} /> An existing customer
+              <input type="radio" name="tr-who" className="h-4 w-4" checked={!isNew} onChange={() => setIsNew(false)} /> {tr("An existing customer")}
             </label>
             <label className="flex items-center gap-2">
-              <input type="radio" name="tr-who" className="h-4 w-4" checked={isNew} onChange={() => setIsNew(true)} /> A new customer
+              <input type="radio" name="tr-who" className="h-4 w-4" checked={isNew} onChange={() => setIsNew(true)} /> {tr("A new customer")}
             </label>
           </div>
           {isNew ? (
             <div className="grid gap-3 sm:grid-cols-2">
-              <Field label="Name" htmlFor="tr-name">
+              <Field label={tr("Name")} htmlFor="tr-name">
                 <input id="tr-name" className={inputClass} value={nw.name} onChange={(e) => setNw({ ...nw, name: e.target.value })} />
               </Field>
-              <Field label="Company (optional)" htmlFor="tr-company">
+              <Field label={tr("Company (optional)")} htmlFor="tr-company">
                 <input id="tr-company" className={inputClass} value={nw.company} onChange={(e) => setNw({ ...nw, company: e.target.value })} />
               </Field>
-              <Field label="Country" htmlFor="tr-country">
+              <Field label={tr("Country")} htmlFor="tr-country">
                 <input id="tr-country" className={inputClass} value={nw.country} onChange={(e) => setNw({ ...nw, country: e.target.value })} />
               </Field>
-              <Field label="Email (optional)" htmlFor="tr-email">
+              <Field label={tr("Email (optional)")} htmlFor="tr-email">
                 <input id="tr-email" type="email" className={inputClass} value={nw.email} onChange={(e) => setNw({ ...nw, email: e.target.value })} />
               </Field>
             </div>
           ) : (
             <div className="space-y-2">
               <input
-                aria-label="Find a customer"
+                aria-label={tr("Find a customer")}
                 className={inputClass}
-                placeholder="Find a customer…"
+                placeholder={tr("Find a customer…")}
                 value={find}
                 onChange={(e) => setFind(e.target.value)}
               />
-              <select aria-label="New owner" size={6} className={inputClass} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+              <select aria-label={tr("New owner")} size={6} className={inputClass} value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
                 {shown.map((c) => (
                   <option key={c.id} value={c.id} disabled={c.id === machine.current_owner?.id}>
                     {ownerName(c)}
@@ -460,14 +465,14 @@ function TransferDialog({ machine, onClose, onDone }: { machine: Details; onClos
             </div>
           )}
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Date" htmlFor="tr-date">
+            <Field label={tr("Date")} htmlFor="tr-date">
               <input id="tr-date" type="date" className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
             </Field>
-            <Field label="New order # (optional)" htmlFor="tr-order" hint="If the resale went through an order of ours.">
+            <Field label={tr("New order # (optional)")} htmlFor="tr-order" hint={tr("If the resale went through an order of ours.")}>
               <input id="tr-order" className={inputClass} value={orderCode} onChange={(e) => setOrderCode(e.target.value)} />
             </Field>
           </div>
-          <Field label="Notes (optional)" htmlFor="tr-notes">
+          <Field label={tr("Notes (optional)")} htmlFor="tr-notes">
             <textarea id="tr-notes" rows={3} className={inputClass} maxLength={2000} value={notes} onChange={(e) => setNotes(e.target.value)} />
           </Field>
           {error && <p className="font-medium text-red-600">{error}</p>}

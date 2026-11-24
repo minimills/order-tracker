@@ -15,6 +15,7 @@ import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
 import type { Widget } from '../../lib/widgets'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 type WorkCard = {
   id: string
@@ -181,11 +182,11 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
     }
   }, [reload, widget.id, print])
 
-  if (failed) return <p className="py-3 text-sm text-slate-500">This could not be loaded. It will try again at the next refresh.</p>
-  if (!work) return <p className="py-3 text-sm text-slate-500">Loading…</p>
+  if (failed) return <p className="py-3 text-sm text-slate-500">{tr("This could not be loaded. It will try again at the next refresh.")}</p>
+  if (!work) return <p className="py-3 text-sm text-slate-500">{tr("Loading…")}</p>
   const board = widget.filters?.board
   const cards = work.cards.filter((c) => !board || c.board_id === board).slice(0, widget.limit ?? 8)
-  if (!cards.length) return <p className="py-3 text-sm text-slate-500">No open cards or tasks are assigned to you.</p>
+  if (!cards.length) return <p className="py-3 text-sm text-slate-500">{tr("No open cards or tasks are assigned to you.")}</p>
   const today = todayISO()
 
   async function run(key: string, fn: () => PromiseLike<{ error: unknown }>, ok?: string) {
@@ -199,7 +200,9 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
   const setCard = (c: WorkCard, patch: Partial<WorkCard>, ok?: string) => run(c.id, () => supabase!.from('board_cards').update(patch).eq('id', c.id), ok)
   const setItem = (it: WorkItem, patch: Partial<WorkItem>, ok?: string) => run(it.id, () => supabase!.from('board_checklist_items').update(patch).eq('id', it.id), ok)
   async function pause(c: WorkCard, it: WorkItem | null) {
-    const note = await askText('Pause the timer. Add a note if you like, for example “waiting for parts”.', { label: 'Note (optional)', confirmLabel: ACTION.pause })
+    const note = await askText(tr("Pause the timer. Add a note if you like, for example “waiting for parts”."), { get label() {
+    return tr("Note (optional)")
+  }, confirmLabel: ACTION.pause })
     if (note === null) return
     run(it?.id ?? c.id, () => supabase!.rpc('pause_board_timer', { p_card: c.id, p_item: it?.id ?? null, p_note: note.trim() || null }))
   }
@@ -228,7 +231,7 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
             <span className="flex flex-wrap gap-1">
               {!started && (
                 <button type="button" className={small} disabled={disabled} onClick={() => (it ? setItem(it, { started_at: now() }) : setCard(c, { started_at: now() }))}>
-                  {machine ? 'Start Stage' : ACTION.start}
+                  {machine ? tr("Start Stage") : ACTION.start}
                 </button>
               )}
               {started &&
@@ -248,7 +251,7 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
                   disabled={disabled}
                   onClick={() => (it ? setItem(it, { finished_at: now() }, 'Task completed.') : setCard(c, { finished_at: now() }, machine ? 'Stage finished.' : 'Card finished.'))}
                 >
-                  {machine ? 'Finish Stage' : ACTION.finish}
+                  {machine ? tr("Finish Stage") : ACTION.finish}
                 </button>
               )}
             </span>
@@ -280,13 +283,13 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
                   {work.stages.get(c.stage_id) && ` · ${work.stages.get(c.stage_id)}`}
                 </span>
               </span>
-              <span className={`shrink-0 text-xs ${late ? 'font-semibold text-red-700' : 'text-slate-600'}`}>{c.due_date ? `Due ${showDate(c.due_date, 'MMM d')}` : 'No due date'}</span>
+              <span className={`shrink-0 text-xs ${late ? 'font-semibold text-red-700' : 'text-slate-600'}`}>{c.due_date ? tr("Due {{showDate}}", { showDate: showDate(c.due_date, 'MMM d') }) : tr("No due date")}</span>
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-2">
-              {work.assigned?.has(c.id) && !c.finished_at ? timerControls(c, null) : <span className="text-xs text-slate-500">Tasks assigned to you on this card</span>}
+              {work.assigned?.has(c.id) && !c.finished_at ? timerControls(c, null) : <span className="text-xs text-slate-500">{tr("Tasks assigned to you on this card")}</span>}
               {open && !print && (
                 <Link to={`/boards/${c.board_id}?card=${c.id}`} className="text-xs text-blue-700 underline">
-                  Open Card
+                  {tr("Open Card")}
                 </Link>
               )}
             </div>
@@ -299,9 +302,9 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
                         {it.item_text}
                         {(it.assignee_email === me || it.due_date) && (
                           <span className="block text-xs text-slate-500">
-                            {it.assignee_email === me && 'Assigned to you'}
+                            {it.assignee_email === me && tr("Assigned to you")}
                             {it.assignee_email === me && it.due_date && ' · '}
-                            {it.due_date && <span className={it.due_date < today ? 'font-semibold text-red-700' : ''}>Due {showDate(it.due_date, 'MMM d')}</span>}
+                            {it.due_date && <span className={it.due_date < today ? 'font-semibold text-red-700' : ''}>{tr("Due")} {showDate(it.due_date, 'MMM d')}</span>}
                           </span>
                         )}
                       </span>
@@ -310,12 +313,12 @@ export default function MyWorkWidget({ widget, data, print }: { widget: Widget; 
                   ))}
                   {tasks.length > 6 && (
                     <li className="text-xs text-slate-500">
-                      {tasks.length - 6} more open task{tasks.length - 6 === 1 ? '' : 's'}
+                      {tasks.length - 6} {tr("more open task")}{tasks.length - 6 === 1 ? '' : 's'}
                       {open && (
                         <>
                           {' · '}
                           <Link to={`/boards/${c.board_id}?card=${c.id}`} className="underline">
-                            Open Card
+                            {tr("Open Card")}
                           </Link>
                         </>
                       )}

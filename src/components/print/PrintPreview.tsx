@@ -6,6 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
 import Icon from '../Icon'
 import Letterhead from './Letterhead'
+import { tr } from '../../i18n'
 
 type Part = { id: string; label: string }
 const chip = (on: boolean) => `rounded-md border px-2.5 py-1 text-sm ${on ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-300 bg-white text-slate-700 hover:bg-slate-50'}`
@@ -87,14 +88,14 @@ export default function PrintPreview({ source, title, subtitle, onClose }: { sou
   const included = parts.length - hidden.size
 
   return createPortal(
-    <div className="print-root" role="dialog" aria-modal="true" aria-label={`Print preview: ${title}`}>
+    <div className="print-root" role="dialog" aria-modal="true" aria-label={tr("Print preview: {{title}}", { title: title })}>
       <div className="print-ui sticky top-0 z-10 border-b border-slate-300 bg-white px-4 py-3 shadow-sm">
         <div className="flex flex-wrap items-center gap-2">
           <h2 className="mr-auto min-w-0 text-base font-semibold">
-            Print Preview <span className="font-normal text-slate-600">· {title}</span>
+            {tr("Print Preview")} <span className="font-normal text-slate-600">· {title}</span>
           </h2>
           <button type="button" className="rounded-md border border-slate-300 bg-white px-4 py-2 text-sm hover:bg-slate-50" onClick={onClose}>
-            Close Preview
+            {tr("Close Preview")}
           </button>
           <button
             type="button"
@@ -107,37 +108,37 @@ export default function PrintPreview({ source, title, subtitle, onClose }: { sou
         </div>
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
           <label className="flex items-center gap-1.5">
-            <input type="checkbox" className="h-4 w-4" checked={letterhead} onChange={(e) => setLetterhead(e.target.checked)} /> Letterhead
+            <input type="checkbox" className="h-4 w-4" checked={letterhead} onChange={(e) => setLetterhead(e.target.checked)} /> {tr("Letterhead")}
           </label>
-          <span className="flex items-center gap-1" role="group" aria-label="Paper direction">
+          <span className="flex items-center gap-1" role="group" aria-label={tr("Paper direction")}>
             <button type="button" aria-pressed={!landscape} className={chip(!landscape)} onClick={() => setLandscape(false)}>
-              Portrait
+              {tr("Portrait")}
             </button>
             <button type="button" aria-pressed={landscape} className={chip(landscape)} onClick={() => setLandscape(true)}>
-              Landscape
+              {tr("Landscape")}
             </button>
           </span>
-          <span className="flex items-center gap-1" role="group" aria-label="Paper size">
+          <span className="flex items-center gap-1" role="group" aria-label={tr("Paper size")}>
             <button type="button" aria-pressed={paper === 'letter'} className={chip(paper === 'letter')} onClick={() => setPaper('letter')}>
-              Letter
+              {tr("Letter")}
             </button>
             <button type="button" aria-pressed={paper === 'A4'} className={chip(paper === 'A4')} onClick={() => setPaper('A4')}>
               A4
             </button>
           </span>
           <label className="flex items-center gap-1.5">
-            <input type="checkbox" className="h-4 w-4" checked={small} onChange={(e) => setSmall(e.target.checked)} /> Smaller text
+            <input type="checkbox" className="h-4 w-4" checked={small} onChange={(e) => setSmall(e.target.checked)} /> {tr("Smaller text")}
           </label>
         </div>
         {parts.length > 1 && (
           <fieldset className="mt-2 text-sm">
             <legend className="mb-1 font-medium">
-              Include ({included} of {parts.length}){' '}
+              {tr("Include (")}{included} {tr("of")} {parts.length}){' '}
               <button type="button" className="ml-2 font-normal underline" onClick={() => setHidden(new Set())}>
-                Select All
+                {tr("Select All")}
               </button>
               <button type="button" className="ml-2 font-normal underline" onClick={() => setHidden(new Set(parts.map((p) => p.id)))}>
-                Clear Selection
+                {tr("Clear Selection")}
               </button>
             </legend>
             <div className="flex max-h-[7.5rem] flex-wrap gap-x-4 gap-y-1 overflow-y-auto">
@@ -155,7 +156,7 @@ export default function PrintPreview({ source, title, subtitle, onClose }: { sou
         {letterhead && <Letterhead title={title} subtitle={subtitle} printedBy={me} />}
         <div ref={contentRef} className="print-content" />
       </div>
-      <style>{`@page { size: ${paper} ${landscape ? 'landscape' : 'portrait'}; margin: 12mm; }`}</style>
+      <style>{tr("@page { size: {{paper}} {{value}}; margin: 12mm; }", { paper: paper, value: landscape ? 'landscape' : 'portrait' })}</style>
     </div>,
     document.body,
   )

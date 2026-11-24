@@ -2,6 +2,8 @@ import type { Session } from '@supabase/supabase-js'
 import { useEffect, useState, type ReactNode } from 'react'
 import { AuthContext, type Role } from '../lib/auth'
 import { supabase } from '../lib/supabase'
+import { browserLang, isLang, setLanguage } from '../i18n'
+import { readLocal } from '../lib/theme'
 
 /** Keeps track of who is signed in and whether they are on the allowed list. */
 export default function AuthProvider({ children }: { children: ReactNode }) {
@@ -50,6 +52,14 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = async () => {
     await supabase?.auth.signOut()
+    // The sign-in page uses this device's own choice (or the browser's language), not the last person's.
+    try {
+      localStorage.removeItem('bmm.lang')
+    } catch {
+      // storage blocked
+    }
+    const own = readLocal('bmm.lang.signin')
+    setLanguage(isLang(own) ? own : browserLang())
   }
 
   return <AuthContext.Provider value={{ loading, session, allowed, role, isAdmin: role === 'admin', signOut }}>{children}</AuthContext.Provider>

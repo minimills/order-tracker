@@ -16,6 +16,7 @@ import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
 import { useOptionList } from '../../lib/useOptionList'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 export type Incoming = {
   id: string
@@ -124,11 +125,11 @@ export default function IncomingShipments() {
 
   async function archive(r: Incoming) {
     if (!supabase) return
-    if (!r.archived && !(await confirmAction(`Archive the shipment from ${r.supplier}? It leaves the list and the totals; Show archived brings it back.`, { confirmLabel: ACTION.archive })))
+    if (!r.archived && !(await confirmAction(tr("Archive the shipment from {{supplier}}? It leaves the list and the totals; Show archived brings it back.", { supplier: r.supplier }), { confirmLabel: ACTION.archive })))
       return
     const { error } = await supabase.rpc('archive_incoming_shipment', { p_id: r.id, p_archived: !r.archived })
     if (error) return toast.error(friendlyError(error))
-    toast.success(r.archived ? 'Shipment restored.' : 'Shipment archived.')
+    toast.success(r.archived ? tr("Shipment restored.") : tr("Shipment archived."))
     load()
   }
 
@@ -136,13 +137,13 @@ export default function IncomingShipments() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3 text-sm">
         <label className="flex min-w-0 flex-1 basis-48 flex-col gap-0.5">
-          <span className="text-xs text-slate-600">Search</span>
-          <input type="search" className={inputClass} placeholder="Supplier, carrier, tracking number, notes" value={q} onChange={(e) => set('iq', e.target.value)} />
+          <span className="text-xs text-slate-600">{tr("Search")}</span>
+          <input type="search" className={inputClass} placeholder={tr("Supplier, carrier, tracking number, notes")} value={q} onChange={(e) => set('iq', e.target.value)} />
         </label>
         <label className="flex flex-col gap-0.5">
-          <span className="text-xs text-slate-600">Type of delivery</span>
+          <span className="text-xs text-slate-600">{tr("Type of delivery")}</span>
           <select className={`${inputClass} w-40`} value={type} onChange={(e) => set('itype', e.target.value)}>
-            <option value="">Every type</option>
+            <option value="">{tr("Every type")}</option>
             {types.map((t) => (
               <option key={t} value={t}>
                 {t}
@@ -151,11 +152,11 @@ export default function IncomingShipments() {
           </select>
         </label>
         <label className="flex flex-col gap-0.5">
-          <span className="text-xs text-slate-600">Received from</span>
+          <span className="text-xs text-slate-600">{tr("Received from")}</span>
           <input type="date" className={`${inputClass} w-40`} value={from} onChange={(e) => set('ifrom2', e.target.value)} />
         </label>
         <label className="flex flex-col gap-0.5">
-          <span className="text-xs text-slate-600">To</span>
+          <span className="text-xs text-slate-600">{tr("To")}</span>
           <input type="date" className={`${inputClass} w-40`} value={to} min={from} onChange={(e) => set('ito2', e.target.value)} />
         </label>
         <label className="flex items-center gap-2 pb-2">
@@ -165,19 +166,19 @@ export default function IncomingShipments() {
         <div className="ml-auto flex flex-wrap gap-2">
           <Can permission="freight.incoming.export">
             <button type="button" className={secondaryButtonClass} disabled={!shown.length} onClick={exportCsv}>
-              Export CSV
+              {tr("Export CSV")}
             </button>
           </Can>
           <Can permission="freight.incoming" level="edit">
             <button type="button" className={buttonClass} onClick={() => setEditing('new')}>
-              Add Incoming Shipment
+              {tr("Add Incoming Shipment")}
             </button>
           </Can>
         </div>
       </div>
 
       {rows && (
-        <section aria-label="Incoming freight totals" data-print-section="Totals" className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))]">
+        <section aria-label={tr("Incoming freight totals")} data-print-section="Totals" className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,10rem),1fr))]">
           {(
             [
               ['Shipments', String(shown.length)],
@@ -196,31 +197,31 @@ export default function IncomingShipments() {
           ))}
         </section>
       )}
-      <p className="text-xs text-slate-500">Totals in CAD (USD amounts × their exchange rate). Shipments without a received date are always listed.</p>
+      <p className="text-xs text-slate-500">{tr("Totals in CAD (USD amounts × their exchange rate). Shipments without a received date are always listed.")}</p>
 
       {!rows ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-slate-500">{tr("Loading…")}</p>
       ) : shown.length === 0 ? (
-        <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">No incoming shipments match.</p>
+        <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">{tr("No incoming shipments match.")}</p>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
           <table className="min-w-full text-sm">
             <thead className="bg-slate-50 text-left text-xs text-slate-600">
               <tr>
-                <th className="px-3 py-2 font-semibold">Received</th>
-                <th className="px-3 py-2 font-semibold">Supplier</th>
-                <th className="px-3 py-2 font-semibold">Delivery</th>
-                <th className="px-3 py-2 font-semibold">Carrier and tracking</th>
-                <th className="px-3 py-2 text-right font-semibold">Product</th>
-                <th className="px-3 py-2 text-right font-semibold">Shipping, fees, taxes, customs</th>
-                <th className="px-3 py-2 text-right font-semibold">Total</th>
+                <th className="px-3 py-2 font-semibold">{tr("Received")}</th>
+                <th className="px-3 py-2 font-semibold">{tr("Supplier")}</th>
+                <th className="px-3 py-2 font-semibold">{tr("Delivery")}</th>
+                <th className="px-3 py-2 font-semibold">{tr("Carrier and tracking")}</th>
+                <th className="px-3 py-2 text-right font-semibold">{tr("Product")}</th>
+                <th className="px-3 py-2 text-right font-semibold">{tr("Shipping, fees, taxes, customs")}</th>
+                <th className="px-3 py-2 text-right font-semibold">{tr("Total")}</th>
                 <th className="px-3 py-2" />
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {shown.map((r) => (
                 <tr key={r.id} className={r.archived ? 'opacity-60' : ''}>
-                  <td className="px-3 py-2 whitespace-nowrap">{r.received_on ? showDate(r.received_on) : <span className="text-slate-400">Not received</span>}</td>
+                  <td className="px-3 py-2 whitespace-nowrap">{r.received_on ? showDate(r.received_on) : <span className="text-slate-400">{tr("Not received")}</span>}</td>
                   <td className="px-3 py-2">
                     <span className="font-medium">{r.supplier}</span>
                     {(r.description || r.reference) && <span className="block text-xs text-slate-500">{[r.description, r.reference].filter(Boolean).join(' · ')}</span>}
@@ -237,7 +238,7 @@ export default function IncomingShipments() {
                     {r.currency !== 'CAD' && <span className="block text-xs text-slate-500">{cad(Number(r.total_cad))}</span>}
                   </td>
                   <td className="px-3 py-2 text-right whitespace-nowrap">
-                    <Can permission="freight.incoming" level="edit" fallback={<button type="button" className="text-xs underline" onClick={() => setEditing(r)}>Open</button>}>
+                    <Can permission="freight.incoming" level="edit" fallback={<button type="button" className="text-xs underline" onClick={() => setEditing(r)}>{tr("Open")}</button>}>
                       <button type="button" className="text-xs underline" onClick={() => setEditing(r)}>
                         {ACTION.edit}
                       </button>
@@ -295,16 +296,16 @@ function IncomingDialog({ shipment, types, readOnly, onClose, onSaved }: { shipm
 
   async function save() {
     if (!supabase) return
-    if (!f.supplier.trim()) return toast.error('Enter the supplier.')
-    if (amounts.some((n) => Number.isNaN(n))) return toast.error('Enter the amounts as numbers, for example 1250.50.')
-    if (f.currency === 'USD' && !(rate > 0)) return toast.error('Enter the exchange rate (USD to CAD).')
+    if (!f.supplier.trim()) return toast.error(tr("Enter the supplier."))
+    if (amounts.some((n) => Number.isNaN(n))) return toast.error(tr("Enter the amounts as numbers, for example 1250.50."))
+    if (f.currency === 'USD' && !(rate > 0)) return toast.error(tr("Enter the exchange rate (USD to CAD)."))
     setBusy(true)
     const { error } = await supabase.rpc('save_incoming_shipment', {
       p: { ...f, id: shipment?.id ?? null, exchange_rate: f.currency === 'CAD' ? '1' : f.exchange_rate, ...Object.fromEntries(MONEY.map((k, i) => [k, amounts[i] ?? 0])) },
     })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Incoming shipment saved.')
+    toast.success(tr("Incoming shipment saved."))
     onSaved()
   }
 
@@ -315,7 +316,7 @@ function IncomingDialog({ shipment, types, readOnly, onClose, onSaved }: { shipm
   )
   return (
     <Modal
-      title={shipment ? (readOnly ? 'Incoming Shipment' : 'Edit Incoming Shipment') : 'Add Incoming Shipment'}
+      title={shipment ? (readOnly ? tr("Incoming Shipment") : tr("Edit Incoming Shipment")) : tr("Add Incoming Shipment")}
       onClose={onClose}
       busy={busy}
       wide
@@ -336,12 +337,12 @@ function IncomingDialog({ shipment, types, readOnly, onClose, onSaved }: { shipm
         {text('supplier', 'Supplier')}
         {text('description', 'What was shipped', 'Optional, for example “Steel tube, 40 lengths”.')}
         {text('reference', 'Purchase order or reference')}
-        <Field label="Date received" htmlFor="inc-received">
+        <Field label={tr("Date received")} htmlFor="inc-received">
           <input id="inc-received" type="date" className={inputClass} disabled={readOnly} value={f.received_on} onChange={(e) => setF({ ...f, received_on: e.target.value })} />
         </Field>
-        <Field label="Type of delivery" htmlFor="inc-type">
+        <Field label={tr("Type of delivery")} htmlFor="inc-type">
           <select id="inc-type" className={inputClass} disabled={readOnly} value={f.delivery_type} onChange={(e) => setF({ ...f, delivery_type: e.target.value })}>
-            <option value="">Not set</option>
+            <option value="">{tr("Not set")}</option>
             {f.delivery_type && !types.includes(f.delivery_type) && <option value={f.delivery_type}>{f.delivery_type}</option>}
             {types.map((t) => (
               <option key={t} value={t}>
@@ -353,14 +354,14 @@ function IncomingDialog({ shipment, types, readOnly, onClose, onSaved }: { shipm
         {text('carrier', 'Carrier')}
         {text('tracking_number', 'Tracking number')}
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Currency" htmlFor="inc-cur">
+          <Field label={tr("Currency")} htmlFor="inc-cur">
             <select id="inc-cur" className={inputClass} disabled={readOnly} value={f.currency} onChange={(e) => setF({ ...f, currency: e.target.value })}>
               <option value="CAD">CAD</option>
               <option value="USD">USD</option>
             </select>
           </Field>
           {f.currency === 'USD' && (
-            <Field label="Exchange rate" htmlFor="inc-rate" hint="USD to CAD">
+            <Field label={tr("Exchange rate")} htmlFor="inc-rate" hint={tr("USD to CAD")}>
               <input id="inc-rate" inputMode="decimal" className={inputClass} disabled={readOnly} value={f.exchange_rate} onChange={(e) => setF({ ...f, exchange_rate: e.target.value })} />
             </Field>
           )}
@@ -371,11 +372,11 @@ function IncomingDialog({ shipment, types, readOnly, onClose, onSaved }: { shipm
           </Field>
         ))}
         <div className="rounded-md bg-slate-50 p-3 text-sm sm:col-span-2">
-          Total landed cost: <span className="font-semibold tabular-nums">{formatMoney(total, f.currency)}</span>
+          {tr("Total landed cost:")} <span className="font-semibold tabular-nums">{formatMoney(total, f.currency)}</span>
           {f.currency === 'USD' && rate > 0 && <span className="text-slate-600"> · {cad(total * rate)}</span>}
         </div>
         <div className="sm:col-span-2">
-          <Field label="Notes" htmlFor="inc-notes">
+          <Field label={tr("Notes")} htmlFor="inc-notes">
             <textarea id="inc-notes" rows={3} maxLength={4000} className={inputClass} disabled={readOnly} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
           </Field>
         </div>

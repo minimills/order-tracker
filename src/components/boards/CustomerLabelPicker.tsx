@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import Can from '../Can'
 import Icon from '../Icon'
 import { inputClass } from '../form'
+import { tr } from '../../i18n'
 
 type Customer = { id: string; name: string; company: string | null; state_province: string | null; country: string | null }
 
@@ -47,7 +48,7 @@ export default function CustomerLabelPicker({ card, editable, busy, onSave }: { 
             <span className="break-words">{card.customer_label}</span>
           </span>
         ) : (
-          <p className="text-xs text-slate-500">No customer label.</p>
+          <p className="text-xs text-slate-500">{tr("No customer label.")}</p>
         )}
         {editable && (
           <Can permission="boards.card.customer_label" level="edit">
@@ -60,11 +61,11 @@ export default function CustomerLabelPicker({ card, editable, busy, onSave }: { 
                   setEditing(true)
                 }}
               >
-                {card.customer_label ? 'Change' : 'Add Customer Label'}
+                {card.customer_label ? tr("Change") : tr("Add Customer Label")}
               </button>
               {card.customer_label && (
                 <button type="button" className="text-red-700 underline" disabled={busy} onClick={() => onSave(null)}>
-                  Remove
+                  {tr("Remove")}
                 </button>
               )}
             </div>
@@ -77,9 +78,9 @@ export default function CustomerLabelPicker({ card, editable, busy, onSave }: { 
     <Can permission="boards.card.customer_label" level="edit">
       <div className="space-y-1.5">
         <input
-          aria-label="Customer label"
+          aria-label={tr("Customer label")}
           className={`${inputClass} py-1`}
-          placeholder="Search customers or type a label"
+          placeholder={tr("Search customers or type a label")}
           value={text}
           autoFocus
           maxLength={200}
@@ -93,8 +94,8 @@ export default function CustomerLabelPicker({ card, editable, busy, onSave }: { 
           }}
         />
         <ul className="max-h-44 overflow-y-auto rounded border border-slate-200 text-sm">
-          {customers.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">Loading customers…</li>}
-          {customers.length > 0 && matches.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">No matching customer. Save the text as typed.</li>}
+          {customers.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">{tr("Loading customers…")}</li>}
+          {customers.length > 0 && matches.length === 0 && <li className="px-2 py-1 text-xs text-slate-500">{tr("No matching customer. Save the text as typed.")}</li>}
           {matches.map((c) => (
             <li key={c.id}>
               <button
@@ -120,10 +121,10 @@ export default function CustomerLabelPicker({ card, editable, busy, onSave }: { 
               setEditing(false)
             }}
           >
-            Save Changes
+            {tr("Save Changes")}
           </button>
           <button type="button" className="rounded border border-slate-300 px-2 py-1 text-xs" onClick={() => setEditing(false)}>
-            Cancel
+            {tr("Cancel")}
           </button>
         </div>
       </div>

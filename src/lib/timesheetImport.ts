@@ -4,27 +4,58 @@
  * only the cleaned rows are sent to `import_timesheet_rows()`.
  */
 import { hoursFrom, type Employee } from './timesheets'
+import { tr } from '../i18n'
 
 /** One cell: its value, the text Excel shows, and a date / time when the cell holds one. */
 export type RawCell = { v: string | number | boolean | null; w: string; date?: string; time?: string }
 export type RawSheet = { name: string; rows: RawCell[][] }
 
 export const FIELDS = [
-  { key: 'ignore', label: 'Ignore' },
-  { key: 'employee', label: 'Employee' },
-  { key: 'date', label: 'Date' },
-  { key: 'start', label: 'Start' },
-  { key: 'end', label: 'End' },
-  { key: 'break_min', label: 'Break (minutes)' },
-  { key: 'break_hours', label: 'Break (hours)' },
-  { key: 'total', label: 'Total hours' },
-  { key: 'banked_earned', label: 'Banked (hours put in)' },
-  { key: 'banked_used', label: 'Banked (hours used)' },
-  { key: 'vacation_hours', label: 'Vacation (hours)' },
-  { key: 'vacation_days', label: 'Vacation (days)' },
-  { key: 'sick_hours', label: 'Sick (hours)' },
-  { key: 'sick_days', label: 'Sick (days)' },
-  { key: 'notes', label: 'Notes' },
+  { key: 'ignore', get label() {
+    return tr("Ignore")
+  } },
+  { key: 'employee', get label() {
+    return tr("Employee")
+  } },
+  { key: 'date', get label() {
+    return tr("Date")
+  } },
+  { key: 'start', get label() {
+    return tr("Start")
+  } },
+  { key: 'end', get label() {
+    return tr("End")
+  } },
+  { key: 'break_min', get label() {
+    return tr("Break (minutes)")
+  } },
+  { key: 'break_hours', get label() {
+    return tr("Break (hours)")
+  } },
+  { key: 'total', get label() {
+    return tr("Total hours")
+  } },
+  { key: 'banked_earned', get label() {
+    return tr("Banked (hours put in)")
+  } },
+  { key: 'banked_used', get label() {
+    return tr("Banked (hours used)")
+  } },
+  { key: 'vacation_hours', get label() {
+    return tr("Vacation (hours)")
+  } },
+  { key: 'vacation_days', get label() {
+    return tr("Vacation (days)")
+  } },
+  { key: 'sick_hours', get label() {
+    return tr("Sick (hours)")
+  } },
+  { key: 'sick_days', get label() {
+    return tr("Sick (days)")
+  } },
+  { key: 'notes', get label() {
+    return tr("Notes")
+  } },
 ] as const
 export type FieldKey = (typeof FIELDS)[number]['key']
 
@@ -304,19 +335,31 @@ export function validate(drafts: Draft[], existingKeys: Set<string>, daysWithHou
     const computed = rowHours(d)
     const importKey = `ts-${fingerprint([d.employee_id, d.date, d.start, d.end, d.breakMin, d.total, d.bankedEarned, d.bankedUsed, d.vacation, d.sick].join('|'))}`
     if (!d.employee_id) p.push({ level: 'error', text: d.employeeText ? `Unknown employee “${d.employeeText}”` : 'No employee' })
-    if (!d.date) p.push({ level: 'error', text: 'Missing date' })
-    if ((d.start && !d.end) || (!d.start && d.end)) p.push({ level: 'warning', text: 'Only a start or an end time' })
-    if (d.start && d.end && computed == null) p.push({ level: 'error', text: 'The break is longer than the time worked' })
+    if (!d.date) p.push({ level: 'error', get text() {
+    return tr("Missing date")
+  } })
+    if ((d.start && !d.end) || (!d.start && d.end)) p.push({ level: 'warning', get text() {
+    return tr("Only a start or an end time")
+  } })
+    if (d.start && d.end && computed == null) p.push({ level: 'error', get text() {
+    return tr("The break is longer than the time worked")
+  } })
     if (computed != null && has(d.total) && Math.abs(computed - Number(d.total)) > 0.05) {
       p.push({ level: 'warning', text: `Total does not add up: the sheet says ${d.total}, start, end and break give ${computed}` })
     }
     if (computed != null && computed > 16) p.push({ level: 'warning', text: `${computed} hours in one day` })
     const nothing = computed == null && !has(d.total) && !has(d.bankedEarned) && !has(d.bankedUsed) && !has(d.vacation) && !has(d.sick)
-    if (nothing) p.push({ level: 'info', text: 'No hours on this row' })
-    if (existingKeys.has(importKey)) p.push({ level: 'info', text: 'Already imported' })
+    if (nothing) p.push({ level: 'info', get text() {
+    return tr("No hours on this row")
+  } })
+    if (existingKeys.has(importKey)) p.push({ level: 'info', get text() {
+    return tr("Already imported")
+  } })
     else if (seen.has(importKey)) p.push({ level: 'warning', text: `The same as row ${seen.get(importKey)}` })
     else if (d.employee_id && d.date && daysWithHours.get(`${d.employee_id}|${d.date}`)?.some((s) => s !== 'import')) {
-      p.push({ level: 'warning', text: 'This day already has hours entered in the app' })
+      p.push({ level: 'warning', get text() {
+    return tr("This day already has hours entered in the app")
+  } })
     }
     seen.set(importKey, `${d.tab} ${d.row}`)
     let action = d.action

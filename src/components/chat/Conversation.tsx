@@ -31,6 +31,7 @@ import { usePermissions } from '../../lib/permissions'
 import { friendlyError } from '../../lib/format'
 import { isEmptyRichText, richTextToPlain } from '../../lib/richText'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 const PAGE = 50
 
@@ -249,36 +250,36 @@ export default function Conversation({
   return (
     <>
       <header className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
-        <Link to="/chat" className="rounded px-2 py-1 text-lg md:hidden" aria-label="Back to conversations">
+        <Link to="/chat" className="rounded px-2 py-1 text-lg md:hidden" aria-label={tr("Back to conversations")}>
           ←
         </Link>
         <div className="min-w-0 flex-1">
           <h2 className="flex items-center gap-2 truncate font-semibold">
             <Can permission="chat.presence">{row?.other_email && <StatusDot status={presence.get(row.other_email)} />}</Can>
-            {row?.name ?? 'Conversation'}
+            {row?.name ?? tr("Conversation")}
           </h2>
           <p className="truncate text-xs text-slate-500">
             {row?.kind === 'direct'
               ? row.other_email && presence.get(row.other_email)
                 ? presence.get(row.other_email) === 'online'
-                  ? 'Online'
-                  : 'Away'
-                : 'Direct message'
-              : `${row?.members ?? members.length} members`}
-            {row?.notify === 'mute' ? ' · muted' : row?.notify === 'mentions' ? ' · mentions only' : ''}
-            {row?.archived ? ' · archived' : ''}
+                  ? tr("Online")
+                  : tr("Away")
+                : tr("Direct message")
+              : tr("{{value}} members", { value: row?.members ?? members.length })}
+            {row?.notify === 'mute' ? tr(" · muted") : row?.notify === 'mentions' ? tr(" · mentions only") : ''}
+            {row?.archived ? tr(" · archived") : ''}
           </p>
         </div>
         {pinned.length > 0 && (
           <Can permission="chat">
             <button type="button" className={secondaryButtonClass} onClick={() => setPanel(panel === 'pins' ? null : 'pins')}>
-              Pinned ({pinned.length})
+              {tr("Pinned (")}{pinned.length})
             </button>
           </Can>
         )}
         <Can permission="chat.members">
           <button type="button" className={secondaryButtonClass} onClick={() => setPanel(panel === 'info' ? null : 'info')}>
-            Details
+            {tr("Details")}
           </button>
         </Can>
       </header>
@@ -290,12 +291,12 @@ export default function Conversation({
               <div className="py-2 text-center">
                 <Can permission="chat">
                   <button type="button" className="text-sm text-blue-700 underline" onClick={() => void load(messages[0]?.created_at)}>
-                    Load Earlier Messages
+                    {tr("Load Earlier Messages")}
                   </button>
                 </Can>
               </div>
             )}
-            {loaded && messages.length === 0 && <p className="p-6 text-center text-sm text-slate-500">No messages yet. Say hello.</p>}
+            {loaded && messages.length === 0 && <p className="p-6 text-center text-sm text-slate-500">{tr("No messages yet. Say hello.")}</p>}
             {messages.map((m, i) => {
               const prev = messages[i - 1]
               const newDay = !prev || !sameDay(prev.created_at, m.created_at)
@@ -327,8 +328,10 @@ export default function Conversation({
                     }}
                     onDelete={async () => {
                       if (
-                        !(await confirmAction('Delete this message? Everyone will see “Message deleted” instead.', {
-                          confirmLabel: 'Delete Message',
+                        !(await confirmAction(tr("Delete this message? Everyone will see “Message deleted” instead."), {
+                          get confirmLabel() {
+    return tr("Delete Message")
+  },
                           danger: true,
                         }))
                       )
@@ -342,7 +345,7 @@ export default function Conversation({
                         const { error } = await supabase!.rpc('unsend_chat_message', { p_id: m.id })
                         if (error) return toast.error(friendlyError(error))
                         setMessages((list) => list.filter((x) => x.id !== m.id))
-                        toast.success('Message unsent.')
+                        toast.success(tr("Message unsent."))
                         void load()
                         onChanged()
                       })()
@@ -355,12 +358,12 @@ export default function Conversation({
                 </div>
               )
             })}
-            {seen && <p className="px-3 text-right text-[0.6875rem] text-slate-500">Seen</p>}
+            {seen && <p className="px-3 text-right text-[0.6875rem] text-slate-500">{tr("Seen")}</p>}
             <div ref={bottom} />
           </div>
 
           <div className="h-5 px-3 text-xs text-slate-500" aria-live="polite">
-            {typers.length > 0 && `${typers.join(', ')} ${typers.length === 1 ? 'is' : 'are'} typing…`}
+            {typers.length > 0 && tr("{{value}} {{value2}} typing…", { value: typers.join(', '), value2: typers.length === 1 ? 'is' : 'are' })}
           </div>
 
           {canPost && away.length > 0 && (
@@ -368,8 +371,8 @@ export default function Conversation({
               <div className="border-t border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
                 {away.map((p) => (
                   <p key={p.email}>
-                    {p.name} is on {TIME_OFF_WORDS[p.kind] ?? p.kind}
-                    {p.return_date ? ` and may not read this until ${showDate(p.return_date, 'EEE, MMM d')}.` : ' and may not read this right away.'}
+                    {p.name} {tr("is on")} {TIME_OFF_WORDS[p.kind] ?? p.kind}
+                    {p.return_date ? tr(" and may not read this until {{showDate}}.", { showDate: showDate(p.return_date, 'EEE, MMM d') }) : tr(" and may not read this right away.")}
                   </p>
                 ))}
               </div>
@@ -381,12 +384,12 @@ export default function Conversation({
                 {(replyTo || editing) && (
                   <div className="mb-1 flex items-center gap-2 rounded bg-slate-100 px-2 py-1 text-xs">
                     <span className="min-w-0 flex-1 truncate">
-                      {editing ? 'Editing your message' : `Replying to ${replyTo!.author_name}: ${replyTo!.body_text}`}
+                      {editing ? tr("Editing your message") : tr("Replying to {{author_name}}: {{body_text}}", { author_name: replyTo!.author_name, body_text: replyTo!.body_text })}
                     </span>
                     <Can anyOf={['chat.send', 'chat.channels.post']} level="edit">
                       <button
                         type="button"
-                        aria-label="Cancel"
+                        aria-label={tr("Cancel")}
                         className="px-1"
                         onClick={() => {
                           setReplyTo(null)
@@ -403,7 +406,7 @@ export default function Conversation({
                   </div>
                 )}
                 {suggestions.length > 0 && (
-                  <ul className="mb-1 max-h-48 overflow-y-auto rounded-md border border-slate-200 bg-white text-sm shadow" role="listbox" aria-label="Mention">
+                  <ul className="mb-1 max-h-48 overflow-y-auto rounded-md border border-slate-200 bg-white text-sm shadow" role="listbox" aria-label={tr("Mention")}>
                     {suggestions.map((s) => (
                       <li key={`${s.type}-${s.key}`}>
                         <Can anyOf={['chat.send', 'chat.channels.post']} level="edit">
@@ -435,7 +438,7 @@ export default function Conversation({
                           editor.current = api
                         }}
                         minHeight="2.5rem"
-                        label={`Message ${row?.name ?? ''}`}
+                        label={tr("Message {{value}}", { value: row?.name ?? '' })}
                       />
                     </Can>
                   </div>
@@ -445,27 +448,27 @@ export default function Conversation({
                         type="button"
                         className={`${secondaryButtonClass} px-2`}
                         disabled
-                        title="Photos and files will be available in a future update."
-                        aria-label="Attach a photo or file (available in a future update)"
+                        title={tr("Photos and files will be available in a future update.")}
+                        aria-label={tr("Attach a photo or file (available in a future update)")}
                       >
                         <Icon name="paperclip" />
                       </button>
                     </Can>
                     <Can anyOf={['chat.send', 'chat.channels.post']} level="edit">
                       <button type="button" className={buttonClass} onClick={send} disabled={sending || isEmptyRichText(html)}>
-                        {editing ? 'Save Changes' : 'Send'}
+                        {editing ? tr("Save Changes") : tr("Send")}
                       </button>
                     </Can>
                   </div>
                 </div>
                 <p className="mt-1 hidden text-[0.6875rem] text-slate-400 md:block">
-                  Ctrl+Enter (or Cmd+Enter) sends. Type @ to mention someone; #86 links an order; serial numbers and card names become links.
+                  {tr("Ctrl+Enter (or Cmd+Enter) sends. Type @ to mention someone; #86 links an order; serial numbers and card names become links.")}
                 </p>
               </div>
             </Can>
           ) : (
             <p className="border-t border-slate-200 p-3 text-center text-sm text-slate-500">
-              {row?.archived ? 'This conversation is archived.' : 'You can read this conversation but not write in it.'}
+              {row?.archived ? tr("This conversation is archived.") : tr("You can read this conversation but not write in it.")}
             </p>
           )}
         </div>
@@ -475,9 +478,9 @@ export default function Conversation({
             {panel === 'pins' ? (
               <div className="p-3">
                 <div className="mb-2 flex items-center justify-between">
-                  <h3 className="font-semibold">Pinned Messages</h3>
+                  <h3 className="font-semibold">{tr("Pinned Messages")}</h3>
                   <Can permission="chat">
-                    <button type="button" aria-label="Close" className="px-2 text-lg" onClick={() => setPanel(null)}>
+                    <button type="button" aria-label={tr("Close")} className="px-2 text-lg" onClick={() => setPanel(null)}>
                       ×
                     </button>
                   </Can>

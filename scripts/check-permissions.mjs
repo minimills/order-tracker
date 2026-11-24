@@ -35,6 +35,7 @@ const CONTROLS = new Set(['button', 'input', 'select', 'textarea'])
 /** Files with no permission-specific elements, and why. */
 const EXEMPT = {
   'src/main.tsx': 'starts the app',
+  'src/components/LanguageRoot.tsx': 'draws the app again when the language changes; shows nothing itself',
   'src/components/form.tsx': 'shared building blocks; every place they are used is checked',
   'src/components/Can.tsx': 'the permission check itself',
   'src/components/Page.tsx': 'the page permission check and the “You don’t have access” message',

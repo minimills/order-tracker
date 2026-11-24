@@ -10,6 +10,7 @@ import { chatTime, KIND_LABEL, linkHref, NOTIFY_LABEL, type ChatLink, type Conve
 import { activityTime } from '../../lib/activity'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 /** Details of a conversation: who is in it, my notifications for it, and (group chats) rename / add / leave. */
 export default function ConversationInfo({
@@ -75,12 +76,18 @@ export default function ConversationInfo({
   }
 
   async function rename() {
-    const name = await askText('Enter a new name for the group chat.', { initial: row.name ?? '', label: 'Name', confirmLabel: 'Rename' })
+    const name = await askText(tr("Enter a new name for the group chat."), { initial: row.name ?? '', get label() {
+    return tr("Name")
+  }, get confirmLabel() {
+    return tr("Rename")
+  } })
     if (name?.trim()) void call(() => supabase!.rpc('update_group_chat', { p_conv: row.id, p_name: name.trim(), p_add: null, p_remove: null }), 'Renamed.')
   }
 
   async function leave() {
-    if (!(await confirmAction(`Leave “${row.name}”? You will no longer see its messages.`, { confirmLabel: 'Leave Group Chat', danger: true }))) return
+    if (!(await confirmAction(tr("Leave “{{name}}”? You will no longer see its messages.", { name: row.name }), { get confirmLabel() {
+    return tr("Leave Group Chat")
+  }, danger: true }))) return
     const { error } = await supabase!.rpc('leave_chat', { p_conv: row.id })
     if (error) return toast.error(friendlyError(error))
     onChanged()
@@ -91,8 +98,8 @@ export default function ConversationInfo({
   return (
     <div className="space-y-4 p-3 text-sm">
       <div className="flex items-center justify-between">
-        <h3 className="font-semibold">Details</h3>
-        <button type="button" aria-label="Close" className="px-2 text-lg" onClick={onClose}>
+        <h3 className="font-semibold">{tr("Details")}</h3>
+        <button type="button" aria-label={tr("Close")} className="px-2 text-lg" onClick={onClose}>
           ×
         </button>
       </div>
@@ -100,14 +107,14 @@ export default function ConversationInfo({
         <p>{KIND_LABEL[row.kind].replace(/s$/, '')}</p>
         {row.created_at && (
           <p className="text-xs">
-            {row.created_by ? `Started by ${names.get(row.created_by) ?? row.created_by}` : 'Made automatically'} · {activityTime.format(new Date(row.created_at))}
+            {row.created_by ? tr("Started by {{value}}", { value: names.get(row.created_by) ?? row.created_by }) : tr("Made automatically")} · {activityTime.format(new Date(row.created_at))}
           </p>
         )}
       </div>
 
       <div>
         <label htmlFor="ci-notify" className="mb-1 block font-medium">
-          Notifications for this conversation
+          {tr("Notifications for this conversation")}
         </label>
         <select
           id="ci-notify"
@@ -123,11 +130,11 @@ export default function ConversationInfo({
             </option>
           ))}
         </select>
-        <p className="mt-1 text-xs text-slate-500">Quiet hours (no phone notifications at night) are in Settings → Notifications.</p>
+        <p className="mt-1 text-xs text-slate-500">{tr("Quiet hours (no phone notifications at night) are in Settings → Notifications.")}</p>
       </div>
 
       <div>
-        <h4 className="mb-1 font-medium">Members ({active.length})</h4>
+        <h4 className="mb-1 font-medium">{tr("Members (")}{active.length})</h4>
         <ul className="space-y-1">
           {active.map((m) => (
             <li key={m.user_email} className="flex items-center gap-2">
@@ -136,8 +143,8 @@ export default function ConversationInfo({
               </Can>
               <span className="min-w-0 flex-1 truncate">
                 {names.get(m.user_email) ?? m.user_email}
-                {m.user_email === me ? ' (you)' : ''}
-                {m.role === 'owner' ? <span className="text-xs text-slate-500"> · started the group</span> : null}
+                {m.user_email === me ? tr(" (you)") : ''}
+                {m.role === 'owner' ? <span className="text-xs text-slate-500"> {tr("· started the group")}</span> : null}
               </span>
               {isGroup && mineOwner && m.user_email !== me && (
                 <Can permission="chat.groups" level="edit">
@@ -148,7 +155,7 @@ export default function ConversationInfo({
                       void call(() => supabase!.rpc('update_group_chat', { p_conv: row.id, p_name: null, p_add: null, p_remove: [m.user_email] }), 'Removed.')
                     }
                   >
-                    Remove
+                    {tr("Remove")}
                   </button>
                 </Can>
               )}
@@ -156,14 +163,14 @@ export default function ConversationInfo({
           ))}
         </ul>
         {!isGroup && row.kind !== 'direct' && (
-          <p className="mt-1 text-xs text-slate-500">Members follow the department or group. An admin manages channels in Admin → Chat.</p>
+          <p className="mt-1 text-xs text-slate-500">{tr("Members follow the department or group. An admin manages channels in Admin → Chat.")}</p>
         )}
       </div>
 
       <div>
-        <h4 className="mb-1 font-medium">Pinned Messages ({pins.length})</h4>
+        <h4 className="mb-1 font-medium">{tr("Pinned Messages (")}{pins.length})</h4>
         {pins.length === 0 ? (
-          <p className="text-xs text-slate-500">No pinned messages.</p>
+          <p className="text-xs text-slate-500">{tr("No pinned messages.")}</p>
         ) : (
           <ul className="space-y-1.5">
             {pins.map((m) => (
@@ -171,7 +178,7 @@ export default function ConversationInfo({
                 <Link to={`/chat/${row.id}?m=${m.id}`} className="block rounded border border-slate-200 p-2 hover:bg-slate-50">
                   <span className="block text-xs text-slate-500">
                     {m.author_name} · {chatTime(m.created_at)}
-                    {m.pinned_by && ` · pinned by ${m.pinned_by}`}
+                    {m.pinned_by && tr(" · pinned by {{pinned_by}}", { pinned_by: m.pinned_by })}
                   </span>
                   <span className="line-clamp-2">{m.body_text}</span>
                 </Link>
@@ -182,9 +189,9 @@ export default function ConversationInfo({
       </div>
 
       <div>
-        <h4 className="mb-1 font-medium">Shared Links ({uniqueShared.length})</h4>
+        <h4 className="mb-1 font-medium">{tr("Shared Links (")}{uniqueShared.length})</h4>
         {uniqueShared.length === 0 ? (
-          <p className="text-xs text-slate-500">No orders, machines, boards or cards have been mentioned yet.</p>
+          <p className="text-xs text-slate-500">{tr("No orders, machines, boards or cards have been mentioned yet.")}</p>
         ) : (
           <ul className="space-y-1">
             {uniqueShared.map((l) => (
@@ -205,8 +212,8 @@ export default function ConversationInfo({
         <Can permission="chat.groups" level="edit">
           <div className="space-y-2 border-t border-slate-200 pt-3">
             <div className="flex gap-2">
-              <select aria-label="Add a person" className={inputClass} value={adding} onChange={(e) => setAdding(e.target.value)}>
-                <option value="">Add a person…</option>
+              <select aria-label={tr("Add a person")} className={inputClass} value={adding} onChange={(e) => setAdding(e.target.value)}>
+                <option value="">{tr("Add a person…")}</option>
                 {candidates.map((p) => (
                   <option key={p.email} value={p.email}>
                     {p.name}
@@ -222,15 +229,15 @@ export default function ConversationInfo({
                   setAdding('')
                 }}
               >
-                Add
+                {tr("Add")}
               </button>
             </div>
             <div className="flex gap-3">
               <button type="button" className="underline" onClick={rename}>
-                Rename
+                {tr("Rename")}
               </button>
               <button type="button" className="text-red-700 underline" onClick={leave}>
-                Leave Group Chat
+                {tr("Leave Group Chat")}
               </button>
             </div>
           </div>

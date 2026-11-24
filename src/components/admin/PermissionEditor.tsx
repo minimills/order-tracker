@@ -10,6 +10,7 @@ import type { Department } from '../../lib/types'
 import { buttonClass, inputClass, secondaryButtonClass } from '../form'
 import { askText, confirmAction } from '../../lib/confirm'
 import Icon from '../Icon'
+import { tr } from '../../i18n'
 
 export type Template = { id: string; name: string; perms: Perms }
 export type OtherUser = { email: string; name: string | null; perms: Perms }
@@ -32,7 +33,7 @@ type Props = {
 }
 
 const levelsOf = (i: PermissionItem) => i.levels
-const label = (key: string) => CATALOG_BY_KEY.get(key)?.label ?? key
+const label = (key: string) => tr(CATALOG_BY_KEY.get(key)?.label ?? key)
 
 /** Allow or remove a permission, keeping "edit includes view". */
 function setTick(perms: Perms, item: PermissionItem, level: Level, on: boolean): Perms {
@@ -93,9 +94,9 @@ function GroupCheckbox({
         className="h-4 w-4"
         checked={all}
         onChange={(e) => onChange(e.target.checked)}
-        aria-label={`Select all ${level === 'view' ? 'View' : 'Edit'}`}
+        aria-label={tr("Select all {{value}}", { value: level === 'view' ? tr("View") : tr("Edit") })}
       />
-      all
+      {tr("all")}
     </label>
   )
 }
@@ -125,7 +126,7 @@ export default function PermissionEditor(props: Props) {
   const words = query.toLowerCase().split(/\s+/).filter(Boolean)
   const shown = CATALOG.filter((i) => {
     if (onlyNew && reviewed.has(i.key)) return false
-    const text = `${i.group} ${i.section} ${i.label} ${i.key}`.toLowerCase()
+    const text = `${i.group} ${i.section} ${i.label} ${tr(i.group)} ${tr(i.section)} ${tr(i.label)} ${i.key}`.toLowerCase()
     return words.every((w) => text.includes(w))
   })
   const shownByGroup = GROUPS.map((g) => ({ group: g, items: shown.filter((i) => i.group === g) })).filter((g) => g.items.length)
@@ -160,38 +161,44 @@ export default function PermissionEditor(props: Props) {
       name = 'nothing'
     }
     if (next === null) return
-    if (Object.keys(perms).length && !(await confirmAction(`Replace the current permissions with ${name}?`))) return
+    if (Object.keys(perms).length && !(await confirmAction(tr("Replace the current permissions with {{name}}?", { name: name })))) return
     setPerms(cleanPerms(next))
     setSource(name)
   }
 
   async function saveTemplate() {
     if (!supabase) return
-    const n = await askText('Enter a name for this template (for example, “Shop floor”). An existing template with the same name is replaced.', { label: 'Template name', confirmLabel: 'Save Template' })
+    const n = await askText(tr("Enter a name for this template (for example, “Shop floor”). An existing template with the same name is replaced."), { get label() {
+    return tr("Template name")
+  }, get confirmLabel() {
+    return tr("Save Template")
+  } })
     if (!n) return
     const { error } = await supabase.rpc('save_permission_template', { p_name: n.trim(), p_perms: perms })
     if (error) return toast.error(friendlyError(error))
-    toast.success(`Template “${n.trim()}” saved.`)
+    toast.success(tr("Template “{{value}}” saved.", { value: n.trim() }))
     props.onTemplatesChanged()
   }
 
   async function saveAsDepartmentPreset(deptId: string) {
     if (!supabase || !deptId) return
     const d = departments.find((x) => x.id === deptId)
-    if (!(await confirmAction(`Use these permissions as the preset for the ${d?.name} department? People already in the department are not changed.`))) return
+    if (!(await confirmAction(tr("Use these permissions as the preset for the {{value}} department? People already in the department are not changed.", { value: d?.name })))) return
     const { error } = await supabase.rpc('set_department_permissions', { p_department_id: deptId, p_perms: perms })
     if (error) return toast.error(friendlyError(error))
-    toast.success(`Preset saved for ${d?.name}.`)
+    toast.success(tr("Preset saved for {{value}}.", { value: d?.name }))
     props.onTemplatesChanged()
   }
 
   async function deleteTemplate(id: string) {
     if (!supabase) return
     const t = templates.find((x) => x.id === id)
-    if (!(await confirmAction(`Permanently delete the template “${t?.name}”? People who started from it keep their permissions.`, { confirmLabel: 'Permanently Delete', danger: true }))) return
+    if (!(await confirmAction(tr("Permanently delete the template “{{value}}”? People who started from it keep their permissions.", { value: t?.name }), { get confirmLabel() {
+    return tr("Permanently Delete")
+  }, danger: true }))) return
     const { error } = await supabase.from('permission_templates').delete().eq('id', id)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Template deleted.')
+    toast.success(tr("Template deleted."))
     setShortcut('')
     props.onTemplatesChanged()
   }
@@ -206,7 +213,7 @@ export default function PermissionEditor(props: Props) {
     })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`Permissions saved for ${email}.`)
+    toast.success(tr("Permissions saved for {{email}}.", { email: email }))
     props.onSaved()
   }
 
@@ -233,23 +240,23 @@ export default function PermissionEditor(props: Props) {
   const tickedCount = Object.keys(perms).length
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col bg-slate-50" role="dialog" aria-modal="true" aria-label={`Permissions for ${email}`}>
+    <div className="fixed inset-0 z-40 flex flex-col bg-slate-50" role="dialog" aria-modal="true" aria-label={tr("Permissions for {{email}}", { email: email })}>
       {/* ---------- Top bar ---------- */}
       <div className="border-b border-slate-200 bg-white px-4 py-3 md:px-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold">What {props.name || email} can see and do</h2>
+            <h2 className="text-lg font-semibold">{tr("What")} {props.name || email} {tr("can see and do")}</h2>
             <p className="text-xs text-slate-500">
-              {email} · {tickedCount} item{tickedCount === 1 ? '' : 's'} allowed. Nothing that is not allowed is shown.
-              {source && <> Started from {source}.</>}
+              {email} · {tr("{{count}} item", { count: tickedCount })} {tr("allowed. Nothing that is not allowed is shown.")}
+              {source && <> {tr("Started from")} {source}.</>}
             </p>
           </div>
           <div className="flex gap-2">
             <button type="button" className={secondaryButtonClass} onClick={props.onClose} disabled={saving}>
-              Cancel
+              {tr("Cancel")}
             </button>
             <button type="button" className={buttonClass} onClick={save} disabled={saving || !dirty}>
-              {saving ? 'Saving…' : 'Save Permissions'}
+              {saving ? tr("Saving…") : tr("Save Permissions")}
             </button>
           </div>
         </div>
@@ -259,30 +266,30 @@ export default function PermissionEditor(props: Props) {
           <input
             type="search"
             className={inputClass}
-            placeholder="Search, for example “voltage”, “column”, “payments”"
+            placeholder={tr("Search, for example “voltage”, “column”, “payments”")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            aria-label="Search permissions"
+            aria-label={tr("Search permissions")}
           />
           <div className="flex gap-1">
             <select
-              aria-label="Start from"
+              aria-label={tr("Start from")}
               className={inputClass}
               value={shortcut}
               onChange={(e) => setShortcut(e.target.value)}
             >
-              <option value="">Start From…</option>
-              <optgroup label="Department presets">
+              <option value="">{tr("Start From…")}</option>
+              <optgroup label={tr("Department presets")}>
                 {deptSorted.map((d) => (
                   <option key={d.id} value={`dept:${d.id}`}>
                     {d.name}
-                    {props.memberOf.includes(d.id) ? ' (their department)' : ''}
-                    {Object.keys(d.default_permissions ?? {}).length === 0 ? ' – empty' : ''}
+                    {props.memberOf.includes(d.id) ? tr(" (their department)") : ''}
+                    {Object.keys(d.default_permissions ?? {}).length === 0 ? tr(" – empty") : ''}
                   </option>
                 ))}
               </optgroup>
               {templates.length > 0 && (
-                <optgroup label="Templates">
+                <optgroup label={tr("Templates")}>
                   {templates.map((t) => (
                     <option key={t.id} value={`tpl:${t.id}`}>
                       {t.name}
@@ -291,7 +298,7 @@ export default function PermissionEditor(props: Props) {
                 </optgroup>
               )}
               {otherUsers.length > 0 && (
-                <optgroup label="Copy from another user">
+                <optgroup label={tr("Copy from another user")}>
                   {otherUsers.map((u) => (
                     <option key={u.email} value={`user:${u.email}`}>
                       {u.name ? `${u.name} (${u.email})` : u.email}
@@ -299,30 +306,30 @@ export default function PermissionEditor(props: Props) {
                   ))}
                 </optgroup>
               )}
-              <optgroup label="Other">
-                <option value="all:">Everything except Admin</option>
-                <option value="none:">Nothing</option>
+              <optgroup label={tr("Other")}>
+                <option value="all:">{tr("Everything except Admin")}</option>
+                <option value="none:">{tr("Nothing")}</option>
               </optgroup>
             </select>
             <button type="button" className={secondaryButtonClass} disabled={!shortcut} onClick={() => applyShortcut(shortcut)}>
-              Apply
+              {tr("Apply")}
             </button>
             {shortcut.startsWith('tpl:') && (
               <button type="button" className="px-1 text-xs text-red-700 underline" onClick={() => deleteTemplate(shortcut.slice(4))}>
-                Permanently Delete
+                {tr("Permanently Delete")}
               </button>
             )}
           </div>
           <button type="button" className={secondaryButtonClass} onClick={saveTemplate}>
-            Save as Template…
+            {tr("Save as Template…")}
           </button>
           <select
-            aria-label="Save as department preset"
+            aria-label={tr("Save as department preset")}
             className={inputClass}
             value=""
             onChange={(e) => saveAsDepartmentPreset(e.target.value)}
           >
-            <option value="">Save as Department Preset…</option>
+            <option value="">{tr("Save as Department Preset…")}</option>
             {departments
               .filter((d) => !d.archived)
               .map((d) => (
@@ -336,15 +343,14 @@ export default function PermissionEditor(props: Props) {
         {newKeys.length > 0 && (
           <div className="mt-2 flex flex-wrap items-center gap-3 rounded-md bg-blue-50 px-3 py-2 text-sm text-blue-900">
             <span>
-              <span className="mr-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-semibold text-white">New</span>
-              {newKeys.length} item{newKeys.length === 1 ? ' has' : 's have'} been added to the app since you last reviewed.
-              They are not permitted for anyone until you allow them.
+              <span className="mr-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-semibold text-white">{tr("New")}</span>
+              {newKeys.length} {tr("item")}{newKeys.length === 1 ? tr(" has") : tr("s have")} {tr("been added to the app since you last reviewed. They are not permitted for anyone until you allow them.")}
             </span>
             <label className="flex items-center gap-1">
-              <input type="checkbox" checked={onlyNew} onChange={(e) => setOnlyNew(e.target.checked)} /> Show only new
+              <input type="checkbox" checked={onlyNew} onChange={(e) => setOnlyNew(e.target.checked)} /> {tr("Show only new")}
             </label>
             <button type="button" className="underline" onClick={() => props.onReviewed(CATALOG.map((i) => i.key))}>
-              Mark as Reviewed
+              {tr("Mark as Reviewed")}
             </button>
           </div>
         )}
@@ -353,7 +359,7 @@ export default function PermissionEditor(props: Props) {
       {/* ---------- Tree + preview ---------- */}
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto lg:flex-row lg:overflow-hidden">
         <div className="space-y-3 p-4 md:p-6 lg:min-h-0 lg:flex-1 lg:overflow-y-auto">
-          {shownByGroup.length === 0 && <p className="text-sm text-slate-500">Nothing matches “{query}”.</p>}
+          {shownByGroup.length === 0 && <p className="text-sm text-slate-500">{tr("Nothing matches “")}{query}”.</p>}
           {shownByGroup.map(({ group, items }) => {
             const open = openGroups.has(group) || words.length > 0 || onlyNew
             const sections = [...new Set(items.map((i) => i.section))]
@@ -375,9 +381,9 @@ export default function PermissionEditor(props: Props) {
                     aria-expanded={open}
                   >
                     <span className="text-slate-400">{open ? '▾' : '▸'}</span>
-                    {group}
+                    {tr(group)}
                     <span className="text-xs font-normal text-slate-500">
-                      {tickedInGroup} of {items.length}
+                      {tickedInGroup} {tr("of")} {items.length}
                     </span>
                   </button>
                   <GroupCheckbox
@@ -397,12 +403,12 @@ export default function PermissionEditor(props: Props) {
                   <div>
                     <div className="grid grid-cols-[1fr_3.5rem_3.5rem] gap-2 px-3 pt-2 text-xs font-medium text-slate-500">
                       <span />
-                      <span className="text-center">View</span>
-                      <span className="text-center">Edit</span>
+                      <span className="text-center">{tr("View")}</span>
+                      <span className="text-center">{tr("Edit")}</span>
                     </div>
                     {sections.map((section) => (
                       <div key={section} className="pb-1">
-                        <div className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">{section}</div>
+                        <div className="px-3 pt-2 pb-1 text-xs font-semibold tracking-wide text-slate-500 uppercase">{tr(section)}</div>
                         <ul>
                           {items
                             .filter((i) => i.section === section)
@@ -417,19 +423,19 @@ export default function PermissionEditor(props: Props) {
                                   className="grid grid-cols-[1fr_3.5rem_3.5rem] items-center gap-2 px-3 py-1.5 text-sm hover:bg-slate-50"
                                 >
                                   <div className="min-w-0">
-                                    <span>{i.label}</span>
+                                    <span>{tr(i.label)}</span>
                                     {!reviewed.has(i.key) && (
-                                      <span className="ml-2 rounded bg-blue-600 px-1.5 py-0.5 text-[0.625rem] font-semibold text-white">New</span>
+                                      <span className="ml-2 rounded bg-blue-600 px-1.5 py-0.5 text-[0.625rem] font-semibold text-white">{tr("New")}</span>
                                     )}
                                     {i.db && (
-                                      <span className="ml-2 text-xs text-slate-400" title="Also enforced by the database">
+                                      <span className="ml-2 text-xs text-slate-400" title={tr("Also enforced by the database")}>
                                         <Icon name="lock" className="h-3.5 w-3.5" />
                                       </span>
                                     )}
                                     <div className="font-mono text-[0.6875rem] text-slate-400">{i.key}</div>
-                                    {i.hint && <div className="text-xs text-slate-500">{i.hint}</div>}
+                                    {i.hint && <div className="text-xs text-slate-500">{tr(i.hint)}</div>}
                                     {on && missing.length > 0 && (
-                                      <div className="text-xs text-amber-700">Not visible until you also allow: {missing.map(label).join(', ')}</div>
+                                      <div className="text-xs text-amber-700">{tr("Not visible until you also allow:")} {missing.map(label).join(', ')}</div>
                                     )}
                                   </div>
                                   <div className="flex justify-center">
@@ -437,7 +443,7 @@ export default function PermissionEditor(props: Props) {
                                       <input
                                         type="checkbox"
                                         className="h-5 w-5"
-                                        aria-label={`${i.label}: view`}
+                                        aria-label={tr("{{label}}: view", { label: tr(i.label) })}
                                         checked={hasTick(perms, i, 'view')}
                                         onChange={(e) => setPerms((p) => setTick(p, i, 'view', e.target.checked))}
                                       />
@@ -448,7 +454,7 @@ export default function PermissionEditor(props: Props) {
                                       <input
                                         type="checkbox"
                                         className="h-5 w-5"
-                                        aria-label={`${i.label}: edit`}
+                                        aria-label={tr("{{label}}: edit", { label: tr(i.label) })}
                                         checked={hasTick(perms, i, 'edit')}
                                         onChange={(e) => setPerms((p) => setTick(p, i, 'edit', e.target.checked))}
                                       />
@@ -466,18 +472,18 @@ export default function PermissionEditor(props: Props) {
             )
           })}
           <p className="pb-4 text-xs text-slate-500">
-            The lock symbol means the rule is also enforced by the database. “Edit” includes “View”. “All” allows every item shown in that group.
+            {tr("The lock symbol means the rule is also enforced by the database. “Edit” includes “View”. “All” allows every item shown in that group.")}
           </p>
         </div>
 
         {/* Live preview */}
         <aside className="border-t border-slate-200 bg-white p-4 md:p-6 lg:w-96 lg:shrink-0 lg:overflow-y-auto lg:border-t-0 lg:border-l">
-          <h3 className="font-semibold">What This User Will See</h3>
+          <h3 className="font-semibold">{tr("What This User Will See")}</h3>
           <div className="mt-3">
-            <div className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Menu</div>
+            <div className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{tr("Menu")}</div>
             {preview.menu.length === 0 ? (
               <p className="mt-1 text-sm text-slate-500">
-                No pages allowed yet. They can sign in but will see “No Pages Enabled Yet”.
+                {tr("No pages allowed yet. They can sign in but will see “No Pages Enabled Yet”.")}
               </p>
             ) : (
               <>
@@ -488,17 +494,17 @@ export default function PermissionEditor(props: Props) {
                     </li>
                   ))}
                 </ul>
-                <p className="mt-1 text-xs text-slate-500">After signing in they land on: {preview.menu[0].label}</p>
+                <p className="mt-1 text-xs text-slate-500">{tr("After signing in they land on:")} {preview.menu[0].label}</p>
               </>
             )}
           </div>
           {preview.blocked.length > 0 && (
             <div className="mt-4 rounded-md bg-amber-50 p-2 text-xs text-amber-900">
-              <div className="font-semibold">Allowed but Not Visible Yet</div>
+              <div className="font-semibold">{tr("Allowed but Not Visible Yet")}</div>
               <ul className="mt-1 space-y-0.5">
                 {preview.blocked.map(({ item, missing }) => (
                   <li key={item.key}>
-                    {item.group} › {item.section}: {item.label} – also allow {missing.map(label).join(', ')}
+                    {tr(item.group)} › {tr(item.section)}: {tr(item.label)} {tr("– also allow")} {missing.map(label).join(', ')}
                   </li>
                 ))}
               </ul>
@@ -507,12 +513,12 @@ export default function PermissionEditor(props: Props) {
           <div className="mt-4 space-y-3">
             {preview.byGroup.map(({ group, items }) => (
               <div key={group}>
-                <div className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{group}</div>
+                <div className="text-xs font-semibold tracking-wide text-slate-500 uppercase">{tr(group)}</div>
                 <ul className="mt-1 space-y-0.5 text-sm">
                   {items.map(({ item, edit }) => (
                     <li key={item.key} className="flex justify-between gap-2">
-                      <span className="min-w-0">{item.label}</span>
-                      <span className={`shrink-0 text-xs ${edit ? 'text-green-700' : 'text-slate-500'}`}>{edit ? 'can change' : 'sees'}</span>
+                      <span className="min-w-0">{tr(item.label)}</span>
+                      <span className={`shrink-0 text-xs ${edit ? 'text-green-700' : 'text-slate-500'}`}>{edit ? tr("can change") : tr("sees")}</span>
                     </li>
                   ))}
                 </ul>

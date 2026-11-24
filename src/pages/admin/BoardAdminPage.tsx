@@ -10,6 +10,7 @@ import { useAlerts } from '../../lib/alerts'
 import { fetchAll } from '../../lib/fetchAll'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Row = { id: string; order_code: string; board_position: number; stage: string; customer_name: string; machines_list: string | null }
 type Diff = { positions: PositionChange[]; serials: SerialChange[] }
@@ -59,7 +60,7 @@ export default function BoardAdminPage() {
     })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Board saved.')
+    toast.success(tr("Board saved."))
     setPending(null)
     refreshAlerts()
     load()
@@ -70,24 +71,22 @@ export default function BoardAdminPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Shop Queue"
+        title={tr("Shop Queue")}
         aside={
           <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => ask(null, null, 'Renumber All')}>
-            Renumber All
+            {tr("Renumber All")}
           </button>
         }
       >
-        To move an order, type the place you want it in the queue (1 = built first) and press Set. Everyone in
-        between moves one place, and unbuilt serials follow the new order. <strong>Renumber All</strong> tidies the queue
-        and re-checks every unbuilt serial. You always see the changes before they are saved. The normal{' '}
+        {tr("To move an order, type the place you want it in the queue (1 = built first) and press Set. Everyone in between moves one place, and unbuilt serials follow the new order.")} <strong>{tr("Renumber All")}</strong> {tr("tidies the queue and re-checks every unbuilt serial. You always see the changes before they are saved. The normal")}{' '}
         <Link to="/board" className="underline">
-          Orders Board
+          {tr("Orders Board")}
         </Link>{' '}
-        does the same by dragging.
+        {tr("does the same by dragging.")}
       </AdminPageHeader>
 
       <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
-        {rows.length === 0 && <p className="p-4 text-sm text-slate-500">The board is empty.</p>}
+        {rows.length === 0 && <p className="p-4 text-sm text-slate-500">{tr("The board is empty.")}</p>}
         {rows.map((r) => {
           const draft = drafts[r.id] ?? String(r.board_position)
           const n = Number(draft)
@@ -95,7 +94,7 @@ export default function BoardAdminPage() {
           return (
             <div key={r.id} className="flex flex-wrap items-center gap-3 px-4 py-2.5 text-sm">
               <input
-                aria-label={`Place in queue for order ${r.order_code}`}
+                aria-label={tr("Place in queue for order {{order_code}}", { order_code: r.order_code })}
                 inputMode="numeric"
                 className="w-16 rounded-md border border-slate-300 px-2 py-1 text-center font-semibold"
                 value={draft}
@@ -104,7 +103,7 @@ export default function BoardAdminPage() {
               />
               <div className="min-w-0 flex-1">
                 <Link to={`/orders/${r.id}`} className="font-medium hover:underline">
-                  Order {r.order_code}
+                  {tr("Order")} {r.order_code}
                 </Link>{' '}
                 <span className="text-slate-600">· {r.customer_name}</span>
                 <div className="truncate text-xs text-slate-500">
@@ -114,7 +113,7 @@ export default function BoardAdminPage() {
               </div>
               {valid && (
                 <button type="button" className={buttonClass} disabled={busy} onClick={() => ask(r.id, n, `Move order ${r.order_code} to place ${n} in the queue`)}>
-                  Set
+                  {tr("Set")}
                 </button>
               )}
             </div>
@@ -130,16 +129,16 @@ export default function BoardAdminPage() {
           footer={
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setPending(null)} disabled={busy}>
-                Cancel
+                {tr("Cancel")}
               </button>
               <button type="button" className={buttonClass} onClick={apply} disabled={busy || !!nothing}>
-                {busy ? 'Saving…' : 'Save These Changes'}
+                {busy ? tr("Saving…") : tr("Save These Changes")}
               </button>
             </>
           }
         >
           {nothing ? (
-            <p className="text-sm text-slate-600">The queue is already in order. No changes would be made.</p>
+            <p className="text-sm text-slate-600">{tr("The queue is already in order. No changes would be made.")}</p>
           ) : (
             <ChangeList positions={pending.diff.positions} serials={pending.diff.serials} />
           )}

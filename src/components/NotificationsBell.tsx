@@ -7,6 +7,7 @@ import { notificationPermission, readStorage, writeStorage } from '../lib/browse
 import { usePreferences } from '../lib/preferences'
 import { supabase } from '../lib/supabase'
 import Icon from './Icon'
+import { tr } from '../i18n'
 
 type Note = {
   id: string
@@ -111,11 +112,11 @@ export default function NotificationsBell() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className="relative flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-sm leading-none hover:bg-slate-50"
-        aria-label={`Notifications: ${unread.length} new`}
+        aria-label={tr("Notifications: {{length}} new", { length: unread.length })}
         aria-expanded={open}
       >
         <Icon name="inbox" />
-        <span className="hidden sm:inline">Notifications</span>
+        <span className="hidden sm:inline">{tr("Notifications")}</span>
         {unread.length > 0 && (
           <span className="absolute -top-2 -right-2 min-w-5 rounded-full bg-blue-600 px-1.5 py-0.5 text-center text-xs font-bold text-white">
             {unread.length > 99 ? '99+' : unread.length}
@@ -125,16 +126,16 @@ export default function NotificationsBell() {
       {open && (
         <div className="absolute right-0 z-30 mt-2 w-[min(24rem,calc(100vw-1.5rem))] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl">
           <div className="flex items-center justify-between border-b border-slate-200 px-3 py-2">
-            <span className="font-semibold">Notifications</span>
+            <span className="font-semibold">{tr("Notifications")}</span>
             <span className="flex items-center gap-3">
-              {unread.length > 0 && <span className="text-xs text-slate-500">{unread.length} unread</span>}
+              {unread.length > 0 && <span className="text-xs text-slate-500">{unread.length} {tr("unread")}</span>}
               <button type="button" className="text-xs font-medium text-blue-700 underline disabled:text-slate-400 disabled:no-underline" disabled={unread.length === 0} onClick={() => markRead(null)}>
-                Mark All as Read
+                {tr("Mark All as Read")}
               </button>
             </span>
           </div>
           <ul className="max-h-[60vh] divide-y divide-slate-100 overflow-y-auto">
-            {notes.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-500">You have no notifications.</li>}
+            {notes.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-500">{tr("You have no notifications.")}</li>}
             {notes.map((n) => (
               <li key={n.id} className={`flex items-start gap-2 px-3 py-2.5 ${n.read_at ? '' : 'bg-blue-50/60'}`}>
                 {/* Round check: mark this one as read */}
@@ -145,8 +146,8 @@ export default function NotificationsBell() {
                   className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border ${
                     n.read_at ? 'border-slate-300 bg-slate-100 text-slate-400' : 'border-blue-500 text-transparent hover:bg-blue-600 hover:text-white'
                   }`}
-                  aria-label={n.read_at ? 'Read' : `Mark as read: ${n.title}`}
-                  title={n.read_at ? 'Read' : 'Mark as read'}
+                  aria-label={n.read_at ? tr("Read") : tr("Mark as read: {{title}}", { title: n.title })}
+                  title={n.read_at ? tr("Read") : tr("Mark as read")}
                 >
                   <Icon name="check" className="h-3 w-3" />
                 </button>
@@ -160,7 +161,7 @@ export default function NotificationsBell() {
                   }}
                 >
                   <div className={`text-sm ${n.read_at ? 'text-slate-500' : 'font-semibold text-slate-900'}`}>
-                    {n.kind === 'board_overdue' && <Icon name="alert" className="mr-1 h-3.5 w-3.5 text-red-700" label="Overdue" />}
+                    {n.kind === 'board_overdue' && <Icon name="alert" className="mr-1 h-3.5 w-3.5 text-red-700" label={tr("Overdue")} />}
                     {n.title}
                   </div>
                   {n.body && (
@@ -168,7 +169,7 @@ export default function NotificationsBell() {
                     <div className={`text-xs ${n.body.includes('\n') ? 'max-h-64 overflow-y-auto whitespace-pre-line' : 'line-clamp-2'} ${n.read_at ? 'text-slate-400' : 'text-slate-600'}`}>{n.body}</div>
                   )}
                   <div className="mt-0.5 flex items-center gap-1.5 text-[0.6875rem] text-slate-400">
-                    {!n.read_at && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-label="Unread" />}
+                    {!n.read_at && <span className="h-1.5 w-1.5 rounded-full bg-blue-600" aria-label={tr("Unread")} />}
                     {activityTime.format(new Date(n.created_at))}
                   </div>
                 </button>

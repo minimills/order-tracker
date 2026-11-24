@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../lib/auth'
 import { isSupabaseConfigured } from '../lib/supabase'
+import { tr } from '../i18n'
 
 /** Shows the page only to signed-in users whose email is on the allowed list. */
 export default function RequireAuth({ children }: { children: ReactNode }) {
@@ -12,7 +13,7 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
   if (!isSupabaseConfigured) return <>{children}</>
 
   if (loading || (session && allowed === null)) {
-    return <div className="p-8 text-center text-slate-500">Loading…</div>
+    return <div className="p-8 text-center text-slate-500">{tr("Loading…")}</div>
   }
 
   if (!session) return <Navigate to="/login" replace state={{ from: location.pathname }} />
@@ -20,17 +21,16 @@ export default function RequireAuth({ children }: { children: ReactNode }) {
   if (!allowed) {
     return (
       <div className="mx-auto mt-16 max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-        <h1 className="text-lg font-semibold">No Access</h1>
+        <h1 className="text-lg font-semibold">{tr("No Access")}</h1>
         <p className="mt-2 text-sm text-slate-600">
-          You are signed in as <strong>{session.user.email}</strong>, but this email doesn’t have access. Contact the
-          office.
+          {tr("You are signed in as")} <strong>{session.user.email}</strong>{tr(", but this email doesn’t have access. Contact the office.")}
         </p>
         <button
           type="button"
           onClick={signOut}
           className="mt-4 rounded-md bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-700"
         >
-          Sign Out
+          {tr("Sign Out")}
         </button>
       </div>
     )

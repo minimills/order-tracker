@@ -21,6 +21,7 @@ import Can from '../Can'
 import { Section, secondaryButtonClass, buttonClass } from '../form'
 import SerialNumber from '../SerialNumber'
 import Timeline from './Timeline'
+import { tr } from '../../i18n'
 
 type Props = {
   order: { id: string; expected_ship_date: string | null; actual_ship_date: string | null }
@@ -84,19 +85,19 @@ export default function OrderSchedule({ order, machines, onChanged, crating = tr
   if (!plan && items.length === 0) return null
 
   return (
-    <Section title="Schedule">
+    <Section title={tr("Schedule")}>
       {plan ? (
         <p className="text-sm text-slate-700">
-          {workingText(plan)}. Build starts {showDate(plan.start)}.
-          {plan.averages.length > 0 && <span className="text-slate-500"> Uses recent build averages for: {plan.averages.join(', ')}.</span>}
+          {workingText(plan)}{tr(". Build starts")} {showDate(plan.start)}.
+          {plan.averages.length > 0 && <span className="text-slate-500"> {tr("Uses recent build averages for:")} {plan.averages.join(', ')}.</span>}
         </p>
       ) : (
-        <p className="text-sm text-slate-500">This order is not in the shop queue, so no schedule is calculated. Promised dates:</p>
+        <p className="text-sm text-slate-500">{tr("This order is not in the shop queue, so no schedule is calculated. Promised dates:")}</p>
       )}
 
       {items.length > 0 && (
         <div className="mt-3">
-          <p className="mb-1 text-xs font-medium text-slate-500">Promised Deadlines</p>
+          <p className="mb-1 text-xs font-medium text-slate-500">{tr("Promised Deadlines")}</p>
           <Timeline items={items} />
         </div>
       )}
@@ -105,15 +106,15 @@ export default function OrderSchedule({ order, machines, onChanged, crating = tr
         <div className={`mt-4 rounded-md border p-3 text-sm ${later ? 'border-red-200 bg-red-50' : 'border-blue-200 bg-blue-50'}`}>
           {noDeadlines ? (
             <p>
-              <strong>No department deadlines are saved for this order yet.</strong> Suggested ship date{' '}
+              <strong>{tr("No department deadlines are saved for this order yet.")}</strong> {tr("Suggested ship date")}{' '}
               {showDate(suggest.ship_date)}
-              {promised.ship && promised.ship !== suggest.ship_date && <> (promised {showDate(promised.ship)})</>}.
+              {promised.ship && promised.ship !== suggest.ship_date && <> {tr("(promised")} {showDate(promised.ship)})</>}.
             </p>
           ) : (
             <p>
-              <strong>Suggested New Dates</strong> (the queue, machines or progress changed): ship{' '}
-              {promised.ship ? showDate(promised.ship) : 'no date'} → <strong>{showDate(suggest.ship_date)}</strong>
-              {later && <span className="font-medium text-red-800"> – later than promised</span>}.
+              <strong>{tr("Suggested New Dates")}</strong> {tr("(the queue, machines or progress changed): ship")}{' '}
+              {promised.ship ? showDate(promised.ship) : tr("no date")} → <strong>{showDate(suggest.ship_date)}</strong>
+              {later && <span className="font-medium text-red-800"> {tr("– later than promised")}</span>}.
             </p>
           )}
           <div className="mt-2">
@@ -122,11 +123,11 @@ export default function OrderSchedule({ order, machines, onChanged, crating = tr
           <Can permission="schedule.accept" level="edit">
             <div className="mt-3 flex gap-2">
               <button type="button" className={buttonClass} disabled={busy} onClick={() => run(() => acceptPlan(order.id, suggest, promised))}>
-                Accept New Dates
+                {tr("Accept New Dates")}
               </button>
               {!noDeadlines && (
                 <button type="button" className={secondaryButtonClass} disabled={busy} onClick={() => run(() => keepPlan(order.id, suggest))}>
-                  Keep Promised Dates
+                  {tr("Keep Promised Dates")}
                 </button>
               )}
             </div>
@@ -149,9 +150,9 @@ export default function OrderSchedule({ order, machines, onChanged, crating = tr
                   {m.serial_number && <SerialNumber serial={m.serial_number} />}
                   {crating && (
                     <Can permission="order.machines.crate_flag" level="edit">
-                      <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600" title="Only crated machines get a crating deadline">
+                      <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600" title={tr("Only crated machines get a crating deadline")}>
                         <input type="checkbox" className="h-4 w-4" checked={m.needs_crate} disabled={busy} onChange={(e) => run(() => setCrate(m.id, e.target.checked))} />
-                        Crate
+                        {tr("Crate")}
                       </label>
                     </Can>
                   )}
@@ -167,7 +168,7 @@ export default function OrderSchedule({ order, machines, onChanged, crating = tr
                       >
                         <label
                           className="flex cursor-pointer items-center gap-1 text-xs"
-                          title={x.done === STATUS_DONE ? `${STEP_LABEL[x.step]} completed (machine marked as built, checked or crated)` : x.done ? `${STEP_LABEL[x.step]} completed ${showDate(x.done)} – clear to mark incomplete` : `Mark complete when ${STEP_LABEL[x.step].toLowerCase()} is finished`}
+                          title={x.done === STATUS_DONE ? tr("{{value}} completed (machine marked as built, checked or crated)", { value: STEP_LABEL[x.step] }) : x.done ? tr("{{value}} completed {{showDate}} – clear to mark incomplete", { value: STEP_LABEL[x.step], showDate: showDate(x.done) }) : tr("Mark complete when {{value}} is finished", { value: STEP_LABEL[x.step].toLowerCase() })}
                         >
                           <input
                             type="checkbox"
@@ -188,8 +189,7 @@ export default function OrderSchedule({ order, machines, onChanged, crating = tr
         </ul>
         <Can permission="schedule.step_done" level="edit">
           <p className="mt-2 text-xs text-slate-500">
-            Mark each step complete when it is finished. Recorded times become the build-time averages, and late steps appear on Reports
-            → Department delays.
+            {tr("Mark each step complete when it is finished. Recorded times become the build-time averages, and late steps appear on Reports → Department delays.")}
           </p>
         </Can>
       </Can>

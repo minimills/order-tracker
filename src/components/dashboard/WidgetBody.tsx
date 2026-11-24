@@ -1,3 +1,4 @@
+import { currentLang, tr } from '../../i18n'
 // @permission-scope dashboard
 /* Drawn only inside a widget frame, which checks the widget's own permission (widgetAllowed). */
 import { useContext, useEffect, useState, type ReactNode } from 'react'
@@ -46,8 +47,8 @@ function useLoad<T>(load: () => Promise<T>, deps: unknown[]) {
 }
 
 const Empty = ({ children }: { children: ReactNode }) => <p className="py-3 text-sm text-slate-500">{children}</p>
-const Loading = () => <p className="py-3 text-sm text-slate-500">Loading…</p>
-const Failed = () => <p className="py-3 text-sm text-slate-500">This could not be loaded. It will try again at the next refresh.</p>
+const Loading = () => <p className="py-3 text-sm text-slate-500">{tr("Loading…")}</p>
+const Failed = () => <p className="py-3 text-sm text-slate-500">{tr("This could not be loaded. It will try again at the next refresh.")}</p>
 
 /** A line that opens a page when the person may open it. */
 function Row({ to, children }: { to?: string | null; children: ReactNode }) {
@@ -96,7 +97,7 @@ export default function WidgetBody({
   onValue?: OnValue
 }) {
   const def = widgetDef(widget.key)
-  if (!def) return <Empty>This widget is no longer available.</Empty>
+  if (!def) return <Empty>{tr("This widget is no longer available.")}</Empty>
   switch (def.kind) {
     case 'kpi':
       return <Kpi widget={widget} data={data} onValue={onValue} />
@@ -204,7 +205,7 @@ function Kpi({ widget, data, onValue }: { widget: Widget; data: DashData; onValu
             </p>
           ))
         )}
-        <p className="text-sm text-slate-600">still owed</p>
+        <p className="text-sm text-slate-600">{tr("still owed")}</p>
       </div>
     )
   }
@@ -219,8 +220,8 @@ function Kpi({ widget, data, onValue }: { widget: Widget; data: DashData; onValu
   return big(
     now ? `${now.v > 0 ? '+' : ''}${now.v}` : '—',
     <>
-      <span>days late on average · {now?.n ?? 0} shipped · {rangeText({ range: widget.range ?? 'ytd', from: widget.from, to: widget.to })}</span>
-      {widget.compare && <span className="block">Same dates last year: {prev ? `${prev.v > 0 ? '+' : ''}${prev.v} days` : 'nothing shipped'}</span>}
+      <span>{tr("days late on average ·")} {now?.n ?? 0} {tr("shipped ·")} {rangeText({ range: widget.range ?? 'ytd', from: widget.from, to: widget.to })}</span>
+      {widget.compare && <span className="block">{tr("Same dates last year:")} {prev ? tr("{{value}}{{v}} days", { value: prev.v > 0 ? '+' : '', v: prev.v }) : tr("nothing shipped")}</span>}
     </>,
   )
 }
@@ -242,7 +243,7 @@ function ChartWidget({ widget, data, print, onValue }: { widget: Widget; data: D
     return { now, before }
   }, [data, JSON.stringify(cfg), widget.compare])
   useReport(onValue, s.data ? (s.data.now?.headline?.value ?? null) : undefined)
-  if (!def) return <Empty>This chart is no longer available.</Empty>
+  if (!def) return <Empty>{tr("This chart is no longer available.")}</Empty>
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
   const { now, before } = s.data as { now: ChartResult; before: ChartResult | null }
@@ -264,7 +265,7 @@ function ChartWidget({ widget, data, print, onValue }: { widget: Widget; data: D
       <ChartView title={def.title} type={display} result={now} target={settings?.targets[def.key]} print={print} color={colour} />
       {before && (
         <p className="mt-1 text-xs text-slate-600">
-          Same dates last year: {before.headline ? `${showNumber(before.headline.value)} ${before.headline.label}` : `${showNumber(before.points.reduce((a, p) => a + p.value, 0))} ${before.unit}`}
+          {tr("Same dates last year:")} {before.headline ? `${showNumber(before.headline.value)} ${before.headline.label}` : `${showNumber(before.points.reduce((a, p) => a + p.value, 0))} ${before.unit}`}
         </p>
       )}
     </div>
@@ -313,7 +314,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
           <span className="block truncate font-medium">{t.title}</span>
           <span className="block truncate text-xs text-slate-500">{t.board_name}</span>
         </span>
-        <span className={`shrink-0 text-xs ${t.due_date && t.due_date < today ? 'font-semibold text-red-700' : 'text-slate-600'}`}>{t.due_date ? showDate(t.due_date, 'MMM d') : 'No due date'}</span>
+        <span className={`shrink-0 text-xs ${t.due_date && t.due_date < today ? 'font-semibold text-red-700' : 'text-slate-600'}`}>{t.due_date ? showDate(t.due_date, 'MMM d') : tr("No due date")}</span>
       </Row>
     </li>
   )
@@ -327,7 +328,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
         <li key={`p${p.id}`}>
           <Row to={orderLink(p.order_id)}>
             <span className="min-w-0 truncate">
-              Payment · Order {p.order_code} · {p.customer_name}
+              {tr("Payment · Order")} {p.order_code} · {p.customer_name}
             </span>
             <span className="shrink-0 text-xs font-semibold text-red-700">{formatMoney(p.remaining, p.currency)}</span>
           </Row>
@@ -337,7 +338,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
         <li key={`o${o.id}`}>
           <Row to={orderLink(o.id)}>
             <span className="min-w-0 truncate">
-              Ship date passed · Order {o.order_code} · {o.customer_name}
+              {tr("Ship date passed · Order")} {o.order_code} · {o.customer_name}
             </span>
             <span className="shrink-0 text-xs font-semibold text-red-700">{showDate(o.expected_ship_date, 'MMM d')}</span>
           </Row>
@@ -352,14 +353,14 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
         <li key={p.id}>
           <Row to={orderLink(p.order_id)}>
             <span className="min-w-0">
-              <span className="font-medium">Order {p.order_code}</span>
+              <span className="font-medium">{tr("Order")} {p.order_code}</span>
               <span className="text-slate-500"> · {p.payment_type}</span>
               <span className="block truncate text-slate-600">{p.customer_name}</span>
             </span>
             <span className="shrink-0 text-right">
               <span className="block font-medium tabular-nums">{formatMoney(p.remaining, p.currency)}</span>
               <span className={`block text-xs ${p.status === 'Due soon' ? 'text-amber-700' : 'text-slate-500'}`}>
-                {showDate(p.due_date)} · {dueText(p) || 'Upcoming'}
+                {showDate(p.due_date)} · {dueText(p) || tr("Upcoming")}
               </span>
             </span>
           </Row>
@@ -378,15 +379,15 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
           <li key={o.id}>
             <Row to={orderLink(o.id)}>
               <span className="min-w-0">
-                <span className="font-medium">Order {o.order_code}</span>
+                <span className="font-medium">{tr("Order")} {o.order_code}</span>
                 <span className="block truncate text-slate-600">
-                  {o.customer_name} · {o.machines_ready_count}/{o.machines_count} built · {label(o.stage)}
+                  {o.customer_name} · {o.machines_ready_count}/{o.machines_count} {tr("built ·")} {label(o.stage)}
                 </span>
               </span>
               <span className="shrink-0 text-right">
                 <span className="block">{showDate(o.expected_ship_date)}</span>
                 <span className={`block text-xs ${days < 0 ? 'font-medium text-red-700' : days <= 14 ? 'text-amber-700' : 'text-slate-500'}`}>
-                  {days < 0 ? `${-days} day${days === -1 ? '' : 's'} ago` : days === 0 ? 'Today' : `in ${days} day${days === 1 ? '' : 's'}`}
+                  {days < 0 ? tr("{{value}} day{{value2}} ago", { value: -days, value2: days === -1 ? '' : 's' }) : days === 0 ? tr("Today") : tr("in {{days}} day{{value}}", { days: days, value: days === 1 ? '' : 's' })}
                 </span>
               </span>
             </Row>
@@ -403,7 +404,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
         <li key={o.id}>
           <Row to={orderLink(o.id)}>
             <span className="min-w-0">
-              <span className="font-medium">Order {o.order_code}</span>
+              <span className="font-medium">{tr("Order")} {o.order_code}</span>
               <span className="block truncate text-slate-600">
                 {o.customer_name} {countryFlag(o.customer_country)}
               </span>
@@ -411,7 +412,7 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
             <span className="shrink-0 text-right">
               <span className="block text-slate-600">{showDate(o.actual_ship_date)}</span>
               <span className={`block text-xs font-medium ${o.delay_days === null ? 'text-slate-400' : o.delay_days > 0 ? 'text-red-700' : 'text-green-700'}`}>
-                {o.delay_days === null ? 'No expected date' : delayWords(o.delay_days)}
+                {o.delay_days === null ? tr("No expected date") : delayWords(o.delay_days)}
               </span>
             </span>
           </Row>
@@ -426,14 +427,14 @@ function ListWidget({ widget, data, onValue }: { widget: Widget; data: DashData;
   return (
     <div>
       <p className="text-xs text-slate-500">
-        {list.length} order{list.length === 1 ? '' : 's'} · {rangeText({ range: widget.range ?? 'month', from: widget.from, to: widget.to })}
+        {tr("{{count}} order", { count: list.length })} · {rangeText({ range: widget.range ?? 'month', from: widget.from, to: widget.to })}
       </p>
       {ul(
         list.map((o) => (
           <li key={o.id}>
             <Row to={orderLink(o.id)}>
               <span className="min-w-0">
-                <span className="font-medium">Order {o.order_code}</span>
+                <span className="font-medium">{tr("Order")} {o.order_code}</span>
                 <span className="block truncate text-slate-600">
                   {o.customer_name} {countryFlag(o.customer_country)} · {o.machines_list}
                 </span>
@@ -457,7 +458,7 @@ function ScheduleWidget({ data }: { data: DashData }) {
       <div className="peer">
         <ScheduleChanges key={version} orders={s.data} onChanged={() => setVersion((v) => v + 1)} />
       </div>
-      <p className="hidden text-sm text-slate-500 peer-empty:block">No ship dates are at risk.</p>
+      <p className="hidden text-sm text-slate-500 peer-empty:block">{tr("No ship dates are at risk.")}</p>
     </div>
   )
 }
@@ -472,18 +473,18 @@ function BoardSnapshot({ widget, data }: { widget: Widget; data: DashData }) {
     const { stages, cards } = await data.boardCards([board])
     return { boards, stages, cards }
   }, [data, board])
-  if (!board) return <Empty>Choose a board in this widget’s settings.</Empty>
+  if (!board) return <Empty>{tr("Choose a board in this widget’s settings.")}</Empty>
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
   const name = s.data.boards.find((b) => b.id === board)?.name
-  if (!name) return <Empty>You cannot open this board any more.</Empty>
+  if (!name) return <Empty>{tr("You cannot open this board any more.")}</Empty>
   const max = Math.max(1, ...s.data.stages.map((st) => s.data!.cards.filter((c) => c.stage_id === st.id).length))
   const colour = colourHex(widget.colour)
   return (
     <div className="text-sm">
       <p className="mb-2 flex justify-between gap-2 text-xs text-slate-600">
         <span className="truncate">{name}</span>
-        <span>{s.data.cards.length} open cards</span>
+        <span>{s.data.cards.length} {tr("open cards")}</span>
       </p>
       <ul className="space-y-1.5">
         {s.data.stages.map((st) => {
@@ -501,7 +502,7 @@ function BoardSnapshot({ widget, data }: { widget: Widget; data: DashData }) {
       </ul>
       {can('boards') && (
         <Link to={`/boards/${board}`} className="mt-2 inline-block text-xs underline">
-          Open the Board
+          {tr("Open the Board")}
         </Link>
       )}
     </div>
@@ -514,7 +515,7 @@ function CalendarToday({ data }: { data: DashData }) {
   const s = useLoad(() => data.calendarToday(me), [data, me])
   if (s.error) return <Failed />
   if (!s.data) return <Loading />
-  const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' }) : 'All day')
+  const time = (iso: string | null) => (iso ? new Date(iso).toLocaleTimeString(currentLang(), { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' }) : 'All day')
   const list = [...s.data].sort((a, b) => (a.start_at ?? '').localeCompare(b.start_at ?? ''))
   return list.length ? (
     <ul className="divide-y divide-slate-100 text-sm">
@@ -531,7 +532,7 @@ function CalendarToday({ data }: { data: DashData }) {
       ))}
     </ul>
   ) : (
-    <Empty>Nothing on your calendar today.</Empty>
+    <Empty>{tr("Nothing on your calendar today.")}</Empty>
   )
 }
 
@@ -552,7 +553,7 @@ function Events({ widget, data }: { widget: Widget; data: DashData }) {
       ))}
     </ul>
   ) : (
-    <Empty>No upcoming events.</Empty>
+    <Empty>{tr("No upcoming events.")}</Empty>
   )
 }
 
@@ -565,12 +566,12 @@ function Holidays({ widget, data }: { widget: Widget; data: DashData }) {
       {list.map((h) => (
         <li key={h.id} className="flex justify-between gap-3 py-1.5">
           <span className="min-w-0 truncate">{h.name}</span>
-          <span className="shrink-0 text-xs text-slate-600">{h.start_date === h.end_date ? showDate(h.start_date, 'EEE MMM d') : `${showDate(h.start_date, 'MMM d')} to ${showDate(h.end_date, 'MMM d')}`}</span>
+          <span className="shrink-0 text-xs text-slate-600">{h.start_date === h.end_date ? showDate(h.start_date, 'EEE MMM d') : tr("{{showDate}} to {{showDate2}}", { showDate: showDate(h.start_date, 'MMM d'), showDate2: showDate(h.end_date, 'MMM d') })}</span>
         </li>
       ))}
     </ul>
   ) : (
-    <Empty>No more holidays or closures this year.</Empty>
+    <Empty>{tr("No more holidays or closures this year.")}</Empty>
   )
 }
 
@@ -584,8 +585,8 @@ function Notices({ widget, data }: { widget: Widget; data: DashData }) {
         <li key={n.id}>
           <Row to={`/notices?notice=${n.id}`}>
             <span className="min-w-0 truncate font-medium">
-              {n.priority === 'urgent' && <span className="mr-1 rounded bg-red-100 px-1 text-xs text-red-800">Urgent</span>}
-              {n.priority === 'important' && <span className="mr-1 rounded bg-amber-100 px-1 text-xs text-amber-900">Important</span>}
+              {n.priority === 'urgent' && <span className="mr-1 rounded bg-red-100 px-1 text-xs text-red-800">{tr("Urgent")}</span>}
+              {n.priority === 'important' && <span className="mr-1 rounded bg-amber-100 px-1 text-xs text-amber-900">{tr("Important")}</span>}
               {n.title}
             </span>
             <span className="shrink-0 text-xs text-slate-600">{showDate(n.created_at.slice(0, 10), 'MMM d')}</span>
@@ -594,7 +595,7 @@ function Notices({ widget, data }: { widget: Widget; data: DashData }) {
       ))}
     </ul>
   ) : (
-    <Empty>No notices are on the board.</Empty>
+    <Empty>{tr("No notices are on the board.")}</Empty>
   )
 }
 
@@ -617,7 +618,7 @@ function Chats({ widget, data }: { widget: Widget; data: DashData }) {
       ))}
     </ul>
   ) : (
-    <Empty>No unread messages.</Empty>
+    <Empty>{tr("No unread messages.")}</Empty>
   )
 }
 
@@ -648,7 +649,7 @@ function Freight({ widget, data }: { widget: Widget; data: DashData }) {
               {showNumber(v)}
             </dd>
             <dt className="text-xs text-slate-600">{l}</dt>
-            {p !== undefined && <dd className="text-xs text-slate-500">Last year {showNumber(p)}</dd>}
+            {p !== undefined && <dd className="text-xs text-slate-500">{tr("Last year")} {showNumber(p)}</dd>}
           </div>
         ))}
       </dl>
@@ -682,11 +683,11 @@ function Labour({ widget, data }: { widget: Widget; data: DashData }) {
         {formatMoney(now.cost, 'CAD')}
       </p>
       <p className="text-xs text-slate-600">
-        Overtime {formatMoney(now.ot, 'CAD')} · {formatMoney(now.perHour, 'CAD')} per paid hour
+        {tr("Overtime")} {formatMoney(now.ot, 'CAD')} · {formatMoney(now.perHour, 'CAD')} {tr("per paid hour")}
       </p>
-      {before && <p className="text-xs text-slate-500">Same dates last year: {formatMoney(before.cost, 'CAD')}</p>}
+      {before && <p className="text-xs text-slate-500">{tr("Same dates last year:")} {formatMoney(before.cost, 'CAD')}</p>}
       <Link to="/timesheets?tab=labour" className="mt-1 inline-block text-xs underline">
-        Open Labour Cost
+        {tr("Open Labour Cost")}
       </Link>
     </div>
   )
@@ -699,12 +700,12 @@ function Note({ widget, onNote, canEdit }: { widget: Widget; onNote?: (text: str
     const t = window.setTimeout(() => onNote?.(text), 1200)
     return () => window.clearTimeout(t)
   }, [text, canEdit, widget.text, onNote])
-  if (!canEdit) return <p className="text-sm whitespace-pre-wrap">{widget.text || <span className="text-slate-500">No note yet.</span>}</p>
+  if (!canEdit) return <p className="text-sm whitespace-pre-wrap">{widget.text || <span className="text-slate-500">{tr("No note yet.")}</span>}</p>
   return (
     <textarea
-      aria-label="My note"
+      aria-label={tr("My note")}
       className="keep-light h-full min-h-20 w-full resize-none rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-slate-900"
-      placeholder="Write a note for yourself. It saves by itself."
+      placeholder={tr("Write a note for yourself. It saves by itself.")}
       value={text}
       onChange={(e) => setText(e.target.value)}
     />

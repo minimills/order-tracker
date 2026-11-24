@@ -7,6 +7,7 @@ import { buttonClass, Field, inputClass, secondaryButtonClass } from '../../comp
 import { BOARD_COLOURS, LABEL_COLOURS, textOn, type BoardTemplate } from '../../lib/boards'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Draft = { id: string | null; name: string; description: string; colour: string; stages: string; labels: string; checklists: string }
 
@@ -63,7 +64,7 @@ export default function BoardTemplatesPage() {
 
   async function save() {
     if (!draft || !supabase) return
-    if (!draft.name.trim()) return toast.error('Give the template a name.')
+    if (!draft.name.trim()) return toast.error(tr("Give the template a name."))
     const row = {
       name: draft.name.trim(),
       description: draft.description.trim() || null,
@@ -76,7 +77,7 @@ export default function BoardTemplatesPage() {
     const { error } = draft.id ? await supabase.from('board_templates').update(row).eq('id', draft.id) : await supabase.from('board_templates').insert(row)
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Template saved.')
+    toast.success(tr("Template saved."))
     setDraft(null)
     load()
   }
@@ -89,50 +90,49 @@ export default function BoardTemplatesPage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Board Templates">
-        What a new board can start with: its stages, labels and ready-made checklists. To copy a board you have set up, open
-        it and press “Save as Template”. Changing a template does not change boards already created from it.
+      <AdminPageHeader title={tr("Board Templates")}>
+        {tr("What a new board can start with: its stages, labels and ready-made checklists. To copy a board you have set up, open it and press “Save as Template”. Changing a template does not change boards already created from it.")}
       </AdminPageHeader>
       <div className="flex items-center justify-between">
         <label className="flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> Show archived
+          <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} /> {tr("Show archived")}
         </label>
         <button type="button" className={buttonClass} onClick={() => setDraft(toDraft(null))}>
-          Create Template
+          {tr("Create Template")}
         </button>
       </div>
 
       {draft && (
         <section className="space-y-3 rounded-lg border border-blue-200 bg-white p-4">
-          <h2 className="font-semibold">{draft.id ? 'Edit template' : 'New template'}</h2>
+          <h2 className="font-semibold">{draft.id ? tr("Edit template") : tr("New template")}</h2>
           <div className="grid gap-3 sm:grid-cols-2">
-            <Field label="Name" htmlFor="bt-name">
+            <Field label={tr("Name")} htmlFor="bt-name">
               <input id="bt-name" className={inputClass} value={draft.name} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
             </Field>
-            <Field label="Description" htmlFor="bt-desc">
+            <Field label={tr("Description")} htmlFor="bt-desc">
               <input id="bt-desc" className={inputClass} value={draft.description} onChange={(e) => setDraft({ ...draft, description: e.target.value })} />
             </Field>
           </div>
-          <Field label="Colour">
-            <ColourPicker colours={BOARD_COLOURS} value={draft.colour} onChange={(c) => setDraft({ ...draft, colour: c })} label="Template colour" />
+          <Field label={tr("Colour")}>
+            <ColourPicker colours={BOARD_COLOURS} value={draft.colour} onChange={(c) => setDraft({ ...draft, colour: c })} label={tr("Template colour")} />
           </Field>
           <div className="grid gap-3 sm:grid-cols-3">
-            <Field label="Stages (one per line, left to right)" htmlFor="bt-stages">
+            <Field label={tr("Stages (one per line, left to right)")} htmlFor="bt-stages">
               <textarea id="bt-stages" rows={6} className={inputClass} value={draft.stages} onChange={(e) => setDraft({ ...draft, stages: e.target.value })} />
             </Field>
-            <Field label="Labels (one per line, colour optional)" htmlFor="bt-labels" hint="for example Urgent #dc2626">
+            <Field label={tr("Labels (one per line, colour optional)")} htmlFor="bt-labels" hint={tr("for example Urgent #dc2626")}>
               <textarea id="bt-labels" rows={6} className={inputClass} value={draft.labels} onChange={(e) => setDraft({ ...draft, labels: e.target.value })} />
             </Field>
-            <Field label="Ready-made checklists" htmlFor="bt-lists" hint="Title, then “- task” lines; empty line between checklists.">
+            <Field label={tr("Ready-made checklists")} htmlFor="bt-lists" hint={tr("Title, then “- task” lines; empty line between checklists.")}>
               <textarea id="bt-lists" rows={6} className={inputClass} value={draft.checklists} onChange={(e) => setDraft({ ...draft, checklists: e.target.value })} />
             </Field>
           </div>
           <div className="flex gap-2">
             <button type="button" className={buttonClass} onClick={save} disabled={busy}>
-              Save Template
+              {tr("Save Template")}
             </button>
             <button type="button" className={secondaryButtonClass} onClick={() => setDraft(null)}>
-              Cancel
+              {tr("Cancel")}
             </button>
           </div>
         </section>
@@ -151,16 +151,16 @@ export default function BoardTemplatesPage() {
                 <div className="flex gap-2">
                   {!t.archived && (
                     <button type="button" className={secondaryButtonClass} onClick={() => setDraft(toDraft(t))}>
-                      Edit
+                      {tr("Edit")}
                     </button>
                   )}
                   <button type="button" className={secondaryButtonClass} onClick={() => archive(t)}>
-                    {t.archived ? 'Restore' : 'Archive'}
+                    {t.archived ? tr("Restore") : tr("Archive")}
                   </button>
                 </div>
               </div>
               <div className="mt-2 text-sm">
-                <span className="text-slate-500">Stages:</span> {t.stages.join(' → ') || 'none'}
+                <span className="text-slate-500">{tr("Stages:")}</span> {t.stages.join(' → ') || tr("none")}
               </div>
               {t.labels.length > 0 && (
                 <div className="mt-1 flex flex-wrap gap-1">
@@ -173,7 +173,7 @@ export default function BoardTemplatesPage() {
               )}
               {t.checklists.length > 0 && (
                 <div className="mt-1 text-sm">
-                  <span className="text-slate-500">Checklists:</span> {t.checklists.map((c) => `${c.title} (${c.items.length})`).join(', ')}
+                  <span className="text-slate-500">{tr("Checklists:")}</span> {t.checklists.map((c) => `${c.title} (${c.items.length})`).join(', ')}
                 </div>
               )}
             </li>

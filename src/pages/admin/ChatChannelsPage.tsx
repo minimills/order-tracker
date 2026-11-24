@@ -7,6 +7,7 @@ import { chatTime, type Person } from '../../lib/chat'
 import { askText, confirmAction } from '../../lib/confirm'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Channel = {
   id: string
@@ -66,36 +67,35 @@ export default function ChatChannelsPage() {
 
   async function create() {
     if (!supabase) return
-    if (!newName.trim()) return toast.error('Give the channel a name.')
+    if (!newName.trim()) return toast.error(tr("Give the channel a name."))
     const { error } = await supabase.rpc('admin_create_chat_channel', { p_name: newName.trim(), p_emails: [] })
     if (error) return toast.error(friendlyError(error))
     setNewName('')
-    toast.success('Channel created. Add its members below.')
+    toast.success(tr("Channel created. Add its members below."))
     load()
   }
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Chat Channels">
-        Every department and group has a channel; its members follow the department or group automatically. You can also make other channels. Direct messages
-        and group chats are private to the people in them and are not listed here.
+      <AdminPageHeader title={tr("Chat Channels")}>
+        {tr("Every department and group has a channel; its members follow the department or group automatically. You can also make other channels. Direct messages and group chats are private to the people in them and are not listed here.")}
       </AdminPageHeader>
 
       <section className="flex flex-wrap gap-2 rounded-lg border border-slate-200 bg-white p-4">
         <input
-          aria-label="New channel name"
+          aria-label={tr("New channel name")}
           className={`${inputClass} flex-1`}
-          placeholder="New channel, for example Everyone"
+          placeholder={tr("New channel, for example Everyone")}
           value={newName}
           onChange={(e) => setNewName(e.target.value)}
         />
         <button type="button" className={buttonClass} onClick={create}>
-          Create Channel
+          {tr("Create Channel")}
         </button>
       </section>
 
       <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
-        {channels.length === 0 && <li className="p-4 text-sm text-slate-500">No channels yet.</li>}
+        {channels.length === 0 && <li className="p-4 text-sm text-slate-500">{tr("No channels yet.")}</li>}
         {channels.map((c) => (
           <li key={c.id} className={`p-3 text-sm ${c.archived ? 'bg-slate-50 text-slate-500' : ''}`}>
             <div className="flex flex-wrap items-center gap-2">
@@ -103,10 +103,10 @@ export default function ChatChannelsPage() {
                 <span className="font-medium">{c.name}</span>
                 <span className="text-xs text-slate-500">
                   {' '}
-                  · {KIND[c.kind]} · {c.members} member{c.members === 1 ? '' : 's'}
-                  {c.removed ? ` · ${c.removed} removed` : ''}
-                  {c.last_message_at ? ` · last message ${chatTime(c.last_message_at)}` : ''}
-                  {c.archived ? ' · archived' : ''}
+                  · {KIND[c.kind]} · {tr("{{count}} member", { count: c.members })}
+                  {c.removed ? tr(" · {{removed}} removed", { removed: c.removed }) : ''}
+                  {c.last_message_at ? tr(" · last message {{chatTime}}", { chatTime: chatTime(c.last_message_at) }) : ''}
+                  {c.archived ? tr(" · archived") : ''}
                 </span>
               </span>
               <button
@@ -118,21 +118,25 @@ export default function ChatChannelsPage() {
                   if (next) loadMembers(next)
                 }}
               >
-                Members
+                {tr("Members")}
               </button>
               <button
                 type="button"
                 className="underline"
                 onClick={async () => {
-                  const name = await askText('Enter a new name for the channel.', { initial: c.name, label: 'Channel name', confirmLabel: 'Rename' })
+                  const name = await askText(tr("Enter a new name for the channel."), { initial: c.name, get label() {
+    return tr("Channel name")
+  }, get confirmLabel() {
+    return tr("Rename")
+  } })
                   if (name?.trim()) update(c.id, { name: name.trim() }, 'Renamed.')
                 }}
               >
-                Rename
+                {tr("Rename")}
               </button>
               {c.archived ? (
                 <button type="button" className="underline" onClick={() => update(c.id, { archived: false }, 'Restored.')}>
-                  Restore
+                  {tr("Restore")}
                 </button>
               ) : (
                 <button
@@ -140,15 +144,17 @@ export default function ChatChannelsPage() {
                   className="text-red-700 underline"
                   onClick={async () => {
                     if (
-                      await confirmAction(`Archive “${c.name}”? Its members can still read it, but nobody can write in it.`, {
-                        confirmLabel: 'Archive',
+                      await confirmAction(tr("Archive “{{name}}”? Its members can still read it, but nobody can write in it.", { name: c.name }), {
+                        get confirmLabel() {
+    return tr("Archive")
+  },
                         danger: true,
                       })
                     )
                       update(c.id, { archived: true }, 'Archived.')
                   }}
                 >
-                  Archive
+                  {tr("Archive")}
                 </button>
               )}
             </div>
@@ -162,7 +168,7 @@ export default function ChatChannelsPage() {
                       </span>
                       {m.removed ? (
                         <button type="button" className="text-xs underline" onClick={() => update(c.id, { restore: [m.email] }, 'Restored.')}>
-                          Restore
+                          {tr("Restore")}
                         </button>
                       ) : (
                         <button
@@ -170,7 +176,7 @@ export default function ChatChannelsPage() {
                           className="text-xs text-red-700 underline"
                           onClick={() => update(c.id, { remove: [m.email] }, 'Removed from the channel.')}
                         >
-                          Remove
+                          {tr("Remove")}
                         </button>
                       )}
                     </li>
@@ -178,12 +184,12 @@ export default function ChatChannelsPage() {
                 </ul>
                 {c.kind !== 'channel' && (
                   <p className="text-xs text-slate-500">
-                    Removing someone keeps them out of this channel even while they stay in the {c.kind === 'department' ? 'department' : 'group'}.
+                    {tr("Removing someone keeps them out of this channel even while they stay in the")} {c.kind === 'department' ? tr("department") : tr("group")}.
                   </p>
                 )}
                 <div className="flex gap-2">
-                  <select aria-label="Add a member" className={inputClass} value={adding} onChange={(e) => setAdding(e.target.value)}>
-                    <option value="">Add a person…</option>
+                  <select aria-label={tr("Add a member")} className={inputClass} value={adding} onChange={(e) => setAdding(e.target.value)}>
+                    <option value="">{tr("Add a person…")}</option>
                     {people
                       .filter((p) => !members.some((m) => m.email === p.email && !m.removed))
                       .map((p) => (
@@ -201,7 +207,7 @@ export default function ChatChannelsPage() {
                       setAdding('')
                     }}
                   >
-                    Add
+                    {tr("Add")}
                   </button>
                 </div>
               </div>

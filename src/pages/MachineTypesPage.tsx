@@ -10,6 +10,7 @@ import { formatSerial, friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
 import type { MachineType } from '../lib/types'
 import { confirmAction } from '../lib/confirm'
+import { tr } from '../i18n'
 
 type Usage = { machine_type_id: string; machines_count: number; highest_serial_number: number | null }
 
@@ -90,7 +91,7 @@ export default function MachineTypesPage() {
     const used = usage[t.id]?.machines_count ?? 0
     if (t.code && code !== t.code && used > 0) {
       const ok = await confirmAction(
-        `${used} machine(s) already have ${t.code} serial numbers. They keep their current serial numbers; only new machines get ${code || 'no'} serial numbers. Change the code?`,
+        tr("{{used}} machine(s) already have {{code}} serial numbers. They keep their current serial numbers; only new machines get {{value}} serial numbers. Change the code?", { used: used, code: t.code, value: code || 'no' }),
       )
       if (!ok) return
     }
@@ -109,7 +110,7 @@ export default function MachineTypesPage() {
     if (!supabase) return
     const { error } = await supabase.from('machine_types').update({ archived }).eq('id', t.id)
     if (error) return toast.error(friendlyError(error))
-    toast.success(archived ? `${t.name} archived. It won't be offered for new orders.` : `${t.name} is back.`)
+    toast.success(archived ? tr("{{name}} archived. It won't be offered for new orders.", { name: t.name }) : tr("{{name}} is back.", { name: t.name }))
     load()
   }
 
@@ -138,21 +139,20 @@ export default function MachineTypesPage() {
     <div className="space-y-6">
       <div>
         <Link to="/admin" className="text-sm text-slate-600 underline">
-          ← Admin
+          {tr("← Admin")}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Machine Types</h1>
+        <h1 className="mt-2 text-2xl font-semibold">{tr("Machine Types")}</h1>
         <p className="mt-1 text-sm text-slate-600">
-          The code and next serial number decide the serial numbers new machines receive, for example code LCR and next number 2073 gives
-          LCR-2073.
-          {!isAdmin && ' Only admins can make changes.'}
+          {tr("The code and next serial number decide the serial numbers new machines receive, for example code LCR and next number 2073 gives LCR-2073.")}
+          {!isAdmin && tr(" Only admins can make changes.")}
         </p>
       </div>
 
       {isAdmin && (
         <form onSubmit={add} className="rounded-lg border border-slate-200 bg-white p-4" noValidate>
-          <h2 className="mb-3 text-base font-semibold">Add a Machine Type</h2>
+          <h2 className="mb-3 text-base font-semibold">{tr("Add a Machine Type")}</h2>
           <div className="grid gap-3 lg:grid-cols-[1fr_8rem_9rem_auto]">
-            <Field label="Name" htmlFor="new-name" error={newErrors.name}>
+            <Field label={tr("Name")} htmlFor="new-name" error={newErrors.name}>
               <input
                 id="new-name"
                 className={inputClass}
@@ -160,7 +160,7 @@ export default function MachineTypesPage() {
                 onChange={(e) => setNewType({ ...newType, name: e.target.value })}
               />
             </Field>
-            <Field label="Code" htmlFor="new-code" error={newErrors.code} hint="Can be left empty for now.">
+            <Field label={tr("Code")} htmlFor="new-code" error={newErrors.code} hint={tr("Can be left empty for now.")}>
               <input
                 id="new-code"
                 className={`${inputClass} uppercase`}
@@ -168,7 +168,7 @@ export default function MachineTypesPage() {
                 onChange={(e) => setNewType({ ...newType, code: e.target.value })}
               />
             </Field>
-            <Field label="Next serial number" htmlFor="new-next" error={newErrors.next}>
+            <Field label={tr("Next serial number")} htmlFor="new-next" error={newErrors.next}>
               <input
                 id="new-next"
                 inputMode="numeric"
@@ -179,7 +179,7 @@ export default function MachineTypesPage() {
             </Field>
             <div className="flex items-start lg:pt-6">
               <button type="submit" className={buttonClass} disabled={savingId === 'new'}>
-                {savingId === 'new' ? 'Adding…' : 'Add'}
+                {savingId === 'new' ? tr("Adding…") : tr("Add")}
               </button>
             </div>
           </div>
@@ -189,19 +189,19 @@ export default function MachineTypesPage() {
       <div className="flex items-center justify-end">
         <label className="flex items-center gap-2 text-sm text-slate-600">
           <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-          Show archived
+          {tr("Show archived")}
         </label>
       </div>
 
       {loading ? (
-        <p className="text-center text-slate-500">Loading…</p>
+        <p className="text-center text-slate-500">{tr("Loading…")}</p>
       ) : (
         <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
           <div className="hidden grid-cols-[1fr_7rem_8rem_12rem_9rem] gap-3 px-4 py-2 text-xs text-slate-500 lg:grid">
-            <span>Name</span>
-            <span>Code</span>
-            <span>Next serial no.</span>
-            <span>Machines / highest serial</span>
+            <span>{tr("Name")}</span>
+            <span>{tr("Code")}</span>
+            <span>{tr("Next serial no.")}</span>
+            <span>{tr("Machines / highest serial")}</span>
             <span />
           </div>
           {visible.map((t) => {
@@ -220,27 +220,27 @@ export default function MachineTypesPage() {
                   t.archived ? 'bg-slate-50 text-slate-500' : ''
                 }`}
               >
-                <Field label="Name" error={e.name} className="col-span-2 lg:col-span-1 [&>label]:lg:hidden">
+                <Field label={tr("Name")} error={e.name} className="col-span-2 lg:col-span-1 [&>label]:lg:hidden">
                   <input
-                    aria-label="Name"
+                    aria-label={tr("Name")}
                     className={inputClass}
                     value={d.name}
                     disabled={!isAdmin}
                     onChange={(ev) => set('name', ev.target.value)}
                   />
                   <input
-                    aria-label="Short name for board chips"
+                    aria-label={tr("Short name for board chips")}
                     className={`${inputClass} mt-1 text-xs`}
                     value={d.short}
                     maxLength={30}
-                    placeholder="Short name for board chips (optional)"
+                    placeholder={tr("Short name for board chips (optional)")}
                     disabled={!isAdmin}
                     onChange={(ev) => set('short', ev.target.value)}
                   />
                 </Field>
-                <Field label="Code" error={e.code} className="[&>label]:lg:hidden">
+                <Field label={tr("Code")} error={e.code} className="[&>label]:lg:hidden">
                   <input
-                    aria-label="Code"
+                    aria-label={tr("Code")}
                     className={`${inputClass} uppercase`}
                     value={d.code}
                     placeholder="—"
@@ -249,13 +249,13 @@ export default function MachineTypesPage() {
                   />
                 </Field>
                 <Field
-                  label="Next serial no."
+                  label={tr("Next serial no.")}
                   error={e.next}
                   className="[&>label]:lg:hidden"
-                  hint={code && !e.next && nextNum >= 1 ? `Next: ${formatSerial(code, nextNum)}` : undefined}
+                  hint={code && !e.next && nextNum >= 1 ? tr("Next: {{formatSerial}}", { formatSerial: formatSerial(code, nextNum) }) : undefined}
                 >
                   <input
-                    aria-label="Next serial number"
+                    aria-label={tr("Next serial number")}
                     inputMode="numeric"
                     className={inputClass}
                     value={d.next}
@@ -266,15 +266,15 @@ export default function MachineTypesPage() {
                 <div className="col-span-2 text-sm lg:col-span-1 lg:pt-2">
                   {u?.machines_count ? (
                     <>
-                      {u.machines_count} machine{u.machines_count === 1 ? '' : 's'}
-                      {highest !== null && t.code && <> · highest {formatSerial(t.code, highest)}</>}
+                      {tr("{{count}} machine", { count: u.machines_count })}
+                      {highest !== null && t.code && <> {tr("· highest")} {formatSerial(t.code, highest)}</>}
                     </>
                   ) : (
-                    <span className="text-slate-400">No machines yet</span>
+                    <span className="text-slate-400">{tr("No machines yet")}</span>
                   )}
                   {lowWarning && (
                     <p className="mt-1 text-xs text-amber-700">
-                      Numbers up to {highest} are already used; taken numbers will be skipped. You probably want{' '}
+                      {tr("Numbers up to")} {highest} {tr("are already used; taken numbers will be skipped. You probably want")}{' '}
                       {highest + 1}.
                     </p>
                   )}
@@ -289,7 +289,7 @@ export default function MachineTypesPage() {
                           disabled={savingId === t.id}
                           onClick={() => save(t)}
                         >
-                          {savingId === t.id ? 'Saving…' : 'Save Changes'}
+                          {savingId === t.id ? tr("Saving…") : tr("Save Changes")}
                         </button>
                         <button
                           type="button"
@@ -299,13 +299,13 @@ export default function MachineTypesPage() {
                             setErrors((all) => ({ ...all, [t.id]: {} }))
                           }}
                         >
-                          Undo
+                          {tr("Undo")}
                         </button>
                       </>
                     )}
                     {!isChanged(t) && (
                       <button type="button" className={secondaryButtonClass} onClick={() => setArchived(t, !t.archived)}>
-                        {t.archived ? 'Restore' : 'Archive'}
+                        {t.archived ? tr("Restore") : tr("Archive")}
                       </button>
                     )}
                   </div>

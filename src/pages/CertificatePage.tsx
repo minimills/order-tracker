@@ -28,6 +28,7 @@ import {
   type CompanyInfo,
 } from '../lib/service'
 import { supabase } from '../lib/supabase'
+import { tr } from '../i18n'
 
 type Editable = Pick<Certificate, 'title' | 'part1' | 'part2' | 'machines' | 'start_date' | 'end_date' | 'site_address' | 'tech_name'>
 type Send = { id: string; to_emails: string[]; cc_emails?: string[] | null; bcc_emails?: string[] | null; subject?: string | null; status: 'sent' | 'failed'; error: string | null; sent_by: string | null; sent_at: string }
@@ -54,7 +55,9 @@ export default function CertificatePage() {
   const [cert, setCert] = useState<Certificate | null>(null)
   useBreadcrumbs(
     cert && [
-      { label: 'Service / Training', to: '/service' },
+      { get label() {
+    return tr("Service / Training")
+  }, to: '/service' },
       { label: documentReference(cert), to: cert.order_id ? `/service/${cert.order_id}?tab=certificate` : `/service/calls/${cert.service_call_id}?tab=certificate` },
       { label: cert.title },
     ],
@@ -95,7 +98,7 @@ export default function CertificatePage() {
     load()
   }, [load])
 
-  if (!cert || !edit) return <p className="p-6 text-center text-slate-500">Loading…</p>
+  if (!cert || !edit) return <p className="p-6 text-center text-slate-500">{tr("Loading…")}</p>
 
   const noun = cert.kind === 'service_report' ? 'service report' : 'certificate'
   const company: CompanyInfo = cert.locked_at && cert.info.company ? cert.info.company : liveCompany
@@ -110,7 +113,7 @@ export default function CertificatePage() {
 
   async function save() {
     if (!supabase || !edit || !cert) return
-    if (edit.start_date && edit.end_date && edit.end_date < edit.start_date) return toast.error('The end date must be on or after the start date.')
+    if (edit.start_date && edit.end_date && edit.end_date < edit.start_date) return toast.error(tr("The end date must be on or after the start date."))
     const patch: Partial<Editable> = {}
     for (const k of Object.keys(edit) as (keyof Editable)[]) {
       if (JSON.stringify(edit[k]) !== JSON.stringify(cert[k])) (patch as Record<string, unknown>)[k] = edit[k]
@@ -126,7 +129,7 @@ export default function CertificatePage() {
   const setMachines = (machines: CertMachine[]) => setEdit({ ...edit, machines })
   const toggleRow = (key: string, removed: boolean) => setMachines(edit.machines.map((m) => (m.key === key ? { ...m, removed } : m)))
   const addRow = () => {
-    if (!newRow.machine.trim()) return toast.error('Type the machine.')
+    if (!newRow.machine.trim()) return toast.error(tr("Type the machine."))
     setMachines([...edit.machines, { key: crypto.randomUUID(), machine_id: null, machine: newRow.machine.trim(), serial: newRow.serial.trim() || null, removed: false }])
     setNewRow({ machine: '', serial: '' })
   }
@@ -142,7 +145,7 @@ export default function CertificatePage() {
       const { downloadPdf } = await import('../lib/certificatePdf')
       downloadPdf(await makePdf(), certificateFileName(cert!))
     } catch (e) {
-      toast.error(`The PDF could not be made: ${(e as Error).message}`)
+      toast.error(tr("The PDF could not be made: {{message}}", { message: (e as Error).message }))
     }
     setBusy(null)
   }
@@ -157,8 +160,8 @@ export default function CertificatePage() {
   }
 
   async function sendEmail() {
-    if (!splitEmails(rcpt.to).length) return toast.error('Enter at least one email address in To.')
-    if (!rcpt.subject.trim()) return toast.error('Enter a subject.')
+    if (!splitEmails(rcpt.to).length) return toast.error(tr("Enter at least one email address in To."))
+    if (!rcpt.subject.trim()) return toast.error(tr("Enter a subject."))
     setBusy('send')
     try {
       const { toBase64 } = await import('../lib/certificatePdf')
@@ -175,11 +178,11 @@ export default function CertificatePage() {
       })
       if (!r.ok) toast.error(r.message)
       else {
-        toast.success(r.message || 'Certificate sent.')
+        toast.success(r.message || tr("Certificate sent."))
         setPreview(null)
       }
     } catch (e) {
-      toast.error(`The PDF could not be made: ${(e as Error).message}`)
+      toast.error(tr("The PDF could not be made: {{message}}", { message: (e as Error).message }))
     }
     setBusy(null)
     load()
@@ -187,7 +190,9 @@ export default function CertificatePage() {
 
   async function correct() {
     if (!supabase) return
-    if (!(await confirmAction(`Create a corrected version? This signed ${noun} stays in the history and the new version starts as a draft that needs both signatures again.`, { confirmLabel: 'Create Corrected Version' }))) return
+    if (!(await confirmAction(tr("Create a corrected version? This signed {{noun}} stays in the history and the new version starts as a draft that needs both signatures again.", { noun: noun }), { get confirmLabel() {
+    return tr("Create Corrected Version")
+  } }))) return
     const { data, error } = await supabase.rpc('correct_certificate', { p_certificate: cert!.id })
     if (error) return toast.error(friendlyError(error))
     navigate(`/service/certificates/${data as string}`)
@@ -206,35 +211,35 @@ export default function CertificatePage() {
             </Link>
             <h1 className="mt-1 text-2xl font-semibold">
               {cert.title}
-              {cert.version > 1 && <span className="text-base font-normal text-slate-500"> · Version {cert.version}</span>}
+              {cert.version > 1 && <span className="text-base font-normal text-slate-500"> {tr("· Version")} {cert.version}</span>}
             </h1>
             <p className="text-sm text-slate-600">
               {cert.status === 'signed'
-                ? `Signed and locked on ${showDate(cert.locked_at)}.`
+                ? tr("Signed and locked on {{showDate}}.", { showDate: showDate(cert.locked_at) })
                 : cert.status === 'superseded'
-                  ? 'Replaced by a corrected version. Kept for the history.'
+                  ? tr("Replaced by a corrected version. Kept for the history.")
                   : anySigned
-                    ? 'Draft with one signature. The text cannot change until the signature is removed.'
-                    : `Draft. Changes here apply to this ${noun} only, not to the template.`}
+                    ? tr("Draft with one signature. The text cannot change until the signature is removed.")
+                    : tr("Draft. Changes here apply to this {{noun}} only, not to the template.", { noun: noun })}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Can permission="service.certificate.pdf">
               <button type="button" className={secondaryButtonClass} onClick={download} disabled={busy !== null}>
-                {busy === 'pdf' ? 'Making PDF…' : 'Download PDF'}
+                {busy === 'pdf' ? tr("Making PDF…") : tr("Download PDF")}
               </button>
             </Can>
             {cert.status === 'signed' && (
               <Can permission="service.certificate.email" level="edit">
                 <button type="button" className={buttonClass} onClick={openEmail} disabled={busy !== null}>
-                  {sends.length ? 'Resend' : cert.kind === 'service_report' ? 'Email Service Report' : 'Email Certificate'}
+                  {sends.length ? tr("Resend") : cert.kind === 'service_report' ? tr("Email Service Report") : tr("Email Certificate")}
                 </button>
               </Can>
             )}
             {cert.status === 'signed' && (
               <Can permission="service.certificate.correct" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={correct}>
-                  Create Corrected Version
+                  {tr("Create Corrected Version")}
                 </button>
               </Can>
             )}
@@ -253,7 +258,7 @@ export default function CertificatePage() {
 
           <Can permission="service.certificate.edit_text" level="edit" fallback={<h2 className="text-center text-xl font-bold">{edit.title}</h2>}>
             {canText ? (
-              <input aria-label="Title" className={`${inputClass} text-center text-lg font-bold`} value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} />
+              <input aria-label={tr("Title")} className={`${inputClass} text-center text-lg font-bold`} value={edit.title} onChange={(e) => setEdit({ ...edit, title: e.target.value })} />
             ) : (
               <h2 className="text-center text-xl font-bold">{edit.title}</h2>
             )}
@@ -261,7 +266,7 @@ export default function CertificatePage() {
 
           {canText ? (
             <Can permission="service.certificate.edit_text" level="edit">
-              <RichTextEditor label="Text above the table" value={edit.part1} onChange={(part1) => setEdit({ ...edit, part1 })} />
+              <RichTextEditor label={tr("Text above the table")} value={edit.part1} onChange={(part1) => setEdit({ ...edit, part1 })} />
             </Can>
           ) : (
             <RichText value={fillPlaceholders(edit.part1, values)} className="text-sm" />
@@ -271,9 +276,9 @@ export default function CertificatePage() {
             <table className="w-full border border-slate-300 text-left text-sm">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="border border-slate-300 px-2 py-1.5">Machine</th>
-                  <th className="border border-slate-300 px-2 py-1.5">Serial number</th>
-                  {canMachines && <th className="w-10 border border-slate-300" aria-label="Remove" />}
+                  <th className="border border-slate-300 px-2 py-1.5">{tr("Machine")}</th>
+                  <th className="border border-slate-300 px-2 py-1.5">{tr("Serial number")}</th>
+                  {canMachines && <th className="w-10 border border-slate-300" aria-label={tr("Remove")} />}
                 </tr>
               </thead>
               <tbody>
@@ -286,7 +291,7 @@ export default function CertificatePage() {
                       {canMachines && (
                         <td className="border border-slate-300 text-center">
                           <Can permission="service.certificate.machines" level="edit">
-                            <button type="button" className="px-2 text-lg text-red-700" aria-label={`Remove ${m.machine} ${m.serial ?? ''}`} onClick={() => toggleRow(m.key, true)}>
+                            <button type="button" className="px-2 text-lg text-red-700" aria-label={tr("Remove {{machine}} {{value}}", { machine: m.machine, value: m.serial ?? '' })} onClick={() => toggleRow(m.key, true)}>
                               ×
                             </button>
                           </Can>
@@ -297,7 +302,7 @@ export default function CertificatePage() {
                 {edit.machines.every((m) => m.removed) && (
                   <tr>
                     <td colSpan={3} className="px-2 py-2 text-slate-500">
-                      No machines listed.
+                      {tr("No machines listed.")}
                     </td>
                   </tr>
                 )}
@@ -309,14 +314,14 @@ export default function CertificatePage() {
               <div className="space-y-2 rounded-md bg-slate-50 p-3 text-sm">
                 {edit.machines.some((m) => m.removed) && (
                   <div>
-                    <p className="font-medium">Removed from the {noun}</p>
+                    <p className="font-medium">{tr("Removed from the")} {noun}</p>
                     <ul className="mt-1 flex flex-wrap gap-2">
                       {edit.machines
                         .filter((m) => m.removed)
                         .map((m) => (
                           <li key={m.key}>
                             <button type="button" className="rounded border border-slate-300 bg-white px-2 py-1" onClick={() => toggleRow(m.key, false)}>
-                              Restore {m.machine} {m.serial ?? ''}
+                              {tr("Restore")} {m.machine} {m.serial ?? ''}
                             </button>
                           </li>
                         ))}
@@ -324,10 +329,10 @@ export default function CertificatePage() {
                   </div>
                 )}
                 <div className="grid gap-2 sm:grid-cols-[1fr_12rem_auto]">
-                  <input aria-label="Machine" className={inputClass} placeholder="Add a row: machine" value={newRow.machine} onChange={(e) => setNewRow({ ...newRow, machine: e.target.value })} />
-                  <input aria-label="Serial number" className={inputClass} placeholder="Serial number" value={newRow.serial} onChange={(e) => setNewRow({ ...newRow, serial: e.target.value })} />
+                  <input aria-label={tr("Machine")} className={inputClass} placeholder={tr("Add a row: machine")} value={newRow.machine} onChange={(e) => setNewRow({ ...newRow, machine: e.target.value })} />
+                  <input aria-label={tr("Serial number")} className={inputClass} placeholder={tr("Serial number")} value={newRow.serial} onChange={(e) => setNewRow({ ...newRow, serial: e.target.value })} />
                   <button type="button" className={secondaryButtonClass} onClick={addRow}>
-                    Add Row
+                    {tr("Add Row")}
                   </button>
                 </div>
               </div>
@@ -336,7 +341,7 @@ export default function CertificatePage() {
 
           {canText ? (
             <Can permission="service.certificate.edit_text" level="edit">
-              <RichTextEditor label="Text below the table" value={edit.part2} onChange={(part2) => setEdit({ ...edit, part2 })} />
+              <RichTextEditor label={tr("Text below the table")} value={edit.part2} onChange={(part2) => setEdit({ ...edit, part2 })} />
             </Can>
           ) : (
             <RichText value={fillPlaceholders(edit.part2, values)} className="text-sm" />
@@ -352,7 +357,7 @@ export default function CertificatePage() {
         {canText && (
           <Can permission="service.certificate.edit_text" level="edit">
             <details className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-              <summary className="cursor-pointer font-medium">Placeholders You Can Type in the Text</summary>
+              <summary className="cursor-pointer font-medium">{tr("Placeholders You Can Type in the Text")}</summary>
               <ul className="mt-2 grid gap-1 sm:grid-cols-2">
                 {PLACEHOLDERS.map((p) => (
                   <li key={p.key}>
@@ -366,17 +371,17 @@ export default function CertificatePage() {
 
         <Can permission="service.certificate.details">
           <section className="grid gap-3 rounded-lg border border-slate-200 bg-white p-4 sm:grid-cols-2">
-            <h2 className="font-semibold sm:col-span-2">Details</h2>
-            <Field label="Start date (first on-site day)" htmlFor="c-start">
+            <h2 className="font-semibold sm:col-span-2">{tr("Details")}</h2>
+            <Field label={tr("Start date (first on-site day)")} htmlFor="c-start">
               <input id="c-start" type="date" className={inputClass} disabled={!canDetails} value={edit.start_date ?? ''} onChange={(e) => setEdit({ ...edit, start_date: e.target.value || null })} />
             </Field>
-            <Field label="End date (last on-site day)" htmlFor="c-end">
+            <Field label={tr("End date (last on-site day)")} htmlFor="c-end">
               <input id="c-end" type="date" className={inputClass} disabled={!canDetails} value={edit.end_date ?? ''} onChange={(e) => setEdit({ ...edit, end_date: e.target.value || null })} />
             </Field>
-            <Field label="Site address" htmlFor="c-site">
+            <Field label={tr("Site address")} htmlFor="c-site">
               <input id="c-site" className={inputClass} disabled={!canDetails} value={edit.site_address ?? ''} onChange={(e) => setEdit({ ...edit, site_address: e.target.value || null })} />
             </Field>
-            <Field label="Technician’s full name" htmlFor="c-tech">
+            <Field label={tr("Technician’s full name")} htmlFor="c-tech">
               <input id="c-tech" className={inputClass} disabled={!canDetails} value={edit.tech_name ?? ''} onChange={(e) => setEdit({ ...edit, tech_name: e.target.value || null })} />
             </Field>
           </section>
@@ -385,12 +390,12 @@ export default function CertificatePage() {
         {editable && (
           <Can anyOf={['service.certificate.edit_text', 'service.certificate.machines', 'service.certificate.details']} level="edit">
             <div className="sticky bottom-0 flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50/95 py-3">
-              {dirty && <span className="text-sm text-amber-800">Changes not saved yet.</span>}
+              {dirty && <span className="text-sm text-amber-800">{tr("Changes not saved yet.")}</span>}
               <button type="button" className={secondaryButtonClass} disabled={!dirty || saving} onClick={() => setEdit(pick(cert))}>
-                Undo Changes
+                {tr("Undo Changes")}
               </button>
               <button type="button" className={buttonClass} disabled={!dirty || saving} onClick={save}>
-                {saving ? 'Saving…' : 'Save Changes'}
+                {saving ? tr("Saving…") : tr("Save Changes")}
               </button>
             </div>
           </Can>
@@ -399,16 +404,16 @@ export default function CertificatePage() {
         {sends.length > 0 && (
           <Can permission="service.certificate.email">
             <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-              <h2 className="mb-2 font-semibold">Emails Sent</h2>
+              <h2 className="mb-2 font-semibold">{tr("Emails Sent")}</h2>
               <ul className="divide-y divide-slate-100">
                 {sends.map((s) => (
                   <li key={s.id} className="py-2">
-                    <span className={s.status === 'sent' ? 'text-green-800' : 'text-red-700'}>{s.status === 'sent' ? 'Sent' : 'Not sent'}</span> {showDate(s.sent_at, 'MMM d, yyyy h:mm a')} to{' '}
+                    <span className={s.status === 'sent' ? 'text-green-800' : 'text-red-700'}>{s.status === 'sent' ? tr("Sent") : tr("Not sent")}</span> {showDate(s.sent_at, 'MMM d, yyyy h:mm a')} {tr("to")}{' '}
                     {s.to_emails.join(', ')}
-                    {s.cc_emails?.length ? <span className="text-slate-600"> · CC {s.cc_emails.join(', ')}</span> : null}
-                    {s.bcc_emails?.length ? <span className="text-slate-600"> · BCC {s.bcc_emails.join(', ')}</span> : null}
+                    {s.cc_emails?.length ? <span className="text-slate-600"> {tr("· CC")} {s.cc_emails.join(', ')}</span> : null}
+                    {s.bcc_emails?.length ? <span className="text-slate-600"> {tr("· BCC")} {s.bcc_emails.join(', ')}</span> : null}
                     {s.subject ? <span className="block text-xs text-slate-500">{s.subject}</span> : null}
-                    {s.sent_by ? <span className="text-slate-500"> · by {s.sent_by}</span> : null}
+                    {s.sent_by ? <span className="text-slate-500"> {tr("· by")} {s.sent_by}</span> : null}
                     {s.error && <p className="text-xs text-red-700">{s.error}</p>}
                   </li>
                 ))}
@@ -419,18 +424,18 @@ export default function CertificatePage() {
 
         {versions.length > 1 && (
           <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <h2 className="mb-2 font-semibold">Versions</h2>
+            <h2 className="mb-2 font-semibold">{tr("Versions")}</h2>
             <ul className="space-y-1">
               {versions.map((v) => (
                 <li key={v.id}>
                   {v.id === cert.id ? (
-                    <strong>Version {v.version} (this one)</strong>
+                    <strong>{tr("Version")} {v.version} {tr("(this one)")}</strong>
                   ) : (
                     <Link to={`/service/certificates/${v.id}`} className="text-blue-700 underline">
-                      Version {v.version}
+                      {tr("Version")} {v.version}
                     </Link>
                   )}{' '}
-                  <span className="text-slate-500">{v.status === 'signed' ? 'signed' : v.status === 'superseded' ? 'replaced' : 'draft'}</span>
+                  <span className="text-slate-500">{v.status === 'signed' ? tr("signed") : v.status === 'superseded' ? tr("replaced") : tr("draft")}</span>
                 </li>
               ))}
             </ul>
@@ -439,45 +444,45 @@ export default function CertificatePage() {
 
         {preview && (
           <Modal
-            title={cert.kind === 'service_report' ? 'Email the Service Report' : 'Email the Certificate'}
+            title={cert.kind === 'service_report' ? tr("Email the Service Report") : tr("Email the Certificate")}
             onClose={() => setPreview(null)}
             busy={busy === 'send'}
             footer={
               <>
                 <button type="button" className={secondaryButtonClass} onClick={() => setPreview(null)} disabled={busy === 'send'}>
-                  Cancel
+                  {tr("Cancel")}
                 </button>
                 <Can permission="service.certificate.email" level="edit">
                   <button type="button" className={buttonClass} onClick={sendEmail} disabled={busy === 'send'}>
-                    {busy === 'send' ? 'Sending…' : 'Send Email'}
+                    {busy === 'send' ? tr("Sending…") : tr("Send Email")}
                   </button>
                 </Can>
               </>
             }
           >
             <div className="space-y-2 text-sm">
-              <Field label="To" htmlFor="cert-to" hint="Separate several addresses with commas. The customer and the technician are filled in; add any others.">
+              <Field label={tr("To")} htmlFor="cert-to" hint={tr("Separate several addresses with commas. The customer and the technician are filled in; add any others.")}>
                 <input id="cert-to" className={inputClass} value={rcpt.to} onChange={(e) => setRcpt({ ...rcpt, to: e.target.value })} />
               </Field>
-              <Field label="CC" htmlFor="cert-cc" hint="The office email is filled in (Admin → Email Templates).">
+              <Field label="CC" htmlFor="cert-cc" hint={tr("The office email is filled in (Admin → Email Templates).")}>
                 <input id="cert-cc" className={inputClass} value={rcpt.cc} onChange={(e) => setRcpt({ ...rcpt, cc: e.target.value })} />
               </Field>
-              <Field label="BCC" htmlFor="cert-bcc" hint="Hidden from the other recipients.">
+              <Field label="BCC" htmlFor="cert-bcc" hint={tr("Hidden from the other recipients.")}>
                 <input id="cert-bcc" className={inputClass} value={rcpt.bcc} onChange={(e) => setRcpt({ ...rcpt, bcc: e.target.value })} />
               </Field>
-              <Field label="Subject" htmlFor="cert-subject">
+              <Field label={tr("Subject")} htmlFor="cert-subject">
                 <input id="cert-subject" className={inputClass} maxLength={300} value={rcpt.subject} onChange={(e) => setRcpt({ ...rcpt, subject: e.target.value })} />
               </Field>
               <SenderLine />
               <p>
-                <span className="text-slate-500">Attachment:</span> {preview.file_name}
+                <span className="text-slate-500">{tr("Attachment:")}</span> {preview.file_name}
               </p>
               {preview.warnings.map((w) => (
                 <p key={w} className="rounded bg-amber-50 p-2 text-amber-900">
                   {w}
                 </p>
               ))}
-              <iframe title="Email preview" sandbox="" srcDoc={preview.html} className="h-80 w-full rounded border border-slate-200" />
+              <iframe title={tr("Email preview")} sandbox="" srcDoc={preview.html} className="h-80 w-full rounded border border-slate-200" />
             </div>
           </Modal>
         )}
@@ -498,15 +503,15 @@ function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'cu
 
   async function sign() {
     if (!supabase || !pad.current) return
-    if (dirty) return toast.error('Save the changes first, then sign.')
-    if (!name.trim()) return toast.error('Enter the printed name.')
-    if (pad.current.isEmpty()) return toast.error('Sign in the box first.')
+    if (dirty) return toast.error(tr("Save the changes first, then sign."))
+    if (!name.trim()) return toast.error(tr("Enter the printed name."))
+    if (pad.current.isEmpty()) return toast.error(tr("Sign in the box first."))
     setBusy(true)
     const sig = await pad.current.get()
     const png = sig?.blob
     if (!png) {
       setBusy(false)
-      return toast.error('The signature could not be saved. Sign again.')
+      return toast.error(tr("The signature could not be saved. Sign again."))
     }
     const path = `${cert.id}/${who}-${Date.now()}.png`
     const up = await supabase.storage.from('certificate-signatures').upload(path, png, { contentType: 'image/png' })
@@ -517,13 +522,15 @@ function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'cu
     const { error } = await supabase.rpc('sign_certificate', { p_certificate: cert.id, p_who: who, p_name: name, p_title: who === 'customer' ? title : null, p_date: date, p_signature_path: path, p_saved_signature: sig?.savedId ?? null })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`${heading} signature saved.`)
+    toast.success(tr("{{heading}} signature saved.", { heading: heading }))
     onDone()
   }
 
   async function clear() {
     if (!supabase) return
-    if (!(await confirmAction(`Remove the ${heading.toLowerCase()} signature?`, { confirmLabel: 'Remove Signature', danger: true }))) return
+    if (!(await confirmAction(tr("Remove the {{value}} signature?", { value: heading.toLowerCase() }), { get confirmLabel() {
+    return tr("Remove Signature")
+  }, danger: true }))) return
     const { error } = await supabase.rpc('clear_certificate_signature', { p_certificate: cert.id, p_who: who })
     if (error) return toast.error(friendlyError(error))
     onDone()
@@ -533,16 +540,16 @@ function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'cu
     return (
       <div className="text-sm">
         <h3 className="font-semibold">{heading}</h3>
-        {image ? <img src={image} alt={`${heading} signature`} className="mt-1 h-16 max-w-full object-contain" /> : <p className="mt-1 h-16 text-slate-400">Signature</p>}
+        {image ? <img src={image} alt={tr("{{heading}} signature", { heading: heading })} className="mt-1 h-16 max-w-full object-contain" /> : <p className="mt-1 h-16 text-slate-400">{tr("Signature")}</p>}
         <div className="border-t border-slate-900 pt-1">
-          <p>Printed name: {who === 'tech' ? cert.tech_name : cert.customer_name}</p>
-          {who === 'customer' && <p>Title: {cert.customer_title ?? '—'}</p>}
-          <p>Date: {showDate(who === 'tech' ? cert.tech_sign_date : cert.customer_sign_date)}</p>
+          <p>{tr("Printed name:")} {who === 'tech' ? cert.tech_name : cert.customer_name}</p>
+          {who === 'customer' && <p>{tr("Title:")} {cert.customer_title ?? '—'}</p>}
+          <p>{tr("Date:")} {showDate(who === 'tech' ? cert.tech_sign_date : cert.customer_sign_date)}</p>
         </div>
         {cert.status === 'draft' && (
           <Can permission="service.certificate.sign" level="edit">
             <button type="button" className="mt-1 text-xs text-red-700 underline" onClick={clear}>
-              Remove Signature
+              {tr("Remove Signature")}
             </button>
           </Can>
         )}
@@ -553,22 +560,22 @@ function SignatureBlock({ who, cert, image, dirty, onDone }: { who: 'tech' | 'cu
   return (
     <div className="space-y-2 text-sm">
       <h3 className="font-semibold">{heading}</h3>
-      <Can permission="service.certificate.sign" level="edit" fallback={<p className="text-slate-500">Not signed yet.</p>}>
+      <Can permission="service.certificate.sign" level="edit" fallback={<p className="text-slate-500">{tr("Not signed yet.")}</p>}>
         {/* The technician may use their saved signature; customers always draw theirs. */}
         <SignatureInput ref={pad} disabled={busy} allowSaved={who === 'tech'} />
-        <Field label="Printed name" htmlFor={`sig-${who}-name`}>
+        <Field label={tr("Printed name")} htmlFor={`sig-${who}-name`}>
           <input id={`sig-${who}-name`} className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
         </Field>
         {who === 'customer' && (
-          <Field label="Title" htmlFor="sig-customer-title">
-            <input id="sig-customer-title" className={inputClass} value={title} placeholder="For example Owner" onChange={(e) => setTitle(e.target.value)} />
+          <Field label={tr("Title")} htmlFor="sig-customer-title">
+            <input id="sig-customer-title" className={inputClass} value={title} placeholder={tr("For example Owner")} onChange={(e) => setTitle(e.target.value)} />
           </Field>
         )}
-        <Field label="Date" htmlFor={`sig-${who}-date`}>
+        <Field label={tr("Date")} htmlFor={`sig-${who}-date`}>
           <input id={`sig-${who}-date`} type="date" className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
         <button type="button" className={buttonClass} onClick={sign} disabled={busy}>
-          {busy ? 'Saving…' : `Sign as ${heading}`}
+          {busy ? tr("Saving…") : tr("Sign as {{heading}}", { heading: heading })}
         </button>
       </Can>
     </div>

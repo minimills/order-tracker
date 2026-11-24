@@ -1,6 +1,7 @@
 // @permission-scope dashboard.charts
 import { useState } from 'react'
 import { showNumber, targetState, type ChartPoint, type ChartResult, type ChartType, type Target } from '../../lib/dashboardCharts'
+import { tr } from '../../i18n'
 
 // Colours checked for colour-blind safety (the palette of the other charts).
 const BLUE = '#2a78d6'
@@ -17,7 +18,9 @@ function slices(points: ChartPoint[]) {
   const pos = points.filter((p) => p.value > 0)
   if (pos.length <= 8) return pos
   const sorted = [...pos].sort((a, b) => b.value - a.value)
-  return [...sorted.slice(0, 7), { label: 'Other', value: sorted.slice(7).reduce((s, p) => s + p.value, 0) }]
+  return [...sorted.slice(0, 7), { get label() {
+    return tr("Other")
+  }, value: sorted.slice(7).reduce((s, p) => s + p.value, 0) }]
 }
 
 const polar = (cx: number, cy: number, r: number, deg: number) => {
@@ -57,8 +60,8 @@ export default function ChartView({ title, type, result, target, print = false, 
     )
   }
 
-  if (!isGauge && points.length === 0) return <p className="py-8 text-center text-sm text-slate-500">{result.note && !headline ? result.note : 'Nothing to show for these dates.'}</p>
-  if (isGauge && !headline) return <p className="py-8 text-center text-sm text-slate-500">This chart has no single number for a gauge. Choose another form.</p>
+  if (!isGauge && points.length === 0) return <p className="py-8 text-center text-sm text-slate-500">{result.note && !headline ? result.note : tr("Nothing to show for these dates.")}</p>
+  if (isGauge && !headline) return <p className="py-8 text-center text-sm text-slate-500">{tr("This chart has no single number for a gauge. Choose another form.")}</p>
 
   const hover = (i: number) => ({
     onMouseEnter: () => setActive(i),
@@ -137,7 +140,7 @@ export default function ChartView({ title, type, result, target, print = false, 
   } else if (type === 'pie') {
     const parts = slices(points)
     const total = parts.reduce((s, p) => s + p.value, 0)
-    if (!total) return <p className="py-8 text-center text-sm text-slate-500">Nothing to show for these dates.</p>
+    if (!total) return <p className="py-8 text-center text-sm text-slate-500">{tr("Nothing to show for these dates.")}</p>
     // Where each slice starts and ends, in degrees.
     const ends = parts.map((_, i) => (parts.slice(0, i + 1).reduce((a, x) => a + x.value, 0) / total) * 360)
     body = (
@@ -212,11 +215,11 @@ export default function ChartView({ title, type, result, target, print = false, 
             <span className="h-3 w-3 rounded-full" style={{ background: STATUS[state] }} aria-hidden="true" />
             {STATUS_WORD[state]}
             <span className="font-normal text-slate-600">
-              (green {target.good === 'low' ? 'up to' : 'from'} {showNumber(target.green)}, amber {target.good === 'low' ? 'up to' : 'from'} {showNumber(target.amber)})
+              {tr("(green")} {target.good === 'low' ? tr("up to") : tr("from")} {showNumber(target.green)}{tr(", amber")} {target.good === 'low' ? tr("up to") : tr("from")} {showNumber(target.amber)})
             </span>
           </p>
         )}
-        {type === 'gauge_targets' && !target && <p className="mt-1 text-xs text-slate-500">No targets are set for this chart yet (Admin → Dashboard Charts).</p>}
+        {type === 'gauge_targets' && !target && <p className="mt-1 text-xs text-slate-500">{tr("No targets are set for this chart yet (Admin → Dashboard Charts).")}</p>}
       </div>
     )
   }
@@ -243,7 +246,7 @@ export default function ChartView({ title, type, result, target, print = false, 
       {!print && points.length > 0 && type !== 'table' && (
         <div className="mb-1 flex justify-end">
           <button type="button" className="text-xs underline" aria-pressed={table} onClick={() => setTable(!table)}>
-            {table ? 'Show as Chart' : 'Show as Table'}
+            {table ? tr("Show as Chart") : tr("Show as Table")}
           </button>
         </div>
       )}

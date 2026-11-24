@@ -13,6 +13,7 @@ import { useDepartments } from '../../lib/useDepartments'
 import { CHART_SETTINGS_DEFAULT, loadChartSettings } from '../../lib/dashboardCharts'
 import { HEALTH_DIRECTIONS, healthFor, healthValueText, healthWidgets, healthWords, WIDGET_COLOURS, WIDGETS, widgetAllowed, widgetDef, widgetTitle, type Health, type Widget } from '../../lib/widgets'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 /** Add Widget: only the widgets this person is allowed to see (the template editor offers all). */
 export function WidgetLibraryDialog({ onAdd, onClose, showAll }: { have?: string[]; onAdd: (key: string) => void; onClose: () => void; showAll?: boolean }) {
@@ -23,7 +24,7 @@ export function WidgetLibraryDialog({ onAdd, onClose, showAll }: { have?: string
   const groups = [...new Set(list.map((w) => w.group))]
   return (
     <Modal
-      title="Add a Widget"
+      title={tr("Add a Widget")}
       wide
       onClose={onClose}
       footer={
@@ -32,8 +33,8 @@ export function WidgetLibraryDialog({ onAdd, onClose, showAll }: { have?: string
         </button>
       }
     >
-      <input aria-label="Search widgets" placeholder="Search widgets" className={`${inputClass} mb-3`} value={q} onChange={(e) => setQ(e.target.value)} />
-      {groups.length === 0 && <p className="text-sm text-slate-500">No widgets match.</p>}
+      <input aria-label={tr("Search widgets")} placeholder={tr("Search widgets")} className={`${inputClass} mb-3`} value={q} onChange={(e) => setQ(e.target.value)} />
+      {groups.length === 0 && <p className="text-sm text-slate-500">{tr("No widgets match.")}</p>}
       <div className="space-y-4">
         {groups.map((g) => (
           <section key={g}>
@@ -55,7 +56,7 @@ export function WidgetLibraryDialog({ onAdd, onClose, showAll }: { have?: string
                         setAdded([...added, w.key])
                       }}
                     >
-                      {added.includes(w.key) ? 'Add Again' : ACTION.add}
+                      {added.includes(w.key) ? tr("Add Again") : ACTION.add}
                     </button>
                   </li>
                 ))}
@@ -108,7 +109,7 @@ export function WidgetSettingsDialog({
 
   return (
     <Modal
-      title={`Widget Settings: ${widgetTitle(widget)}`}
+      title={tr("Widget Settings: {{widgetTitle}}", { widgetTitle: widgetTitle(widget) })}
       onClose={onClose}
       footer={
         <>
@@ -122,12 +123,12 @@ export function WidgetSettingsDialog({
       }
     >
       <div className="space-y-3 text-sm">
-        <Field label="Title" htmlFor="ws-title" hint={`Empty = “${def.title}”.`}>
+        <Field label={tr("Title")} htmlFor="ws-title" hint={tr("Empty = “{{title}}”.", { title: def.title })}>
           <input id="ws-title" className={inputClass} maxLength={60} value={w.title ?? ''} onChange={(e) => setW({ ...w, title: e.target.value })} />
         </Field>
         {displays.length > 1 && (
           <Can permission="dashboard.charts.form">
-            <Field label="Form" htmlFor="ws-form">
+            <Field label={tr("Form")} htmlFor="ws-form">
               <select id="ws-form" className={inputClass} value={w.display ?? displays[0]} onChange={(e) => setW({ ...w, display: e.target.value as ChartType })}>
                 {CHART_TYPES.filter((t) => displays.includes(t.key)).map((t) => (
                   <option key={t.key} value={t.key}>
@@ -136,12 +137,12 @@ export function WidgetSettingsDialog({
                 ))}
               </select>
             </Field>
-            {w.display === 'gauge_targets' && <p className="text-xs text-slate-500">The red, amber and green targets are set by an admin in Admin → Dashboard Charts.</p>}
+            {w.display === 'gauge_targets' && <p className="text-xs text-slate-500">{tr("The red, amber and green targets are set by an admin in Admin → Dashboard Charts.")}</p>}
           </Can>
         )}
         {def.range && (
           <Can permission="dashboard.charts.dates">
-            <Field label="Dates" htmlFor="ws-range">
+            <Field label={tr("Dates")} htmlFor="ws-range">
               <select id="ws-range" className={inputClass} value={range} onChange={(e) => setW({ ...w, range: e.target.value as RangeKey })}>
                 {RANGES.map((r) => (
                   <option key={r.key} value={r.key}>
@@ -152,27 +153,27 @@ export function WidgetSettingsDialog({
             </Field>
             {range === 'custom' && (
               <div className="grid grid-cols-2 gap-2">
-                <Field label="From" htmlFor="ws-from">
+                <Field label={tr("From")} htmlFor="ws-from">
                   <input id="ws-from" type="date" className={inputClass} value={w.from ?? ''} onChange={(e) => setW({ ...w, from: e.target.value })} />
                 </Field>
-                <Field label="To" htmlFor="ws-to">
+                <Field label={tr("To")} htmlFor="ws-to">
                   <input id="ws-to" type="date" className={inputClass} value={w.to ?? ''} onChange={(e) => setW({ ...w, to: e.target.value })} />
                 </Field>
               </div>
             )}
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={!!w.compare} onChange={(e) => setW({ ...w, compare: e.target.checked })} />
-              Compare with the same dates last year
+              {tr("Compare with the same dates last year")}
             </label>
           </Can>
         )}
         {f.length > 0 && (
           <Can permission="dashboard.widget.filters">
             <fieldset className="space-y-2">
-              <legend className="font-medium">Filters</legend>
+              <legend className="font-medium">{tr("Filters")}</legend>
               {f.includes('department') && (
-                <select aria-label="Department" className={inputClass} value={w.filters?.department ?? ''} onChange={(e) => setF('department', e.target.value)}>
-                  <option value="">Every department</option>
+                <select aria-label={tr("Department")} className={inputClass} value={w.filters?.department ?? ''} onChange={(e) => setF('department', e.target.value)}>
+                  <option value="">{tr("Every department")}</option>
                   {departments
                     .filter((d) => !d.archived)
                     .map((d) => (
@@ -183,8 +184,8 @@ export function WidgetSettingsDialog({
                 </select>
               )}
               {f.includes('machineType') && (
-                <select aria-label="Machine type" className={inputClass} value={w.filters?.machineType ?? ''} onChange={(e) => setF('machineType', e.target.value)}>
-                  <option value="">Every machine type</option>
+                <select aria-label={tr("Machine type")} className={inputClass} value={w.filters?.machineType ?? ''} onChange={(e) => setF('machineType', e.target.value)}>
+                  <option value="">{tr("Every machine type")}</option>
                   {opts.types.map((t) => (
                     <option key={t} value={t}>
                       {t}
@@ -193,8 +194,8 @@ export function WidgetSettingsDialog({
                 </select>
               )}
               {f.includes('country') && (
-                <select aria-label="Customer country" className={inputClass} value={w.filters?.country ?? ''} onChange={(e) => setF('country', e.target.value)}>
-                  <option value="">Every country</option>
+                <select aria-label={tr("Customer country")} className={inputClass} value={w.filters?.country ?? ''} onChange={(e) => setF('country', e.target.value)}>
+                  <option value="">{tr("Every country")}</option>
                   {opts.countries.map((c) => (
                     <option key={c} value={c}>
                       {c}
@@ -203,8 +204,8 @@ export function WidgetSettingsDialog({
                 </select>
               )}
               {f.includes('board') && (
-                <select aria-label="Board" className={inputClass} value={w.filters?.board ?? ''} onChange={(e) => setF('board', e.target.value)}>
-                  <option value="">{def.kind === 'list' ? 'Every board' : 'Choose a board'}</option>
+                <select aria-label={tr("Board")} className={inputClass} value={w.filters?.board ?? ''} onChange={(e) => setF('board', e.target.value)}>
+                  <option value="">{def.kind === 'list' ? tr("Every board") : tr("Choose a board")}</option>
                   {opts.boards.map((b) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
@@ -216,13 +217,13 @@ export function WidgetSettingsDialog({
           </Can>
         )}
         {def.limit && (
-          <Field label="Lines to show" htmlFor="ws-limit">
+          <Field label={tr("Lines to show")} htmlFor="ws-limit">
             <input id="ws-limit" type="number" min={1} max={50} className={`${narrowInputClass} w-24`} value={w.limit ?? def.limit} onChange={(e) => setW({ ...w, limit: Math.max(1, Math.min(50, Number(e.target.value) || def.limit!)) })} />
           </Field>
         )}
         <Can permission="dashboard.widget.colour">
           <fieldset>
-            <legend className="mb-1 font-medium">Colour</legend>
+            <legend className="mb-1 font-medium">{tr("Colour")}</legend>
             <div className="flex flex-wrap gap-2">
               {WIDGET_COLOURS.map((c) => (
                 <button
@@ -242,17 +243,17 @@ export function WidgetSettingsDialog({
         {judged && (
           <Can permission="dashboard.widget.health">
             <fieldset className="space-y-2" data-setting="widget-health">
-              <legend className="font-medium">Good and Bad Colours</legend>
+              <legend className="font-medium">{tr("Good and Bad Colours")}</legend>
               <p className="text-xs text-slate-500">
-                The widget turns green or red by {healthValueText(widget.key)}. Company setting: {HEALTH_DIRECTIONS.find((d) => d.value === shared.direction)?.label.toLowerCase()}. {healthWords(shared)}
+                {tr("The widget turns green or red by")} {healthValueText(widget.key)}{tr(". Company setting:")} {HEALTH_DIRECTIONS.find((d) => d.value === shared.direction)?.label.toLowerCase()}. {healthWords(shared)}
               </p>
               <select
-                aria-label="Good and bad colours"
+                aria-label={tr("Good and bad colours")}
                 className={inputClass}
                 value={w.health ? w.health.direction : ''}
                 onChange={(e) => setW({ ...w, health: e.target.value ? { ...(w.health ?? shared), direction: e.target.value as Health['direction'] } : undefined })}
               >
-                <option value="">Use the company setting</option>
+                <option value="">{tr("Use the company setting")}</option>
                 {HEALTH_DIRECTIONS.map((d) => (
                   <option key={d.value} value={d.value}>
                     {d.label}
@@ -262,11 +263,11 @@ export function WidgetSettingsDialog({
               {w.health && w.health.direction !== 'none' && (
                 <div className="flex flex-wrap items-center gap-2">
                   <label className="flex items-center gap-1">
-                    Green {w.health.direction === 'low' ? 'below' : 'above'}
+                    {tr("Green")} {w.health.direction === 'low' ? tr("below") : tr("above")}
                     <input type="number" step="any" className={`${narrowInputClass} w-24`} value={w.health.good} onChange={(e) => setW({ ...w, health: { ...w.health!, good: Number(e.target.value) || 0 } })} />
                   </label>
                   <label className="flex items-center gap-1">
-                    Red {w.health.direction === 'low' ? 'above' : 'below'}
+                    {tr("Red")} {w.health.direction === 'low' ? tr("above") : tr("below")}
                     <input type="number" step="any" className={`${narrowInputClass} w-24`} value={w.health.bad} onChange={(e) => setW({ ...w, health: { ...w.health!, bad: Number(e.target.value) || 0 } })} />
                   </label>
                 </div>
@@ -276,17 +277,17 @@ export function WidgetSettingsDialog({
         )}
         {size && (
           <fieldset>
-            <legend className="mb-1 font-medium">Size on this screen</legend>
+            <legend className="mb-1 font-medium">{tr("Size on this screen")}</legend>
             <div className="flex flex-wrap items-center gap-2">
               <label className="flex items-center gap-1">
-                Width
+                {tr("Width")}
                 <input type="number" min={1} max={cols} className={`${narrowInputClass} w-20`} value={sz.w} onChange={(e) => setSz({ ...sz, w: Math.max(1, Math.min(cols, Number(e.target.value) || 1)) })} />
-                of {cols} columns
+                {tr("of")} {cols} {tr("columns")}
               </label>
               <label className="flex items-center gap-1">
-                Height
+                {tr("Height")}
                 <input type="number" min={1} max={20} className={`${narrowInputClass} w-20`} value={sz.h} onChange={(e) => setSz({ ...sz, h: Math.max(1, Math.min(20, Number(e.target.value) || 1)) })} />
-                rows
+                {tr("rows")}
               </label>
             </div>
           </fieldset>
@@ -310,12 +311,12 @@ export function ShareDashboardDialog({ dashboardId, name, onClose }: { dashboard
     const { data, error } = await supabase.rpc('share_dashboard', { p_id: dashboardId, p_emails: chosen })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`A copy of “${name}” was given to ${data} ${data === 1 ? 'person' : 'people'}.`)
+    toast.success(tr("A copy of “{{name}}” was given to {{data}} {{value}}.", { name: name, data: data, value: data === 1 ? 'person' : 'people' }))
     onClose()
   }
   return (
     <Modal
-      title="Share a Copy of This Dashboard"
+      title={tr("Share a Copy of This Dashboard")}
       onClose={onClose}
       busy={busy}
       footer={
@@ -324,14 +325,14 @@ export function ShareDashboardDialog({ dashboardId, name, onClose }: { dashboard
             {ACTION.cancel}
           </button>
           <button type="button" className={buttonClass} disabled={busy || chosen.length === 0} onClick={share}>
-            Share ({chosen.length})
+            {tr("Share (")}{chosen.length})
           </button>
         </>
       }
     >
-      <p className="mb-2 text-sm text-slate-600">Each person gets their own copy of “{name}”. They only see the widgets they are allowed to see, and their changes do not change yours.</p>
+      <p className="mb-2 text-sm text-slate-600">{tr("Each person gets their own copy of “")}{name}{tr("”. They only see the widgets they are allowed to see, and their changes do not change yours.")}</p>
       {people.length === 0 ? (
-        <p className="text-sm text-slate-500">Nobody else can open the dashboard yet.</p>
+        <p className="text-sm text-slate-500">{tr("Nobody else can open the dashboard yet.")}</p>
       ) : (
         <ul className="max-h-72 space-y-1 overflow-y-auto text-sm">
           {people.map((p) => (
@@ -354,7 +355,7 @@ export function PrintDashboardDialog({ widgets, name, onPrint, onClose }: { widg
   const [ids, setIds] = useState(widgets.filter((w) => widgetDef(w.key)?.kind !== 'note').map((w) => w.id))
   return (
     <Modal
-      title="Print Dashboard"
+      title={tr("Print Dashboard")}
       onClose={onClose}
       footer={
         <>
@@ -362,13 +363,13 @@ export function PrintDashboardDialog({ widgets, name, onPrint, onClose }: { widg
             {ACTION.cancel}
           </button>
           <button type="button" className={buttonClass} disabled={!ids.length} onClick={() => onPrint(title, ids)}>
-            Open Printable Page
+            {tr("Open Printable Page")}
           </button>
         </>
       }
     >
       <div className="space-y-3 text-sm">
-        <Field label="Report title" htmlFor="pd-title">
+        <Field label={tr("Report title")} htmlFor="pd-title">
           <input id="pd-title" className={inputClass} value={title} onChange={(e) => setTitle(e.target.value)} />
         </Field>
         <div className="flex gap-3">

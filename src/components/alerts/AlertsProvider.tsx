@@ -8,6 +8,7 @@ import { fetchAll } from '../../lib/fetchAll'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { usePreferences } from '../../lib/preferences'
+import { tr } from '../../i18n'
 
 const RECHECK_MS = 10 * 60 * 1000 // every 10 minutes
 const MIN_GAP_MS = 20 * 1000 // don't re-check more often than this on page changes
@@ -63,14 +64,18 @@ export default function AlertsProvider({ children }: { children: ReactNode }) {
               toast.error(t.title, {
                 description: t.detail,
                 duration: 10000,
-                action: opensOrders ? { label: 'Open', onClick: () => navigate(`/orders/${a.order_id}`) } : undefined,
+                action: opensOrders ? { get label() {
+    return tr("Open")
+  }, onClick: () => navigate(`/orders/${a.order_id}`) } : undefined,
               }),
             i * 300,
           )
         })
         if (red.length > MAX_OPENING_TOASTS) {
-          toast.error(`…and ${red.length - MAX_OPENING_TOASTS} more overdue or due today`, {
-            description: 'Open Alerts at the top of the page to see them all.',
+          toast.error(tr("…and {{value}} more overdue or due today", { value: red.length - MAX_OPENING_TOASTS }), {
+            get description() {
+    return tr("Open Alerts at the top of the page to see them all.")
+  },
             duration: 10000,
           })
         }

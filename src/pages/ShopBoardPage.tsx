@@ -19,6 +19,7 @@ import { supabase } from '../lib/supabase'
 import type { OrderSummaryRow } from '../lib/types'
 import SerialNumber from '../components/SerialNumber'
 import Icon from '../components/Icon'
+import { tr } from '../i18n'
 
 type Machine = {
   id: string
@@ -153,9 +154,15 @@ export default function ShopBoardPage() {
     .filter(Boolean)
     .join(' · ')
   const VIEWS: { v: ShopBoardView; label: string }[] = [
-    { v: 'rows', label: 'Across' },
-    { v: 'list', label: 'List' },
-    { v: 'cards', label: 'Cards' },
+    { v: 'rows', get label() {
+    return tr("Across")
+  } },
+    { v: 'list', get label() {
+    return tr("List")
+  } },
+    { v: 'cards', get label() {
+    return tr("Cards")
+  } },
   ]
   const field = 'rounded-md border border-slate-300 bg-white px-2 py-1.5 text-sm'
 
@@ -167,9 +174,9 @@ export default function ShopBoardPage() {
             {company.logo && <img src={company.logo} alt="" className="max-h-14" />}
             <div>
               <div className="text-sm font-medium text-slate-600">{company.name}</div>
-              <h1 className="text-3xl font-bold">Shop Board</h1>
+              <h1 className="text-3xl font-bold">{tr("Shop Board")}</h1>
               <p className="text-slate-600">
-                {orders.length} order{orders.length === 1 ? '' : 's'} in the queue · {showDate(todayISO(), 'EEEE, MMMM d, yyyy')}
+                {tr("{{count}} order", { count: orders.length })} {tr("in the queue ·")} {showDate(todayISO(), 'EEEE, MMMM d, yyyy')}
               </p>
             </div>
           </div>
@@ -178,12 +185,12 @@ export default function ShopBoardPage() {
               permission="orders.board"
               fallback={
                 <Link to="/" className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
-                  ← Back
+                  {tr("← Back")}
                 </Link>
               }
             >
               <Link to="/board" className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
-                ← Back to Orders Board
+                {tr("← Back to Orders Board")}
               </Link>
             </Can>
             <Can permission="shop_board.print">
@@ -192,32 +199,32 @@ export default function ShopBoardPage() {
                 onClick={() => window.print()}
                 className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
               >
-                Print
+                {tr("Print")}
               </button>
             </Can>
           </div>
         </div>
 
-        {loading && <p className="text-xl text-slate-500">Loading…</p>}
+        {loading && <p className="text-xl text-slate-500">{tr("Loading…")}</p>}
         {error && <p className="text-xl text-red-700">{error}</p>}
-        {!loading && orders.length === 0 && <p className="text-xl text-slate-500">There are no orders in the shop queue.</p>}
+        {!loading && orders.length === 0 && <p className="text-xl text-slate-500">{tr("There are no orders in the shop queue.")}</p>}
 
         <div className="mb-4 flex flex-wrap items-end gap-3 print:hidden">
           <Can permission="shop_board.filters">
             <label className="text-xs text-slate-600">
-              Search
+              {tr("Search")}
               <input
                 type="search"
                 className={`${field} block w-56`}
-                placeholder="Customer, country or serial"
+                placeholder={tr("Customer, country or serial")}
                 value={fQ}
                 onChange={(e) => setFilter('q', e.target.value)}
               />
             </label>
             <label className="text-xs text-slate-600">
-              Stage
+              {tr("Stage")}
               <select className={`${field} block`} value={fStage} onChange={(e) => setFilter('stage', e.target.value)}>
-                <option value="">All stages in the queue</option>
+                <option value="">{tr("All stages in the queue")}</option>
                 {BOARD_STAGES.map((st) => (
                   <option key={st} value={st}>
                     {label(st)}
@@ -226,26 +233,26 @@ export default function ShopBoardPage() {
               </select>
             </label>
             <label className="text-xs text-slate-600">
-              Orders
+              {tr("Orders")}
               <input
                 className={`${field} block w-36`}
-                placeholder="for example 76, 81"
+                placeholder={tr("for example 76, 81")}
                 value={params.get('orders') ?? ''}
                 onChange={(e) => setFilter('orders', e.target.value)}
               />
             </label>
             <label className="text-xs text-slate-600">
-              Ship date after
+              {tr("Ship date after")}
               <input type="date" className={`${field} block`} value={fAfter} onChange={(e) => setFilter('after', e.target.value)} />
             </label>
             <label className="text-xs text-slate-600">
-              Ship date before
+              {tr("Ship date before")}
               <input type="date" className={`${field} block`} value={fBefore} onChange={(e) => setFilter('before', e.target.value)} />
             </label>
             <label className="text-xs text-slate-600">
-              Machine type
+              {tr("Machine type")}
               <select className={`${field} block`} value={fType} onChange={(e) => setFilter('type', e.target.value)}>
-                <option value="">All machine types</option>
+                <option value="">{tr("All machine types")}</option>
                 {typeNames.map((t) => (
                   <option key={t}>{t}</option>
                 ))}
@@ -253,10 +260,10 @@ export default function ShopBoardPage() {
             </label>
             <label className="flex items-center gap-1.5 pb-2 text-sm">
               <input type="checkbox" className="h-4 w-4" checked={fPassed} onChange={(e) => setFilter('passed', e.target.checked ? '1' : '')} />
-              Ship date passed
+              {tr("Ship date passed")}
             </label>
             <label className="text-xs text-slate-600">
-              Passed by more than (days)
+              {tr("Passed by more than (days)")}
               <input
                 inputMode="numeric"
                 className={`${field} block w-24`}
@@ -266,12 +273,12 @@ export default function ShopBoardPage() {
             </label>
             {filtering && (
               <button type="button" className="pb-2 text-sm underline" onClick={() => setParams(new URLSearchParams(), { replace: true })}>
-                Clear Filters
+                {tr("Clear Filters")}
               </button>
             )}
           </Can>
           <Can permission="shop_board.sort">
-            <div className="ml-auto flex rounded-md border border-slate-300 p-0.5 text-sm" role="radiogroup" aria-label="Order">
+            <div className="ml-auto flex rounded-md border border-slate-300 p-0.5 text-sm" role="radiogroup" aria-label={tr("Order")}>
               {(
                 [
                   ['asc', 'Order # Ascending'],
@@ -292,7 +299,7 @@ export default function ShopBoardPage() {
             </div>
           </Can>
           <Can permission="shop_board.views">
-            <div className="flex rounded-md border border-slate-300 p-0.5 text-sm" role="radiogroup" aria-label="View">
+            <div className="flex rounded-md border border-slate-300 p-0.5 text-sm" role="radiogroup" aria-label={tr("View")}>
               {VIEWS.map((x) => (
                 <button
                   key={x.v}
@@ -310,7 +317,7 @@ export default function ShopBoardPage() {
         </div>
         {filtering && (
           <p className="mb-3 text-lg text-slate-700">
-            Showing {shown.length} of {orders.length} orders: {filterText}
+            {tr("Showing")} {shown.length} {tr("of")} {orders.length} orders: {filterText}
           </p>
         )}
 
@@ -319,24 +326,24 @@ export default function ShopBoardPage() {
             <table className="w-full min-w-[40rem] border-collapse text-left text-base">
               <thead>
                 <tr className="border-b-2 border-slate-900 text-sm text-slate-600">
-                  <th className="py-2 pr-3">Order</th>
+                  <th className="py-2 pr-3">{tr("Order")}</th>
                   <Can permission="shop_board.detail.customer">
-                    <th className="py-2 pr-3">Customer</th>
+                    <th className="py-2 pr-3">{tr("Customer")}</th>
                   </Can>
                   <Can permission="shop_board.detail.stage">
-                    <th className="py-2 pr-3">Stage</th>
+                    <th className="py-2 pr-3">{tr("Stage")}</th>
                   </Can>
                   <Can permission="shop_board.detail.ship_date">
-                    <th className="py-2 pr-3">Ship by</th>
+                    <th className="py-2 pr-3">{tr("Ship by")}</th>
                   </Can>
                   <Can permission="shop_board.detail.voltage">
-                    <th className="py-2 pr-3">Voltage</th>
+                    <th className="py-2 pr-3">{tr("Voltage")}</th>
                   </Can>
                   <Can permission="shop_board.detail.built">
-                    <th className="py-2 pr-3">Built</th>
+                    <th className="py-2 pr-3">{tr("Built")}</th>
                   </Can>
                   <Can permission="shop_board.detail.machines">
-                    <th className="py-2">Machines</th>
+                    <th className="py-2">{tr("Machines")}</th>
                   </Can>
                 </tr>
               </thead>
@@ -368,7 +375,7 @@ export default function ShopBoardPage() {
                         {(machinesByOrder.get(o.id) ?? []).map((m) => (
                           <span key={m.id} className="mr-3 inline-block whitespace-nowrap">
                             {m.machine_types?.name} {m.serial_number && <span className="font-mono font-semibold">{m.serial_number}</span>}
-                            {m.ready && <span className="text-green-700"> (built)</span>}
+                            {m.ready && <span className="text-green-700"> {tr("(built)")}</span>}
                           </span>
                         ))}
                       </td>
@@ -423,14 +430,14 @@ export default function ShopBoardPage() {
                         <span>{label(o.stage)}</span>
                       </Can>
                       <Can permission="shop_board.detail.ship_date">
-                        <span>Ship by {showDate(o.expected_ship_date)}</span>
+                        <span>{tr("Ship by")} {showDate(o.expected_ship_date)}</span>
                       </Can>
                       <Can permission="shop_board.detail.voltage">
-                        <span>Voltage: {o.voltage}</span>
+                        <span>{tr("Voltage:")} {o.voltage}</span>
                       </Can>
                       <Can permission="shop_board.detail.built">
                         <span>
-                          Built {o.machines_ready_count}/{o.machines_count}
+                          {tr("Built")} {o.machines_ready_count}/{o.machines_count}
                         </span>
                       </Can>
                     </div>
@@ -453,7 +460,7 @@ export default function ShopBoardPage() {
                               className={`inline-flex h-7 w-7 shrink-0 items-center justify-center rounded border-2 text-lg font-bold ${
                                 m.ready ? 'border-green-700 bg-green-700 text-white' : 'border-slate-500'
                               }`}
-                              aria-label={m.ready ? 'Built' : 'Not built'}
+                              aria-label={m.ready ? tr("Built") : tr("Not built")}
                             >
                               {m.ready && <Icon name="check" className="h-5 w-5" />}
                             </span>
@@ -476,7 +483,7 @@ export default function ShopBoardPage() {
                             )}
                           </li>
                         ))}
-                        {list.length === 0 && <li className="text-lg text-slate-500">No machines</li>}
+                        {list.length === 0 && <li className="text-lg text-slate-500">{tr("No machines")}</li>}
                       </ul>
                     </Can>
                     <Can permission="shop_board.detail.notes">{o.notes && <RichText value={o.notes} className="mt-2 text-base text-slate-700" />}</Can>

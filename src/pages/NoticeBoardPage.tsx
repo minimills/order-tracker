@@ -30,6 +30,7 @@ import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { useOptionList } from '../lib/useOptionList'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 const EMPTY: BoardData = { notices: [], audience: [], reads: [], reactions: [], comments: [] }
 
@@ -169,13 +170,13 @@ export default function NoticeBoardPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">Notice Board</h1>
+              <h1 className="text-2xl font-semibold">{tr("Notice Board")}</h1>
               <Can permission="notices.board.print">
-                <PrintButton title={view === 'mine' ? 'My Notes' : 'Notice Board'} />
+                <PrintButton title={view === 'mine' ? tr("My Notes") : tr("Notice Board")} />
               </Can>
             </div>
             <p className="mt-1 text-sm text-slate-600">
-              {view === 'mine' ? 'Your own notes. Nobody else can see them.' : 'Notices for the team. Urgent and pinned notices stay at the top.'}
+              {view === 'mine' ? tr("Your own notes. Nobody else can see them.") : tr("Notices for the team. Urgent and pinned notices stay at the top.")}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -186,21 +187,21 @@ export default function NoticeBoardPage() {
                   aria-pressed={onlyNew}
                   className={`rounded-full px-3 py-1 text-sm font-medium ${onlyNew ? 'bg-blue-600 text-white' : 'bg-blue-50 text-blue-800 ring-1 ring-blue-200 hover:bg-blue-100'}`}
                   onClick={() => set({ unread: onlyNew ? null : '1' })}
-                  title={onlyNew ? 'Show every notice again' : 'Show only the notices you had not read'}
+                  title={onlyNew ? tr("Show every notice again") : tr("Show only the notices you had not read")}
                 >
-                  {onlyNew ? 'Show All Notices' : `${newCount} new ${newCount === 1 ? 'notice' : 'notices'}`}
+                  {onlyNew ? tr("Show All Notices") : tr("{{newCount}} new {{value}}", { newCount: newCount, value: newCount === 1 ? tr("notice") : tr("notices") })}
                 </button>
               </Can>
             )}
             {view === 'team' && (
               <Can permission="notices.closures.post" level="edit">
                 <button type="button" className="rounded-md border border-amber-500 bg-amber-50 px-3 py-2 text-sm font-medium text-amber-900 hover:bg-amber-100" onClick={() => setNewClosure(true)}>
-                  Post Closure Alert
+                  {tr("Post Closure Alert")}
                 </button>
               </Can>
             )}
             <Can permission="notices.my_notes" level="edit">
-              <div className="flex rounded-md border border-slate-300 bg-white p-0.5 text-sm" role="tablist" aria-label="Board">
+              <div className="flex rounded-md border border-slate-300 bg-white p-0.5 text-sm" role="tablist" aria-label={tr("Board")}>
                 <button
                   type="button"
                   role="tab"
@@ -208,7 +209,7 @@ export default function NoticeBoardPage() {
                   className={`rounded px-3 py-1.5 ${view === 'team' ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
                   onClick={() => set({ view: null, note: null })}
                 >
-                  Team Board
+                  {tr("Team Board")}
                 </button>
                 <button
                   type="button"
@@ -217,14 +218,14 @@ export default function NoticeBoardPage() {
                   className={`rounded px-3 py-1.5 ${view === 'mine' ? 'bg-slate-900 text-white' : 'hover:bg-slate-100'}`}
                   onClick={() => set({ view: 'mine', notice: null })}
                 >
-                  My Notes
+                  {tr("My Notes")}
                 </button>
               </div>
             </Can>
             {view === 'team' && (
               <Can anyOf={['notices.post.everyone', 'notices.post.department']} level="edit">
                 <button type="button" className={buttonClass} onClick={() => setEditing('new')}>
-                  Post Notice
+                  {tr("Post Notice")}
                 </button>
               </Can>
             )}
@@ -242,7 +243,7 @@ export default function NoticeBoardPage() {
             </Can>
             <div className="flex flex-wrap items-center gap-2">
               <Can permission="notices.archive">
-                <div className="flex gap-1 text-sm" role="tablist" aria-label="Notices">
+                <div className="flex gap-1 text-sm" role="tablist" aria-label={tr("Notices")}>
                   <button
                     type="button"
                     role="tab"
@@ -250,7 +251,7 @@ export default function NoticeBoardPage() {
                     className={`rounded-md px-3 py-1.5 ${tab === 'board' ? 'bg-white font-medium shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:bg-white'}`}
                     onClick={() => set({ tab: null })}
                   >
-                    On the Board
+                    {tr("On the Board")}
                   </button>
                   <button
                     type="button"
@@ -259,33 +260,33 @@ export default function NoticeBoardPage() {
                     className={`rounded-md px-3 py-1.5 ${tab === 'archive' ? 'bg-white font-medium shadow-sm ring-1 ring-slate-200' : 'text-slate-600 hover:bg-white'}`}
                     onClick={() => set({ tab: 'archive' })}
                   >
-                    Archive
+                    {tr("Archive")}
                   </button>
                 </div>
               </Can>
               <Can permission="notices.filters">
                 <div className="flex flex-1 flex-wrap items-center gap-2 sm:justify-end">
                   <label className="relative w-full sm:w-auto">
-                    <span className="sr-only">Search notices</span>
+                    <span className="sr-only">{tr("Search notices")}</span>
                     <Icon name="search" className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
                     <input
                       type="search"
                       className={`${narrowInputClass} w-full pl-8 sm:w-52`}
-                      placeholder="Search notices…"
+                      placeholder={tr("Search notices…")}
                       value={params.get('q') ?? ''}
                       onChange={(e) => set({ q: e.target.value || null })}
                     />
                   </label>
-                  <select aria-label="Category" className={`${narrowInputClass} w-40`} value={cat} onChange={(e) => set({ cat: e.target.value || null })}>
-                    <option value="">All categories</option>
+                  <select aria-label={tr("Category")} className={`${narrowInputClass} w-40`} value={cat} onChange={(e) => set({ cat: e.target.value || null })}>
+                    <option value="">{tr("All categories")}</option>
                     {categories.options.map((c) => (
                       <option key={c} value={c}>
                         {c}
                       </option>
                     ))}
                   </select>
-                  <select aria-label="Priority" className={`${narrowInputClass} w-36`} value={pri} onChange={(e) => set({ pri: e.target.value || null })}>
-                    <option value="">All priorities</option>
+                  <select aria-label={tr("Priority")} className={`${narrowInputClass} w-36`} value={pri} onChange={(e) => set({ pri: e.target.value || null })}>
+                    <option value="">{tr("All priorities")}</option>
                     {(Object.keys(PRIORITY) as Priority[]).map((p) => (
                       <option key={p} value={p}>
                         {PRIORITY[p].label}
@@ -294,7 +295,7 @@ export default function NoticeBoardPage() {
                   </select>
                   <label className="flex items-center gap-1.5 text-sm">
                     <input type="checkbox" className="h-4 w-4" checked={mine} onChange={(e) => set({ mydept: e.target.checked ? '1' : null })} />
-                    For my department
+                    {tr("For my department")}
                   </label>
                 </div>
               </Can>
@@ -303,12 +304,12 @@ export default function NoticeBoardPage() {
             <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
               <div className="min-w-0 flex-1">
                 {loading ? (
-                  <p className="text-sm text-slate-500">Loading…</p>
+                  <p className="text-sm text-slate-500">{tr("Loading…")}</p>
                 ) : tab === 'archive' ? (
-                  <section aria-label="Archive" className="space-y-3">
+                  <section aria-label={tr("Archive")} className="space-y-3">
                     {shown.length === 0 ? (
                       <p className="rounded-lg border border-slate-200 bg-white p-6 text-center text-sm text-slate-500">
-                        {filtering ? 'No archived notices match these filters.' : 'No notices in the archive.'}
+                        {filtering ? tr("No archived notices match these filters.") : tr("No notices in the archive.")}
                       </p>
                     ) : (
                       shown.map((n) => card(n, 'list'))
@@ -324,25 +325,25 @@ export default function NoticeBoardPage() {
                     style={{ backgroundImage: 'var(--board-sheen)' }}
                   >
                     {live.length === 0 && scheduled.length === 0 ? (
-                      <p className="py-16 text-center text-sm text-slate-500">{filtering ? 'No notices match these filters.' : 'There are no notices on the board.'}</p>
+                      <p className="py-16 text-center text-sm text-slate-500">{filtering ? tr("No notices match these filters.") : tr("There are no notices on the board.")}</p>
                     ) : (
                       <div className="space-y-10">
                         {top.length > 0 && (
-                          <section aria-label="Pinned notices">
-                            <h2 className="mb-5 text-xs font-semibold uppercase tracking-wider text-slate-500">Pinned</h2>
+                          <section aria-label={tr("Pinned notices")}>
+                            <h2 className="mb-5 text-xs font-semibold uppercase tracking-wider text-slate-500">{tr("Pinned")}</h2>
                             <div className={grid}>{top.map((n) => card(n, 'board'))}</div>
                           </section>
                         )}
                         {rest.length > 0 && (
-                          <section aria-label="Notices">
-                            {top.length > 0 && <h2 className="mb-5 text-xs font-semibold uppercase tracking-wider text-slate-500">Notices</h2>}
+                          <section aria-label={tr("Notices")}>
+                            {top.length > 0 && <h2 className="mb-5 text-xs font-semibold uppercase tracking-wider text-slate-500">{tr("Notices")}</h2>}
                             <div className={grid}>{rest.map((n) => card(n, 'board'))}</div>
                           </section>
                         )}
                         {scheduled.length > 0 && (
-                          <section aria-label="Scheduled notices" className="border-t border-dashed border-slate-300 pt-6">
-                            <h2 className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">Scheduled</h2>
-                            <p className="mb-5 text-xs text-slate-500">Only the poster and notice managers see these until their start date.</p>
+                          <section aria-label={tr("Scheduled notices")} className="border-t border-dashed border-slate-300 pt-6">
+                            <h2 className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-500">{tr("Scheduled")}</h2>
+                            <p className="mb-5 text-xs text-slate-500">{tr("Only the poster and notice managers see these until their start date.")}</p>
                             <div className={grid}>{scheduled.map((n) => card(n, 'board'))}</div>
                           </section>
                         )}

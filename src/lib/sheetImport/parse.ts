@@ -1,5 +1,6 @@
 import { HEADER_EXTRAS } from './layout'
 import type { Cell, DraftMachine, DraftOrder, Grid, Msg } from './types'
+import { tr } from '../../i18n'
 
 /*
  * Reads the sheet layout into orders and machines (see layout.ts).
@@ -248,7 +249,9 @@ export function parseGrid(grid: Grid): ParseResult {
     const name = cellText(at('B'))
     if (!name) {
       if (!isEmpty(at('C')) || isTick(at('D'))) {
-        msgs.push({ row, level: 'warning', text: `Row has a serial number or check mark but no machine name; it is ignored.` })
+        msgs.push({ row, level: 'warning', get text() {
+    return tr("Row has a serial number or check mark but no machine name; it is ignored.")
+  } })
       }
       return
     }

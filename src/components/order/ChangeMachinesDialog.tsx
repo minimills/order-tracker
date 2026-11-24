@@ -7,6 +7,7 @@ import type { MachineType } from '../../lib/types'
 import ChangeList, { type SerialChange } from '../admin/ChangeList'
 import MachineTypeSearch from './MachineTypeSearch'
 import { buttonClass, inputClass, Modal, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 type Row = { key: number; typeId: string; quantity: string; serial: string }
 type Preview = {
@@ -66,10 +67,10 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
   async function run(apply: boolean) {
     if (!supabase) return
     if (mode.kind === 'add') {
-      if (rows.length === 0) return setError('Add at least one machine using the search box.')
-      if (rows.some((r) => !r.typeId)) return setError('Choose a machine type on every line.')
+      if (rows.length === 0) return setError(tr("Add at least one machine using the search box."))
+      if (rows.some((r) => !r.typeId)) return setError(tr("Choose a machine type on every line."))
       if (rows.some((r) => !/^\d+$/.test(r.quantity) || Number(r.quantity) < 1 || Number(r.quantity) > 50))
-        return setError('Quantity must be 1 to 50.')
+        return setError(tr("Quantity must be 1 to 50."))
     }
     setBusy(true)
     setError(null)
@@ -100,7 +101,7 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
   const footer = (
     <>
       <button type="button" className={secondaryButtonClass} onClick={preview && mode.kind === 'add' ? () => setPreview(null) : onClose} disabled={busy}>
-        {preview && mode.kind === 'add' ? 'Back' : 'Cancel'}
+        {preview && mode.kind === 'add' ? tr("Back") : tr("Cancel")}
       </button>
       {preview ? (
         <button
@@ -109,12 +110,12 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
           onClick={() => run(true)}
           disabled={busy}
         >
-          {busy ? 'Saving…' : mode.kind === 'add' ? 'Add Machines' : 'Remove Machine'}
+          {busy ? tr("Saving…") : mode.kind === 'add' ? tr("Add Machines") : tr("Remove Machine")}
         </button>
       ) : (
         mode.kind === 'add' && (
           <button type="button" className={buttonClass} onClick={() => run(false)} disabled={busy}>
-            {busy ? 'Calculating…' : 'Preview Changes'}
+            {busy ? tr("Calculating…") : tr("Preview Changes")}
           </button>
         )
       )}
@@ -128,11 +129,11 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
           {rows.map((r, i) => (
             <div key={r.key} className="grid grid-cols-[1fr_5rem_auto] items-end gap-2">
               <div className="text-sm">
-                <span className="mb-1 block text-slate-600">Machine type</span>
+                <span className="mb-1 block text-slate-600">{tr("Machine type")}</span>
                 <p className="py-2 font-medium">{types.find((t) => t.id === r.typeId)?.name ?? '—'}</p>
               </div>
               <label className="text-sm">
-                <span className="mb-1 block text-slate-600">How many</span>
+                <span className="mb-1 block text-slate-600">{tr("How many")}</span>
                 <input
                   inputMode="numeric"
                   className={inputClass}
@@ -144,17 +145,17 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
                 type="button"
                 className="pb-2 text-sm text-red-700 underline disabled:text-slate-400 disabled:no-underline"
                 onClick={() => setRows(rows.filter((x) => x.key !== r.key))}
-                aria-label={`Remove line ${i + 1}`}
+                aria-label={tr("Remove line {{value}}", { value: i + 1 })}
               >
                 ✕
               </button>
               {r.quantity === '1' && (
                 <label className="col-span-3 text-xs text-slate-600">
-                  Serial typed by hand (optional, for odd cases; leave empty for the next automatic serial)
+                  {tr("Serial typed by hand (optional, for odd cases; leave empty for the next automatic serial)")}
                   <input
                     className={`${inputClass} mt-1 max-w-48 font-mono uppercase`}
                     value={r.serial}
-                    placeholder="automatic"
+                    placeholder={tr("automatic")}
                     onChange={(e) => setRows(rows.map((x) => (x.key === r.key ? { ...x, serial: e.target.value } : x)))}
                   />
                 </label>
@@ -174,19 +175,19 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
         </div>
       )}
 
-      {mode.kind === 'remove' && !preview && !error && <p className="text-sm text-slate-500">Calculating the changes…</p>}
+      {mode.kind === 'remove' && !preview && !error && <p className="text-sm text-slate-500">{tr("Calculating the changes…")}</p>}
 
       {preview && (
         <div className="space-y-4 text-sm">
           {preview.added.length > 0 && (
             <div>
-              <h3 className="font-medium">New Machines</h3>
+              <h3 className="font-medium">{tr("New Machines")}</h3>
               <ul className="mt-1 space-y-0.5">
                 {preview.added.map((a, i) => (
                   <li key={i}>
                     {a.machine_type}:{' '}
                     <strong className="font-mono">
-                      {a.serial ?? (noSerials ? 'no serial yet (the order is not confirmed)' : 'no serial (this type has no code yet)')}
+                      {a.serial ?? (noSerials ? tr("no serial yet (the order is not confirmed)") : tr("no serial (this type has no code yet)"))}
                     </strong>
                   </li>
                 ))}
@@ -195,35 +196,34 @@ export default function ChangeMachinesDialog({ orderId, orderCode, stage, mode, 
           )}
           {preview.removed.length > 0 && (
             <div>
-              <h3 className="font-medium">Removed from the Order</h3>
+              <h3 className="font-medium">{tr("Removed from the Order")}</h3>
               <ul className="mt-1 space-y-0.5">
                 {preview.removed.map((r, i) => (
                   <li key={i}>
                     {r.machine_type} <span className="font-mono">{r.serial ?? ''}</span>
                     <span className="text-slate-500">
                       {r.built
-                        ? ' — built, so it keeps its serial number'
+                        ? tr(" — built, so it keeps its serial number")
                         : r.serial
-                          ? ' — its serial number is released for other machines'
+                          ? tr(" — its serial number is released for other machines")
                           : ''}
                     </span>
                   </li>
                 ))}
               </ul>
               <p className="mt-1 text-xs text-slate-500">
-                It is archived, not deleted: an administrator can restore it from Admin → Archive.
+                {tr("It is archived, not deleted: an administrator can restore it from Admin → Archive.")}
               </p>
             </div>
           )}
           <div>
-            <h3 className="font-medium">Other Machines</h3>
+            <h3 className="font-medium">{tr("Other Machines")}</h3>
             {preview.serials.length === 0 ? (
-              <p className="mt-1 text-slate-500">No other serial numbers change.</p>
+              <p className="mt-1 text-slate-500">{tr("No other serial numbers change.")}</p>
             ) : (
               <>
                 <p className="mt-1 text-slate-600">
-                  These serial numbers change so that orders earlier in the shop queue keep the lower numbers. Built machines are
-                  never changed.
+                  {tr("These serial numbers change so that orders earlier in the shop queue keep the lower numbers. Built machines are never changed.")}
                 </p>
                 <div className="mt-2">
                   <ChangeList serials={preview.serials} />

@@ -1,3 +1,4 @@
+import { currentLang, tr } from '../i18n'
 // @permission-scope dashboard.charts.print
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
@@ -32,14 +33,14 @@ export default function DashboardPrintPage() {
     <div className="keep-light mx-auto min-h-full max-w-5xl bg-white p-4 text-slate-900 sm:p-6 print:max-w-none print:p-0">
       <div className="mb-4 flex justify-end gap-2 print:hidden">
         <Link to="/dashboard" className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
-          ← Back to the Dashboard
+          {tr("← Back to the Dashboard")}
         </Link>
         <button type="button" onClick={() => window.print()} disabled={widgets.length === 0} className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
-          Print or Save as PDF
+          {tr("Print or Save as PDF")}
         </button>
       </div>
       {widgets.length === 0 ? (
-        <p className="rounded-md bg-amber-50 p-4 text-amber-900">No widgets were chosen. Go back to the Dashboard and select Print.</p>
+        <p className="rounded-md bg-amber-50 p-4 text-amber-900">{tr("No widgets were chosen. Go back to the Dashboard and select Print.")}</p>
       ) : (
         <article className="text-sm">
           <header className="flex items-start justify-between gap-6 border-b-2 border-slate-900 pb-3">
@@ -52,7 +53,7 @@ export default function DashboardPrintPage() {
           </header>
           <h1 className="mt-4 text-2xl font-bold">{report?.title}</h1>
           <p className="mb-4 text-slate-600">
-            Printed {showDate(todayISO())} at {data.loadedAt.toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' })}
+            {tr("Printed")} {showDate(todayISO())} {tr("at")} {data.loadedAt.toLocaleTimeString(currentLang(), { hour: 'numeric', minute: '2-digit', timeZone: 'America/Halifax' })}
           </p>
           {small.length > 0 && (
             <div className="mb-3 grid grid-cols-2 gap-3 sm:grid-cols-4 print:grid-cols-4">

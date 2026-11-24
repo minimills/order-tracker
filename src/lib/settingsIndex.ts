@@ -1,5 +1,6 @@
 import { ADMIN_PAGES, ADMIN_VIEW_ONLY } from './adminPages'
 import type { Level } from './permissions/catalog'
+import { tr } from '../i18n'
 
 /**
  * Everything the settings search (top of Settings and Admin pages) can find.
@@ -21,24 +22,63 @@ export type SettingEntry = {
 }
 
 const MY: SettingEntry[] = [
-  { label: 'Your account and departments', where: 'Settings', keywords: 'email role department name', to: '/settings', find: 'account', permission: 'settings.account' },
-  { label: 'Appearance: Light, Dark, System or Glass', where: 'Settings', keywords: 'theme dark mode night colours glass frosted blur transparent look', to: '/settings', find: 'theme', permission: 'settings.theme', level: 'edit' },
-  { label: 'Start page', where: 'Settings', keywords: 'home first page after sign in', to: '/settings', find: 'start-page', permission: 'settings.start_page', level: 'edit' },
-  { label: 'Units for crate sizes and weights', where: 'Settings', keywords: 'imperial metric inches pounds kg cm', to: '/settings', find: 'units', permission: 'settings.units' },
-  { label: 'Phone calendar link (calendar to app)', where: 'Calendar → Calendar Connection', keywords: 'ical icloud google calendar sync refresh', to: '/calendar', find: 'calendar-import', permission: 'service.calendar.import', level: 'edit' },
-  { label: 'My calendar link (app to phone calendar)', where: 'Calendar → Calendar Connection', keywords: 'ical webcal subscribe apple google outlook calendar feed', to: '/calendar', find: 'calendar-feed', permission: 'service.calendar.sync', level: 'edit' },
-  { label: 'Daily summary: Today’s Agenda and What I Did Today', where: 'Settings', keywords: 'morning evening digest agenda recap email push', to: '/settings', find: 'daily-summary', permission: 'settings.daily_summary', level: 'edit' },
-  { label: 'Email: send from my own address (my sending mailbox)', where: 'Settings', keywords: 'smtp mailbox from address sender reply-to sent folder imap test email password', to: '/settings', find: 'my-email', permission: 'settings.mailbox' },
-  { label: 'Change sign-in email', where: 'Settings', keywords: 'login address account email change', to: '/settings', find: 'change-email', permission: 'settings.change_email', level: 'edit' },
-  { label: 'My signature (upload, replace or remove)', where: 'Settings', keywords: 'sign scan saved signature picture', to: '/settings', find: 'my-signature', permission: 'settings.signature' },
-  { label: 'Chat swipe actions (swipe left / right)', where: 'Settings', keywords: 'archive delete clear hide unread phone conversation list', to: '/settings', find: 'chat-swipe', permission: 'settings.chat_swipe', level: 'edit' },
-  { label: 'Hide my chat status', where: 'Settings', keywords: 'online away presence', to: '/settings', find: 'chat-status', permission: 'settings.chat_status', level: 'edit' },
-  { label: 'Notification settings (in-app, phone push, email, desktop)', where: 'Settings → Notifications', keywords: 'alerts emails push bell switches', to: '/settings/notifications', permission: 'settings.notification_channels' },
-  { label: 'Quiet hours', where: 'Settings → Notifications', keywords: 'night do not disturb phone silent', to: '/settings/notifications', find: 'quiet-hours', permission: 'settings.quiet_hours', level: 'edit' },
-  { label: 'Phone notifications on this device', where: 'Settings → Notifications', keywords: 'push iphone android enable test', to: '/settings/notifications', find: 'phone', permission: 'settings.push', level: 'edit' },
-  { label: 'Desktop notifications', where: 'Settings → Notifications', keywords: 'computer browser pop-ups turn off', to: '/settings/notifications', find: 'desktop', permission: 'settings.notifications' },
-  { label: 'Email: each time or daily summary', where: 'Settings → Notifications', keywords: 'digest once a day', to: '/settings/notifications', find: 'email-mode', permission: 'settings.notification_channels', level: 'edit' },
-  { label: 'My automations (When … If … Then …)', where: 'Automations', keywords: 'automation rule trigger workflow automatic when then', to: '/automations', permission: 'automations' },
+  { get label() {
+    return tr("Your account and departments")
+  }, where: 'Settings', keywords: 'email role department name', to: '/settings', find: 'account', permission: 'settings.account' },
+  { get label() {
+    return tr("Language")
+  }, where: 'Settings', keywords: 'language langue idioma язык sprache french english spanish russian german français español русский deutsch', to: '/settings', find: 'language', permission: 'settings.language', level: 'edit' },
+  { get label() {
+    return tr("Appearance: Light, Dark, System or Glass")
+  }, where: 'Settings', keywords: 'theme dark mode night colours glass frosted blur transparent look', to: '/settings', find: 'theme', permission: 'settings.theme', level: 'edit' },
+  { get label() {
+    return tr("Start page")
+  }, where: 'Settings', keywords: 'home first page after sign in', to: '/settings', find: 'start-page', permission: 'settings.start_page', level: 'edit' },
+  { get label() {
+    return tr("Units for crate sizes and weights")
+  }, where: 'Settings', keywords: 'imperial metric inches pounds kg cm', to: '/settings', find: 'units', permission: 'settings.units' },
+  { get label() {
+    return tr("Phone calendar link (calendar to app)")
+  }, where: 'Calendar → Calendar Connection', keywords: 'ical icloud google calendar sync refresh', to: '/calendar', find: 'calendar-import', permission: 'service.calendar.import', level: 'edit' },
+  { get label() {
+    return tr("My calendar link (app to phone calendar)")
+  }, where: 'Calendar → Calendar Connection', keywords: 'ical webcal subscribe apple google outlook calendar feed', to: '/calendar', find: 'calendar-feed', permission: 'service.calendar.sync', level: 'edit' },
+  { get label() {
+    return tr("Daily summary: Today’s Agenda and What I Did Today")
+  }, where: 'Settings', keywords: 'morning evening digest agenda recap email push', to: '/settings', find: 'daily-summary', permission: 'settings.daily_summary', level: 'edit' },
+  { get label() {
+    return tr("Email: send from my own address (my sending mailbox)")
+  }, where: 'Settings', keywords: 'smtp mailbox from address sender reply-to sent folder imap test email password', to: '/settings', find: 'my-email', permission: 'settings.mailbox' },
+  { get label() {
+    return tr("Change sign-in email")
+  }, where: 'Settings', keywords: 'login address account email change', to: '/settings', find: 'change-email', permission: 'settings.change_email', level: 'edit' },
+  { get label() {
+    return tr("My signature (upload, replace or remove)")
+  }, where: 'Settings', keywords: 'sign scan saved signature picture', to: '/settings', find: 'my-signature', permission: 'settings.signature' },
+  { get label() {
+    return tr("Chat swipe actions (swipe left / right)")
+  }, where: 'Settings', keywords: 'archive delete clear hide unread phone conversation list', to: '/settings', find: 'chat-swipe', permission: 'settings.chat_swipe', level: 'edit' },
+  { get label() {
+    return tr("Hide my chat status")
+  }, where: 'Settings', keywords: 'online away presence', to: '/settings', find: 'chat-status', permission: 'settings.chat_status', level: 'edit' },
+  { get label() {
+    return tr("Notification settings (in-app, phone push, email, desktop)")
+  }, where: 'Settings → Notifications', keywords: 'alerts emails push bell switches', to: '/settings/notifications', permission: 'settings.notification_channels' },
+  { get label() {
+    return tr("Quiet hours")
+  }, where: 'Settings → Notifications', keywords: 'night do not disturb phone silent', to: '/settings/notifications', find: 'quiet-hours', permission: 'settings.quiet_hours', level: 'edit' },
+  { get label() {
+    return tr("Phone notifications on this device")
+  }, where: 'Settings → Notifications', keywords: 'push iphone android enable test', to: '/settings/notifications', find: 'phone', permission: 'settings.push', level: 'edit' },
+  { get label() {
+    return tr("Desktop notifications")
+  }, where: 'Settings → Notifications', keywords: 'computer browser pop-ups turn off', to: '/settings/notifications', find: 'desktop', permission: 'settings.notifications' },
+  { get label() {
+    return tr("Email: each time or daily summary")
+  }, where: 'Settings → Notifications', keywords: 'digest once a day', to: '/settings/notifications', find: 'email-mode', permission: 'settings.notification_channels', level: 'edit' },
+  { get label() {
+    return tr("My automations (When … If … Then …)")
+  }, where: 'Automations', keywords: 'automation rule trigger workflow automatic when then', to: '/automations', permission: 'automations' },
 ]
 
 const A = (page: string) => ADMIN_PAGES.find((p) => p.to === page)!
@@ -88,7 +128,9 @@ const ADMIN_INNER: SettingEntry[] = [
   inner('/admin/company', 'Office email for certificates', 'co-office', 'commissioning'),
   inner('/admin/company', 'Company logo', 'co-logo', 'letterhead picture'),
   inner('/admin/production', 'Office department for production boards', 'prod-office', ''),
-  { label: 'Production assignments: default people per stage', where: 'Admin → Production Assignments', keywords: 'assign assignee default people stage machine type department automatic cards tasks', to: '/admin/production-assignments', permission: 'admin.production_assignments' },
+  { get label() {
+    return tr("Production assignments: default people per stage")
+  }, where: 'Admin → Production Assignments', keywords: 'assign assignee default people stage machine type department automatic cards tasks', to: '/admin/production-assignments', permission: 'admin.production_assignments' },
   inner('/admin/production', 'Production board sharing level', 'prod-level', 'share'),
   inner('/admin/serials', 'Re-sequence serial numbers', 'st-type', 'renumber'),
   inner('/admin/templates', 'Commissioning certificate text', 'tpl-title', 'service report'),

@@ -22,6 +22,7 @@ import { adminUsers } from '../../lib/adminUsers'
 import Can from '../../components/Can'
 import EmployeeDialog from '../../components/timesheets/EmployeeDialog'
 import { useEmployees } from '../../lib/timesheets'
+import { tr } from '../../i18n'
 
 type User = { email: string; name: string | null; role: Role; created_at: string }
 
@@ -100,7 +101,7 @@ export default function UsersPage() {
     const { error: e } = await supabase.from('app_settings').upsert({ key: 'permissions_reviewed', value: { keys } })
     if (e) return toast.error(friendlyError(e))
     setReviewed(new Set(keys))
-    toast.success('Marked as reviewed. Items added to the app later will show a “New” badge again.')
+    toast.success(tr("Marked as reviewed. Items added to the app later will show a “New” badge again."))
   }
 
   /** Permissions from a "Start with" choice: dept:<id>, tpl:<id> or user:<email>. */
@@ -127,8 +128,8 @@ export default function UsersPage() {
     event.preventDefault()
     if (!supabase || adding) return
     const address = email.trim().toLowerCase()
-    if (!emailPattern.test(address)) return setError('Enter a full email address, for example name@minimills.net')
-    if (users.some((u) => u.email === address)) return setError(`${address} already has access to the app.`)
+    if (!emailPattern.test(address)) return setError(tr("Enter a full email address, for example name@minimills.net"))
+    if (users.some((u) => u.email === address)) return setError(tr("{{address}} already has access to the app.", { address: address }))
     // New people start with nothing ticked, unless a starting point was chosen.
     const start = role === 'staff' && isAdmin ? startingPerms(startWith) : null
     // One step on the server: the login (Supabase Auth), the users list,
@@ -148,9 +149,9 @@ export default function UsersPage() {
     // The welcome email (Admin → Email Templates), with the features their permissions give.
     const welcome = await composeWelcome({ email: address, name: name.trim() || null, role }, { ...DEFAULT_PERMS, ...((start?.perms as Perms | undefined) ?? {}) }, company.name)
     const sentWelcome = await sendWelcome(address, welcome.subject, welcome.body)
-    if (!sentWelcome.ok) toast.warning(`The welcome email could not be sent: ${sentWelcome.message} Use “Welcome Email” next to their name to try again.`, { duration: 12000 })
+    if (!sentWelcome.ok) toast.warning(tr("The welcome email could not be sent: {{message}} Use “Welcome Email” next to their name to try again.", { message: sentWelcome.message }), { duration: 12000 })
     if (result.emailed === false) toast.warning(result.message, { duration: 12000 })
-    else toast.success(`${result.message}${sentWelcome.ok ? ' A welcome email was sent too.' : ''}${role === 'staff' && !start ? ' No permissions are allowed yet: select “Permissions” to choose what they can see.' : ''}`, { duration: 8000 })
+    else toast.success(`${result.message}${sentWelcome.ok ? tr(" A welcome email was sent too.") : ''}${role === 'staff' && !start ? tr(" No permissions are allowed yet: select “Permissions” to choose what they can see.") : ''}`, { duration: 8000 })
     setStartWith('')
     setNewDepts([])
     setNewStartPage('')
@@ -162,9 +163,13 @@ export default function UsersPage() {
   }
 
   async function changeEmail(u: User) {
-    const next = await askText(`New sign-in email for ${u.name || u.email}. Their history, departments and permissions move with them, and they sign in with the new address from now on.`, {
-      label: 'New email address',
-      confirmLabel: 'Change Email',
+    const next = await askText(tr("New sign-in email for {{value}}. Their history, departments and permissions move with them, and they sign in with the new address from now on.", { value: u.name || u.email }), {
+      get label() {
+    return tr("New email address")
+  },
+      get confirmLabel() {
+    return tr("Change Email")
+  },
     })
     if (!next?.trim()) return
     setBusyEmail(u.email)
@@ -188,14 +193,14 @@ export default function UsersPage() {
     const { error: e } = await supabase.rpc('set_start_page', { p_email: u.email, p_page: page })
     if (e) return toast.error(friendlyError(e))
     setStartPages((m) => ({ ...m, [u.email]: page }))
-    toast.success(`Start page saved for ${u.email}.`)
+    toast.success(tr("Start page saved for {{email}}.", { email: u.email }))
   }
 
   async function changeRole(u: User, newRole: Role) {
     if (!supabase) return
     const { error: e } = await supabase.from('allowed_users').update({ role: newRole }).eq('email', u.email)
     if (e) return toast.error(friendlyError(e))
-    toast.success(`${u.email} is now ${newRole === 'admin' ? 'an admin (full access)' : 'a user (sees only what is allowed)'}.`)
+    toast.success(tr("{{email}} is now {{value}}.", { email: u.email, value: newRole === 'admin' ? tr("an admin (full access)") : tr("a user (sees only what is allowed)") }))
     load()
   }
 
@@ -213,7 +218,7 @@ export default function UsersPage() {
       const { error: e } = await supabase.from('user_departments').delete().eq('user_email', user.email).in('department_id', drop)
       if (e) return toast.error(friendlyError(e))
     }
-    toast.success(`Departments saved for ${user.email}.`)
+    toast.success(tr("Departments saved for {{email}}.", { email: user.email }))
     setEditingDepts(null)
     load()
   }
@@ -235,7 +240,7 @@ export default function UsersPage() {
             onChange={(e) => set(e.target.checked ? [...chosen, d.id] : chosen.filter((x) => x !== d.id))}
           />
           {d.name}
-          {d.archived && <span className="text-xs text-slate-400">(archived)</span>}
+          {d.archived && <span className="text-xs text-slate-400">{tr("(archived)")}</span>}
         </label>
       ))}
     </div>
@@ -253,35 +258,32 @@ export default function UsersPage() {
 
   return (
     <div className="space-y-6">
-      <AdminPageHeader title="Users">
-        Only people on this list can use the app. Adding someone creates their login and emails them a 6-digit code (they
-        sign in with a code each time, no password; nobody can sign themselves up).{' '}
-        <strong>Admins</strong> have full access. Everyone else (<strong>users</strong>) sees only what is allowed
-        for them under <strong>Permissions</strong>; new users start with no access.
+      <AdminPageHeader title={tr("Users")}>
+        {tr("Only people on this list can use the app. Adding someone creates their login and emails them a 6-digit code (they sign in with a code each time, no password; nobody can sign themselves up).")}{' '}
+        <strong>{tr("Admins")}</strong> {tr("have full access. Everyone else (")}<strong>{tr("users")}</strong>{tr(") sees only what is allowed for them under")} <strong>{tr("Permissions")}</strong>{tr("; new users start with no access.")}
       </AdminPageHeader>
 
       {isAdmin && !loading && CATALOG.some((i) => !reviewed.has(i.key)) && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900">
-          <span className="mr-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-semibold text-white">New</span>
-          {CATALOG.filter((i) => !reviewed.has(i.key)).length} permission item(s) are new since you last reviewed. They
-          are not permitted for anyone until you allow them. Open anyone’s <strong>Permissions</strong> to see them.
+          <span className="mr-1 rounded bg-blue-600 px-1.5 py-0.5 text-xs font-semibold text-white">{tr("New")}</span>
+          {CATALOG.filter((i) => !reviewed.has(i.key)).length} {tr("permission item(s) are new since you last reviewed. They are not permitted for anyone until you allow them. Open anyone’s")} <strong>{tr("Permissions")}</strong> {tr("to see them.")}
         </div>
       )}
 
       <form onSubmit={add} className="rounded-lg border border-slate-200 bg-white p-4" noValidate>
-        <h2 className="mb-3 font-semibold">Add a User</h2>
+        <h2 className="mb-3 font-semibold">{tr("Add a User")}</h2>
         <div className="grid gap-3 md:grid-cols-[2fr_1.5fr_8rem_auto]">
-          <Field label="Email" htmlFor="new-email">
+          <Field label={tr("Email")} htmlFor="new-email">
             <input id="new-email" type="email" className={inputClass} value={email} onChange={(e) => setEmail(e.target.value)} />
           </Field>
-          <Field label="Name (optional)" htmlFor="new-name">
+          <Field label={tr("Name (optional)")} htmlFor="new-name">
             <input id="new-name" className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
           </Field>
           {isAdmin ? (
-            <Field label="Role" htmlFor="new-role">
+            <Field label={tr("Role")} htmlFor="new-role">
               <select id="new-role" className={inputClass} value={role} onChange={(e) => setRole(e.target.value as Role)}>
-                <option value="staff">User</option>
-                <option value="admin">Admin</option>
+                <option value="staff">{tr("User")}</option>
+                <option value="admin">{tr("Admin")}</option>
               </select>
             </Field>
           ) : (
@@ -289,31 +291,31 @@ export default function UsersPage() {
           )}
           <div className="flex items-start md:pt-6">
             <button type="submit" className={buttonClass} disabled={adding}>
-              {adding ? 'Adding…' : 'Add User'}
+              {adding ? tr("Adding…") : tr("Add User")}
             </button>
           </div>
         </div>
         {activeDepartments.length > 0 && (
           <div className="mt-3">
-            <div className="mb-1 text-sm font-medium text-slate-700">Departments</div>
+            <div className="mb-1 text-sm font-medium text-slate-700">{tr("Departments")}</div>
             {deptCheckboxes(newDepts, setNewDepts)}
           </div>
         )}
         {isAdmin && role === 'staff' && (
           <div className="mt-3 max-w-md">
-            <Field label="Start with" htmlFor="new-start" hint="No permissions are allowed unless you choose a starting point. You can adjust them afterwards.">
+            <Field label={tr("Start with")} htmlFor="new-start" hint={tr("No permissions are allowed unless you choose a starting point. You can adjust them afterwards.")}>
               <select id="new-start" className={inputClass} value={startWith} onChange={(e) => setStartWith(e.target.value)}>
-                <option value="">No access granted</option>
-                <optgroup label="Department presets">
+                <option value="">{tr("No access granted")}</option>
+                <optgroup label={tr("Department presets")}>
                   {activeDepartments.map((d) => (
                     <option key={d.id} value={`dept:${d.id}`}>
                       {d.name}
-                      {Object.keys(d.default_permissions ?? {}).length === 0 ? ' (empty)' : ''}
+                      {Object.keys(d.default_permissions ?? {}).length === 0 ? tr(" (empty)") : ''}
                     </option>
                   ))}
                 </optgroup>
                 {templates.length > 0 && (
-                  <optgroup label="Templates">
+                  <optgroup label={tr("Templates")}>
                     {templates.map((t) => (
                       <option key={t.id} value={`tpl:${t.id}`}>
                         {t.name}
@@ -321,7 +323,7 @@ export default function UsersPage() {
                     ))}
                   </optgroup>
                 )}
-                <optgroup label="Copy from">
+                <optgroup label={tr("Copy from")}>
                   {users
                     .filter((u) => u.role === 'staff')
                     .map((u) => (
@@ -335,9 +337,9 @@ export default function UsersPage() {
           </div>
         )}
         <div className="mt-3 max-w-md">
-          <Field label="Start page" htmlFor="new-start-page" hint="The page they see after signing in (if they are allowed to open it).">
+          <Field label={tr("Start page")} htmlFor="new-start-page" hint={tr("The page they see after signing in (if they are allowed to open it).")}>
             <select id="new-start-page" className={inputClass} value={newStartPage} onChange={(e) => setNewStartPage(e.target.value)}>
-              <option value="">Automatic (first page they may open)</option>
+              <option value="">{tr("Automatic (first page they may open)")}</option>
               {startPageChoices(() => true).map((p) => (
                 <option key={p.to} value={p.to}>
                   {p.label}
@@ -348,38 +350,37 @@ export default function UsersPage() {
         </div>
         {error && <p className="mt-2 text-sm font-medium text-red-600">{error}</p>}
         <p className="mt-2 text-xs text-slate-500">
-          Add User creates their login and emails them a 6-digit code. They open https://order.minimills.net and enter their email and
-          the code. No password is needed.
+          {tr("Add User creates their login and emails them a 6-digit code. They open https://order.minimills.net and enter their email and the code. No password is needed.")}
         </p>
       </form>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-semibold">
-          People <span className="text-sm font-normal text-slate-500">({shownUsers.length})</span>
+          {tr("People")} <span className="text-sm font-normal text-slate-500">({shownUsers.length})</span>
         </h2>
-        <select aria-label="Filter by department" className={selectClass} value={filter} onChange={(e) => setFilter(e.target.value)}>
-          <option value="">All departments</option>
+        <select aria-label={tr("Filter by department")} className={selectClass} value={filter} onChange={(e) => setFilter(e.target.value)}>
+          <option value="">{tr("All departments")}</option>
           {activeDepartments.map((d) => (
             <option key={d.id} value={d.id}>
               {d.name}
             </option>
           ))}
-          <option value={NO_DEPARTMENT}>No department</option>
+          <option value={NO_DEPARTMENT}>{tr("No department")}</option>
         </select>
       </div>
 
       <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
-        {loading && <p className="p-4 text-sm text-slate-500">Loading…</p>}
-        {shownUsers.length === 0 && !loading && <p className="p-4 text-sm text-slate-500">No users in this department.</p>}
+        {loading && <p className="p-4 text-sm text-slate-500">{tr("Loading…")}</p>}
+        {shownUsers.length === 0 && !loading && <p className="p-4 text-sm text-slate-500">{tr("No users in this department.")}</p>}
         {shownUsers.map((u) => (
           <div key={u.email} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
             <div className="min-w-0 flex-1">
               <div className="font-medium break-all">
                 {u.email}
-                {u.email === me && <span className="ml-2 text-xs font-normal text-slate-500">(you)</span>}
+                {u.email === me && <span className="ml-2 text-xs font-normal text-slate-500">{tr("(you)")}</span>}
               </div>
               <div className="text-xs text-slate-500">
-                {u.name ? `${u.name} · ` : ''}added {showDate(u.created_at.slice(0, 10))}
+                {u.name ? `${u.name} · ` : ''}{tr("added")} {showDate(u.created_at.slice(0, 10))}
               </div>
               <div className="mt-1 flex flex-wrap items-center gap-1">
                 {(memberships[u.email] ?? [])
@@ -391,36 +392,36 @@ export default function UsersPage() {
                       {d.name}
                     </span>
                   ))}
-                {(memberships[u.email] ?? []).length === 0 && <span className="text-xs text-slate-400">No department</span>}
+                {(memberships[u.email] ?? []).length === 0 && <span className="text-xs text-slate-400">{tr("No department")}</span>}
                 <button
                   type="button"
                   className="text-xs text-blue-700 underline"
                   onClick={() => setEditingDepts({ user: u, chosen: memberships[u.email] ?? [] })}
                 >
-                  Change
+                  {tr("Change")}
                 </button>
               </div>
             </div>
             {isAdmin && u.role === 'staff' && (
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500">
-                  {Object.keys(permsByUser[u.email] ?? {}).length} allowed
+                  {Object.keys(permsByUser[u.email] ?? {}).length} {tr("allowed")}
                 </span>
                 <button type="button" className={secondaryButtonClass} onClick={() => setEditingPerms(u)}>
-                  Permissions
+                  {tr("Permissions")}
                 </button>
               </div>
             )}
-            {u.role === 'admin' && <span className="text-xs text-slate-500">Full access</span>}
+            {u.role === 'admin' && <span className="text-xs text-slate-500">{tr("Full access")}</span>}
             <label className="flex items-center gap-1 text-xs text-slate-600">
-              Start page
+              {tr("Start page")}
               <select
-                aria-label={`Start page for ${u.email}`}
+                aria-label={tr("Start page for {{email}}", { email: u.email })}
                 className={selectClass}
                 value={startPages[u.email] ?? ''}
                 onChange={(e) => changeStartPage(u, e.target.value || null)}
               >
-                <option value="">Automatic</option>
+                <option value="">{tr("Automatic")}</option>
                 {startPageChoices(
                   (p) =>
                     u.role === 'admin' ||
@@ -436,33 +437,33 @@ export default function UsersPage() {
             </label>
             {isAdmin ? (
               <select
-                aria-label={`Role for ${u.email}`}
+                aria-label={tr("Role for {{email}}", { email: u.email })}
                 className={selectClass}
                 value={u.role}
                 onChange={(e) => changeRole(u, e.target.value as Role)}
               >
-                <option value="staff">User</option>
-                <option value="admin">Admin</option>
+                <option value="staff">{tr("User")}</option>
+                <option value="admin">{tr("Admin")}</option>
               </select>
             ) : (
-              <span className="text-xs text-slate-600">{u.role === 'admin' ? 'Admin' : 'User'}</span>
+              <span className="text-xs text-slate-600">{u.role === 'admin' ? tr("Admin") : tr("User")}</span>
             )}
             <button type="button" className="text-sm text-blue-700 underline disabled:opacity-50" disabled={busyEmail === u.email} onClick={() => resend(u)}>
-              {busyEmail === u.email ? 'Sending…' : 'Resend Login Code'}
+              {busyEmail === u.email ? tr("Sending…") : tr("Resend Login Code")}
             </button>
             <button type="button" className="text-sm text-blue-700 underline" onClick={() => setWelcoming(u)}>
-              Welcome Email
+              {tr("Welcome Email")}
             </button>
             <Can permission="admin.employees" level="edit">
               <button type="button" className="text-sm text-blue-700 underline" onClick={() => setEmployeeFor(u)}>
-                {employees.some((e) => e.user_email === u.email) ? 'Employee Setup' : 'Set Up as Employee'}
+                {employees.some((e) => e.user_email === u.email) ? tr("Employee Setup") : tr("Set Up as Employee")}
               </button>
             </Can>
             <button type="button" className="text-sm text-blue-700 underline disabled:opacity-50" disabled={busyEmail === u.email} onClick={() => changeEmail(u)}>
-              Change Email
+              {tr("Change Email")}
             </button>
             <button type="button" className="text-sm text-red-700 underline" onClick={() => setRemoving(u)}>
-              Revoke Access
+              {tr("Revoke Access")}
             </button>
           </div>
         ))}
@@ -506,15 +507,15 @@ export default function UsersPage() {
 
       {editingDepts && (
         <Modal
-          title={`Departments for ${editingDepts.user.email}`}
+          title={tr("Departments for {{email}}", { email: editingDepts.user.email })}
           onClose={() => setEditingDepts(null)}
           footer={
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setEditingDepts(null)}>
-                Cancel
+                {tr("Cancel")}
               </button>
               <button type="button" className={buttonClass} onClick={saveDepartments}>
-                Save Changes
+                {tr("Save Changes")}
               </button>
             </>
           }
@@ -525,18 +526,18 @@ export default function UsersPage() {
             // archived departments only show if the person is still in one
             departments.filter((d) => !d.archived || editingDepts.chosen.includes(d.id)),
           )}
-          <p className="mt-3 text-xs text-slate-500">A user can belong to more than one department.</p>
+          <p className="mt-3 text-xs text-slate-500">{tr("A user can belong to more than one department.")}</p>
         </Modal>
       )}
 
       {removing && (
         <Modal
-          title="Revoke Access?"
+          title={tr("Revoke Access?")}
           onClose={() => setRemoving(null)}
           footer={
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setRemoving(null)}>
-                Cancel
+                {tr("Cancel")}
               </button>
               <button
                 type="button"
@@ -544,16 +545,14 @@ export default function UsersPage() {
                 disabled={busyEmail === removing.email}
                 onClick={() => remove(removing)}
               >
-                {busyEmail === removing.email ? 'Revoking…' : 'Revoke Access'}
+                {busyEmail === removing.email ? tr("Revoking…") : tr("Revoke Access")}
               </button>
             </>
           }
         >
           <p className="text-sm">
-            <strong>{removing.email}</strong> will no longer be able to sign in, see or change anything (their login is
-            blocked and they leave the users list).
-            {removing.email === me && ' This is your own account: you will lose access immediately.'} Their past changes stay in
-            the activity log.
+            <strong>{removing.email}</strong> {tr("will no longer be able to sign in, see or change anything (their login is blocked and they leave the users list).")}
+            {removing.email === me && tr(" This is your own account: you will lose access immediately.")} {tr("Their past changes stay in the activity log.")}
           </p>
         </Modal>
       )}

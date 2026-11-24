@@ -11,6 +11,7 @@ import { usePermissions } from '../../lib/permissions'
 import { friendlyError } from '../../lib/format'
 import { ACTION } from '../../lib/wording'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Hit = { id: string; conversation_id: string; conversation_name: string | null; author_name: string | null; body_text: string; created_at: string }
 const ORDER: ConversationKind[] = ['direct', 'group', 'department', 'user_group', 'channel']
@@ -22,8 +23,8 @@ export function StatusDot({ status }: { status: Status | undefined }) {
   return (
     <span
       className={`inline-block h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white ${status === 'online' ? 'bg-green-500' : 'bg-amber-400'}`}
-      title={status === 'online' ? 'Online' : 'Away'}
-      aria-label={status === 'online' ? 'Online' : 'Away'}
+      title={status === 'online' ? tr("Online") : tr("Away")}
+      aria-label={status === 'online' ? tr("Online") : tr("Away")}
     />
   )
 }
@@ -114,11 +115,15 @@ export default function ChatList({
       })
       return
     }
-    if (!full && action === 'delete' && !(await confirmAction(`Delete “${name}” for you? Its messages disappear from your list only; the others keep them. It comes back if someone writes again.`, { confirmLabel: 'Delete for Me', danger: true }))) return
-    if (!full && action === 'clear' && !(await confirmAction(`Clear the messages of “${name}” for you? The others keep them.`, { confirmLabel: 'Clear Chat', danger: true }))) return
+    if (!full && action === 'delete' && !(await confirmAction(tr("Delete “{{name}}” for you? Its messages disappear from your list only; the others keep them. It comes back if someone writes again.", { name: name }), { get confirmLabel() {
+    return tr("Delete for Me")
+  }, danger: true }))) return
+    if (!full && action === 'clear' && !(await confirmAction(tr("Clear the messages of “{{name}}” for you? The others keep them.", { name: name }), { get confirmLabel() {
+    return tr("Clear Chat")
+  }, danger: true }))) return
     if (!(await setState(r, action))) return
     const undo = STATE_UNDO[action]
-    toast.success(STATE_DONE[action] ?? 'Done.', {
+    toast.success(STATE_DONE[action] ?? tr("Done."), {
       duration: full && undo ? 5000 : undefined,
       action:
         full && undo
@@ -160,19 +165,19 @@ export default function ChatList({
     <>
       <div className="space-y-2 border-b border-slate-200 p-3">
         <div className="flex items-center justify-between gap-2">
-          <h1 className="text-xl font-semibold">Chat</h1>
+          <h1 className="text-xl font-semibold">{tr("Chat")}</h1>
           <Can anyOf={['chat.direct', 'chat.groups']} level="edit">
             <button type="button" className={buttonClass} onClick={() => setNewChat(true)}>
-              New Chat
+              {tr("New Chat")}
             </button>
           </Can>
         </div>
         <Can permission="chat.search">
           <input
             type="search"
-            aria-label="Search messages"
+            aria-label={tr("Search messages")}
             className={inputClass}
-            placeholder="Search all your conversations"
+            placeholder={tr("Search all your conversations")}
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -182,7 +187,7 @@ export default function ChatList({
       <div className="flex-1 overflow-y-auto overscroll-x-contain">
         {hits ? (
           <ul className="divide-y divide-slate-100">
-            {hits.length === 0 && <li className="p-4 text-sm text-slate-500">No messages match.</li>}
+            {hits.length === 0 && <li className="p-4 text-sm text-slate-500">{tr("No messages match.")}</li>}
             {hits.map((h) => (
               <li key={h.id}>
                 <Link to={`/chat/${h.conversation_id}?m=${h.id}`} className="block px-3 py-2 text-sm hover:bg-slate-50" onClick={() => setQ('')}>
@@ -202,7 +207,7 @@ export default function ChatList({
           <>
             {loaded && visible.length === 0 && (
               <p className="p-4 text-sm text-slate-500">
-                {rows.length ? 'No other conversations. Your archived and hidden ones are below.' : 'No conversations yet. Start one with New Chat.'}
+                {rows.length ? tr("No other conversations. Your archived and hidden ones are below.") : tr("No conversations yet. Start one with New Chat.")}
               </p>
             )}
             {ORDER.map((kind) => {
@@ -238,7 +243,7 @@ export default function ChatList({
             {rows.some((r) => r.archived) && (
               <label className="flex items-center gap-2 px-3 py-3 text-xs text-slate-600">
                 <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-                Show archived channels
+                {tr("Show archived channels")}
               </label>
             )}
           </>
@@ -456,7 +461,7 @@ function ConversationItem({
       style={w === null ? undefined : { width: w }}
       onClick={() => press(a)}
     >
-      {full && !extra ? `Release to ${label(a)}` : label(a)}
+      {full && !extra ? tr("Release to {{label}}", { label: label(a) }) : label(a)}
     </button>
   )
 
@@ -493,12 +498,12 @@ function ConversationItem({
           <span className="min-w-0 flex-1">
             <span className="flex items-center gap-1.5">
               <Can permission="chat.presence">{r.other_email && <StatusDot status={presence.get(r.other_email)} />}</Can>
-              <span className={`truncate ${r.unread && r.notify !== 'mute' ? 'font-semibold' : 'font-medium'}`}>{r.name ?? 'Conversation'}</span>
-              {r.notify === 'mute' && <span className="text-xs text-slate-400">muted</span>}
-              {r.archived && <span className="text-xs text-slate-400">archived</span>}
+              <span className={`truncate ${r.unread && r.notify !== 'mute' ? 'font-semibold' : 'font-medium'}`}>{r.name ?? tr("Conversation")}</span>
+              {r.notify === 'mute' && <span className="text-xs text-slate-400">{tr("muted")}</span>}
+              {r.archived && <span className="text-xs text-slate-400">{tr("archived")}</span>}
             </span>
             <span className="block truncate text-xs text-slate-500">
-              {r.last_text ? `${r.kind === 'direct' ? '' : `${r.last_author ?? ''}: `}${r.last_text}` : 'No messages yet'}
+              {r.last_text ? `${r.kind === 'direct' ? '' : `${r.last_author ?? ''}: `}${r.last_text}` : tr("No messages yet")}
             </span>
           </span>
           <span className="flex flex-col items-end gap-1">
@@ -506,7 +511,7 @@ function ConversationItem({
             {r.unread > 0 && (
               <span
                 className={`min-w-5 rounded-full px-1.5 text-center text-[0.6875rem] font-semibold text-white ${r.mentions ? 'bg-red-600' : r.notify === 'mute' ? 'bg-slate-400' : 'bg-blue-600'}`}
-                aria-label={`${r.unread} unread${r.mentions ? `, ${r.mentions} mentioning you` : ''}`}
+                aria-label={tr("{{unread}} unread{{value}}", { unread: r.unread, value: r.mentions ? tr(", {{mentions}} mentioning you", { mentions: r.mentions }) : '' })}
               >
                 {r.mentions ? '@' : ''}
                 {r.unread}
@@ -527,7 +532,7 @@ function ConversationItem({
             </button>
             <span className="relative">
               <button type="button" className="rounded px-1.5 py-0.5 hover:bg-slate-100" aria-expanded={menu} aria-haspopup="menu" onClick={() => !afterDrag() && setMenu((m) => !m)}>
-                More ▾
+                {tr("More ▾")}
               </button>
               {menu && (
                 <span role="menu" className="absolute top-6 right-0 z-20 flex w-40 flex-col rounded-md border border-slate-200 bg-white py-1 shadow-lg" onMouseLeave={() => setMenu(false)}>

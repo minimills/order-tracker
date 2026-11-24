@@ -2,6 +2,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { usePermissions } from '../lib/permissions'
 import type { Level } from '../lib/permissions/catalog'
+import { tr } from '../i18n'
 
 /**
  * A page that needs a permission. Someone without it (for example by typing
@@ -20,7 +21,7 @@ export default function Page({
   children: ReactNode
 }) {
   const { loading, can, canAny } = usePermissions()
-  if (loading) return <div className="p-8 text-center text-slate-500">Loading…</div>
+  if (loading) return <div className="p-8 text-center text-slate-500">{tr("Loading…")}</div>
   const ok = (permission ? can(permission, level) : true) && (anyOf ? canAny(anyOf, level) : true)
   if (!ok) return <NoAccess />
   return <>{children}</>
@@ -29,12 +30,12 @@ export default function Page({
 export function NoAccess() {
   return (
     <div className="mx-auto mt-16 max-w-md rounded-lg border border-slate-200 bg-white p-6 text-center">
-      <h1 className="text-lg font-semibold">You Don’t Have Access</h1>
+      <h1 className="text-lg font-semibold">{tr("You Don’t Have Access")}</h1>
       <p className="mt-2 text-sm text-slate-600">
-        This page is not enabled for your account. If you need it, ask an administrator to allow it in Admin → Users.
+        {tr("This page is not enabled for your account. If you need it, ask an administrator to allow it in Admin → Users.")}
       </p>
       <Link to="/" className="mt-4 inline-block text-sm underline">
-        Go to Your Start Page
+        {tr("Go to Your Start Page")}
       </Link>
     </div>
   )

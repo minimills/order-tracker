@@ -24,6 +24,7 @@ import Icon from '../Icon'
 import RichText from '../RichText'
 import { Modal, secondaryButtonClass } from '../form'
 import EventDialog from './EventDialog'
+import { tr } from '../../i18n'
 
 type EventAudience = { event_id: string; target_type: Audience['target_type']; target: string }
 
@@ -69,21 +70,21 @@ export default function EventsPanel({ highlightId, onMissing }: { highlightId: s
     e.audience_everyone ? 'Everyone' : audience.filter((a) => a.event_id === e.id).map(choices.nameOf).join(', ') || 'Chosen people'
 
   return (
-    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label="Upcoming events">
+    <section className="rounded-lg border border-slate-200 bg-white p-4 shadow-sm" aria-label={tr("Upcoming events")}>
       <div className="flex items-center justify-between gap-2">
         <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-600">
-          <Icon name="calendar" /> Upcoming Events
+          <Icon name="calendar" /> {tr("Upcoming Events")}
         </h2>
         <Can permission="notices.events.post" level="edit">
           <button type="button" className="text-xs font-medium text-slate-700 underline" onClick={() => setEditing('new')}>
-            Add Event
+            {tr("Add Event")}
           </button>
         </Can>
       </div>
       {list === null ? (
-        <p className="mt-3 text-sm text-slate-500">Loading…</p>
+        <p className="mt-3 text-sm text-slate-500">{tr("Loading…")}</p>
       ) : list.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-500">No upcoming events.</p>
+        <p className="mt-3 text-sm text-slate-500">{tr("No upcoming events.")}</p>
       ) : (
         <ul className="mt-2 space-y-1.5">
           {list.map((e) => (
@@ -164,7 +165,7 @@ function EventItem({
       <button type="button" className="w-full px-2.5 py-2 text-left" onClick={onToggle} aria-expanded={open}>
         <span className="block font-medium text-slate-900">{e.title}</span>
         <span className="block text-xs text-slate-500">
-          <span className={`font-semibold ${today ? 'text-red-700' : 'text-slate-700'}`}>{past ? (e.archived ? 'Archived' : 'Past') : when.text}</span>
+          <span className={`font-semibold ${today ? 'text-red-700' : 'text-slate-700'}`}>{past ? (e.archived ? tr("Archived") : tr("Past")) : when.text}</span>
           {' · '}
           {whenText(e)}
           {e.location && ` · ${e.location}`}
@@ -175,18 +176,18 @@ function EventItem({
         <div className="space-y-2 border-t border-slate-100 px-2.5 pb-2.5 pt-2 text-sm">
           {e.description_text && <RichText value={e.description} className="text-sm" />}
           <div className="text-xs text-slate-600">
-            <div>Organizer: {e.organizer_name ?? 'someone who has left'}</div>
-            <div>For: {audienceText}</div>
+            <div>{tr("Organizer:")} {e.organizer_name ?? tr("someone who has left")}</div>
+            <div>{tr("For:")} {audienceText}</div>
           </div>
 
           {e.rsvp_enabled && (
             <div>
               <div className="text-xs text-slate-600">
-                {e.going} going · {e.maybe} maybe · {e.not_going} not going
+                {e.going} {tr("going ·")} {e.maybe} {tr("maybe ·")} {e.not_going} {tr("not going")}
               </div>
               {!past && (
                 <Can permission="notices.events.rsvp" level="edit">
-                  <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label="Your answer">
+                  <div className="mt-1 flex flex-wrap gap-1.5" role="group" aria-label={tr("Your answer")}>
                     {(['going', 'maybe', 'not_going'] as Rsvp[]).map((r) => (
                       <button
                         key={r}
@@ -210,9 +211,9 @@ function EventItem({
           {!past && (
             <Can permission="notices.events.calendar">
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
-                <span className="text-slate-600">Add to My Calendar:</span>
+                <span className="text-slate-600">{tr("Add to My Calendar:")}</span>
                 <button type="button" className="underline" onClick={() => downloadIcs(e, company.name)}>
-                  Apple or Outlook
+                  {tr("Apple or Outlook")}
                 </button>
                 <a href={googleCalendarUrl(e)} target="_blank" rel="noopener noreferrer" className="underline">
                   Google Calendar
@@ -226,7 +227,7 @@ function EventItem({
               <div className="flex flex-wrap gap-x-3 text-xs">
                 {e.rsvp_enabled && (
                   <button type="button" className="underline" onClick={() => setAnswers(true)}>
-                    Who Answered
+                    {tr("Who Answered")}
                   </button>
                 )}
                 {!past && onEdit && (
@@ -261,15 +262,23 @@ function RsvpListDialog({ event, onClose }: { event: CompanyEvent; onClose: () =
   }, [event.id])
   const groups: { title: string; rows: RsvpRow[] }[] = rows
     ? [
-        { title: 'Going', rows: rows.filter((r) => r.response === 'going') },
-        { title: 'Maybe', rows: rows.filter((r) => r.response === 'maybe') },
-        { title: 'Not going', rows: rows.filter((r) => r.response === 'not_going') },
-        { title: 'No answer yet', rows: rows.filter((r) => !r.response) },
+        { get title() {
+    return tr("Going")
+  }, rows: rows.filter((r) => r.response === 'going') },
+        { get title() {
+    return tr("Maybe")
+  }, rows: rows.filter((r) => r.response === 'maybe') },
+        { get title() {
+    return tr("Not going")
+  }, rows: rows.filter((r) => r.response === 'not_going') },
+        { get title() {
+    return tr("No answer yet")
+  }, rows: rows.filter((r) => !r.response) },
       ]
     : []
   return (
     <Modal
-      title="Who Answered"
+      title={tr("Who Answered")}
       onClose={onClose}
       footer={
         <button type="button" className={secondaryButtonClass} onClick={onClose}>
@@ -279,7 +288,7 @@ function RsvpListDialog({ event, onClose }: { event: CompanyEvent; onClose: () =
     >
       <p className="text-sm text-slate-600">{event.title}</p>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
-      {!rows && !error && <p className="mt-3 text-sm text-slate-500">Loading…</p>}
+      {!rows && !error && <p className="mt-3 text-sm text-slate-500">{tr("Loading…")}</p>}
       <div className="mt-3 space-y-3 text-sm">
         {groups.map((g) => (
           <div key={g.title}>
@@ -287,7 +296,7 @@ function RsvpListDialog({ event, onClose }: { event: CompanyEvent; onClose: () =
               {g.title} ({g.rows.length})
             </h3>
             {g.rows.length === 0 ? (
-              <p className="text-xs text-slate-500">Nobody.</p>
+              <p className="text-xs text-slate-500">{tr("Nobody.")}</p>
             ) : (
               <ul className="mt-0.5 text-slate-700">
                 {g.rows.map((r) => (
@@ -330,10 +339,10 @@ export function PastEvents({ search, highlightId }: { search: string; highlightI
   const shown = (list ?? []).filter((e) => !q || `${e.title} ${e.description_text} ${e.location ?? ''} ${e.organizer_name ?? ''}`.toLowerCase().includes(q))
   if (list === null || (list.length === 0 && !q)) return null
   return (
-    <section aria-label="Past events" className="mt-6">
-      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">Past Events</h2>
+    <section aria-label={tr("Past events")} className="mt-6">
+      <h2 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-500">{tr("Past Events")}</h2>
       {shown.length === 0 ? (
-        <p className="rounded-lg border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">No past events match this search.</p>
+        <p className="rounded-lg border border-slate-200 bg-white p-4 text-center text-sm text-slate-500">{tr("No past events match this search.")}</p>
       ) : (
         <ul className="space-y-1.5 rounded-lg border border-slate-200 bg-white p-3">
           {shown.map((e) => (

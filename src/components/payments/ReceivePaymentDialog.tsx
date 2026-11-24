@@ -7,6 +7,7 @@ import { parseMoney } from '../../lib/money'
 import { supabase } from '../../lib/supabase'
 import type { PaymentRow } from '../../lib/types'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 type Props = {
   payment: Pick<PaymentRow, 'id' | 'order_code' | 'payment_type' | 'amount' | 'received_amount' | 'remaining' | 'currency'>
@@ -27,8 +28,8 @@ export default function ReceivePaymentDialog({ payment, onClose, onDone }: Props
 
   async function save() {
     if (!supabase) return
-    if (!date) return setError('Enter the date the money arrived.')
-    if (value === null || Number.isNaN(value) || value <= 0) return setError('Enter the amount received, for example 2500.')
+    if (!date) return setError(tr("Enter the date the money arrived."))
+    if (value === null || Number.isNaN(value) || value <= 0) return setError(tr("Enter the amount received, for example 2500."))
     setSaving(true)
     const { error: e } = await supabase.rpc('record_payment_received', {
       p_payment_id: payment.id,
@@ -43,40 +44,39 @@ export default function ReceivePaymentDialog({ payment, onClose, onDone }: Props
 
   return (
     <Modal
-      title={`Order ${payment.order_code}: ${payment.payment_type} received`}
+      title={tr("Order {{order_code}}: {{payment_type}} received", { order_code: payment.order_code, payment_type: payment.payment_type })}
       onClose={onClose}
       busy={saving}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-            {saving ? 'Saving…' : 'Mark as Received'}
+            {saving ? tr("Saving…") : tr("Mark as Received")}
           </button>
         </>
       }
     >
       <p className="mb-4 text-sm text-slate-600">
-        {formatMoney(payment.amount, payment.currency)} due
-        {payment.received_amount > 0 && <>, {formatMoney(payment.received_amount, payment.currency)} already received</>}.
-        Still to pay: <strong>{formatMoney(payment.remaining, payment.currency)}</strong>.
+        {formatMoney(payment.amount, payment.currency)} {tr("due")}
+        {payment.received_amount > 0 && <>, {formatMoney(payment.received_amount, payment.currency)} {tr("already received")}</>}{tr(". Still to pay:")} <strong>{formatMoney(payment.remaining, payment.currency)}</strong>.
       </p>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Date received" htmlFor="recv-date">
+        <Field label={tr("Date received")} htmlFor="recv-date">
           <input id="recv-date" type="date" className={inputClass} value={date} onChange={(e) => setDate(e.target.value)} />
         </Field>
         <Field
-          label={`Amount received (${payment.currency})`}
+          label={tr("Amount received ({{currency}})", { currency: payment.currency })}
           htmlFor="recv-amount"
           hint={
             after === null
               ? undefined
               : after > 0
-                ? `Part payment: ${formatMoney(after, payment.currency)} will remain outstanding.`
+                ? tr("Part payment: {{formatMoney}} will remain outstanding.", { formatMoney: formatMoney(after, payment.currency) })
                 : after < 0
-                  ? `That is ${formatMoney(-after, payment.currency)} more than the amount owed.`
-                  : 'Paid in full.'
+                  ? tr("That is {{formatMoney}} more than the amount owed.", { formatMoney: formatMoney(-after, payment.currency) })
+                  : tr("Paid in full.")
           }
         >
           <input

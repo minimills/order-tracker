@@ -1,6 +1,7 @@
 import { addDaysISO, showDate, todayISO } from './dates'
 import { showTime } from './service'
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 export type Rsvp = 'going' | 'not_going' | 'maybe'
 export type EventColour = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'teal' | 'slate'
@@ -35,13 +36,27 @@ export type RsvpRow = { email: string; name: string; response: Rsvp | null; resp
 
 /** Category colours (a stripe on the left of the event). */
 export const EVENT_COLOURS: { value: EventColour; label: string; stripe: string }[] = [
-  { value: 'blue', label: 'Blue', stripe: '#2a78d6' },
-  { value: 'green', label: 'Green', stripe: '#2f9e5b' },
-  { value: 'amber', label: 'Amber', stripe: '#d99a12' },
-  { value: 'red', label: 'Red', stripe: '#d64545' },
-  { value: 'purple', label: 'Purple', stripe: '#7c5cd6' },
-  { value: 'teal', label: 'Teal', stripe: '#1f9aa3' },
-  { value: 'slate', label: 'Grey', stripe: '#64748b' },
+  { value: 'blue', get label() {
+    return tr("Blue")
+  }, stripe: '#2a78d6' },
+  { value: 'green', get label() {
+    return tr("Green")
+  }, stripe: '#2f9e5b' },
+  { value: 'amber', get label() {
+    return tr("Amber")
+  }, stripe: '#d99a12' },
+  { value: 'red', get label() {
+    return tr("Red")
+  }, stripe: '#d64545' },
+  { value: 'purple', get label() {
+    return tr("Purple")
+  }, stripe: '#7c5cd6' },
+  { value: 'teal', get label() {
+    return tr("Teal")
+  }, stripe: '#1f9aa3' },
+  { value: 'slate', get label() {
+    return tr("Grey")
+  }, stripe: '#64748b' },
 ]
 export const stripeOf = (c: EventColour | null) => EVENT_COLOURS.find((x) => x.value === c)?.stripe ?? '#cbd5e1'
 
@@ -49,12 +64,24 @@ export const RSVP_LABEL: Record<Rsvp, string> = { going: 'Going', maybe: 'Maybe'
 
 /** Reminder choices (minutes before the start). */
 export const REMINDER_CHOICES: { minutes: number; label: string }[] = [
-  { minutes: 10080, label: '1 week before' },
-  { minutes: 2880, label: '2 days before' },
-  { minutes: 1440, label: '1 day before' },
-  { minutes: 120, label: '2 hours before' },
-  { minutes: 60, label: '1 hour before' },
-  { minutes: 15, label: '15 minutes before' },
+  { minutes: 10080, get label() {
+    return tr("1 week before")
+  } },
+  { minutes: 2880, get label() {
+    return tr("2 days before")
+  } },
+  { minutes: 1440, get label() {
+    return tr("1 day before")
+  } },
+  { minutes: 120, get label() {
+    return tr("2 hours before")
+  } },
+  { minutes: 60, get label() {
+    return tr("1 hour before")
+  } },
+  { minutes: 15, get label() {
+    return tr("15 minutes before")
+  } },
 ]
 
 const dayDiff = (from: string, to: string) => Math.round((Date.parse(`${to}T12:00:00Z`) - Date.parse(`${from}T12:00:00Z`)) / 86_400_000)

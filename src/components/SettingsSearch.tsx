@@ -4,6 +4,7 @@ import { usePermissions } from '../lib/permissions'
 import { searchSettings, type SettingEntry } from '../lib/settingsIndex'
 import Can from './Can'
 import Icon from './Icon'
+import { tr } from '../i18n'
 
 /** "Find a setting" box: type a few words, then open the page and jump to the setting. */
 export default function SettingsSearch({ className = '' }: { className?: string }) {
@@ -31,7 +32,7 @@ export default function SettingsSearch({ className = '' }: { className?: string 
         onBlur={(e) => !box.current?.contains(e.relatedTarget as Node) && setOpen(false)}
       >
         <label className="relative block">
-          <span className="sr-only">Find a setting</span>
+          <span className="sr-only">{tr("Find a setting")}</span>
           <Icon name="search" className="pointer-events-none absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" />
           <input
             type="search"
@@ -39,7 +40,7 @@ export default function SettingsSearch({ className = '' }: { className?: string 
             aria-expanded={open && results.length > 0}
             aria-controls="settings-search-results"
             aria-autocomplete="list"
-            placeholder="Find a setting…"
+            placeholder={tr("Find a setting…")}
             className="w-full rounded-md border border-slate-300 bg-white py-2 pl-8 pr-3 text-sm focus:border-slate-500 focus:outline-none"
             value={q}
             onChange={(e) => {
@@ -68,7 +69,7 @@ export default function SettingsSearch({ className = '' }: { className?: string 
             role="listbox"
             className="absolute right-0 z-30 mt-1 max-h-80 w-full min-w-64 overflow-y-auto rounded-md border border-slate-200 bg-white py-1 text-sm shadow-lg"
           >
-            {results.length === 0 && <li className="px-3 py-2 text-slate-500">No settings match.</li>}
+            {results.length === 0 && <li className="px-3 py-2 text-slate-500">{tr("No settings match.")}</li>}
             {results.map((r, i) => (
               <li key={`${r.to}-${r.find ?? ''}-${r.label}`} role="option" aria-selected={i === active}>
                 <button

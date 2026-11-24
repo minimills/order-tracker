@@ -5,6 +5,7 @@ import { toast } from 'sonner'
 import { secondaryButtonClass } from '../form'
 import { ACTION_STATUS, RUN_STATUS, loadRuns, when, type Run } from '../../lib/automations'
 import { friendlyError } from '../../lib/format'
+import { tr } from '../../i18n'
 
 const TONE: Record<string, string> = { ok: 'text-green-800', skipped: 'text-amber-800', failed: 'text-red-700' }
 
@@ -28,16 +29,16 @@ export default function RunLog({ automationId }: { automationId: string }) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-3 text-sm">
         <label className="flex items-center gap-2 text-slate-600">
-          <input type="checkbox" checked={withTests} onChange={(e) => setWithTests(e.target.checked)} /> Show tests
+          <input type="checkbox" checked={withTests} onChange={(e) => setWithTests(e.target.checked)} /> {tr("Show tests")}
         </label>
         <button type="button" className={`${secondaryButtonClass} ml-auto py-1`} onClick={load}>
-          Refresh
+          {tr("Refresh")}
         </button>
       </div>
       {runs === null ? (
-        <p className="text-sm text-slate-500">Loading…</p>
+        <p className="text-sm text-slate-500">{tr("Loading…")}</p>
       ) : shown.length === 0 ? (
-        <p className="text-sm text-slate-500">This automation has not run yet.</p>
+        <p className="text-sm text-slate-500">{tr("This automation has not run yet.")}</p>
       ) : (
         <ul className="divide-y divide-slate-200 rounded-md border border-slate-200 bg-white">
           {shown.map((r) => {
@@ -47,7 +48,7 @@ export default function RunLog({ automationId }: { automationId: string }) {
                 <div className="flex flex-wrap items-center gap-2">
                   <span className={`rounded px-2 py-0.5 text-xs font-medium ${st.tone}`}>{st.text}</span>
                   <span className="text-slate-500">{when(r.started_at)}</span>
-                  {r.depth > 0 && <span className="text-xs text-slate-500">(started by another automation)</span>}
+                  {r.depth > 0 && <span className="text-xs text-slate-500">{tr("(started by another automation)")}</span>}
                 </div>
                 <p className="min-w-0 break-words text-slate-800">
                   {r.trigger_text}
@@ -63,7 +64,7 @@ export default function RunLog({ automationId }: { automationId: string }) {
                       )}
                     </>
                   )}
-                  {r.actor_name && <span className="text-slate-500"> · by {r.actor_name}</span>}
+                  {r.actor_name && <span className="text-slate-500"> {tr("· by")} {r.actor_name}</span>}
                 </p>
                 {r.message && <p className="text-slate-600">{r.message}</p>}
                 {r.actions.length > 0 && (

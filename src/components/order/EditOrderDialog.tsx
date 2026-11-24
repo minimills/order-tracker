@@ -9,6 +9,7 @@ import { CURRENCIES, type Currency, type OrderSummaryRow } from '../../lib/types
 import { useOptionList } from '../../lib/useOptionList'
 import Can from '../Can'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 type Props = { order: OrderSummaryRow; onClose: () => void; onDone: () => void }
 
@@ -63,9 +64,9 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
     if (may.currency) changes.currency = currency
     if (may.total) {
       const totalNum = parseMoney(total)
-      if (totalNum === null || Number.isNaN(totalNum)) return setError('Enter the order total as a number, for example 12500.')
+      if (totalNum === null || Number.isNaN(totalNum)) return setError(tr("Enter the order total as a number, for example 12500."))
       if (order.down_payment_amount !== null && totalNum < order.down_payment_amount)
-        return setError('The total cannot be less than the down payment. Change the down payment first.')
+        return setError(tr("The total cannot be less than the down payment. Change the down payment first."))
       changes.order_total = totalNum
     }
     // Only send what really changed, so nobody trips over a field they can't edit.
@@ -95,53 +96,53 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
 
   return (
     <Modal
-      title={`Edit Order ${order.order_code}`}
+      title={tr("Edit Order {{order_code}}", { order_code: order.order_code })}
       onClose={onClose}
       busy={saving}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button type="button" className={buttonClass} onClick={save} disabled={saving || nothingToEdit}>
-            {saving ? 'Saving…' : 'Save Changes'}
+            {saving ? tr("Saving…") : tr("Save Changes")}
           </button>
         </>
       }
     >
-      {nothingToEdit && <p className="text-sm text-slate-600">You do not have permission to change any of this order’s fields.</p>}
+      {nothingToEdit && <p className="text-sm text-slate-600">{tr("You do not have permission to change any of this order’s fields.")}</p>}
       <div className="grid gap-4 sm:grid-cols-2">
         <Can permission="order.field.expected_ship_date" level="edit">
-          <Field label="Expected ship date" htmlFor="ed-expected">
+          <Field label={tr("Expected ship date")} htmlFor="ed-expected">
             <input id="ed-expected" type="date" className={inputClass} value={expected} onChange={(e) => setExpected(e.target.value)} />
           </Field>
           {order.expected_ship_date && expected !== order.expected_ship_date && (
-            <Field label="Reason for the new ship date (optional)" htmlFor="ed-reason" hint="Kept in the ship date history. The delay still counts from the original promised date.">
+            <Field label={tr("Reason for the new ship date (optional)")} htmlFor="ed-reason" hint={tr("Kept in the ship date history. The delay still counts from the original promised date.")}>
               <input id="ed-reason" className={inputClass} maxLength={500} value={reason} onChange={(e) => setReason(e.target.value)} />
             </Field>
           )}
         </Can>
         <Can permission="order.field.quote_number" level="edit">
-          <Field label="Quote #" htmlFor="ed-quote">
+          <Field label={tr("Quote #")} htmlFor="ed-quote">
             <input id="ed-quote" className={inputClass} maxLength={60} value={quote} onChange={(e) => setQuote(e.target.value)} />
           </Field>
         </Can>
         <Can permission="order.field.invoice_number" level="edit">
-          <Field label="Invoice #" htmlFor="ed-invoice">
+          <Field label={tr("Invoice #")} htmlFor="ed-invoice">
             <input id="ed-invoice" className={inputClass} maxLength={60} value={invoice} onChange={(e) => setInvoice(e.target.value)} />
           </Field>
         </Can>
         <Can permission="order.field.actual_ship_date" level="edit">
           <Field
-            label="Actual ship date"
+            label={tr("Actual ship date")}
             htmlFor="ed-actual"
-            hint={order.stage !== 'Shipped' ? 'Filled in when the order is marked as shipped.' : undefined}
+            hint={order.stage !== 'Shipped' ? tr("Filled in when the order is marked as shipped.") : undefined}
           >
             <input id="ed-actual" type="date" className={inputClass} value={actual} onChange={(e) => setActual(e.target.value)} />
           </Field>
         </Can>
         <Can permission="order.field.voltage" level="edit">
-          <Field label="Voltage" htmlFor="ed-voltage">
+          <Field label={tr("Voltage")} htmlFor="ed-voltage">
             <select id="ed-voltage" className={inputClass} value={voltage} onChange={(e) => setVoltage(e.target.value)}>
               {voltageOptions.options.map((o) => (
                 <option key={o}>{o}</option>
@@ -150,7 +151,7 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
           </Field>
         </Can>
         <Can permission="order.field.delivery_equipment" level="edit">
-          <Field label="Delivery equipment" htmlFor="ed-delivery">
+          <Field label={tr("Delivery equipment")} htmlFor="ed-delivery">
             <select id="ed-delivery" className={inputClass} value={delivery} onChange={(e) => setDelivery(e.target.value)}>
               {deliveryOptions.options.map((o) => (
                 <option key={o}>{o}</option>
@@ -159,9 +160,9 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
           </Field>
         </Can>
         <Can permission="order.field.freight_type" level="edit">
-          <Field label="Freight type" htmlFor="ed-freight">
+          <Field label={tr("Freight type")} htmlFor="ed-freight">
             <select id="ed-freight" className={inputClass} value={freight} onChange={(e) => setFreight(e.target.value)}>
-              <option value="">Not decided yet</option>
+              <option value="">{tr("Not decided yet")}</option>
               {freightOptions.options.map((o) => (
                 <option key={o}>{o}</option>
               ))}
@@ -169,12 +170,12 @@ export default function EditOrderDialog({ order, onClose, onDone }: Props) {
           </Field>
         </Can>
         <Can permission="order.field.order_total" level="edit">
-          <Field label="Order total" htmlFor="ed-total" hint="The balance updates automatically.">
+          <Field label={tr("Order total")} htmlFor="ed-total" hint={tr("The balance updates automatically.")}>
             <input id="ed-total" inputMode="decimal" className={inputClass} value={total} onChange={(e) => setTotal(e.target.value)} />
           </Field>
         </Can>
         <Can permission="order.field.currency" level="edit">
-          <Field label="Currency" htmlFor="ed-currency">
+          <Field label={tr("Currency")} htmlFor="ed-currency">
             <select
               id="ed-currency"
               className={inputClass}

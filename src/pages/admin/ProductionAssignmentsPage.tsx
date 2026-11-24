@@ -8,6 +8,7 @@ import { confirmAction } from '../../lib/confirm'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { useDepartments } from '../../lib/useDepartments'
+import { tr } from '../../i18n'
 
 type TemplateStage = { id: string; name: string; step: string; sort_order: number }
 type Rule = { id: string; stage_template_id: string; machine_type_id: string | null; assignee_type: 'user' | 'department'; user_email: string | null; department_id: string | null; applies_to: 'card' | 'tasks' | 'both' }
@@ -62,7 +63,7 @@ export default function ProductionAssignmentsPage() {
   async function add(stageId: string) {
     if (!supabase) return
     const d = drafts[stageId] ?? blank
-    if (!d.who) return toast.error(d.kind === 'user' ? 'Choose a person.' : 'Choose a department.')
+    if (!d.who) return toast.error(d.kind === 'user' ? tr("Choose a person.") : tr("Choose a department."))
     setBusy(true)
     const { error } = await supabase.from('production_assignments').insert({
       stage_template_id: stageId,
@@ -74,7 +75,7 @@ export default function ProductionAssignmentsPage() {
       applies_to: d.kind === 'department' ? 'card' : d.applies,
     })
     setBusy(false)
-    if (error) return toast.error(/duplicate|unique/i.test(error.message) ? 'That default is already there.' : friendlyError(error))
+    if (error) return toast.error(/duplicate|unique/i.test(error.message) ? tr("That default is already there.") : friendlyError(error))
     setDrafts((x) => ({ ...x, [stageId]: blank }))
     load()
   }
@@ -88,8 +89,10 @@ export default function ProductionAssignmentsPage() {
     if (!supabase) return
     if (
       !(await confirmAction(
-        'Use these defaults now on every machine card of the open production boards? People added by hand stay on the cards; tasks that already have someone keep them.',
-        { confirmLabel: 'Apply to Open Boards' },
+        tr("Use these defaults now on every machine card of the open production boards? People added by hand stay on the cards; tasks that already have someone keep them."),
+        { get confirmLabel() {
+    return tr("Apply to Open Boards")
+  } },
       ))
     )
       return
@@ -97,24 +100,22 @@ export default function ProductionAssignmentsPage() {
     const { data, error } = await supabase.rpc('apply_production_assignments')
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`Defaults applied to ${data} machine card${data === 1 ? '' : 's'}.`)
+    toast.success(tr("Defaults applied to {{data}} machine card{{value}}.", { data: data, value: data === 1 ? '' : 's' }))
   }
 
   return (
     <div className="space-y-4">
       <AdminPageHeader
-        title="Production Assignments"
+        title={tr("Production Assignments")}
         aside={
           <Can permission="admin.production_assignments" level="edit">
             <button type="button" className={secondaryButtonClass} onClick={applyNow} disabled={busy}>
-              Apply to Open Boards
+              {tr("Apply to Open Boards")}
             </button>
           </Can>
         }
       >
-        Who is put on a machine card (and its tasks) when it reaches each production stage, from the moment an order is confirmed. Defaults for one machine type are used
-        instead of the defaults for every machine type. Assigning is optional: anyone allowed can change the people on a card or a task at any time, also while a task is running
-        (its timer stays with the task and the change is logged).
+        {tr("Who is put on a machine card (and its tasks) when it reaches each production stage, from the moment an order is confirmed. Defaults for one machine type are used instead of the defaults for every machine type. Assigning is optional: anyone allowed can change the people on a card or a task at any time, also while a task is running (its timer stays with the task and the change is logged).")}
       </AdminPageHeader>
       <div className="grid items-start gap-4 [grid-template-columns:repeat(auto-fill,minmax(min(100%,24rem),1fr))]">
         {stages.map((s) => {
@@ -125,7 +126,7 @@ export default function ProductionAssignmentsPage() {
             <section key={s.id} className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" data-setting={`assign-${s.step}`}>
               <h2 className="text-base font-semibold">{s.name}</h2>
               {mine.length === 0 ? (
-                <p className="text-slate-500">Nobody is assigned automatically.</p>
+                <p className="text-slate-500">{tr("Nobody is assigned automatically.")}</p>
               ) : (
                 <ul className="divide-y divide-slate-100">
                   {mine.map((r) => (
@@ -133,12 +134,12 @@ export default function ProductionAssignmentsPage() {
                       <span className="min-w-0 flex-1">
                         <span className="font-medium">{nameOf(r)}</span>
                         <span className="block text-xs text-slate-500">
-                          {r.machine_type_id ? (types.find((t) => t.id === r.machine_type_id)?.name ?? 'One machine type') : 'Every machine type'} · {APPLIES[r.applies_to]}
+                          {r.machine_type_id ? (types.find((t) => t.id === r.machine_type_id)?.name ?? tr("One machine type")) : tr("Every machine type")} · {APPLIES[r.applies_to]}
                         </span>
                       </span>
                       <Can permission="admin.production_assignments" level="edit">
-                        <button type="button" className="text-xs text-red-700 underline" onClick={() => remove(r)} aria-label={`Remove ${nameOf(r)} from ${s.name}`}>
-                          Remove
+                        <button type="button" className="text-xs text-red-700 underline" onClick={() => remove(r)} aria-label={tr("Remove {{nameOf}} from {{name}}", { nameOf: nameOf(r), name: s.name })}>
+                          {tr("Remove")}
                         </button>
                       </Can>
                     </li>
@@ -148,15 +149,15 @@ export default function ProductionAssignmentsPage() {
               <Can permission="admin.production_assignments" level="edit">
                 <div className="space-y-2 border-t border-slate-100 pt-3">
                   <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))]">
-                    <Field label="Assign" htmlFor={`pa-kind-${s.id}`}>
+                    <Field label={tr("Assign")} htmlFor={`pa-kind-${s.id}`}>
                       <select id={`pa-kind-${s.id}`} className={`${narrowInputClass} w-full`} value={d.kind} onChange={(e) => set({ kind: e.target.value as Draft['kind'], who: '' })}>
-                        <option value="user">A person</option>
-                        <option value="department">A department</option>
+                        <option value="user">{tr("A person")}</option>
+                        <option value="department">{tr("A department")}</option>
                       </select>
                     </Field>
-                    <Field label={d.kind === 'user' ? 'Person' : 'Department'} htmlFor={`pa-who-${s.id}`}>
+                    <Field label={d.kind === 'user' ? tr("Person") : tr("Department")} htmlFor={`pa-who-${s.id}`}>
                       <select id={`pa-who-${s.id}`} className={`${narrowInputClass} w-full`} value={d.who} onChange={(e) => set({ who: e.target.value })}>
-                        <option value="">Choose…</option>
+                        <option value="">{tr("Choose…")}</option>
                         {d.kind === 'user'
                           ? people.map((p) => (
                               <option key={p.email} value={p.email}>
@@ -170,9 +171,9 @@ export default function ProductionAssignmentsPage() {
                             ))}
                       </select>
                     </Field>
-                    <Field label="Machine type" htmlFor={`pa-type-${s.id}`}>
+                    <Field label={tr("Machine type")} htmlFor={`pa-type-${s.id}`}>
                       <select id={`pa-type-${s.id}`} className={`${narrowInputClass} w-full`} value={d.type} onChange={(e) => set({ type: e.target.value })}>
-                        <option value="">Every machine type</option>
+                        <option value="">{tr("Every machine type")}</option>
                         {types.map((t) => (
                           <option key={t.id} value={t.id}>
                             {t.name}
@@ -181,7 +182,7 @@ export default function ProductionAssignmentsPage() {
                       </select>
                     </Field>
                     {d.kind === 'user' && (
-                      <Field label="Put on" htmlFor={`pa-applies-${s.id}`}>
+                      <Field label={tr("Put on")} htmlFor={`pa-applies-${s.id}`}>
                         <select id={`pa-applies-${s.id}`} className={`${narrowInputClass} w-full`} value={d.applies} onChange={(e) => set({ applies: e.target.value as Rule['applies_to'] })}>
                           {Object.entries(APPLIES).map(([k, v]) => (
                             <option key={k} value={k}>
@@ -193,7 +194,7 @@ export default function ProductionAssignmentsPage() {
                     )}
                   </div>
                   <button type="button" className={buttonClass} onClick={() => add(s.id)} disabled={busy}>
-                    Add Default
+                    {tr("Add Default")}
                   </button>
                 </div>
               </Can>
@@ -201,7 +202,7 @@ export default function ProductionAssignmentsPage() {
           )
         })}
       </div>
-      {stages.length === 0 && <p className="text-sm text-slate-500">There are no production stages yet. Add them in Admin → Production.</p>}
+      {stages.length === 0 && <p className="text-sm text-slate-500">{tr("There are no production stages yet. Add them in Admin → Production.")}</p>}
     </div>
   )
 }

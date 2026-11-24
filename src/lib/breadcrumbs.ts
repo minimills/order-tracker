@@ -1,6 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { ADMIN_PAGES } from './adminPages'
 import { NAV_ITEMS } from './permissions/nav'
+import { tr } from '../i18n'
 
 /** One part of the breadcrumb trail ("Orders > Order 86 > Carder - Large LCR-2073"). */
 export type Crumb = { label: string; to?: string }
@@ -32,36 +33,78 @@ export function useBreadcrumbs(crumbs: Crumb[] | null | undefined | false) {
   }, [key])
 }
 
-const NAV_LABEL = new Map(NAV_ITEMS.map((n) => [n.to, n.label]))
+const navLabel = (to: string) => NAV_ITEMS.find((n) => n.to === to)?.label
 
 /** The trail worked out from the address alone (pages with ids add their own names). */
 export function crumbsForPath(path: string): Crumb[] {
   const p = path.replace(/\/+$/, '') || '/'
   if (p === '/') return []
   const admin = ADMIN_PAGES.find((a) => a.to === p)
-  if (admin) return [{ label: 'Admin', to: '/admin' }, { label: admin.title }]
-  if (p.startsWith('/admin')) return [{ label: 'Admin', to: '/admin' }]
+  if (admin) return [{ get label() {
+    return tr("Admin")
+  }, to: '/admin' }, { label: admin.title }]
+  if (p.startsWith('/admin')) return [{ get label() {
+    return tr("Admin")
+  }, to: '/admin' }]
   const exact: Record<string, Crumb[]> = {
-    '/orders': [{ label: 'Orders' }],
-    '/orders/new': [{ label: 'Orders', to: '/orders' }, { label: 'New Order' }],
-    '/settings/notifications': [{ label: 'Settings', to: '/settings' }, { label: 'Notifications' }],
-    '/reports/department-delays': [{ label: 'Reports' }, { label: 'Department Delays' }],
-    '/reports/build-times': [{ label: 'Reports' }, { label: 'Build Times' }],
+    '/orders': [{ get label() {
+    return tr("Orders")
+  } }],
+    '/orders/new': [{ get label() {
+    return tr("Orders")
+  }, to: '/orders' }, { get label() {
+    return tr("New Order")
+  } }],
+    '/settings/notifications': [{ get label() {
+    return tr("Settings")
+  }, to: '/settings' }, { get label() {
+    return tr("Notifications")
+  } }],
+    '/reports/department-delays': [{ get label() {
+    return tr("Reports")
+  } }, { get label() {
+    return tr("Department Delays")
+  } }],
+    '/reports/build-times': [{ get label() {
+    return tr("Reports")
+  } }, { get label() {
+    return tr("Build Times")
+  } }],
   }
   if (exact[p]) return exact[p]
-  if (NAV_LABEL.has(p)) return [{ label: NAV_LABEL.get(p)! }]
+  if (navLabel(p)) return [{ label: navLabel(p)! }]
   const parts = p.split('/').filter(Boolean)
   const section: Record<string, Crumb> = {
-    orders: { label: 'Orders', to: '/orders' },
-    checklists: { label: 'Orders', to: '/orders' },
-    boards: { label: 'Boards', to: '/boards' },
-    chat: { label: 'Chat', to: '/chat' },
-    service: { label: 'Service / Training', to: '/service' },
-    notices: { label: 'Notice Board', to: '/notices' },
-    settings: { label: 'Settings', to: '/settings' },
-    freight: { label: 'Freight', to: '/freight' },
-    timesheets: { label: 'Timesheets', to: '/timesheets' },
-    automations: { label: 'Automations', to: '/automations' },
+    orders: { get label() {
+    return tr("Orders")
+  }, to: '/orders' },
+    checklists: { get label() {
+    return tr("Orders")
+  }, to: '/orders' },
+    boards: { get label() {
+    return tr("Boards")
+  }, to: '/boards' },
+    chat: { get label() {
+    return tr("Chat")
+  }, to: '/chat' },
+    service: { get label() {
+    return tr("Service / Training")
+  }, to: '/service' },
+    notices: { get label() {
+    return tr("Notice Board")
+  }, to: '/notices' },
+    settings: { get label() {
+    return tr("Settings")
+  }, to: '/settings' },
+    freight: { get label() {
+    return tr("Freight")
+  }, to: '/freight' },
+    timesheets: { get label() {
+    return tr("Timesheets")
+  }, to: '/timesheets' },
+    automations: { get label() {
+    return tr("Automations")
+  }, to: '/automations' },
   }
   const first = section[parts[0]]
   if (!first) return []

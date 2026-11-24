@@ -1,3 +1,4 @@
+import { tr } from '../i18n'
 /**
  * Scheduling: working days, build times, expected ship dates and department
  * deadlines. Pure functions (no database), so the same rules give the same
@@ -17,12 +18,24 @@
  */
 
 export const STEPS = [
-  { key: 'fabrication', label: 'Fabrication' },
-  { key: 'sandblasting', label: 'Sandblasting' },
-  { key: 'powder_coating', label: 'Powder coating' },
-  { key: 'assembly', label: 'Assembly' },
-  { key: 'final_check', label: 'Final check' },
-  { key: 'crating', label: 'Crating' },
+  { key: 'fabrication', get label() {
+    return tr("Fabrication")
+  } },
+  { key: 'sandblasting', get label() {
+    return tr("Sandblasting")
+  } },
+  { key: 'powder_coating', get label() {
+    return tr("Powder coating")
+  } },
+  { key: 'assembly', get label() {
+    return tr("Assembly")
+  } },
+  { key: 'final_check', get label() {
+    return tr("Final check")
+  } },
+  { key: 'crating', get label() {
+    return tr("Crating")
+  } },
 ] as const
 export type StepKey = (typeof STEPS)[number]['key']
 export const STEP_LABEL: Record<StepKey | 'shipping', string> = {

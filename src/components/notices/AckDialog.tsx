@@ -7,6 +7,7 @@ import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
 import Can from '../Can'
 import { buttonClass, Modal, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 /** Who has and hasn't acknowledged a notice, with "Remind the Rest". */
 export default function AckDialog({ notice, onClose }: { notice: Notice; onClose: () => void }) {
@@ -31,13 +32,13 @@ export default function AckDialog({ notice, onClose }: { notice: Notice; onClose
     setBusy(false)
     if (e) return toast.error(friendlyError(e))
     const n = Number(data ?? 0)
-    toast.success(n === 0 ? 'Nobody needed a reminder.' : `Reminder sent to ${n} ${n === 1 ? 'person' : 'people'}.`)
+    toast.success(n === 0 ? tr("Nobody needed a reminder.") : tr("Reminder sent to {{n}} {{value}}.", { n: n, value: n === 1 ? 'person' : 'people' }))
     onClose()
   }
 
   return (
     <Modal
-      title="Who Has Acknowledged"
+      title={tr("Who Has Acknowledged")}
       onClose={onClose}
       busy={busy}
       footer={
@@ -48,7 +49,7 @@ export default function AckDialog({ notice, onClose }: { notice: Notice; onClose
           {waiting.length > 0 && (
             <Can permission="notices.acks" level="edit">
               <button type="button" className={buttonClass} onClick={remind} disabled={busy}>
-                {busy ? 'Sending…' : 'Remind the Rest'}
+                {busy ? tr("Sending…") : tr("Remind the Rest")}
               </button>
             </Can>
           )}
@@ -57,31 +58,31 @@ export default function AckDialog({ notice, onClose }: { notice: Notice; onClose
     >
       <p className="text-sm text-slate-600">{notice.title}</p>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
-      {!rows && !error && <p className="mt-3 text-sm text-slate-500">Loading…</p>}
+      {!rows && !error && <p className="mt-3 text-sm text-slate-500">{tr("Loading…")}</p>}
       {rows && (
         <div className="mt-3 space-y-4 text-sm">
           <p className="font-medium">
-            {done.length} of {rows.length} acknowledged
+            {done.length} {tr("of")} {rows.length} {tr("acknowledged")}
           </p>
           <div>
-            <h3 className="font-medium text-red-800">Not yet acknowledged ({waiting.length})</h3>
+            <h3 className="font-medium text-red-800">{tr("Not yet acknowledged (")}{waiting.length})</h3>
             {waiting.length === 0 ? (
-              <p className="mt-1 text-slate-500">Everyone has acknowledged this notice.</p>
+              <p className="mt-1 text-slate-500">{tr("Everyone has acknowledged this notice.")}</p>
             ) : (
               <ul className="mt-1 divide-y divide-slate-100">
                 {waiting.map((r) => (
                   <li key={r.email} className="flex justify-between gap-3 py-1">
                     <span>{r.name}</span>
-                    <span className="text-xs text-slate-500">{r.read_at ? `Seen ${showDateTime(r.read_at)}` : 'Not seen yet'}</span>
+                    <span className="text-xs text-slate-500">{r.read_at ? tr("Seen {{showDateTime}}", { showDateTime: showDateTime(r.read_at) }) : tr("Not seen yet")}</span>
                   </li>
                 ))}
               </ul>
             )}
           </div>
           <div>
-            <h3 className="font-medium text-green-800">Acknowledged ({done.length})</h3>
+            <h3 className="font-medium text-green-800">{tr("Acknowledged (")}{done.length})</h3>
             {done.length === 0 ? (
-              <p className="mt-1 text-slate-500">Nobody has acknowledged it yet.</p>
+              <p className="mt-1 text-slate-500">{tr("Nobody has acknowledged it yet.")}</p>
             ) : (
               <ul className="mt-1 divide-y divide-slate-100">
                 {done.map((r) => (

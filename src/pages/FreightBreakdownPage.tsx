@@ -29,6 +29,7 @@ import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
 import { ACTION } from '../lib/wording'
 import PrintButton from '../components/print/PrintButton'
+import { tr } from '../i18n'
 
 type Form = {
   order_id: string
@@ -95,7 +96,9 @@ export default function FreightBreakdownPage() {
   const [missing, setMissing] = useState(false)
 
   useBreadcrumbs([
-    { label: 'Freight', to: '/freight?tab=breakdowns' },
+    { get label() {
+    return tr("Freight")
+  }, to: '/freight?tab=breakdowns' },
     { label: id ? `Cost Breakdown${saved?.customer_name ? ` – ${saved.customer_name}` : ''}` : 'New Cost Breakdown' },
   ])
 
@@ -194,8 +197,8 @@ export default function FreightBreakdownPage() {
   )
   const r = numbers ? calcBreakdown(numbers) : null
 
-  if (missing) return <p className="rounded-md bg-amber-50 p-4 text-sm text-amber-900">That cost breakdown could not be found. It may have been removed.</p>
-  if (!f || !numbers || !r) return <p className="py-8 text-center text-slate-500">Loading…</p>
+  if (missing) return <p className="rounded-md bg-amber-50 p-4 text-sm text-amber-900">{tr("That cost breakdown could not be found. It may have been removed.")}</p>
+  if (!f || !numbers || !r) return <p className="py-8 text-center text-slate-500">{tr("Loading…")}</p>
 
   const up = (patch: Partial<Form>) => setF({ ...f, ...patch })
   const money = (n: number) => formatMoney(n, f.currency)
@@ -212,7 +215,11 @@ export default function FreightBreakdownPage() {
       const a = agents.find((x) => x.id === v)
       return up({ agent_id: v, insurance_auto: !!a?.auto_insurance, sub_contractor: a?.sub_contractor ? f!.sub_contractor : '' })
     }
-    const name = await askText('Name of the new shipping agent', { label: 'Shipping agent', confirmLabel: 'Add Shipping Agent' })
+    const name = await askText(tr("Name of the new shipping agent"), { get label() {
+    return tr("Shipping agent")
+  }, get confirmLabel() {
+    return tr("Add Shipping Agent")
+  } })
     if (!name?.trim() || !supabase) return
     const { data, error } = await supabase.rpc('add_freight_agent', { p_name: name.trim() })
     if (error) return toast.error(friendlyError(error))
@@ -228,8 +235,10 @@ export default function FreightBreakdownPage() {
     }
     if (
       (f!.customer_name || f!.invoice_total) &&
-      !(await confirmAction('Fill the details from this order? The customer, quote #, invoice #, invoice total, currency, freight type, ship date, hours and plywood sheets are replaced.', {
-        confirmLabel: 'Fill From Order',
+      !(await confirmAction(tr("Fill the details from this order? The customer, quote #, invoice #, invoice total, currency, freight type, ship date, hours and plywood sheets are replaced."), {
+        get confirmLabel() {
+    return tr("Fill From Order")
+  },
       }))
     ) {
       setOrderCode(orders.find((o) => o.id === v)?.order_code ?? null)
@@ -240,8 +249,8 @@ export default function FreightBreakdownPage() {
 
   async function save() {
     if (!supabase) return
-    if (invoice === null) return toast.error('The invoice total is not a valid amount or sum. Use numbers with + − × ÷ only, for example 12000+850.')
-    if (f!.currency === 'USD' && fx <= 0) return toast.error('Enter the exchange rate (USD to CAD).')
+    if (invoice === null) return toast.error(tr("The invoice total is not a valid amount or sum. Use numbers with + − × ÷ only, for example 12000+850."))
+    if (f!.currency === 'USD' && fx <= 0) return toast.error(tr("Enter the exchange rate (USD to CAD)."))
     setBusy(true)
     const { data, error } = await supabase.rpc('save_freight_breakdown', {
       p: {
@@ -251,7 +260,7 @@ export default function FreightBreakdownPage() {
     })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(id ? 'Cost breakdown saved.' : 'Cost breakdown created.')
+    toast.success(id ? tr("Cost breakdown saved.") : tr("Cost breakdown created."))
     if (!id) return navigate(`/freight/breakdowns/${data as string}`, { replace: true })
     const { data: b } = await supabase.from('freight_breakdowns').select('*').eq('id', id).maybeSingle()
     setSaved(b as Breakdown)
@@ -260,10 +269,12 @@ export default function FreightBreakdownPage() {
   async function archive() {
     if (!supabase || !saved) return
     const to = !saved.archived
-    if (to && !(await confirmAction('Archive this cost breakdown? It leaves the list and the insurance summary. It can be restored from “Show archived”.', { confirmLabel: 'Archive', danger: true }))) return
+    if (to && !(await confirmAction(tr("Archive this cost breakdown? It leaves the list and the insurance summary. It can be restored from “Show archived”."), { get confirmLabel() {
+    return tr("Archive")
+  }, danger: true }))) return
     const { error } = await supabase.rpc('archive_freight_breakdown', { p_id: saved.id, p_archived: to })
     if (error) return toast.error(friendlyError(error))
-    toast.success(to ? 'Cost breakdown archived.' : 'Cost breakdown restored.')
+    toast.success(to ? tr("Cost breakdown archived.") : tr("Cost breakdown restored."))
     setSaved({ ...saved, archived: to })
   }
 
@@ -271,7 +282,7 @@ export default function FreightBreakdownPage() {
     if (await copyText(value.toFixed(2))) {
       setCopied(key)
       window.setTimeout(() => setCopied((c) => (c === key ? null : c)), 1500)
-    } else toast.error('The amount could not be copied. Select it and copy it by hand.')
+    } else toast.error(tr("The amount could not be copied. Select it and copy it by hand."))
   }
   const Row = ({ label, value, k, strong }: { label: string; value: number; k?: string; strong?: boolean }) => (
     <div className={`flex items-center justify-between gap-2 py-1.5 ${strong ? 'font-semibold' : ''}`}>
@@ -282,8 +293,8 @@ export default function FreightBreakdownPage() {
         </span>
         {k && (
           <Can permission="freight.breakdowns.copy">
-            <button type="button" className="rounded border border-slate-300 px-1.5 py-0.5 text-xs font-normal print:hidden" onClick={() => copy(k, value)} aria-label={`Copy ${label}`}>
-              {copied === k ? 'Copied' : 'Copy'}
+            <button type="button" className="rounded border border-slate-300 px-1.5 py-0.5 text-xs font-normal print:hidden" onClick={() => copy(k, value)} aria-label={tr("Copy {{label}}", { label: label })}>
+              {copied === k ? tr("Copied") : tr("Copy")}
             </button>
           </Can>
         )}
@@ -296,14 +307,14 @@ export default function FreightBreakdownPage() {
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="min-w-0">
           <Link to="/freight?tab=breakdowns" className="text-sm text-slate-600 underline">
-            ← Freight
+            {tr("← Freight")}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{id ? 'Shipment Cost Breakdown' : 'New Shipment Cost Breakdown'}</h1>
+          <h1 className="mt-1 text-2xl font-semibold">{id ? tr("Shipment Cost Breakdown") : tr("New Shipment Cost Breakdown")}</h1>
           {saved && (
             <p className="text-sm text-slate-600">
-              {saved.source === 'import' ? 'Imported from the Freight Multitool. ' : ''}
-              {saved.created_by_name ? `Created by ${saved.created_by_name}. ` : ''}
-              {saved.archived ? 'Archived.' : ''}
+              {saved.source === 'import' ? tr("Imported from the Freight Multitool. ") : ''}
+              {saved.created_by_name ? tr("Created by {{created_by_name}}. ", { created_by_name: saved.created_by_name }) : ''}
+              {saved.archived ? tr("Archived.") : ''}
             </p>
           )}
         </div>
@@ -312,12 +323,12 @@ export default function FreightBreakdownPage() {
             <>
               <Can permission="order.page">
                 <Link to={`/orders/${f.order_id}`} className={secondaryButtonClass}>
-                  Open Order {orderCode ?? ''}
+                  {tr("Open Order")} {orderCode ?? ''}
                 </Link>
               </Can>
               <Can permission="freight.quote">
                 <Link to={`/freight/quote?order=${f.order_id}`} className={secondaryButtonClass}>
-                  Freight Quote Request
+                  {tr("Freight Quote Request")}
                 </Link>
               </Can>
             </>
@@ -325,7 +336,7 @@ export default function FreightBreakdownPage() {
           {saved && (
             <>
               <Can permission="freight.breakdowns.print">
-                <PrintButton title="Shipment Cost Breakdown" to={`/freight/breakdowns/${saved.id}/print`} className="py-2" />
+                <PrintButton title={tr("Shipment Cost Breakdown")} to={`/freight/breakdowns/${saved.id}/print`} className="py-2" />
               </Can>
               <Can permission="freight.breakdowns.archive" level="edit">
                 <button type="button" className={secondaryButtonClass} onClick={archive}>
@@ -339,18 +350,18 @@ export default function FreightBreakdownPage() {
 
       {filled.length > 0 && !id && (
         <p className="rounded-md border border-blue-200 bg-blue-50 p-3 text-sm text-blue-900" role="status">
-          Filled in from order {orderCode}: {filled.join(', ')}. Check the numbers and change anything that is different for this shipment.
+          {tr("Filled in from order")} {orderCode}: {filled.join(', ')}{tr(". Check the numbers and change anything that is different for this shipment.")}
         </p>
       )}
 
       <div className="flex flex-col gap-4 xl:flex-row xl:items-start">
         <div className="min-w-0 flex-1 space-y-4">
-          <Section title="Order and Invoice">
+          <Section title={tr("Order and Invoice")}>
             <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))]">
-              <Field label="Order" htmlFor="fb-order" hint="Choosing an order fills in its details.">
+              <Field label={tr("Order")} htmlFor="fb-order" hint={tr("Choosing an order fills in its details.")}>
                 <select id="fb-order" className={inputClass} value={f.order_id} disabled={ro} onChange={(e) => changeOrder(e.target.value)}>
-                  <option value="">Not linked to an order</option>
-                  {f.order_id && !orders.some((o) => o.id === f.order_id) && <option value={f.order_id}>Order {orderCode ?? ''}</option>}
+                  <option value="">{tr("Not linked to an order")}</option>
+                  {f.order_id && !orders.some((o) => o.id === f.order_id) && <option value={f.order_id}>{tr("Order")} {orderCode ?? ''}</option>}
                   {orders.map((o) => (
                     <option key={o.id} value={o.id}>
                       {o.order_code} · {o.customer_name ?? ''}
@@ -358,45 +369,45 @@ export default function FreightBreakdownPage() {
                   ))}
                 </select>
               </Field>
-              <Field label="Customer" htmlFor="fb-customer">
+              <Field label={tr("Customer")} htmlFor="fb-customer">
                 <input id="fb-customer" className={inputClass} value={f.customer_name} disabled={ro} onChange={(e) => up({ customer_name: e.target.value })} />
               </Field>
-              <Field label="Quote #" htmlFor="fb-quote">
+              <Field label={tr("Quote #")} htmlFor="fb-quote">
                 <input id="fb-quote" className={inputClass} value={f.quote_number} disabled={ro} onChange={(e) => up({ quote_number: e.target.value })} />
               </Field>
-              <Field label="Invoice #" htmlFor="fb-invoice">
+              <Field label={tr("Invoice #")} htmlFor="fb-invoice">
                 <input id="fb-invoice" className={inputClass} value={f.invoice_number} disabled={ro} onChange={(e) => up({ invoice_number: e.target.value })} />
               </Field>
-              <Field label="Invoice currency" htmlFor="fb-currency">
+              <Field label={tr("Invoice currency")} htmlFor="fb-currency">
                 <select id="fb-currency" className={inputClass} value={f.currency} disabled={ro} onChange={(e) => changeCurrency(e.target.value as FreightCurrency)}>
                   <option value="CAD">CAD</option>
                   <option value="USD">USD</option>
                 </select>
               </Field>
               {f.currency === 'USD' && (
-                <Field label="Exchange rate (USD to CAD)" htmlFor="fb-fx" hint="Used to store every amount in CAD as well.">
+                <Field label={tr("Exchange rate (USD to CAD)")} htmlFor="fb-fx" hint={tr("Used to store every amount in CAD as well.")}>
                   <input id="fb-fx" inputMode="decimal" className={inputClass} value={f.exchange_rate} disabled={ro} onChange={(e) => up({ exchange_rate: e.target.value })} />
                 </Field>
               )}
               <Field
-                label="Total amount on invoice"
+                label={tr("Total amount on invoice")}
                 htmlFor="fb-total"
-                hint={invoice === null ? undefined : isSum ? `= ${money(invoice)}` : 'A sum also works, for example 12000+850.'}
+                hint={invoice === null ? undefined : isSum ? `= ${money(invoice)}` : tr("A sum also works, for example 12000+850.")}
                 error={invoice === null ? 'This is not a valid amount or sum.' : undefined}
               >
                 <input id="fb-total" inputMode="decimal" className={inputClass} value={f.invoice_total} disabled={ro} onChange={(e) => up({ invoice_total: e.target.value })} />
               </Field>
-              <Field label="Ship date (picked up)" htmlFor="fb-ship">
+              <Field label={tr("Ship date (picked up)")} htmlFor="fb-ship">
                 <input id="fb-ship" type="date" className={inputClass} value={f.ship_date} disabled={ro} onChange={(e) => up({ ship_date: e.target.value })} />
               </Field>
             </div>
           </Section>
 
-          <Section title="Shipment Details">
+          <Section title={tr("Shipment Details")}>
             <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))]">
-              <Field label="Shipping agent" htmlFor="fb-agent">
+              <Field label={tr("Shipping agent")} htmlFor="fb-agent">
                 <select id="fb-agent" className={inputClass} value={f.agent_id} disabled={ro} onChange={(e) => changeAgent(e.target.value)}>
-                  <option value="">{saved?.agent_name && !f.agent_id ? saved.agent_name : 'Choose…'}</option>
+                  <option value="">{saved?.agent_name && !f.agent_id ? saved.agent_name : tr("Choose…")}</option>
                   {agents
                     .filter((a) => !a.archived || a.id === f.agent_id)
                     .map((a) => (
@@ -404,24 +415,24 @@ export default function FreightBreakdownPage() {
                         {a.name}
                       </option>
                     ))}
-                  {can('freight.agents.add', 'edit') && <option value="new">Add new…</option>}
+                  {can('freight.agents.add', 'edit') && <option value="new">{tr("Add new…")}</option>}
                 </select>
               </Field>
-              <Field label="Agent ref #" htmlFor="fb-ref">
+              <Field label={tr("Agent ref #")} htmlFor="fb-ref">
                 <input id="fb-ref" className={inputClass} value={f.agent_ref} disabled={ro} onChange={(e) => up({ agent_ref: e.target.value })} />
               </Field>
               {agent?.sub_contractor && (
-                <Field label="Sub-contractor carrier" htmlFor="fb-sub" hint={`The carrier ${agent.name} booked.`}>
+                <Field label={tr("Sub-contractor carrier")} htmlFor="fb-sub" hint={tr("The carrier {{name}} booked.", { name: agent.name })}>
                   <input id="fb-sub" className={inputClass} value={f.sub_contractor} disabled={ro} onChange={(e) => up({ sub_contractor: e.target.value })} />
                 </Field>
               )}
-              <Field label="Carrier" htmlFor="fb-carrier">
+              <Field label={tr("Carrier")} htmlFor="fb-carrier">
                 <input id="fb-carrier" className={inputClass} value={f.carrier} disabled={ro} onChange={(e) => up({ carrier: e.target.value })} />
               </Field>
-              <Field label="Carrier tracking number" htmlFor="fb-tracking">
+              <Field label={tr("Carrier tracking number")} htmlFor="fb-tracking">
                 <input id="fb-tracking" className={inputClass} value={f.tracking_number} disabled={ro} onChange={(e) => up({ tracking_number: e.target.value })} />
               </Field>
-              <Field label="Freight type" htmlFor="fb-type">
+              <Field label={tr("Freight type")} htmlFor="fb-type">
                 <select id="fb-type" className={inputClass} value={f.freight_type} disabled={ro} onChange={(e) => up({ freight_type: e.target.value as FreightType })}>
                   {FREIGHT_TYPES.map((t) => (
                     <option key={t}>{t}</option>
@@ -431,20 +442,20 @@ export default function FreightBreakdownPage() {
             </div>
           </Section>
 
-          <Section title="Costs">
+          <Section title={tr("Costs")}>
             <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,13rem),1fr))]">
-              <Field label="Total cargo value" htmlFor="fb-cargo">
+              <Field label={tr("Total cargo value")} htmlFor="fb-cargo">
                 <input id="fb-cargo" inputMode="decimal" className={inputClass} value={f.cargo_value} disabled={ro} onChange={(e) => up({ cargo_value: e.target.value })} />
               </Field>
-              <Field label="Freight (per carrier’s quote)" htmlFor="fb-freight">
+              <Field label={tr("Freight (per carrier’s quote)")} htmlFor="fb-freight">
                 <input id="fb-freight" inputMode="decimal" className={inputClass} value={f.freight} disabled={ro} onChange={(e) => up({ freight: e.target.value })} />
               </Field>
               <Field
-                label="Insurance"
+                label={tr("Insurance")}
                 htmlFor="fb-insurance"
                 hint={
                   f.insurance_auto
-                    ? `Calculated: the larger of (cargo value + freight) × ${settings.insurance.uplift} × ${settings.insurance.rate_pct}% and $${settings.insurance.minimum}.`
+                    ? tr("Calculated: the larger of (cargo value + freight) × {{uplift}} × {{rate_pct}}% and ${{minimum}}.", { uplift: settings.insurance.uplift, rate_pct: settings.insurance.rate_pct, minimum: settings.insurance.minimum })
                     : undefined
                 }
               >
@@ -463,10 +474,10 @@ export default function FreightBreakdownPage() {
                     disabled={ro}
                     onChange={(e) => up({ insurance_auto: e.target.checked, insurance: e.target.checked ? f.insurance : insurance.toFixed(2) })}
                   />
-                  Calculate automatically
+                  {tr("Calculate automatically")}
                 </label>
               </Field>
-              <Field label="Broker fees" htmlFor="fb-broker">
+              <Field label={tr("Broker fees")} htmlFor="fb-broker">
                 <input
                   id="fb-broker"
                   inputMode="decimal"
@@ -482,30 +493,30 @@ export default function FreightBreakdownPage() {
                     disabled={ro}
                     onChange={(e) => up({ broker_standard: e.target.checked, broker_fees: e.target.checked ? String(settings.broker_fee) : '' })}
                   />
-                  Standard fee (${settings.broker_fee})
+                  {tr("Standard fee ($")}{settings.broker_fee})
                 </label>
               </Field>
             </div>
-            <h3 className="mt-4 mb-2 text-sm font-semibold">Handling</h3>
+            <h3 className="mt-4 mb-2 text-sm font-semibold">{tr("Handling")}</h3>
             <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,9rem),1fr))]">
-              <Field label="Hours" htmlFor="fb-hours">
+              <Field label={tr("Hours")} htmlFor="fb-hours">
                 <input id="fb-hours" inputMode="decimal" className={inputClass} value={f.hours} disabled={ro} onChange={(e) => up({ hours: e.target.value })} />
               </Field>
-              <Field label="Hourly rate" htmlFor="fb-hourly">
+              <Field label={tr("Hourly rate")} htmlFor="fb-hourly">
                 <input id="fb-hourly" inputMode="decimal" className={inputClass} value={f.hourly_rate} disabled={ro} onChange={(e) => up({ hourly_rate: e.target.value })} />
               </Field>
-              <Field label="Plywood sheets" htmlFor="fb-sheets">
+              <Field label={tr("Plywood sheets")} htmlFor="fb-sheets">
                 <input id="fb-sheets" inputMode="decimal" className={inputClass} value={f.plywood_sheets} disabled={ro} onChange={(e) => up({ plywood_sheets: e.target.value })} />
               </Field>
-              <Field label="Plywood rate" htmlFor="fb-plyrate">
+              <Field label={tr("Plywood rate")} htmlFor="fb-plyrate">
                 <input id="fb-plyrate" inputMode="decimal" className={inputClass} value={f.plywood_rate} disabled={ro} onChange={(e) => up({ plywood_rate: e.target.value })} />
               </Field>
             </div>
             <p className="mt-1 text-xs text-slate-500">
-              Handling = hours × hourly rate + plywood sheets × plywood rate = {money(r.handling)}.
-              {f.order_id ? ' Hours and sheets come from the crates entered on the order.' : ''}
+              {tr("Handling = hours × hourly rate + plywood sheets × plywood rate =")} {money(r.handling)}.
+              {f.order_id ? tr(" Hours and sheets come from the crates entered on the order.") : ''}
             </p>
-            <h3 className="mt-4 mb-2 text-sm font-semibold">Margin</h3>
+            <h3 className="mt-4 mb-2 text-sm font-semibold">{tr("Margin")}</h3>
             <div className="flex flex-wrap items-center gap-2">
               {settings.margin_presets.map((m) => (
                 <button
@@ -520,49 +531,49 @@ export default function FreightBreakdownPage() {
                 </button>
               ))}
               <label className="flex items-center gap-2 text-sm">
-                <span className="text-slate-600">Custom %</span>
-                <input aria-label="Margin %" inputMode="decimal" className={`${narrowInputClass} w-24`} value={f.margin_pct} disabled={ro} onChange={(e) => up({ margin_pct: e.target.value })} />
+                <span className="text-slate-600">{tr("Custom %")}</span>
+                <input aria-label={tr("Margin %")} inputMode="decimal" className={`${narrowInputClass} w-24`} value={f.margin_pct} disabled={ro} onChange={(e) => up({ margin_pct: e.target.value })} />
               </label>
             </div>
-            <Field label="Notes" htmlFor="fb-notes" className="mt-4">
+            <Field label={tr("Notes")} htmlFor="fb-notes" className="mt-4">
               <textarea id="fb-notes" rows={2} maxLength={2000} className={inputClass} value={f.notes} disabled={ro} onChange={(e) => up({ notes: e.target.value })} />
             </Field>
           </Section>
         </div>
 
         <aside className="w-full shrink-0 space-y-4 xl:sticky xl:top-4 xl:w-96">
-          <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm md:p-6" aria-label="Results">
-            <h2 className="mb-2 text-base font-semibold">Results ({f.currency})</h2>
+          <section className="rounded-lg border border-slate-200 bg-white p-4 text-sm md:p-6" aria-label={tr("Results")}>
+            <h2 className="mb-2 text-base font-semibold">{tr("Results (")}{f.currency})</h2>
             <div className="divide-y divide-slate-100">
-              <Row label="Cargo value" value={numbers.cargo_value} />
-              <Row label="Freight" value={numbers.freight} />
-              <Row label="Insurance" value={numbers.insurance} />
-              <Row label="Broker fees" value={numbers.broker_fees} />
-              <Row label="Handling" value={r.handling} />
-              <Row label="Subtotal" value={r.subtotal} strong />
-              <Row label="Freight subtotal (without cargo value)" value={r.freight_subtotal} k="freight_subtotal" />
-              <Row label="Total breakdown cost" value={r.breakdown_total} k="breakdown_total" strong />
-              <Row label={`Total with margin (${numbers.margin_pct}%)`} value={r.total_with_margin} k="total_with_margin" strong />
-              <Row label={`Freight subtotal with margin (${numbers.margin_pct}%)`} value={r.freight_with_margin} k="freight_with_margin" />
-              <Row label="Total amount on invoice" value={numbers.invoice_total} />
+              <Row label={tr("Cargo value")} value={numbers.cargo_value} />
+              <Row label={tr("Freight")} value={numbers.freight} />
+              <Row label={tr("Insurance")} value={numbers.insurance} />
+              <Row label={tr("Broker fees")} value={numbers.broker_fees} />
+              <Row label={tr("Handling")} value={r.handling} />
+              <Row label={tr("Subtotal")} value={r.subtotal} strong />
+              <Row label={tr("Freight subtotal (without cargo value)")} value={r.freight_subtotal} k="freight_subtotal" />
+              <Row label={tr("Total breakdown cost")} value={r.breakdown_total} k="breakdown_total" strong />
+              <Row label={tr("Total with margin ({{margin_pct}}%)", { margin_pct: numbers.margin_pct })} value={r.total_with_margin} k="total_with_margin" strong />
+              <Row label={tr("Freight subtotal with margin ({{margin_pct}}%)", { margin_pct: numbers.margin_pct })} value={r.freight_with_margin} k="freight_with_margin" />
+              <Row label={tr("Total amount on invoice")} value={numbers.invoice_total} />
             </div>
             <div
               className={`mt-3 flex items-center justify-between gap-2 rounded-md px-3 py-2 font-semibold ${r.price_difference >= 0 ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}
               data-result="price_difference"
             >
-              <span>Price difference (invoice − breakdown cost)</span>
+              <span>{tr("Price difference (invoice − breakdown cost)")}</span>
               <span className="tabular-nums">{money(r.price_difference)}</span>
             </div>
             {f.currency === 'USD' && fx > 0 && (
               <p className="mt-3 text-xs text-slate-600">
-                In CAD at {fx}: breakdown cost {formatMoney(r.breakdown_total * fx, 'CAD')}, total with margin {formatMoney(r.total_with_margin * fx, 'CAD')}, invoice{' '}
-                {formatMoney(numbers.invoice_total * fx, 'CAD')}. Every amount is also stored in CAD.
+                {tr("In CAD at")} {fx}{tr(": breakdown cost")} {formatMoney(r.breakdown_total * fx, 'CAD')}{tr(", total with margin")} {formatMoney(r.total_with_margin * fx, 'CAD')}{tr(", invoice")}{' '}
+                {formatMoney(numbers.invoice_total * fx, 'CAD')}{tr(". Every amount is also stored in CAD.")}
               </p>
             )}
           </section>
           <Can permission="freight.breakdowns" level="edit">
             <button type="button" className={`${buttonClass} w-full`} onClick={save} disabled={busy}>
-              {busy ? 'Saving…' : id ? ACTION.save : 'Create Cost Breakdown'}
+              {busy ? tr("Saving…") : id ? ACTION.save : tr("Create Cost Breakdown")}
             </button>
           </Can>
         </aside>

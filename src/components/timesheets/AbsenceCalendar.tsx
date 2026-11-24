@@ -7,6 +7,7 @@ import { addDaysISO, showDate, todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { isoDow, showHours, timeOffLabel } from '../../lib/timesheets'
+import { tr } from '../../i18n'
 
 type Absence = { employee_id: string; name: string; department_id: string | null; kind: string; start_date: string; end_date: string; hours: number | null; status: string; request_id: string | null; source: string }
 
@@ -49,11 +50,11 @@ export default function AbsenceCalendar() {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <button type="button" className={secondaryButtonClass} onClick={() => shift(-1)} aria-label="Previous month">
+        <button type="button" className={secondaryButtonClass} onClick={() => shift(-1)} aria-label={tr("Previous month")}>
           ←
         </button>
         <h2 className="w-40 text-center font-semibold">{showDate(first, 'MMMM yyyy')}</h2>
-        <button type="button" className={secondaryButtonClass} onClick={() => shift(1)} aria-label="Next month">
+        <button type="button" className={secondaryButtonClass} onClick={() => shift(1)} aria-label={tr("Next month")}>
           →
         </button>
         <div className="ml-auto flex flex-wrap gap-3 text-xs">
@@ -65,7 +66,7 @@ export default function AbsenceCalendar() {
           ))}
           <span className="flex items-center gap-1">
             <span className="inline-block h-3 w-3 rounded-sm border border-slate-400" style={{ background: 'repeating-linear-gradient(45deg,#cbd5e1 0 2px,transparent 2px 5px)' }} />
-            Waiting for a decision
+            {tr("Waiting for a decision")}
           </span>
         </div>
       </div>
@@ -74,12 +75,12 @@ export default function AbsenceCalendar() {
         <table className="text-xs">
           <thead>
             <tr>
-              <th className="sticky left-0 z-10 min-w-36 bg-white px-2 py-1 text-left">Employee</th>
+              <th className="sticky left-0 z-10 min-w-36 bg-white px-2 py-1 text-left">{tr("Employee")}</th>
               {days.map((d) => (
                 <th key={d} className={`w-7 px-0.5 py-1 text-center font-normal ${[6, 7].includes(isoDow(d)) ? 'bg-slate-50 text-slate-400' : ''} ${d === today ? 'font-bold text-blue-700' : ''}`} title={holidayOn.get(d)}>
                   <div>{showDate(d, 'EEEEE')}</div>
                   <div>{Number(d.slice(8))}</div>
-                  {holidayOn.has(d) && <div className="text-[0.625rem] text-red-700">Hol</div>}
+                  {holidayOn.has(d) && <div className="text-[0.625rem] text-red-700">{tr("Hol")}</div>}
                 </th>
               ))}
             </tr>
@@ -88,7 +89,7 @@ export default function AbsenceCalendar() {
             {people.length === 0 && (
               <tr>
                 <td className="px-2 py-3 text-slate-500" colSpan={days.length + 1}>
-                  Nobody is off this month.
+                  {tr("Nobody is off this month.")}
                 </td>
               </tr>
             )}
@@ -120,7 +121,7 @@ export default function AbsenceCalendar() {
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-slate-500">Approved and waiting requests, plus leave entered or imported in the timesheets. Select a coloured day to open the request.</p>
+      <p className="text-xs text-slate-500">{tr("Approved and waiting requests, plus leave entered or imported in the timesheets. Select a coloured day to open the request.")}</p>
     </div>
   )
 }

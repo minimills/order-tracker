@@ -6,6 +6,7 @@
  * version it was signed with even if the saved signature changes later.
  */
 import { supabase } from './supabase'
+import { tr } from '../i18n'
 
 export const SAVED_SIGNATURE_BUCKET = 'user-signatures'
 /** Saved signatures (and their copies on documents) stay under this size. */
@@ -69,13 +70,13 @@ export async function fileToCanvas(file: File): Promise<HTMLCanvasElement> {
     await page.render({ canvasContext: ctx, viewport }).promise
     return canvas
   }
-  if (!/^image\/(png|jpe?g)$/.test(file.type) && !/\.(png|jpe?g)$/i.test(file.name)) throw new Error('Choose a PNG, JPG or PDF file.')
+  if (!/^image\/(png|jpe?g)$/.test(file.type) && !/\.(png|jpe?g)$/i.test(file.name)) throw new Error(tr("Choose a PNG, JPG or PDF file."))
   const url = URL.createObjectURL(file)
   try {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const i = new Image()
       i.onload = () => resolve(i)
-      i.onerror = () => reject(new Error('The picture could not be read. Try a PNG or JPG file.'))
+      i.onerror = () => reject(new Error(tr("The picture could not be read. Try a PNG or JPG file.")))
       i.src = url
     })
     const scale = Math.min(MAX_SOURCE / img.naturalWidth, MAX_SOURCE / img.naturalHeight, 1)
@@ -136,7 +137,7 @@ export async function cleanSignature(source: HTMLCanvasElement, crop: Crop): Pro
         if (y < minY) minY = y
         if (y > maxY) maxY = y
       }
-  if (maxX < 0) throw new Error('No signature was found in the selected area. Select the part with the signature.')
+  if (maxX < 0) throw new Error(tr("No signature was found in the selected area. Select the part with the signature."))
   const pad = 6
   minX = Math.max(0, minX - pad)
   minY = Math.max(0, minY - pad)
@@ -172,14 +173,14 @@ export async function cleanSignature(source: HTMLCanvasElement, crop: Crop): Pro
     if (blob && blob.size <= MAX_SAVED_SIGNATURE_BYTES) return { blob, dataUrl: c.toDataURL('image/png'), width: c.width, height: c.height }
     scale *= 0.8
   }
-  throw new Error('The signature could not be made small enough. Select a smaller area.')
+  throw new Error(tr("The signature could not be made small enough. Select a smaller area."))
 }
 
 // ---------------------------------------------------------------------------
 // Saving, removing and using it
 // ---------------------------------------------------------------------------
 export async function saveMySignature(email: string, cleaned: { blob: Blob; width: number; height: number }, old: SavedSignature | null) {
-  if (!supabase) throw new Error('Not connected')
+  if (!supabase) throw new Error(tr("Not connected"))
   const path = `${email.toLowerCase()}/${Date.now()}.png`
   const up = await supabase.storage.from(SAVED_SIGNATURE_BUCKET).upload(path, cleaned.blob, { contentType: 'image/png' })
   if (up.error) throw up.error
@@ -193,7 +194,7 @@ export async function saveMySignature(email: string, cleaned: { blob: Blob; widt
 }
 
 export async function removeMySignature() {
-  if (!supabase) throw new Error('Not connected')
+  if (!supabase) throw new Error(tr("Not connected"))
   const { data: path, error } = await supabase.rpc('remove_my_signature')
   if (error) throw error
   if (path) await supabase.storage.from(SAVED_SIGNATURE_BUCKET).remove([String(path)])

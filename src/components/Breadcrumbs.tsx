@@ -2,6 +2,7 @@ import { Fragment } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { crumbsForPath, usePageCrumbs } from '../lib/breadcrumbs'
 import Icon from './Icon'
+import { tr } from '../i18n'
 
 /** "Orders > Order 86 > Carder - Large LCR-2073" at the top of every page; each earlier part is a link. */
 export default function Breadcrumbs() {
@@ -10,7 +11,7 @@ export default function Breadcrumbs() {
   const crumbs = fromPage ?? crumbsForPath(pathname)
   if (crumbs.length === 0) return null
   return (
-    <nav aria-label="Breadcrumb" className="mb-3 min-w-0 text-sm print:hidden">
+    <nav aria-label={tr("Breadcrumb")} className="mb-3 min-w-0 text-sm print:hidden">
       <ol className="flex min-w-0 flex-wrap items-center gap-x-1 gap-y-0.5 text-slate-500">
         {crumbs.map((c, i) => {
           const last = i === crumbs.length - 1

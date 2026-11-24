@@ -10,6 +10,7 @@ import { supabase } from '../../lib/supabase'
 import { loadBalances, minimumFor, showHours, usePayrollSettings, type Balances, type Employee } from '../../lib/timesheets'
 import { useDepartments } from '../../lib/useDepartments'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 type Rate = { id: string; effective_from: string; pay_type: string; hourly_rate: number | null; annual_salary: number | null; reason: string | null; created_by_name: string | null; created_at: string }
 type LeaveChange = { id: string; kind: string; year: number | null; days: number | null; reason: string; created_by_name: string | null; created_at: string }
@@ -77,7 +78,7 @@ export default function EmployeeDialog({ employee, userEmail, userName, onClose,
     })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(id ? 'Employee saved.' : 'Employee added. You can now add the pay rate.')
+    toast.success(id ? tr("Employee saved.") : tr("Employee added. You can now add the pay rate."))
     setId(data as string)
     onSaved()
   }
@@ -94,7 +95,7 @@ export default function EmployeeDialog({ employee, userEmail, userName, onClose,
       p_reason: rate.reason,
     })
     if (error) return toast.error(friendlyError(error))
-    toast.success('Pay rate saved.')
+    toast.success(tr("Pay rate saved."))
     setRate({ from: todayISO(), amount: '', reason: '' })
     loadExtra(id)
     onSaved()
@@ -102,34 +103,42 @@ export default function EmployeeDialog({ employee, userEmail, userName, onClose,
 
   async function changeLeave(kind: 'vacation' | 'sick') {
     if (!supabase || !id) return
-    const days = await askText(`${kind === 'vacation' ? 'Vacation' : 'Paid sick'} days for ${year} (leave empty to go back to the company rule)`, { label: 'Days', initial: '' })
+    const days = await askText(tr("{{value}} days for {{year}} (leave empty to go back to the company rule)", { value: kind === 'vacation' ? tr("Vacation") : tr("Paid sick"), year: year }), { get label() {
+    return tr("Days")
+  }, initial: '' })
     if (days === null) return
-    const reason = await askText('Reason for the change', { label: 'Reason' })
-    if (!reason) return toast.error('A reason is needed.')
+    const reason = await askText(tr("Reason for the change"), { get label() {
+    return tr("Reason")
+  } })
+    if (!reason) return toast.error(tr("A reason is needed."))
     const n = days.trim() === '' ? null : Number(days)
-    if (n !== null && (Number.isNaN(n) || n < 0)) return toast.error('Enter a number of days.')
+    if (n !== null && (Number.isNaN(n) || n < 0)) return toast.error(tr("Enter a number of days."))
     const minimum = bal ? minimumFor(settings, kind, bal.years_of_service) : 0
-    if (n !== null && n < minimum) toast.warning(`${n} days is less than the PEI minimum of ${minimum} days for ${bal?.years_of_service} years of service.`, { duration: 10000 })
+    if (n !== null && n < minimum) toast.warning(tr("{{n}} days is less than the PEI minimum of {{minimum}} days for {{value}} years of service.", { n: n, minimum: minimum, value: bal?.years_of_service }), { duration: 10000 })
     const { error } = await supabase.rpc('set_leave_entitlement', { p_employee: id, p_kind: kind, p_year: year, p_days: n, p_reason: reason })
     if (error) return toast.error(friendlyError(error))
-    toast.success('Entitlement changed.')
+    toast.success(tr("Entitlement changed."))
     loadExtra(id)
   }
   async function adjustBank() {
     if (!supabase || !id) return
-    const hours = await askText('Hours to add to the bank (a negative number takes hours away)', { label: 'Hours' })
+    const hours = await askText(tr("Hours to add to the bank (a negative number takes hours away)"), { get label() {
+    return tr("Hours")
+  } })
     if (!hours) return
-    const reason = await askText('Reason for the correction', { label: 'Reason' })
-    if (!reason) return toast.error('A reason is needed.')
+    const reason = await askText(tr("Reason for the correction"), { get label() {
+    return tr("Reason")
+  } })
+    if (!reason) return toast.error(tr("A reason is needed."))
     const { error } = await supabase.rpc('adjust_banked_hours', { p_employee: id, p_hours: Number(hours), p_reason: reason })
     if (error) return toast.error(friendlyError(error))
-    toast.success('Bank corrected.')
+    toast.success(tr("Bank corrected."))
     loadExtra(id)
   }
 
   return (
     <Modal
-      title={id ? `Employee Setup: ${e.name}` : 'Employee Setup'}
+      title={id ? tr("Employee Setup: {{name}}", { name: e.name }) : tr("Employee Setup")}
       wide
       onClose={onClose}
       busy={busy}
@@ -146,19 +155,19 @@ export default function EmployeeDialog({ employee, userEmail, userName, onClose,
     >
       <div className="grid gap-4 md:grid-cols-2">
         <div className="space-y-3 text-sm">
-          <Field label="Name" htmlFor="emp-name">
+          <Field label={tr("Name")} htmlFor="emp-name">
             <input id="emp-name" className={inputClass} value={e.name} onChange={(x) => setE({ ...e, name: x.target.value })} />
           </Field>
-          <p className="text-xs text-slate-500">{employee?.user_email ?? userEmail ? `Signs in as ${employee?.user_email ?? userEmail}.` : 'No login (for example former staff in imported sheets).'}</p>
-          <Field label="Pay type" htmlFor="emp-pay">
+          <p className="text-xs text-slate-500">{employee?.user_email ?? userEmail ? tr("Signs in as {{value}}.", { value: employee?.user_email ?? userEmail }) : tr("No login (for example former staff in imported sheets).")}</p>
+          <Field label={tr("Pay type")} htmlFor="emp-pay">
             <select id="emp-pay" className={inputClass} value={e.pay_type} onChange={(x) => setE({ ...e, pay_type: x.target.value as 'hourly' | 'salaried' })}>
-              <option value="hourly">Hourly</option>
-              <option value="salaried">Salaried</option>
+              <option value="hourly">{tr("Hourly")}</option>
+              <option value="salaried">{tr("Salaried")}</option>
             </select>
           </Field>
-          <Field label="Payroll department" htmlFor="emp-dept" hint="For department totals; the managers of this department and of their other departments approve their weeks.">
+          <Field label={tr("Payroll department")} htmlFor="emp-dept" hint={tr("For department totals; the managers of this department and of their other departments approve their weeks.")}>
             <select id="emp-dept" className={inputClass} value={e.department_id} onChange={(x) => setE({ ...e, department_id: x.target.value })}>
-              <option value="">None</option>
+              <option value="">{tr("None")}</option>
               {departments
                 .filter((d) => !d.archived || d.id === e.department_id)
                 .map((d) => (
@@ -169,37 +178,37 @@ export default function EmployeeDialog({ employee, userEmail, userName, onClose,
             </select>
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Start date" htmlFor="emp-start" hint="Years of service count from here.">
+            <Field label={tr("Start date")} htmlFor="emp-start" hint={tr("Years of service count from here.")}>
               <input id="emp-start" type="date" className={inputClass} value={e.start_date} onChange={(x) => setE({ ...e, start_date: x.target.value })} />
             </Field>
-            <Field label="Last day (if they left)" htmlFor="emp-end">
+            <Field label={tr("Last day (if they left)")} htmlFor="emp-end">
               <input id="emp-end" type="date" className={inputClass} value={e.end_date} onChange={(x) => setE({ ...e, end_date: x.target.value })} />
             </Field>
           </div>
-          <Field label="Hours in a full day" htmlFor="emp-hpd" hint={`Empty = ${settings.hours_per_day} (Admin → Payroll Settings).`}>
+          <Field label={tr("Hours in a full day")} htmlFor="emp-hpd" hint={tr("Empty = {{hours_per_day}} (Admin → Payroll Settings).", { hours_per_day: settings.hours_per_day })}>
             <input id="emp-hpd" inputMode="decimal" className={`${narrowInputClass} w-24`} value={e.hours_per_day} onChange={(x) => setE({ ...e, hours_per_day: x.target.value.replace(/[^0-9.]/g, '') })} />
           </Field>
-          <Field label="Other spellings in imported sheets" htmlFor="emp-alias" hint="Separate with commas, for example “Tom, T. Test”.">
+          <Field label={tr("Other spellings in imported sheets")} htmlFor="emp-alias" hint={tr("Separate with commas, for example “Tom, T. Test”.")}>
             <input id="emp-alias" className={inputClass} value={e.import_names} onChange={(x) => setE({ ...e, import_names: x.target.value })} />
           </Field>
-          <Field label="Notes" htmlFor="emp-notes">
+          <Field label={tr("Notes")} htmlFor="emp-notes">
             <textarea id="emp-notes" rows={2} className={inputClass} value={e.notes} onChange={(x) => setE({ ...e, notes: x.target.value })} />
           </Field>
         </div>
 
         <div className="space-y-4 text-sm">
-          {!id && <p className="rounded-md bg-slate-50 p-3 text-slate-600">Save the employee first; then the pay rate and leave entitlements can be added.</p>}
+          {!id && <p className="rounded-md bg-slate-50 p-3 text-slate-600">{tr("Save the employee first; then the pay rate and leave entitlements can be added.")}</p>}
           {id && (
             <Can permission="payroll.pay">
               <section className="rounded-md border border-slate-200 p-3">
-                <h3 className="mb-2 font-semibold">Pay Rate</h3>
+                <h3 className="mb-2 font-semibold">{tr("Pay Rate")}</h3>
                 {rates.length === 0 ? (
-                  <p className="text-slate-500">No pay rate yet.</p>
+                  <p className="text-slate-500">{tr("No pay rate yet.")}</p>
                 ) : (
                   <ul className="mb-2 space-y-1">
                     {rates.map((r, i) => (
                       <li key={r.id} className={i === 0 ? 'font-medium' : 'text-slate-600'}>
-                        From {showDate(r.effective_from)}: {r.pay_type === 'hourly' ? `${formatMoney(Number(r.hourly_rate), 'CAD')} an hour` : `${formatMoney(Number(r.annual_salary), 'CAD')} a year`}
+                        {tr("From")} {showDate(r.effective_from)}: {r.pay_type === 'hourly' ? tr("{{formatMoney}} an hour", { formatMoney: formatMoney(Number(r.hourly_rate), 'CAD') }) : tr("{{formatMoney}} a year", { formatMoney: formatMoney(Number(r.annual_salary), 'CAD') })}
                         {r.reason && ` · ${r.reason}`}
                         <span className="text-xs text-slate-500"> · {r.created_by_name}</span>
                       </li>
@@ -208,71 +217,71 @@ export default function EmployeeDialog({ employee, userEmail, userName, onClose,
                 )}
                 <Can permission="payroll.pay" level="edit">
                   <div className="grid gap-2 sm:grid-cols-3">
-                    <Field label="From" htmlFor="rate-from">
+                    <Field label={tr("From")} htmlFor="rate-from">
                       <input id="rate-from" type="date" className={inputClass} value={rate.from} onChange={(x) => setRate({ ...rate, from: x.target.value })} />
                     </Field>
-                    <Field label={e.pay_type === 'hourly' ? 'Hourly rate (CAD)' : 'Annual salary (CAD)'} htmlFor="rate-amount">
+                    <Field label={e.pay_type === 'hourly' ? tr("Hourly rate (CAD)") : tr("Annual salary (CAD)")} htmlFor="rate-amount">
                       <input id="rate-amount" inputMode="decimal" className={inputClass} value={rate.amount} onChange={(x) => setRate({ ...rate, amount: x.target.value })} />
                     </Field>
-                    <Field label="Reason" htmlFor="rate-reason">
-                      <input id="rate-reason" className={inputClass} value={rate.reason} placeholder="for example Raise" onChange={(x) => setRate({ ...rate, reason: x.target.value })} />
+                    <Field label={tr("Reason")} htmlFor="rate-reason">
+                      <input id="rate-reason" className={inputClass} value={rate.reason} placeholder={tr("for example Raise")} onChange={(x) => setRate({ ...rate, reason: x.target.value })} />
                     </Field>
                   </div>
                   <button type="button" className={`${secondaryButtonClass} mt-2`} disabled={!rate.amount} onClick={addRate}>
-                    Add Pay Rate
+                    {tr("Add Pay Rate")}
                   </button>
-                  <p className="mt-1 text-xs text-slate-500">Earlier rates stay in the history and are used for the weeks before the new date (labour cost, compared years).</p>
+                  <p className="mt-1 text-xs text-slate-500">{tr("Earlier rates stay in the history and are used for the weeks before the new date (labour cost, compared years).")}</p>
                 </Can>
               </section>
             </Can>
           )}
           {id && bal && (
             <section className="rounded-md border border-slate-200 p-3">
-              <h3 className="mb-2 font-semibold">Leave {year}</h3>
-              <p className="mb-2 text-xs text-slate-500">{bal.years_of_service} years of service by the end of {year}.</p>
+              <h3 className="mb-2 font-semibold">{tr("Leave")} {year}</h3>
+              <p className="mb-2 text-xs text-slate-500">{bal.years_of_service} {tr("years of service by the end of")} {year}.</p>
               <dl className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 gap-y-1">
-                <dt>Vacation days</dt>
+                <dt>{tr("Vacation days")}</dt>
                 <dd className="tabular-nums">
-                  {showHours(bal.vacation.entitlement)} ({showHours(bal.vacation.left)} left)
+                  {showHours(bal.vacation.entitlement)} ({showHours(bal.vacation.left)} {tr("left)")}
                 </dd>
                 <dd>
                   <Can permission="timesheets.adjust" level="edit">
                     <button type="button" className="text-xs text-blue-700 underline" onClick={() => changeLeave('vacation')}>
-                      Change
+                      {tr("Change")}
                     </button>
                   </Can>
                 </dd>
-                <dt>Paid sick days</dt>
+                <dt>{tr("Paid sick days")}</dt>
                 <dd className="tabular-nums">
-                  {showHours(bal.sick.entitlement)} ({showHours(bal.sick.left)} left)
+                  {showHours(bal.sick.entitlement)} ({showHours(bal.sick.left)} {tr("left)")}
                 </dd>
                 <dd>
                   <Can permission="timesheets.adjust" level="edit">
                     <button type="button" className="text-xs text-blue-700 underline" onClick={() => changeLeave('sick')}>
-                      Change
+                      {tr("Change")}
                     </button>
                   </Can>
                 </dd>
-                <dt>Banked hours</dt>
+                <dt>{tr("Banked hours")}</dt>
                 <dd className="tabular-nums">{showHours(bal.banked.balance)}</dd>
                 <dd>
                   <Can permission="timesheets.adjust" level="edit">
                     <button type="button" className="text-xs text-blue-700 underline" onClick={adjustBank}>
-                      Correct
+                      {tr("Correct")}
                     </button>
                   </Can>
                 </dd>
               </dl>
               {(bal.vacation.entitlement < minimumFor(settings, 'vacation', bal.years_of_service) || bal.sick.entitlement < minimumFor(settings, 'sick', bal.years_of_service)) && (
                 <p className="mt-2 rounded bg-red-50 p-2 text-xs text-red-800">
-                  Below the PEI minimum for {bal.years_of_service} years of service: {minimumFor(settings, 'vacation', bal.years_of_service)} vacation days and {minimumFor(settings, 'sick', bal.years_of_service)} paid sick days.
+                  {tr("Below the PEI minimum for")} {bal.years_of_service} {tr("years of service:")} {minimumFor(settings, 'vacation', bal.years_of_service)} {tr("vacation days and")} {minimumFor(settings, 'sick', bal.years_of_service)} {tr("paid sick days.")}
                 </p>
               )}
               {changes.length > 0 && (
                 <ul className="mt-2 space-y-0.5 border-t border-slate-100 pt-2 text-xs text-slate-600">
                   {changes.map((c) => (
                     <li key={c.id}>
-                      {showDate(c.created_at.slice(0, 10))}: {c.kind === 'vacation' ? 'vacation' : 'sick'} {c.year ?? 'every year'} → {c.days == null ? 'company rule' : `${showHours(c.days)} days`} · “{c.reason}” ({c.created_by_name})
+                      {showDate(c.created_at.slice(0, 10))}: {c.kind === 'vacation' ? tr("vacation") : tr("sick")} {c.year ?? tr("every year")} → {c.days == null ? tr("company rule") : tr("{{showHours}} days", { showHours: showHours(c.days) })} · “{c.reason}” ({c.created_by_name})
                     </li>
                   ))}
                 </ul>

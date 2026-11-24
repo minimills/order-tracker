@@ -10,6 +10,7 @@ import { useOptionList } from '../../lib/useOptionList'
 import { buttonClass, Field, inputClass, Modal, secondaryButtonClass } from '../form'
 import { emailPattern, parseEmails } from '../order/customer'
 import RichTextEditor from '../RichTextEditor'
+import { tr } from '../../i18n'
 
 type DialogProps = { onClose: () => void; onDone: (message: string) => void }
 
@@ -17,10 +18,10 @@ function Footer({ onClose, onSave, saving }: { onClose: () => void; onSave: () =
   return (
     <>
       <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-        Cancel
+        {tr("Cancel")}
       </button>
       <button type="button" className={buttonClass} onClick={onSave} disabled={saving}>
-        {saving ? 'Saving…' : 'Save Changes'}
+        {saving ? tr("Saving…") : tr("Save Changes")}
       </button>
     </>
   )
@@ -84,14 +85,14 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
 
   async function save() {
     if (!supabase) return
-    if (!/^\d+$/.test(f.order_number) || Number(f.order_number) < 1) return setError('The order number must be a whole number.')
+    if (!/^\d+$/.test(f.order_number) || Number(f.order_number) < 1) return setError(tr("The order number must be a whole number."))
     if (f.split_number && (!/^\d+$/.test(f.split_number) || Number(f.split_number) < 1))
-      return setError('The split number must be a whole number, or empty.')
+      return setError(tr("The split number must be a whole number, or empty."))
     // People without "order.field.order_total" don't see the total; it is then left as it is.
     const keepTotal = order.order_total === null && f.order_total.trim() === ''
     const total = keepTotal ? null : parseMoney(f.order_total)
-    if (!keepTotal && (total === null || Number.isNaN(total))) return setError('Enter the order total as a number.')
-    if (!f.order_date) return setError('Enter the order date.')
+    if (!keepTotal && (total === null || Number.isNaN(total))) return setError(tr("Enter the order total as a number."))
+    if (!f.order_date) return setError(tr("Enter the order date."))
     setSaving(true)
     const { error: e } = await supabase
       .from('orders')
@@ -114,7 +115,7 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
     setSaving(false)
     if (e) {
       return setError(
-        e.code === '23505' ? 'That order number (with that split number) is already in use.' : friendlyError(e),
+        e.code === '23505' ? tr("That order number (with that split number) is already in use.") : friendlyError(e),
       )
     }
     refresh()
@@ -122,15 +123,15 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
   }
 
   return (
-    <Modal title={`Edit Order ${order.order_code}`} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
+    <Modal title={tr("Edit Order {{order_code}}", { order_code: order.order_code })} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Order number" htmlFor="ao-number">
+        <Field label={tr("Order number")} htmlFor="ao-number">
           <input id="ao-number" inputMode="numeric" className={inputClass} value={f.order_number} onChange={set('order_number')} />
         </Field>
-        <Field label="Split number" htmlFor="ao-split" hint="Leave empty for a normal order; enter 1, 2… for 76-1, 76-2.">
+        <Field label={tr("Split number")} htmlFor="ao-split" hint={tr("Leave empty for a normal order; enter 1, 2… for 76-1, 76-2.")}>
           <input id="ao-split" inputMode="numeric" className={inputClass} value={f.split_number} onChange={set('split_number')} />
         </Field>
-        <Field label="Customer" htmlFor="ao-customer" className="sm:col-span-2">
+        <Field label={tr("Customer")} htmlFor="ao-customer" className="sm:col-span-2">
           <select id="ao-customer" className={inputClass} value={f.customer_id} onChange={set('customer_id')}>
             {customers
               .filter((c) => !c.archived || c.id === order.customer_id)
@@ -142,7 +143,7 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
               ))}
           </select>
         </Field>
-        <Field label="Stage" htmlFor="ao-stage" hint="Changing it here skips the serial number preview; the Orders Board shows it first.">
+        <Field label={tr("Stage")} htmlFor="ao-stage" hint={tr("Changing it here skips the serial number preview; the Orders Board shows it first.")}>
           <select id="ao-stage" className={inputClass} value={f.stage} onChange={set('stage')}>
             {STAGES.map((s) => (
               <option key={s} value={s}>
@@ -151,49 +152,49 @@ export function AdminOrderDialog({ order, onClose, onDone }: DialogProps & { ord
             ))}
           </select>
         </Field>
-        <Field label="Order date" htmlFor="ao-date">
+        <Field label={tr("Order date")} htmlFor="ao-date">
           <input id="ao-date" type="date" className={inputClass} value={f.order_date} onChange={set('order_date')} />
         </Field>
-        <Field label="Order total" htmlFor="ao-total">
+        <Field label={tr("Order total")} htmlFor="ao-total">
           <div className="flex gap-2">
             <input id="ao-total" inputMode="decimal" className={inputClass} value={f.order_total} onChange={set('order_total')} />
-            <select aria-label="Currency" className={`${inputClass} w-24`} value={f.currency} onChange={set('currency')}>
+            <select aria-label={tr("Currency")} className={`${inputClass} w-24`} value={f.currency} onChange={set('currency')}>
               {CURRENCIES.map((c) => (
                 <option key={c}>{c}</option>
               ))}
             </select>
           </div>
         </Field>
-        <Field label="Voltage" htmlFor="ao-voltage">
+        <Field label={tr("Voltage")} htmlFor="ao-voltage">
           <select id="ao-voltage" className={inputClass} value={f.voltage} onChange={set('voltage')}>
             {voltage.options.map((o) => (
               <option key={o}>{o}</option>
             ))}
           </select>
         </Field>
-        <Field label="Expected ship date" htmlFor="ao-exp">
+        <Field label={tr("Expected ship date")} htmlFor="ao-exp">
           <input id="ao-exp" type="date" className={inputClass} value={f.expected_ship_date} onChange={set('expected_ship_date')} />
         </Field>
-        <Field label="Actual ship date" htmlFor="ao-act">
+        <Field label={tr("Actual ship date")} htmlFor="ao-act">
           <input id="ao-act" type="date" className={inputClass} value={f.actual_ship_date} onChange={set('actual_ship_date')} />
         </Field>
-        <Field label="Delivery equipment" htmlFor="ao-del">
+        <Field label={tr("Delivery equipment")} htmlFor="ao-del">
           <select id="ao-del" className={inputClass} value={f.delivery_equipment} onChange={set('delivery_equipment')}>
             {delivery.options.map((o) => (
               <option key={o}>{o}</option>
             ))}
           </select>
         </Field>
-        <Field label="Freight type" htmlFor="ao-freight">
+        <Field label={tr("Freight type")} htmlFor="ao-freight">
           <select id="ao-freight" className={inputClass} value={f.freight_type} onChange={set('freight_type')}>
-            <option value="">Not decided yet</option>
+            <option value="">{tr("Not decided yet")}</option>
             {freight.options.map((o) => (
               <option key={o}>{o}</option>
             ))}
           </select>
         </Field>
-        <Field label="Notes" className="sm:col-span-2">
-          <RichTextEditor label="Order notes" value={f.notes} onChange={(notes) => setF((x) => ({ ...x, notes }))} />
+        <Field label={tr("Notes")} className="sm:col-span-2">
+          <RichTextEditor label={tr("Order notes")} value={f.notes} onChange={(notes) => setF((x) => ({ ...x, notes }))} />
         </Field>
       </div>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
@@ -220,10 +221,10 @@ export function AdminCustomerDialog({ customer, onClose, onDone }: DialogProps &
 
   async function save() {
     if (!supabase) return
-    if (!f.name.trim()) return setError('Enter the customer’s name.')
+    if (!f.name.trim()) return setError(tr("Enter the customer’s name."))
     const emails = parseEmails(f.emails)
     const bad = emails.filter((m) => !emailPattern.test(m))
-    if (bad.length) return setError(`This doesn’t look like an email address: ${bad.join(', ')}`)
+    if (bad.length) return setError(tr("This doesn’t look like an email address: {{value}}", { value: bad.join(', ') }))
     setSaving(true)
     const { error: e } = await supabase
       .from('customers')
@@ -243,28 +244,28 @@ export function AdminCustomerDialog({ customer, onClose, onDone }: DialogProps &
   }
 
   return (
-    <Modal title={`Edit Customer ${customer.name}`} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
+    <Modal title={tr("Edit Customer {{name}}", { name: customer.name })} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Name" htmlFor="ac-name">
+        <Field label={tr("Name")} htmlFor="ac-name">
           <input id="ac-name" className={inputClass} value={f.name} onChange={set('name')} />
         </Field>
-        <Field label="Company" htmlFor="ac-company">
+        <Field label={tr("Company")} htmlFor="ac-company">
           <input id="ac-company" className={inputClass} value={f.company} onChange={set('company')} />
         </Field>
-        <Field label="Email addresses" htmlFor="ac-emails" hint="Separate multiple addresses with commas." className="sm:col-span-2">
+        <Field label={tr("Email addresses")} htmlFor="ac-emails" hint={tr("Separate multiple addresses with commas.")} className="sm:col-span-2">
           <input id="ac-emails" className={inputClass} value={f.emails} onChange={set('emails')} />
         </Field>
-        <Field label="Phone" htmlFor="ac-phone">
+        <Field label={tr("Phone")} htmlFor="ac-phone">
           <input id="ac-phone" className={inputClass} value={f.phone} onChange={set('phone')} />
         </Field>
-        <Field label="Country" htmlFor="ac-country">
+        <Field label={tr("Country")} htmlFor="ac-country">
           <input id="ac-country" className={inputClass} value={f.country} onChange={set('country')} />
         </Field>
-        <Field label="State / province" htmlFor="ac-state">
+        <Field label={tr("State / province")} htmlFor="ac-state">
           <input id="ac-state" className={inputClass} value={f.state_province} onChange={set('state_province')} />
         </Field>
-        <Field label="Notes" className="sm:col-span-2">
-          <RichTextEditor label="Customer notes" value={f.notes} onChange={(notes) => setF((x) => ({ ...x, notes }))} />
+        <Field label={tr("Notes")} className="sm:col-span-2">
+          <RichTextEditor label={tr("Customer notes")} value={f.notes} onChange={(notes) => setF((x) => ({ ...x, notes }))} />
         </Field>
       </div>
       {error && <p className="mt-3 text-sm font-medium text-red-600">{error}</p>}
@@ -315,7 +316,7 @@ export function AdminMachineDialog({ machine, onClose, onDone }: DialogProps & {
       const { data } = await supabase.from('orders').select('id').eq('order_code', f.order_code.trim()).maybeSingle()
       if (!data) {
         setSaving(false)
-        return setError(`There is no order ${f.order_code.trim()}.`)
+        return setError(tr("There is no order {{value}}.", { value: f.order_code.trim() }))
       }
       orderId = (data as { id: string }).id
     }
@@ -343,9 +344,9 @@ export function AdminMachineDialog({ machine, onClose, onDone }: DialogProps & {
   }
 
   return (
-    <Modal title="Edit Machine" onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
+    <Modal title={tr("Edit Machine")} onClose={onClose} busy={saving} footer={<Footer onClose={onClose} onSave={save} saving={saving} />}>
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Machine type" htmlFor="am-type" hint="Changing the type gives the machine a new automatic serial number.">
+        <Field label={tr("Machine type")} htmlFor="am-type" hint={tr("Changing the type gives the machine a new automatic serial number.")}>
           <select
             id="am-type"
             className={inputClass}
@@ -362,16 +363,16 @@ export function AdminMachineDialog({ machine, onClose, onDone }: DialogProps & {
               ))}
           </select>
         </Field>
-        <Field label="On order #" htmlFor="am-order" hint="Enter another order number to move it, for example 76 or 76-2.">
+        <Field label={tr("On order #")} htmlFor="am-order" hint={tr("Enter another order number to move it, for example 76 or 76-2.")}>
           <input id="am-order" className={inputClass} value={f.order_code} onChange={(e) => setF({ ...f, order_code: e.target.value })} />
         </Field>
         <Field
-          label="Serial number"
+          label={tr("Serial number")}
           htmlFor="am-serial"
           hint={
             f.machine_type_id !== machine.machine_type_id
-              ? 'Save the new type first, then set a serial number.'
-              : 'Manually entered serial numbers stay fixed. Leave empty to return to an automatic serial number.'
+              ? tr("Save the new type first, then set a serial number.")
+              : tr("Manually entered serial numbers stay fixed. Leave empty to return to an automatic serial number.")
           }
         >
           <input
@@ -384,9 +385,9 @@ export function AdminMachineDialog({ machine, onClose, onDone }: DialogProps & {
         </Field>
         <label className="flex items-center gap-2 pt-6 text-sm">
           <input type="checkbox" className="h-4 w-4" checked={f.ready} onChange={(e) => setF({ ...f, ready: e.target.checked })} />
-          Built (keeps its serial for good)
+          {tr("Built (keeps its serial for good)")}
         </label>
-        <Field label="Notes" htmlFor="am-notes" className="sm:col-span-2">
+        <Field label={tr("Notes")} htmlFor="am-notes" className="sm:col-span-2">
           <textarea id="am-notes" rows={2} className={inputClass} value={f.notes} onChange={(e) => setF({ ...f, notes: e.target.value })} />
         </Field>
       </div>
@@ -412,13 +413,13 @@ export function ArchiveDialog({
   const [busy, setBusy] = useState(false)
   return (
     <Modal
-      title={`Archive ${what}?`}
+      title={tr("Archive {{what}}?", { what: what })}
       onClose={onClose}
       busy={busy}
       footer={
         <>
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={busy}>
-            Cancel
+            {tr("Cancel")}
           </button>
           <button
             type="button"
@@ -430,13 +431,13 @@ export function ArchiveDialog({
               setBusy(false)
             }}
           >
-            {busy ? 'Archiving…' : 'Archive'}
+            {busy ? tr("Archiving…") : tr("Archive")}
           </button>
         </>
       }
     >
       <p className="text-sm text-slate-700">{explain}</p>
-      <p className="mt-2 text-sm text-slate-600">You can restore it at any time from Admin → Archive.</p>
+      <p className="mt-2 text-sm text-slate-600">{tr("You can restore it at any time from Admin → Archive.")}</p>
     </Modal>
   )
 }

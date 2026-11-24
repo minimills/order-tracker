@@ -10,12 +10,21 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { loadBalances, loadWeekRows, showHours, useEmployees, type Balances, type WeekRow } from '../../lib/timesheets'
 import { useDepartments } from '../../lib/useDepartments'
+import { tr } from '../../i18n'
 
 const VIEWS = [
-  { key: 'hours', label: 'Hours' },
-  { key: 'overtime', label: 'Overtime' },
-  { key: 'banked', label: 'Banked Hours' },
-  { key: 'leave', label: 'Leave Taken' },
+  { key: 'hours', get label() {
+    return tr("Hours")
+  } },
+  { key: 'overtime', get label() {
+    return tr("Overtime")
+  } },
+  { key: 'banked', get label() {
+    return tr("Banked Hours")
+  } },
+  { key: 'leave', get label() {
+    return tr("Leave Taken")
+  } },
 ] as const
 type Ledger = { id: string; employee_id: string; work_date: string; kind: string; source: string | null; hours: number; change: number; note: string | null; by_name: string | null; created_at: string }
 
@@ -163,7 +172,7 @@ export default function TimesheetReports() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-1 border-b border-slate-200" role="tablist" aria-label="Report">
+      <div className="flex flex-wrap gap-1 border-b border-slate-200" role="tablist" aria-label={tr("Report")}>
         {VIEWS.map((v) => (
           <button key={v.key} type="button" role="tab" aria-selected={view === v.key} onClick={() => set('view', v.key === 'hours' ? '' : v.key)} className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${view === v.key ? 'border-slate-900 font-semibold' : 'border-transparent text-slate-600'}`}>
             {v.label}
@@ -172,11 +181,11 @@ export default function TimesheetReports() {
       </div>
       <div className="flex flex-wrap items-end gap-2 text-sm">
         <label className="flex flex-col">
-          <span className="text-xs text-slate-600">From</span>
+          <span className="text-xs text-slate-600">{tr("From")}</span>
           <input type="date" className={narrowInputClass} value={from} onChange={(e) => set('from', e.target.value)} />
         </label>
         <label className="flex flex-col">
-          <span className="text-xs text-slate-600">To</span>
+          <span className="text-xs text-slate-600">{tr("To")}</span>
           <input type="date" className={narrowInputClass} value={to} onChange={(e) => set('to', e.target.value)} />
         </label>
         {[Number(year) - 1, Number(year)].map((y) => (
@@ -185,22 +194,22 @@ export default function TimesheetReports() {
           </button>
         ))}
         <button type="button" className={secondaryButtonClass} onClick={() => setParams({ ...Object.fromEntries(params), from: `${Number(year) - 1}-01-01`, to: todayISO(), by: 'year' }, { replace: true })}>
-          Compare Years
+          {tr("Compare Years")}
         </button>
         {view === 'hours' && (
           <label className="flex flex-col">
-            <span className="text-xs text-slate-600">Group by</span>
+            <span className="text-xs text-slate-600">{tr("Group by")}</span>
             <select className={narrowInputClass} value={by} onChange={(e) => set('by', e.target.value === 'month' ? '' : e.target.value)}>
-              <option value="week">Week</option>
-              <option value="month">Month</option>
-              <option value="year">Year</option>
+              <option value="week">{tr("Week")}</option>
+              <option value="month">{tr("Month")}</option>
+              <option value="year">{tr("Year")}</option>
             </select>
           </label>
         )}
         <label className="flex flex-col">
-          <span className="text-xs text-slate-600">Department</span>
+          <span className="text-xs text-slate-600">{tr("Department")}</span>
           <select className={narrowInputClass} value={deptFilter} onChange={(e) => set('dept', e.target.value)}>
-            <option value="">All</option>
+            <option value="">{tr("All")}</option>
             {departments.map((d) => (
               <option key={d.id} value={d.id}>
                 {d.name}
@@ -209,9 +218,9 @@ export default function TimesheetReports() {
           </select>
         </label>
         <label className="flex flex-col">
-          <span className="text-xs text-slate-600">Employee</span>
+          <span className="text-xs text-slate-600">{tr("Employee")}</span>
           <select className={narrowInputClass} value={empFilter} onChange={(e) => set('employee', e.target.value)}>
-            <option value="">All</option>
+            <option value="">{tr("All")}</option>
             {employees.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.name}
@@ -221,7 +230,7 @@ export default function TimesheetReports() {
         </label>
         <Can permission="timesheets.reports.export">
           <button type="button" className={`${secondaryButtonClass} ml-auto`} onClick={exportCsv}>
-            Export CSV
+            {tr("Export CSV")}
           </button>
         </Can>
       </div>
@@ -231,21 +240,21 @@ export default function TimesheetReports() {
           <table className="w-full min-w-[60rem] text-sm">
             <thead className="bg-slate-50 text-xs text-slate-600">
               <tr>
-                <th className={th}>Employee</th>
-                <th className={th}>{by === 'week' ? 'Week' : by === 'month' ? 'Month' : 'Year'}</th>
+                <th className={th}>{tr("Employee")}</th>
+                <th className={th}>{by === 'week' ? tr("Week") : by === 'month' ? tr("Month") : tr("Year")}</th>
                 {HOUR_COLS.map(([k, l]) => (
                   <th key={k} className={`${th} text-right`}>
                     {l}
                   </th>
                 ))}
-                <th className={th}>Notes</th>
+                <th className={th}>{tr("Notes")}</th>
               </tr>
             </thead>
             <tbody>
               {grouped.length === 0 && (
                 <tr>
                   <td className={`${td} text-slate-500`} colSpan={HOUR_COLS.length + 3}>
-                    No hours in these dates.
+                    {tr("No hours in these dates.")}
                   </td>
                 </tr>
               )}
@@ -259,9 +268,9 @@ export default function TimesheetReports() {
                     </td>
                   ))}
                   <td className={`${td} text-xs text-slate-600`}>
-                    {g.imported > 0 && <span className="mr-1 rounded bg-slate-100 px-1">Imported</span>}
-                    {g.review > 0 && <span className="mr-1 rounded bg-amber-100 px-1 text-amber-900">Needs review</span>}
-                    {g.choices.length > 0 && <span>Banked time over the threshold: {g.choices.join('; ')}</span>}
+                    {g.imported > 0 && <span className="mr-1 rounded bg-slate-100 px-1">{tr("Imported")}</span>}
+                    {g.review > 0 && <span className="mr-1 rounded bg-amber-100 px-1 text-amber-900">{tr("Needs review")}</span>}
+                    {g.choices.length > 0 && <span>{tr("Banked time over the threshold:")} {g.choices.join('; ')}</span>}
                   </td>
                 </tr>
               ))}
@@ -272,21 +281,21 @@ export default function TimesheetReports() {
           <table className="w-full min-w-[54rem] text-sm">
             <thead className="bg-slate-50 text-xs text-slate-600">
               <tr>
-                <th className={th}>Employee</th>
-                <th className={th}>Week of</th>
-                <th className={`${th} text-right`}>Worked</th>
-                <th className={`${th} text-right`}>Banked used</th>
-                <th className={`${th} text-right`}>Overtime</th>
-                <th className={`${th} text-right`}>Banked from overtime</th>
-                <th className={`${th} text-right`}>Paid overtime</th>
-                <th className={th}>Hours over the threshold from banked time</th>
+                <th className={th}>{tr("Employee")}</th>
+                <th className={th}>{tr("Week of")}</th>
+                <th className={`${th} text-right`}>{tr("Worked")}</th>
+                <th className={`${th} text-right`}>{tr("Banked used")}</th>
+                <th className={`${th} text-right`}>{tr("Overtime")}</th>
+                <th className={`${th} text-right`}>{tr("Banked from overtime")}</th>
+                <th className={`${th} text-right`}>{tr("Paid overtime")}</th>
+                <th className={th}>{tr("Hours over the threshold from banked time")}</th>
               </tr>
             </thead>
             <tbody>
               {overtimeRows.length === 0 && (
                 <tr>
                   <td className={`${td} text-slate-500`} colSpan={8}>
-                    No overtime in these dates.
+                    {tr("No overtime in these dates.")}
                   </td>
                 </tr>
               )}
@@ -301,7 +310,7 @@ export default function TimesheetReports() {
                   <td className={`${td} text-right tabular-nums`}>{showHours(r.paid_overtime)}</td>
                   <td className={`${td} text-xs`}>
                     {r.over_by_banked > 0
-                      ? `${showHours(r.over_by_banked)} hours paid as ${r.ot_choice === 'regular' ? 'regular pay' : 'overtime'}${r.ot_choice_by_name ? ` (chosen by ${r.ot_choice_by_name}${r.ot_choice_at ? `, ${showDate(r.ot_choice_at.slice(0, 10))}` : ''})` : ''}`
+                      ? tr("{{showHours}} hours paid as {{value}}{{value2}}", { showHours: showHours(r.over_by_banked), value: r.ot_choice === 'regular' ? tr("regular pay") : 'overtime', value2: r.ot_choice_by_name ? tr(" (chosen by {{ot_choice_by_name}}{{value}})", { ot_choice_by_name: r.ot_choice_by_name, value: r.ot_choice_at ? `, ${showDate(r.ot_choice_at.slice(0, 10))}` : '' }) : '' })
                       : ''}
                   </td>
                 </tr>
@@ -313,20 +322,20 @@ export default function TimesheetReports() {
           <table className="w-full min-w-[48rem] text-sm">
             <thead className="bg-slate-50 text-xs text-slate-600">
               <tr>
-                <th className={th}>Employee</th>
-                <th className={th}>Date</th>
-                <th className={th}>What</th>
-                <th className={`${th} text-right`}>Hours</th>
-                <th className={`${th} text-right`}>Bank change</th>
-                <th className={`${th} text-right`}>Balance</th>
-                <th className={th}>Note</th>
+                <th className={th}>{tr("Employee")}</th>
+                <th className={th}>{tr("Date")}</th>
+                <th className={th}>{tr("What")}</th>
+                <th className={`${th} text-right`}>{tr("Hours")}</th>
+                <th className={`${th} text-right`}>{tr("Bank change")}</th>
+                <th className={`${th} text-right`}>{tr("Balance")}</th>
+                <th className={th}>{tr("Note")}</th>
               </tr>
             </thead>
             <tbody>
               {ledgerRows.length === 0 && (
                 <tr>
                   <td className={`${td} text-slate-500`} colSpan={7}>
-                    No banked hours in these dates.
+                    {tr("No banked hours in these dates.")}
                   </td>
                 </tr>
               )}
@@ -357,22 +366,22 @@ export default function TimesheetReports() {
           <table className="w-full min-w-[50rem] text-sm">
             <thead className="bg-slate-50 text-xs text-slate-600">
               <tr>
-                <th className={th}>Employee</th>
-                <th className={th}>Year</th>
-                <th className={`${th} text-right`}>Vacation days</th>
-                <th className={`${th} text-right`}>Vacation left</th>
-                <th className={`${th} text-right`}>Sick days</th>
-                <th className={`${th} text-right`}>Sick days left</th>
-                <th className={`${th} text-right`}>Banked used (h)</th>
-                <th className={`${th} text-right`}>Unpaid (h)</th>
-                <th className={`${th} text-right`}>Stat holiday (h)</th>
+                <th className={th}>{tr("Employee")}</th>
+                <th className={th}>{tr("Year")}</th>
+                <th className={`${th} text-right`}>{tr("Vacation days")}</th>
+                <th className={`${th} text-right`}>{tr("Vacation left")}</th>
+                <th className={`${th} text-right`}>{tr("Sick days")}</th>
+                <th className={`${th} text-right`}>{tr("Sick days left")}</th>
+                <th className={`${th} text-right`}>{tr("Banked used (h)")}</th>
+                <th className={`${th} text-right`}>{tr("Unpaid (h)")}</th>
+                <th className={`${th} text-right`}>{tr("Stat holiday (h)")}</th>
               </tr>
             </thead>
             <tbody>
               {leaveRows.length === 0 && (
                 <tr>
                   <td className={`${td} text-slate-500`} colSpan={9}>
-                    No leave in these dates.
+                    {tr("No leave in these dates.")}
                   </td>
                 </tr>
               )}
@@ -381,9 +390,9 @@ export default function TimesheetReports() {
                   <td className={td}>{l.name}</td>
                   <td className={td}>{l.year}</td>
                   <td className={`${td} text-right tabular-nums`}>{showHours(l.vacation / l.hpd)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{l.b ? `${showHours(l.b.vacation.left)} of ${showHours(l.b.vacation.entitlement)}` : '—'}</td>
+                  <td className={`${td} text-right tabular-nums`}>{l.b ? tr("{{showHours}} of {{showHours2}}", { showHours: showHours(l.b.vacation.left), showHours2: showHours(l.b.vacation.entitlement) }) : '—'}</td>
                   <td className={`${td} text-right tabular-nums`}>{showHours(l.sick / l.hpd)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{l.b ? `${showHours(l.b.sick.left)} of ${showHours(l.b.sick.entitlement)}` : '—'}</td>
+                  <td className={`${td} text-right tabular-nums`}>{l.b ? tr("{{showHours}} of {{showHours2}}", { showHours: showHours(l.b.sick.left), showHours2: showHours(l.b.sick.entitlement) }) : '—'}</td>
                   <td className={`${td} text-right tabular-nums`}>{showHours(l.banked)}</td>
                   <td className={`${td} text-right tabular-nums`}>{showHours(l.unpaid)}</td>
                   <td className={`${td} text-right tabular-nums`}>{showHours(l.stat)}</td>
@@ -394,8 +403,7 @@ export default function TimesheetReports() {
         )}
       </div>
       <p className="text-xs text-slate-500">
-        Weeks count in the month and year they start in. Imported years are included, so years can be compared. Days = hours ÷ the employee’s hours per day. “Left” counts the whole year, including approved
-        time off still to come.
+        {tr("Weeks count in the month and year they start in. Imported years are included, so years can be compared. Days = hours ÷ the employee’s hours per day. “Left” counts the whole year, including approved time off still to come.")}
       </p>
     </div>
   )

@@ -12,6 +12,7 @@ import { supabase } from '../../lib/supabase'
 import { useDepartments } from '../../lib/useDepartments'
 import type { Widget } from '../../lib/widgets'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 type Template = { id: string; name: string; description: string | null; widgets: Widget[]; layouts: Layouts; locked: boolean; archived: boolean; updated_at: string }
 type Target = { template_id: string; target_type: 'user' | 'department'; target: string }
@@ -50,16 +51,18 @@ export default function DashboardTemplatesPage() {
       p: { id: t.id || null, name: t.name, description: t.description, widgets: t.widgets, layouts: t.layouts, locked: t.locked },
     })
     if (error) return toast.error(friendlyError(error))
-    toast.success('Template saved. Select “Give It Now” to update the people it is for.')
+    toast.success(tr("Template saved. Select “Give It Now” to update the people it is for."))
     setEdit({ ...t, id: id as string })
     load()
   }
   async function giveNow(t: Template) {
     if (!supabase) return
-    if (!(await confirmAction(`Give “${t.name}” to everyone it is for now? Their copy of this template is replaced (their other dashboards stay).`, { confirmLabel: 'Give It Now' }))) return
+    if (!(await confirmAction(tr("Give “{{name}}” to everyone it is for now? Their copy of this template is replaced (their other dashboards stay).", { name: t.name }), { get confirmLabel() {
+    return tr("Give It Now")
+  } }))) return
     const { data: n, error } = await supabase.rpc('apply_dashboard_template', { p_template: t.id })
     if (error) return toast.error(friendlyError(error))
-    toast.success(`Given to ${n} ${n === 1 ? 'person' : 'people'}.`)
+    toast.success(tr("Given to {{n}} {{value}}.", { n: n, value: n === 1 ? 'person' : 'people' }))
   }
   async function archive(t: Template) {
     if (!supabase) return
@@ -76,19 +79,19 @@ export default function DashboardTemplatesPage() {
   if (edit)
     return (
       <div className="space-y-4">
-        <AdminPageHeader title={edit.id ? `Template: ${edit.name}` : 'New Dashboard Template'}>
-          Add and arrange the widgets. People only ever see the widgets they are allowed to see. Arrange it on a computer; tablets and phones get a layout worked out from it (or arrange it on those screens too).
+        <AdminPageHeader title={edit.id ? tr("Template: {{name}}", { name: edit.name }) : tr("New Dashboard Template")}>
+          {tr("Add and arrange the widgets. People only ever see the widgets they are allowed to see. Arrange it on a computer; tablets and phones get a layout worked out from it (or arrange it on those screens too).")}
         </AdminPageHeader>
         <div className="grid max-w-3xl gap-3 sm:grid-cols-2">
-          <Field label="Name" htmlFor="dt-name">
+          <Field label={tr("Name")} htmlFor="dt-name">
             <input id="dt-name" className={inputClass} value={edit.name} onChange={(e) => setEdit({ ...edit, name: e.target.value })} />
           </Field>
-          <Field label="Description" htmlFor="dt-desc">
+          <Field label={tr("Description")} htmlFor="dt-desc">
             <input id="dt-desc" className={inputClass} value={edit.description ?? ''} onChange={(e) => setEdit({ ...edit, description: e.target.value })} />
           </Field>
           <label className="flex items-center gap-2 text-sm sm:col-span-2">
             <input type="checkbox" checked={edit.locked} onChange={(e) => setEdit({ ...edit, locked: e.target.checked })} />
-            Lock it: people cannot change their copy (they can still use Reset to Template)
+            {tr("Lock it: people cannot change their copy (they can still use Reset to Template)")}
           </label>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -101,10 +104,10 @@ export default function DashboardTemplatesPage() {
           {edit.id && (
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setAssign(edit)}>
-                Who Gets It
+                {tr("Who Gets It")}
               </button>
               <button type="button" className={secondaryButtonClass} onClick={() => giveNow(edit)}>
-                Give It Now
+                {tr("Give It Now")}
               </button>
             </>
           )}
@@ -116,13 +119,12 @@ export default function DashboardTemplatesPage() {
 
   return (
     <div className="space-y-4">
-      <AdminPageHeader title="Dashboard Templates">
-        Starting dashboards for people or departments. Someone without a dashboard gets the templates meant for them when they first open the Dashboard; “Give It Now” replaces their copy. A locked template
-        cannot be changed by the people who have it.
+      <AdminPageHeader title={tr("Dashboard Templates")}>
+        {tr("Starting dashboards for people or departments. Someone without a dashboard gets the templates meant for them when they first open the Dashboard; “Give It Now” replaces their copy. A locked template cannot be changed by the people who have it.")}
       </AdminPageHeader>
       <div className="flex flex-wrap items-center gap-3">
         <button type="button" className={buttonClass} onClick={() => setEdit({ id: '', name: '', description: '', widgets: [], layouts: {}, locked: false, archived: false, updated_at: '' })}>
-          Create Template
+          {tr("Create Template")}
         </button>
         <label className="ml-auto flex items-center gap-1.5 text-xs text-slate-600">
           <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
@@ -130,7 +132,7 @@ export default function DashboardTemplatesPage() {
         </label>
       </div>
       {templates.filter((t) => showArchived || !t.archived).length === 0 ? (
-        <p className="text-sm text-slate-500">No dashboard templates yet.</p>
+        <p className="text-sm text-slate-500">{tr("No dashboard templates yet.")}</p>
       ) : (
         <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm">
           {templates
@@ -139,19 +141,19 @@ export default function DashboardTemplatesPage() {
               <li key={t.id} className={`flex flex-wrap items-center gap-3 px-3 py-2 ${t.archived ? 'opacity-60' : ''}`} data-setting={`template-${t.id}`}>
                 <span className="min-w-0 flex-1">
                   <span className="font-medium">{t.name}</span>
-                  {t.locked && <span className="ml-2 rounded bg-slate-100 px-1.5 text-xs">Locked</span>}
+                  {t.locked && <span className="ml-2 rounded bg-slate-100 px-1.5 text-xs">{tr("Locked")}</span>}
                   <span className="block text-xs text-slate-500">
-                    {t.widgets.length} widgets · For: {forText(t)}
+                    {t.widgets.length} {tr("widgets · For:")} {forText(t)}
                   </span>
                 </span>
                 <button type="button" className={secondaryButtonClass} onClick={() => setEdit(t)}>
                   {ACTION.edit}
                 </button>
                 <button type="button" className={secondaryButtonClass} onClick={() => setAssign(t)}>
-                  Who Gets It
+                  {tr("Who Gets It")}
                 </button>
                 <button type="button" className={secondaryButtonClass} disabled={t.archived} onClick={() => giveNow(t)}>
-                  Give It Now
+                  {tr("Give It Now")}
                 </button>
                 <button type="button" className={secondaryButtonClass} onClick={() => archive(t)}>
                   {t.archived ? ACTION.restore : ACTION.archive}
@@ -175,14 +177,14 @@ function AssignDialog({ template, targets, people, onClose, onSaved }: { templat
     const list = [...users.map((u) => ({ type: 'user', target: u })), ...depts.map((d) => ({ type: 'department', target: d }))]
     const { error } = await supabase.rpc('set_dashboard_template_targets', { p_template: template.id, p_targets: list })
     if (error) return toast.error(friendlyError(error))
-    toast.success('Saved. People without a dashboard get it when they open the Dashboard; select “Give It Now” to give it to everyone now.')
+    toast.success(tr("Saved. People without a dashboard get it when they open the Dashboard; select “Give It Now” to give it to everyone now."))
     onSaved()
     onClose()
   }
   const toggle = (list: string[], set: (l: string[]) => void, v: string) => set(list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
   return (
     <Modal
-      title={`Who Gets “${template.name}”`}
+      title={tr("Who Gets “{{name}}”", { name: template.name })}
       onClose={onClose}
       footer={
         <>
@@ -197,7 +199,7 @@ function AssignDialog({ template, targets, people, onClose, onSaved }: { templat
     >
       <div className="grid gap-4 text-sm sm:grid-cols-2">
         <fieldset>
-          <legend className="mb-1 font-medium">Departments</legend>
+          <legend className="mb-1 font-medium">{tr("Departments")}</legend>
           {departments
             .filter((d) => !d.archived)
             .map((d) => (
@@ -208,7 +210,7 @@ function AssignDialog({ template, targets, people, onClose, onSaved }: { templat
             ))}
         </fieldset>
         <fieldset className="max-h-72 overflow-y-auto">
-          <legend className="mb-1 font-medium">People</legend>
+          <legend className="mb-1 font-medium">{tr("People")}</legend>
           {people.map((p) => (
             <label key={p.email} className="flex items-center gap-2">
               <input type="checkbox" checked={users.includes(p.email)} onChange={() => toggle(users, setUsers, p.email)} />

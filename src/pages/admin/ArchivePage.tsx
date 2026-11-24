@@ -9,6 +9,7 @@ import { showDate } from '../../lib/dates'
 import { fetchAll } from '../../lib/fetchAll'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 type Item = {
   table: 'orders' | 'customers' | 'order_machines'
@@ -82,7 +83,7 @@ export default function ArchivePage() {
     if (!supabase) return
     const { error } = await supabase.from(item.table).update({ archived: false }).eq('id', item.id)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`${item.label} restored.${item.table === 'orders' ? ' If it is a confirmed order, it is added at the end of the shop queue.' : ''}`)
+    toast.success(`${item.label} restored.${item.table === 'orders' ? tr(" If it is a confirmed order, it is added at the end of the shop queue.") : ''}`)
     refreshAlerts()
     load()
   }
@@ -93,7 +94,7 @@ export default function ArchivePage() {
     const { error } = await supabase.rpc('admin_delete_record', { p_table: deleting.table, p_id: deleting.id, p_confirm: typed })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success(`${deleting.label} deleted permanently.`)
+    toast.success(tr("{{label}} deleted permanently.", { label: deleting.label }))
     setDeleting(null)
     load()
   }
@@ -102,10 +103,9 @@ export default function ArchivePage() {
 
   return (
     <div className="space-y-5">
-      <AdminPageHeader title="Archive">
-        Archived records are hidden from normal screens. <strong>Restore</strong> restores one.{' '}
-        <strong>Permanently Delete</strong> removes it permanently (an order takes its machines and payments with it); this
-        cannot be undone.
+      <AdminPageHeader title={tr("Archive")}>
+        {tr("Archived records are hidden from normal screens.")} <strong>{tr("Restore")}</strong> {tr("restores one.")}{' '}
+        <strong>{tr("Permanently Delete")}</strong> {tr("removes it permanently (an order takes its machines and payments with it); this cannot be undone.")}
       </AdminPageHeader>
 
       <div className="flex flex-wrap gap-1 rounded-md bg-slate-100 p-1 text-sm" role="tablist">
@@ -118,14 +118,14 @@ export default function ArchivePage() {
             onClick={() => setFilter(t)}
             className={`rounded px-3 py-1.5 font-medium ${filter === t ? 'bg-white shadow-sm' : 'text-slate-600'}`}
           >
-            {t === 'all' ? 'All' : `${KIND[t]}s`}
+            {t === 'all' ? tr("All") : `${KIND[t]}s`}
           </button>
         ))}
       </div>
 
       <div className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
-        {loading && <p className="p-4 text-sm text-slate-500">Loading…</p>}
-        {!loading && shown.length === 0 && <p className="p-6 text-center text-sm text-slate-500">There are no archived records.</p>}
+        {loading && <p className="p-4 text-sm text-slate-500">{tr("Loading…")}</p>}
+        {!loading && shown.length === 0 && <p className="p-6 text-center text-sm text-slate-500">{tr("There are no archived records.")}</p>}
         {shown.map((i) => (
           <div key={`${i.table}-${i.id}`} className="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
             <div className="min-w-0 flex-1">
@@ -135,12 +135,12 @@ export default function ArchivePage() {
                 {i.detail && <span className="text-slate-500"> · {i.detail}</span>}
               </div>
               <div className="text-xs text-slate-500">
-                Archived {showDate(i.archived_at?.slice(0, 10))}
-                {i.archived_by && ` by ${i.archived_by}`}
+                {tr("Archived")} {showDate(i.archived_at?.slice(0, 10))}
+                {i.archived_by && tr(" by {{archived_by}}", { archived_by: i.archived_by })}
               </div>
             </div>
             <button type="button" className={secondaryButtonClass} onClick={() => restore(i)}>
-              Restore
+              {tr("Restore")}
             </button>
             <button
               type="button"
@@ -150,7 +150,7 @@ export default function ArchivePage() {
                 setTyped('')
               }}
             >
-              Permanently Delete
+              {tr("Permanently Delete")}
             </button>
           </div>
         ))}
@@ -158,13 +158,13 @@ export default function ArchivePage() {
 
       {deleting && (
         <Modal
-          title={`Permanently Delete ${deleting.label}?`}
+          title={tr("Permanently Delete {{label}}?", { label: deleting.label })}
           onClose={() => setDeleting(null)}
           busy={busy}
           footer={
             <>
               <button type="button" className={secondaryButtonClass} onClick={() => setDeleting(null)} disabled={busy}>
-                Cancel
+                {tr("Cancel")}
               </button>
               <button
                 type="button"
@@ -172,18 +172,17 @@ export default function ArchivePage() {
                 onClick={remove}
                 disabled={busy || typed !== 'DELETE'}
               >
-                {busy ? 'Deleting…' : 'Permanently Delete'}
+                {busy ? tr("Deleting…") : tr("Permanently Delete")}
               </button>
             </>
           }
         >
           <p className="text-sm text-slate-700">
-            This cannot be undone.
-            {deleting.table === 'orders' && ' The order’s machines and payments are permanently deleted as well.'}
-            {deleting.table === 'customers' && ' A customer can only be permanently deleted once they have no orders.'} The activity
-            log keeps a record that it was deleted.
+            {tr("This cannot be undone.")}
+            {deleting.table === 'orders' && tr(" The order’s machines and payments are permanently deleted as well.")}
+            {deleting.table === 'customers' && tr(" A customer can only be permanently deleted once they have no orders.")} {tr("The activity log keeps a record that it was deleted.")}
           </p>
-          <Field label="Enter DELETE to confirm" htmlFor="confirm-delete" className="mt-4">
+          <Field label={tr("Enter DELETE to confirm")} htmlFor="confirm-delete" className="mt-4">
             <input
               id="confirm-delete"
               className={inputClass}

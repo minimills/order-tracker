@@ -12,6 +12,7 @@ import { ACTION } from '../../lib/wording'
 import Can from '../Can'
 import RichTextEditor from '../RichTextEditor'
 import { buttonClass, Field, inputClass, Modal, narrowInputClass, secondaryButtonClass } from '../form'
+import { tr } from '../../i18n'
 
 type Target = Pick<Audience, 'target_type' | 'target'>
 
@@ -44,9 +45,9 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
 
   async function save() {
     if (!supabase) return
-    if (!title.trim()) return setError('Enter a title.')
-    if (!everyone && targets.length === 0) return setError('Choose who the notice is for.')
-    if (showUntil && showUntil < showFrom) return setError('The "show until" date must be on or after the "show from" date.')
+    if (!title.trim()) return setError(tr("Enter a title."))
+    if (!everyone && targets.length === 0) return setError(tr("Choose who the notice is for."))
+    if (showUntil && showUntil < showFrom) return setError(tr("The \"show until\" date must be on or after the \"show from\" date."))
     setBusy(true)
     setError(null)
     const { data, error: e } = await supabase.rpc('save_notice', {
@@ -70,7 +71,7 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
     void refreshUrgentNotices()
     void refreshNoticeUnread()
     toast.success(
-      notice ? 'Notice updated.' : showFrom > todayISO() ? 'Notice scheduled. It will show on the board from the chosen date.' : 'Notice posted.',
+      notice ? tr("Notice updated.") : showFrom > todayISO() ? tr("Notice scheduled. It will show on the board from the chosen date.") : tr("Notice posted."),
     )
     onSaved(data as string)
   }
@@ -84,7 +85,7 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
 
   return (
     <Modal
-      title={notice ? 'Edit Notice' : 'Post a Notice'}
+      title={notice ? tr("Edit Notice") : tr("Post a Notice")}
       onClose={onClose}
       busy={busy}
       footer={
@@ -94,25 +95,25 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
           </button>
           <Can anyOf={['notices.post.everyone', 'notices.post.department', 'notices.manage']} level="edit">
             <button type="button" className={buttonClass} onClick={save} disabled={busy}>
-              {busy ? ACTION.saving : notice ? ACTION.save : 'Post Notice'}
+              {busy ? ACTION.saving : notice ? ACTION.save : tr("Post Notice")}
             </button>
           </Can>
         </>
       }
     >
       <div className="space-y-4">
-        <Field label="Title" htmlFor="nt-title">
+        <Field label={tr("Title")} htmlFor="nt-title">
           <input id="nt-title" className={inputClass} maxLength={200} value={title} onChange={(e) => setTitle(e.target.value)} />
         </Field>
         <div>
-          <span className="mb-1 block text-sm font-medium text-slate-700">Message</span>
-          <RichTextEditor value={body} onChange={setBody} label="Message" minHeight="8rem" placeholder="Write the notice…" />
+          <span className="mb-1 block text-sm font-medium text-slate-700">{tr("Message")}</span>
+          <RichTextEditor value={body} onChange={setBody} label={tr("Message")} minHeight="8rem" placeholder={tr("Write the notice…")} />
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Category (optional)" htmlFor="nt-cat">
+          <Field label={tr("Category (optional)")} htmlFor="nt-cat">
             <select id="nt-cat" className={inputClass} value={category} onChange={(e) => setCategory(e.target.value)}>
-              <option value="">No category</option>
+              <option value="">{tr("No category")}</option>
               {categories.options.map((c) => (
                 <option key={c} value={c}>
                   {c}
@@ -121,7 +122,7 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
             </select>
           </Field>
           <fieldset>
-            <legend className="mb-1 block text-sm font-medium text-slate-700">Note colour</legend>
+            <legend className="mb-1 block text-sm font-medium text-slate-700">{tr("Note colour")}</legend>
             <div className="flex flex-wrap gap-2">
               {NOTE_COLOURS.map((c) => (
                 <button
@@ -140,7 +141,7 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
         </div>
 
         <fieldset>
-          <legend className="mb-1 block text-sm font-medium text-slate-700">Priority</legend>
+          <legend className="mb-1 block text-sm font-medium text-slate-700">{tr("Priority")}</legend>
           <div className="space-y-1.5">
             {priorities.map((p) => (
               <label key={p} className="flex items-start gap-2 text-sm">
@@ -154,32 +155,32 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
         </fieldset>
 
         <fieldset>
-          <legend className="mb-1 block text-sm font-medium text-slate-700">Who is it for</legend>
+          <legend className="mb-1 block text-sm font-medium text-slate-700">{tr("Who is it for")}</legend>
           {toEveryone ? (
             <div className="space-y-2">
               <label className="flex items-center gap-2 text-sm">
                 <input type="radio" name="nt-aud" className="h-4 w-4" checked={everyone} onChange={() => setEveryone(true)} />
-                Everyone
+                {tr("Everyone")}
               </label>
               <label className="flex items-center gap-2 text-sm">
                 <input type="radio" name="nt-aud" className="h-4 w-4" checked={!everyone} onChange={() => setEveryone(false)} />
-                Chosen people, groups and departments
+                {tr("Chosen people, groups and departments")}
               </label>
               {!everyone && (
                 <div className="rounded-md border border-slate-200 p-3">
                   <div className="flex flex-wrap gap-2">
                     <select
-                      aria-label="Type"
+                      aria-label={tr("Type")}
                       className={`${narrowInputClass} w-36`}
                       value={pick.type}
                       onChange={(e) => setPick({ type: e.target.value as Target['target_type'], target: '' })}
                     >
-                      <option value="user">A person</option>
-                      <option value="group">A group</option>
-                      <option value="department">A department</option>
+                      <option value="user">{tr("A person")}</option>
+                      <option value="group">{tr("A group")}</option>
+                      <option value="department">{tr("A department")}</option>
                     </select>
-                    <select aria-label="Which" className={`${narrowInputClass} min-w-40 flex-1`} value={pick.target} onChange={(e) => setPick({ ...pick, target: e.target.value })}>
-                      <option value="">Select…</option>
+                    <select aria-label={tr("Which")} className={`${narrowInputClass} min-w-40 flex-1`} value={pick.target} onChange={(e) => setPick({ ...pick, target: e.target.value })}>
+                      <option value="">{tr("Select…")}</option>
                       {pickList.map((x) => (
                         <option key={x.id} value={x.id}>
                           {x.name}
@@ -200,12 +201,12 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
                     </button>
                   </div>
                   {targets.length === 0 ? (
-                    <p className="mt-2 text-xs text-slate-500">Nobody chosen yet.</p>
+                    <p className="mt-2 text-xs text-slate-500">{tr("Nobody chosen yet.")}</p>
                   ) : (
                     <ul className="mt-2 flex flex-wrap gap-1.5">
                       {targets.map((t) => (
                         <li key={`${t.target_type}:${t.target}`} className="flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pl-2.5 pr-1 text-xs">
-                          <span className="text-slate-500">{t.target_type === 'user' ? 'Person' : t.target_type === 'group' ? 'Group' : 'Department'}:</span> {choices.nameOf(t)}
+                          <span className="text-slate-500">{t.target_type === 'user' ? tr("Person") : t.target_type === 'group' ? tr("Group") : tr("Department")}:</span> {choices.nameOf(t)}
                           <button type="button" className="rounded-full px-1.5 hover:bg-slate-200" aria-label={`${ACTION.remove} ${choices.nameOf(t)}`} onClick={() => toggle(t)}>
                             ×
                           </button>
@@ -219,7 +220,7 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
           ) : (
             <div className="space-y-1.5">
               {myDepartments.length === 0 ? (
-                <p className="text-sm text-amber-800">You are not in a department yet, so you cannot post a notice. Ask an administrator.</p>
+                <p className="text-sm text-amber-800">{tr("You are not in a department yet, so you cannot post a notice. Ask an administrator.")}</p>
               ) : (
                 myDepartments.map((d) => {
                   const t: Target = { target_type: 'department', target: d.id }
@@ -231,16 +232,16 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
                   )
                 })
               )}
-              <p className="text-xs text-slate-500">You can post to your own departments.</p>
+              <p className="text-xs text-slate-500">{tr("You can post to your own departments.")}</p>
             </div>
           )}
         </fieldset>
 
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="Show from" htmlFor="nt-from" hint="A later date schedules the notice.">
+          <Field label={tr("Show from")} htmlFor="nt-from" hint={tr("A later date schedules the notice.")}>
             <input id="nt-from" type="date" className={inputClass} value={showFrom} onChange={(e) => setShowFrom(e.target.value)} />
           </Field>
-          <Field label="Show until (optional)" htmlFor="nt-until" hint="After this day it moves to the Archive.">
+          <Field label={tr("Show until (optional)")} htmlFor="nt-until" hint={tr("After this day it moves to the Archive.")}>
             <input id="nt-until" type="date" className={inputClass} value={showUntil} min={showFrom} onChange={(e) => setShowUntil(e.target.value)} />
           </Field>
         </div>
@@ -248,15 +249,15 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
         <div className="space-y-1.5">
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" className="h-4 w-4" checked={comments} onChange={(e) => setComments(e.target.checked)} />
-            Allow comments
+            {tr("Allow comments")}
           </label>
           <Can permission="notices.pin" level="edit">
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" className="h-4 w-4" checked={pinned} onChange={(e) => setPinned(e.target.checked)} />
-              Pin to the top of the board
+              {tr("Pin to the top of the board")}
             </label>
           </Can>
-          {priority === 'urgent' && <p className="text-xs text-slate-500">Urgent notices are always shown at the top.</p>}
+          {priority === 'urgent' && <p className="text-xs text-slate-500">{tr("Urgent notices are always shown at the top.")}</p>}
         </div>
 
         {error && <p className="text-sm font-medium text-red-600">{error}</p>}

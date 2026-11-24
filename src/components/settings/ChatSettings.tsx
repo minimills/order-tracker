@@ -6,6 +6,7 @@ import { buttonClass, Field, narrowInputClass } from '../form'
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { SWIPE_ACTIONS, type SwipeAction } from '../../lib/chat'
+import { tr } from '../../i18n'
 
 type S = { hide_status: boolean; quiet_enabled: boolean; quiet_start: string; quiet_end: string; swipe_left: SwipeAction; swipe_right: SwipeAction }
 const DEFAULTS: S = { hide_status: false, quiet_enabled: false, quiet_start: '21:00', quiet_end: '07:00', swipe_left: 'archive', swipe_right: 'delete' }
@@ -39,7 +40,7 @@ export default function ChatSettings({
     const { error } = await supabase.rpc('set_my_chat_settings', { p: patch })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Saved.')
+    toast.success(tr("Saved."))
   }
 
   return (
@@ -47,8 +48,8 @@ export default function ChatSettings({
       {part === 'swipe' && (
         <Can permission="settings.chat_swipe" level="edit">
           <div className="space-y-2">
-            <h2 className="text-base font-semibold">Chat Swipe Actions</h2>
-            <p className="text-slate-600">Swipe a conversation in the list: with a finger on a phone, or on a computer by dragging it with the mouse or swiping two fingers on the trackpad. A short swipe shows this action, a longer one shows more actions, and a long full swipe does this action straight away (with Undo for a few seconds). On a computer the actions also appear when you point at a conversation.</p>
+            <h2 className="text-base font-semibold">{tr("Chat Swipe Actions")}</h2>
+            <p className="text-slate-600">{tr("Swipe a conversation in the list: with a finger on a phone, or on a computer by dragging it with the mouse or swiping two fingers on the trackpad. A short swipe shows this action, a longer one shows more actions, and a long full swipe does this action straight away (with Undo for a few seconds). On a computer the actions also appear when you point at a conversation.")}</p>
             {(
               [
                 ['swipe_left', 'Swipe left', 'sw-left'],
@@ -80,16 +81,16 @@ export default function ChatSettings({
       {part !== 'status' && part !== 'swipe' && (
         <Can permission="settings.quiet_hours" level="edit">
           <div className="space-y-2">
-            <h2 className="text-base font-semibold">Quiet Hours</h2>
+            <h2 className="text-base font-semibold">{tr("Quiet Hours")}</h2>
             <p className="text-slate-600">
-              No phone push or desktop notifications during these hours (Halifax time). Everything still appears in the bell. Urgent notices are always sent.
+              {tr("No phone push or desktop notifications during these hours (Halifax time). Everything still appears in the bell. Urgent notices are always sent.")}
             </p>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={s.quiet_enabled} onChange={(e) => setS({ ...s, quiet_enabled: e.target.checked })} />
-              Use quiet hours
+              {tr("Use quiet hours")}
             </label>
             <div className="flex flex-wrap items-end gap-3">
-              <Field label="From" htmlFor="qh-start">
+              <Field label={tr("From")} htmlFor="qh-start">
                 <input
                   id="qh-start"
                   type="time"
@@ -98,7 +99,7 @@ export default function ChatSettings({
                   onChange={(e) => setS({ ...s, quiet_start: e.target.value })}
                 />
               </Field>
-              <Field label="Until" htmlFor="qh-end">
+              <Field label={tr("Until")} htmlFor="qh-end">
                 <input
                   id="qh-end"
                   type="time"
@@ -113,7 +114,7 @@ export default function ChatSettings({
                 disabled={saving}
                 onClick={() => save({ quiet_enabled: s.quiet_enabled, quiet_start: s.quiet_start, quiet_end: s.quiet_end })}
               >
-                Save Changes
+                {tr("Save Changes")}
               </button>
             </div>
           </div>
@@ -122,7 +123,7 @@ export default function ChatSettings({
       {part !== 'quiet' && part !== 'swipe' && (
         <Can permission="settings.chat_status" level="edit">
           <div className={`space-y-1 ${part ? '' : 'border-t border-slate-100 pt-3'}`}>
-            <h2 className="text-base font-semibold">Chat Status</h2>
+            <h2 className="text-base font-semibold">{tr("Chat Status")}</h2>
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
@@ -132,9 +133,9 @@ export default function ChatSettings({
                   void save({ hide_status: e.target.checked })
                 }}
               />
-              Hide my online / away status from others
+              {tr("Hide my online / away status from others")}
             </label>
-            <p className="text-slate-500">Takes effect the next time Chat is opened.</p>
+            <p className="text-slate-500">{tr("Takes effect the next time Chat is opened.")}</p>
           </div>
         </Can>
       )}

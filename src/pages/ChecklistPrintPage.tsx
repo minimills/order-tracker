@@ -8,6 +8,7 @@ import { fetchAll } from '../lib/fetchAll'
 import { friendlyError } from '../lib/format'
 import { stageLabel } from '../lib/stages'
 import { supabase } from '../lib/supabase'
+import { tr } from '../i18n'
 
 type OrderInfo = { order_code: string; customer_name: string; customer_company: string | null; customer_country: string | null; stage: string }
 
@@ -32,7 +33,7 @@ export default function ChecklistPrintPage() {
       const s = await supabase!.from('machine_checklist_status').select('*').eq('machine_id', machineId).maybeSingle()
       const st = s.data as ChecklistStatusRow | null
       if (!st) {
-        if (!cancelled) setError(s.error ? friendlyError(s.error) : 'This machine could not be found.')
+        if (!cancelled) setError(s.error ? friendlyError(s.error) : tr("This machine could not be found."))
         return
       }
       const [o, c] = await Promise.all([
@@ -63,7 +64,7 @@ export default function ChecklistPrintPage() {
       <div className="keep-light mx-auto min-h-full max-w-4xl bg-white p-4 text-slate-900 sm:p-6 print:max-w-none print:p-0">
         <div className="mb-4 flex justify-end gap-2 print:hidden">
           <Link to={`/checklists/${machineId}`} className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
-            ← Back to the Final Check
+            {tr("← Back to the Final Check")}
           </Link>
           <button
             type="button"
@@ -71,14 +72,14 @@ export default function ChecklistPrintPage() {
             disabled={!signed}
             className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50"
           >
-            Print or Save as PDF
+            {tr("Print or Save as PDF")}
           </button>
         </div>
 
         {error && <p className="text-red-700">{error}</p>}
-        {!error && !status && <p className="text-slate-500">Loading…</p>}
+        {!error && !status && <p className="text-slate-500">{tr("Loading…")}</p>}
         {status && !signed && (
-          <p className="rounded-md bg-amber-50 p-4 text-amber-900">This final check has not been signed. Only signed final checks can be printed.</p>
+          <p className="rounded-md bg-amber-50 p-4 text-amber-900">{tr("This final check has not been signed. Only signed final checks can be printed.")}</p>
         )}
 
         {status && checklist && signed && (
@@ -95,22 +96,22 @@ export default function ChecklistPrintPage() {
               {company.logo && <img src={company.logo} alt="" className="max-h-16" />}
             </header>
 
-            <h1 className="mt-4 text-2xl font-bold">Final Check</h1>
+            <h1 className="mt-4 text-2xl font-bold">{tr("Final Check")}</h1>
             <dl className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-4 print:grid-cols-4">
               <div>
-                <dt className="text-xs text-slate-500">Machine</dt>
+                <dt className="text-xs text-slate-500">{tr("Machine")}</dt>
                 <dd className="font-medium">{status.machine_type}</dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-500">Serial number</dt>
+                <dt className="text-xs text-slate-500">{tr("Serial number")}</dt>
                 <dd className="font-mono font-medium">{status.serial_number ?? '—'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-500">Order</dt>
+                <dt className="text-xs text-slate-500">{tr("Order")}</dt>
                 <dd className="font-medium">{order?.order_code ?? '—'}</dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-500">Customer</dt>
+                <dt className="text-xs text-slate-500">{tr("Customer")}</dt>
                 <dd className="font-medium">
                   {order?.customer_name}
                   {order?.customer_company && ` · ${order.customer_company}`}
@@ -118,21 +119,21 @@ export default function ChecklistPrintPage() {
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-500">Started</dt>
+                <dt className="text-xs text-slate-500">{tr("Started")}</dt>
                 <dd>
                   {showDateTime(checklist.started_at)}
-                  {checklist.started_by_name && ` by ${checklist.started_by_name}`}
+                  {checklist.started_by_name && tr(" by {{started_by_name}}", { started_by_name: checklist.started_by_name })}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-500">Items</dt>
+                <dt className="text-xs text-slate-500">{tr("Items")}</dt>
                 <dd>
-                  {items.filter((i) => i.status === 'done').length} completed · {items.filter((i) => i.status === 'na').length} not applicable ·{' '}
-                  {items.length} in total
+                  {items.filter((i) => i.status === 'done').length} {tr("completed ·")} {items.filter((i) => i.status === 'na').length} {tr("not applicable ·")}{' '}
+                  {items.length} {tr("in total")}
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-500">Order stage when printed</dt>
+                <dt className="text-xs text-slate-500">{tr("Order stage when printed")}</dt>
                 <dd>{order ? stageLabel(order.stage) : '—'}</dd>
               </div>
             </dl>
@@ -140,10 +141,10 @@ export default function ChecklistPrintPage() {
             <table className="mt-4 w-full border-collapse text-left">
               <thead>
                 <tr className="border-b border-slate-400 text-xs text-slate-600">
-                  <th className="w-28 py-1">Status</th>
-                  <th className="py-1">Item</th>
-                  <th className="py-1">Notes</th>
-                  <th className="w-44 py-1">By / when</th>
+                  <th className="w-28 py-1">{tr("Status")}</th>
+                  <th className="py-1">{tr("Item")}</th>
+                  <th className="py-1">{tr("Notes")}</th>
+                  <th className="w-44 py-1">{tr("By / when")}</th>
                 </tr>
               </thead>
               {groupBySection(items).map(({ section, items: list }) => (
@@ -155,10 +156,10 @@ export default function ChecklistPrintPage() {
                   </tr>
                   {list.map((i) => (
                     <tr key={i.id} className="border-b border-slate-200 align-top">
-                      <td className="py-1 font-semibold">{i.status === 'done' ? 'Completed' : i.status === 'na' ? 'Not applicable' : 'Open'}</td>
+                      <td className="py-1 font-semibold">{i.status === 'done' ? tr("Completed") : i.status === 'na' ? tr("Not applicable") : tr("Open")}</td>
                       <td className="py-1 pr-2">
                         {i.item_text}
-                        {i.is_one_off && <span className="text-xs text-slate-500"> (added for this machine)</span>}
+                        {i.is_one_off && <span className="text-xs text-slate-500"> {tr("(added for this machine)")}</span>}
                       </td>
                       <td className="py-1 pr-2 text-slate-700">{i.notes}</td>
                       <td className="py-1 text-xs text-slate-600">
@@ -173,19 +174,19 @@ export default function ChecklistPrintPage() {
 
             {checklist.general_notes && (
               <section className="mt-4 break-inside-avoid">
-                <h2 className="font-semibold">General Notes</h2>
+                <h2 className="font-semibold">{tr("General Notes")}</h2>
                 <RichText value={checklist.general_notes} className="text-slate-800" />
               </section>
             )}
 
             <section className="mt-6 break-inside-avoid border-t-2 border-slate-900 pt-3">
-              <h2 className="font-semibold">Sign-Off</h2>
+              <h2 className="font-semibold">{tr("Sign-Off")}</h2>
               <div className="mt-2 flex flex-wrap items-end gap-8">
-                {sig && <img src={sig} alt={`Signature of ${checklist.signed_name}`} className="h-20" />}
+                {sig && <img src={sig} alt={tr("Signature of {{signed_name}}", { signed_name: checklist.signed_name })} className="h-20" />}
                 <div>
                   <div className="font-medium">{checklist.signed_name}</div>
                   <div className="text-slate-600">{showDateTime(checklist.signed_at)}</div>
-                  <div className="text-xs text-slate-500">Signed in the app as {checklist.signed_by}</div>
+                  <div className="text-xs text-slate-500">{tr("Signed in the app as")} {checklist.signed_by}</div>
                 </div>
               </div>
             </section>

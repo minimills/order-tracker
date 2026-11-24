@@ -8,6 +8,7 @@ import type { ServiceCallInfo } from './service'
 import { addDays, differenceInCalendarDays, parseISO } from 'date-fns'
 import { supabase } from './supabase'
 import { richTextInline } from './richText'
+import { tr } from '../i18n'
 
 export type ChecklistPreset = { title: string; items: string[] }
 
@@ -132,12 +133,24 @@ export const SHARE_LEVEL_TEXT: Record<ShareLevel, string> = {
 }
 
 export const NOTIFY_EVENTS: { value: NotifyEvent; label: string }[] = [
-  { value: 'card_created', label: 'A card is created' },
-  { value: 'card_moved', label: 'A card is moved to…' },
-  { value: 'assigned', label: 'Someone is assigned to a card' },
-  { value: 'due_soon', label: 'A card is due soon' },
-  { value: 'overdue', label: 'A card is overdue' },
-  { value: 'comment', label: 'Someone adds a comment' },
+  { value: 'card_created', get label() {
+    return tr("A card is created")
+  } },
+  { value: 'card_moved', get label() {
+    return tr("A card is moved to…")
+  } },
+  { value: 'assigned', get label() {
+    return tr("Someone is assigned to a card")
+  } },
+  { value: 'due_soon', get label() {
+    return tr("A card is due soon")
+  } },
+  { value: 'overdue', get label() {
+    return tr("A card is overdue")
+  } },
+  { value: 'comment', get label() {
+    return tr("Someone adds a comment")
+  } },
 ]
 
 // ---------------------------------------------------------------------------
@@ -301,7 +314,7 @@ export async function loadBoardChoices(): Promise<BoardChoice[]> {
 
 /** Everything the board page shows (one load). */
 export async function loadBoard(id: string, opts: { comments: boolean; timing?: boolean }) {
-  if (!supabase) throw new Error('Not connected')
+  if (!supabase) throw new Error(tr("Not connected"))
   const [b, lvl, st, lb, cards, people] = await Promise.all([
     supabase.from('boards').select('*').eq('id', id).maybeSingle(),
     supabase.rpc('board_level', { p_board: id }),

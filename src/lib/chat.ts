@@ -1,3 +1,4 @@
+import { dtf, tr } from '../i18n'
 import { useEffect, useState } from 'react'
 import type { RealtimeChannel } from '@supabase/supabase-js'
 import { cleanRichText } from './richText'
@@ -66,11 +67,21 @@ export const NOTIFY_LABEL: Record<NotifyMode, string> = { all: 'All messages', m
 /** What a swipe on a conversation does (Settings → Chat; left = Archive, right = Delete for me by default). */
 export type SwipeAction = 'archive' | 'delete' | 'clear' | 'read_toggle' | 'hide'
 export const SWIPE_ACTIONS: { value: SwipeAction; label: string }[] = [
-  { value: 'archive', label: 'Archive' },
-  { value: 'delete', label: 'Delete for me' },
-  { value: 'clear', label: 'Clear chat' },
-  { value: 'read_toggle', label: 'Mark read / unread' },
-  { value: 'hide', label: 'Hide' },
+  { value: 'archive', get label() {
+    return tr("Archive")
+  } },
+  { value: 'delete', get label() {
+    return tr("Delete for me")
+  } },
+  { value: 'clear', get label() {
+    return tr("Clear chat")
+  } },
+  { value: 'read_toggle', get label() {
+    return tr("Mark read / unread")
+  } },
+  { value: 'hide', get label() {
+    return tr("Hide")
+  } },
 ]
 /** The database action for a list action on this conversation (toggles flip with its state). */
 export function stateAction(a: SwipeAction, r: ConversationRow) {
@@ -97,9 +108,9 @@ export const STATE_UNDO: Record<string, string | null> = { archive: 'unarchive',
 export type TimeOff = { email: string; name: string; kind: string; return_date: string | null }
 export const TIME_OFF_WORDS: Record<string, string> = { vacation: 'vacation', sick: 'sick leave', banked: 'banked time', unpaid: 'time off' }
 
-const timeFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit' })
-const dayFmt = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', month: 'short', day: 'numeric' })
-const dayKey = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax' })
+const timeFmt = dtf({ timeZone: 'America/Halifax', hour: 'numeric', minute: '2-digit' })
+const dayFmt = dtf({ timeZone: 'America/Halifax', month: 'short', day: 'numeric' })
+const dayKey = dtf({ timeZone: 'America/Halifax' })
 /** "3:05 p.m." today, "Nov 9" before. */
 export function chatTime(iso: string | null) {
   if (!iso) return ''
@@ -107,7 +118,7 @@ export function chatTime(iso: string | null) {
   return dayKey.format(d) === dayKey.format(new Date()) ? timeFmt.format(d) : dayFmt.format(d)
 }
 export const clockTime = (iso: string) => timeFmt.format(new Date(iso))
-export const dayLabel = (iso: string) => new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', dateStyle: 'full' }).format(new Date(iso))
+export const dayLabel = (iso: string) => dtf({ timeZone: 'America/Halifax', dateStyle: 'full' }).format(new Date(iso))
 export const sameDay = (a: string, b: string) => dayKey.format(new Date(a)) === dayKey.format(new Date(b))
 
 // ---------------------------------------------------------------------------

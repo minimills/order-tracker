@@ -10,6 +10,7 @@ import { todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
 import { usePermissions } from '../../lib/permissions'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 export type EntryKind = 'onsite' | 'travel' | 'training' | 'other'
 export type Share = { type: 'user' | 'group' | 'department'; target: string; name?: string }
@@ -142,12 +143,12 @@ export default function CalendarEntryDialog({
 
   async function save() {
     if (!supabase) return
-    if (!f.start_date || !f.end_date) return toast.error('Enter the dates.')
-    if (f.end_date < f.start_date) return toast.error('The end date must be on or after the start date.')
+    if (!f.start_date || !f.end_date) return toast.error(tr("Enter the dates."))
+    if (f.end_date < f.start_date) return toast.error(tr("The end date must be on or after the start date."))
     const startsAt = f.all_day ? null : hfxToIso(f.start_date, inputToMinutes(f.start_time))
     const endsAt = f.all_day ? null : hfxToIso(f.end_date, inputToMinutes(f.end_time))
-    if (startsAt && endsAt && endsAt <= startsAt) return toast.error('The end time must be after the start time.')
-    if (f.visibility === 'shared' && !shares.length) return toast.error('Choose who the entry is shared with, or make it private.')
+    if (startsAt && endsAt && endsAt <= startsAt) return toast.error(tr("The end time must be after the start time."))
+    if (f.visibility === 'shared' && !shares.length) return toast.error(tr("Choose who the entry is shared with, or make it private."))
     const match = customers.find((c) => c.name.toLowerCase() === f.customer_text.trim().toLowerCase())
     const row = {
       ...(entry ? { id: entry.id } : {}),
@@ -170,13 +171,15 @@ export default function CalendarEntryDialog({
     const { error } = await supabase.rpc('save_calendar_entry', { p: row })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Calendar entry saved.')
+    toast.success(tr("Calendar entry saved."))
     onSaved()
   }
 
   async function archive() {
     if (!supabase || !entry) return
-    if (!(await confirmAction('Archive this calendar entry? It disappears from the calendar and the phone calendar.', { confirmLabel: 'Archive', danger: true }))) return
+    if (!(await confirmAction(tr("Archive this calendar entry? It disappears from the calendar and the phone calendar."), { get confirmLabel() {
+    return tr("Archive")
+  }, danger: true }))) return
     const { error } = await supabase.rpc('archive_calendar_entry', { p_entry: entry.id })
     if (error) return toast.error(friendlyError(error))
     onSaved()
@@ -184,22 +187,22 @@ export default function CalendarEntryDialog({
 
   return (
     <Modal
-      title={entry ? (mayEdit ? 'Edit Calendar Entry' : 'Calendar Entry') : 'Add a Calendar Entry'}
+      title={entry ? (mayEdit ? tr("Edit Calendar Entry") : tr("Calendar Entry")) : tr("Add a Calendar Entry")}
       onClose={onClose}
       busy={saving}
       footer={
         <>
           {entry && mayEdit && (
             <button type="button" className="mr-auto text-sm text-red-700 underline" onClick={archive}>
-              Archive
+              {tr("Archive")}
             </button>
           )}
           <button type="button" className={secondaryButtonClass} onClick={onClose} disabled={saving}>
-            Cancel
+            {tr("Cancel")}
           </button>
           {mayEdit && (
             <button type="button" className={buttonClass} onClick={save} disabled={saving}>
-              {saving ? 'Saving…' : 'Save Changes'}
+              {saving ? tr("Saving…") : tr("Save Changes")}
             </button>
           )}
         </>
@@ -207,7 +210,7 @@ export default function CalendarEntryDialog({
     >
       <div className="space-y-3">
         <Can permission="service.calendar.manage" level="edit">
-          <Field label="Whose calendar" htmlFor="ce-tech">
+          <Field label={tr("Whose calendar")} htmlFor="ce-tech">
             <select
               id="ce-tech"
               className={inputClass}
@@ -226,16 +229,16 @@ export default function CalendarEntryDialog({
         </Can>
         {entry?.owner_name && entry.tech_email !== me && (
           <p className="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
-            On {entry.owner_name}’s calendar{mayEdit ? '' : ', shared with you. Only its owner can change it.'}
+            {tr("On")} {entry.owner_name}{tr("’s calendar")}{mayEdit ? '' : tr(", shared with you. Only its owner can change it.")}
           </p>
         )}
         {entry?.done_at && (
           <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-900">
-            Done{entry.done_by_name ? ` (${entry.done_by_name})` : ''}: the training of this order was marked as done.
+            {tr("Done")}{entry.done_by_name ? ` (${entry.done_by_name})` : ''}{tr(": the training of this order was marked as done.")}
           </p>
         )}
         {(service || f.kind !== 'other') && (
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label="Kind of entry">
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4" role="radiogroup" aria-label={tr("Kind of entry")}>
             {(['other', ...SERVICE_KINDS] as EntryKind[]).map((k) => (
               <button
                 key={k}
@@ -251,10 +254,10 @@ export default function CalendarEntryDialog({
             ))}
           </div>
         )}
-        <Field label="Title" htmlFor="ce-title" hint="Optional. Without a title the entry shows its kind and the customer.">
+        <Field label={tr("Title")} htmlFor="ce-title" hint={tr("Optional. Without a title the entry shows its kind and the customer.")}>
           <input id="ce-title" className={inputClass} maxLength={200} value={f.title} disabled={!mayEdit} onChange={(e) => setF({ ...f, title: e.target.value })} />
         </Field>
-        <Field label="Customer" htmlFor="ce-customer" hint="Pick from the list or type any name.">
+        <Field label={tr("Customer")} htmlFor="ce-customer" hint={tr("Pick from the list or type any name.")}>
           <input
             id="ce-customer"
             list="ce-customers"
@@ -271,12 +274,12 @@ export default function CalendarEntryDialog({
         </Field>
         <div className="flex items-center justify-between gap-3">
           <span className="text-sm font-medium">
-            All day
+            {tr("All day")}
           </span>
-          <Switch checked={f.all_day} label="All day" disabled={!mayEdit} onChange={(on) => setF({ ...f, all_day: on })} />
+          <Switch checked={f.all_day} label={tr("All day")} disabled={!mayEdit} onChange={(on) => setF({ ...f, all_day: on })} />
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <Field label="From" htmlFor="ce-start">
+          <Field label={tr("From")} htmlFor="ce-start">
             <input
               id="ce-start"
               type="date"
@@ -286,12 +289,12 @@ export default function CalendarEntryDialog({
               onChange={(e) => setF({ ...f, start_date: e.target.value, end_date: f.end_date < e.target.value ? e.target.value : f.end_date })}
             />
           </Field>
-          <Field label="Until" htmlFor="ce-end">
+          <Field label={tr("Until")} htmlFor="ce-end">
             <input id="ce-end" type="date" className={inputClass} value={f.end_date} min={f.start_date} disabled={!mayEdit} onChange={(e) => setF({ ...f, end_date: e.target.value })} />
           </Field>
           {!f.all_day && (
             <>
-              <Field label="Start time" htmlFor="ce-start-time">
+              <Field label={tr("Start time")} htmlFor="ce-start-time">
                 <input
                   id="ce-start-time"
                   type="time"
@@ -308,21 +311,21 @@ export default function CalendarEntryDialog({
                   }}
                 />
               </Field>
-              <Field label="End time" htmlFor="ce-end-time">
+              <Field label={tr("End time")} htmlFor="ce-end-time">
                 <input id="ce-end-time" type="time" step={900} className={inputClass} value={f.end_time} disabled={!mayEdit} onChange={(e) => setF({ ...f, end_time: e.target.value })} />
               </Field>
             </>
           )}
         </div>
-        {!f.all_day && <p className="text-xs text-slate-500">Times are Halifax time.</p>}
+        {!f.all_day && <p className="text-xs text-slate-500">{tr("Times are Halifax time.")}</p>}
         {f.kind !== 'other' && service && (
-          <Field label="Order" htmlFor="ce-order" hint="Optional. “Mark Training as Done” on the order also completes its linked entries.">
+          <Field label={tr("Order")} htmlFor="ce-order" hint={tr("Optional. “Mark Training as Done” on the order also completes its linked entries.")}>
             <select id="ce-order" className={inputClass} value={f.order_id ?? ''} disabled={!mayEdit} onChange={(e) => setF({ ...f, order_id: e.target.value })}>
-              <option value="">No order</option>
-              {entry?.order_id && !orders.some((o) => o.order_id === entry.order_id) && <option value={entry.order_id}>Order {entry.order_code ?? ''}</option>}
+              <option value="">{tr("No order")}</option>
+              {entry?.order_id && !orders.some((o) => o.order_id === entry.order_id) && <option value={entry.order_id}>{tr("Order")} {entry.order_code ?? ''}</option>}
               {orders.map((o) => (
                 <option key={o.order_id} value={o.order_id}>
-                  Order {o.order_code}
+                  {tr("Order")} {o.order_code}
                   {o.customer_name ? ` – ${o.customer_name}` : ''}
                 </option>
               ))}
@@ -330,8 +333,8 @@ export default function CalendarEntryDialog({
           </Field>
         )}
         <fieldset className="space-y-2" data-setting="calendar-visibility">
-          <legend className="text-sm font-medium">Who Sees It</legend>
-          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label="Who sees it">
+          <legend className="text-sm font-medium">{tr("Who Sees It")}</legend>
+          <div className="grid grid-cols-2 gap-2" role="radiogroup" aria-label={tr("Who sees it")}>
             {(['private', 'shared'] as const).map((v) => (
               <button
                 key={v}
@@ -345,9 +348,9 @@ export default function CalendarEntryDialog({
                   if (v === 'shared' && !shares.length && SERVICE_KINDS.includes(f.kind)) setShares(team)
                 }}
               >
-                <span className="block font-medium">{v === 'private' ? 'Private' : 'Shared'}</span>
+                <span className="block font-medium">{v === 'private' ? tr("Private") : tr("Shared")}</span>
                 <span className={`block text-xs ${f.visibility === v ? 'text-slate-200' : 'text-slate-500'}`}>
-                  {v === 'private' ? 'Only you. Nobody else, admins included.' : 'Also on the calendars of the people chosen.'}
+                  {v === 'private' ? tr("Only you. Nobody else, admins included.") : tr("Also on the calendars of the people chosen.")}
                 </span>
               </button>
             ))}
@@ -355,14 +358,14 @@ export default function CalendarEntryDialog({
           {f.visibility === 'shared' && (
             <div className="space-y-2">
               {shares.length === 0 ? (
-                <p className="text-xs text-slate-500">Not shared with anyone yet.</p>
+                <p className="text-xs text-slate-500">{tr("Not shared with anyone yet.")}</p>
               ) : (
                 <ul className="flex flex-wrap gap-1.5">
                   {shares.map((x) => (
                     <li key={`${x.type}:${x.target}`} className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
                       {nameOf(x)}
                       {mayEdit && (
-                        <button type="button" aria-label={`Remove ${nameOf(x)}`} className="text-slate-500 hover:text-red-700" onClick={() => setShares(shares.filter((y) => y !== x))}>
+                        <button type="button" aria-label={tr("Remove {{nameOf}}", { nameOf: nameOf(x) })} className="text-slate-500 hover:text-red-700" onClick={() => setShares(shares.filter((y) => y !== x))}>
                           ✕
                         </button>
                       )}
@@ -376,23 +379,23 @@ export default function CalendarEntryDialog({
                   level="edit"
                   fallback={
                     <p className="text-xs text-slate-500">
-                      {SERVICE_KINDS.includes(f.kind) ? 'Service and training entries are shared with the Service / Training team.' : 'Ask an admin to allow sharing with other people.'}
+                      {SERVICE_KINDS.includes(f.kind) ? tr("Service and training entries are shared with the Service / Training team.") : tr("Ask an admin to allow sharing with other people.")}
                     </p>
                   }
                 >
                   <div className="flex flex-wrap gap-2">
                     <select
-                      aria-label="Share with"
+                      aria-label={tr("Share with")}
                       className={`${narrowInputClass} w-36`}
                       value={adding.type}
                       onChange={(e) => setAdding({ type: e.target.value as Share['type'], target: '' })}
                     >
-                      <option value="user">A person</option>
-                      <option value="group">A group</option>
-                      <option value="department">A department</option>
+                      <option value="user">{tr("A person")}</option>
+                      <option value="group">{tr("A group")}</option>
+                      <option value="department">{tr("A department")}</option>
                     </select>
-                    <select aria-label="Which" className={`${narrowInputClass} min-w-40 flex-1`} value={adding.target} onChange={(e) => setAdding({ ...adding, target: e.target.value })}>
-                      <option value="">Select…</option>
+                    <select aria-label={tr("Which")} className={`${narrowInputClass} min-w-40 flex-1`} value={adding.target} onChange={(e) => setAdding({ ...adding, target: e.target.value })}>
+                      <option value="">{tr("Select…")}</option>
                       {(adding.type === 'user'
                         ? choices.people.filter((p) => p.email !== f.tech_email).map((p) => ({ id: p.email, name: p.name }))
                         : adding.type === 'group'
@@ -413,7 +416,7 @@ export default function CalendarEntryDialog({
                         setAdding({ ...adding, target: '' })
                       }}
                     >
-                      Add
+                      {tr("Add")}
                     </button>
                     {team.length > 0 && (
                       <button
@@ -421,7 +424,7 @@ export default function CalendarEntryDialog({
                         className="text-xs text-blue-700 underline"
                         onClick={() => setShares([...shares, ...team.filter((t) => !shares.some((x) => x.type === t.type && x.target === t.target))])}
                       >
-                        Add the Service / Training Team
+                        {tr("Add the Service / Training Team")}
                       </button>
                     )}
                   </div>
@@ -430,7 +433,7 @@ export default function CalendarEntryDialog({
             </div>
           )}
         </fieldset>
-        <Field label="Notes" htmlFor="ce-notes">
+        <Field label={tr("Notes")} htmlFor="ce-notes">
           <textarea id="ce-notes" rows={3} className={inputClass} value={f.notes} disabled={!mayEdit} onChange={(e) => setF({ ...f, notes: e.target.value })} />
         </Field>
       </div>

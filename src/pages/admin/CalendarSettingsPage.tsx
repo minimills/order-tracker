@@ -7,6 +7,7 @@ import { buttonClass, narrowInputClass, secondaryButtonClass } from '../../compo
 import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 type Target = { type: 'group' | 'department'; target: string }
 type Choices = { groups: { id: string; name: string }[]; departments: { id: string; name: string }[] }
@@ -37,10 +38,10 @@ export default function CalendarSettingsPage() {
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
     setSaved(JSON.stringify(team))
-    toast.success('Calendar settings saved.')
+    toast.success(tr("Calendar settings saved."))
   }
 
-  if (!team) return <p className="text-sm text-slate-500">Loading…</p>
+  if (!team) return <p className="text-sm text-slate-500">{tr("Loading…")}</p>
   const nameOf = (t: Target) =>
     t.type === 'group'
       ? `Group: ${choices.groups.find((g) => g.id === t.target)?.name ?? 'archived group'}`
@@ -49,29 +50,28 @@ export default function CalendarSettingsPage() {
 
   return (
     <div className="space-y-4">
-      <AdminPageHeader title="Calendar">
-        Who service and training calendar entries are shared with when they are made. People can still change the sharing of each entry; private entries are never shown to
-        anyone but their owner, admins included.
+      <AdminPageHeader title={tr("Calendar")}>
+        {tr("Who service and training calendar entries are shared with when they are made. People can still change the sharing of each entry; private entries are never shown to anyone but their owner, admins included.")}
       </AdminPageHeader>
       <section className="max-w-3xl space-y-3 rounded-lg border border-slate-200 bg-white p-4 text-sm" data-setting="calendar-team">
         <div>
-          <h2 className="text-base font-semibold">Service / Training Team</h2>
+          <h2 className="text-base font-semibold">{tr("Service / Training Team")}</h2>
           <p className="text-slate-600">
-            Travel, on-site and training entries start shared with these groups and departments. Change the members of a group in{' '}
+            {tr("Travel, on-site and training entries start shared with these groups and departments. Change the members of a group in")}{' '}
             <Link to="/admin/groups" className="underline">
-              Admin → Groups
+              {tr("Admin → Groups")}
             </Link>
             .
           </p>
         </div>
         {team.length === 0 ? (
-          <p className="text-slate-500">No team is chosen: new service and training entries start private.</p>
+          <p className="text-slate-500">{tr("No team is chosen: new service and training entries start private.")}</p>
         ) : (
           <ul className="flex flex-wrap gap-1.5">
             {team.map((t) => (
               <li key={`${t.type}:${t.target}`} className="flex items-center gap-1 rounded-full bg-slate-100 px-2 py-0.5 text-xs">
                 {nameOf(t)}
-                <button type="button" aria-label={`Remove ${nameOf(t)}`} className="text-slate-500 hover:text-red-700" onClick={() => setTeam(team.filter((x) => x !== t))}>
+                <button type="button" aria-label={tr("Remove {{nameOf}}", { nameOf: nameOf(t) })} className="text-slate-500 hover:text-red-700" onClick={() => setTeam(team.filter((x) => x !== t))}>
                   ✕
                 </button>
               </li>
@@ -79,12 +79,12 @@ export default function CalendarSettingsPage() {
           </ul>
         )}
         <div className="flex flex-wrap gap-2">
-          <select aria-label="Kind" className={`${narrowInputClass} w-36`} value={adding.type} onChange={(e) => setAdding({ type: e.target.value as Target['type'], target: '' })}>
-            <option value="group">A group</option>
-            <option value="department">A department</option>
+          <select aria-label={tr("Kind")} className={`${narrowInputClass} w-36`} value={adding.type} onChange={(e) => setAdding({ type: e.target.value as Target['type'], target: '' })}>
+            <option value="group">{tr("A group")}</option>
+            <option value="department">{tr("A department")}</option>
           </select>
-          <select aria-label="Which" className={`${narrowInputClass} min-w-48 flex-1`} value={adding.target} onChange={(e) => setAdding({ ...adding, target: e.target.value })}>
-            <option value="">Select…</option>
+          <select aria-label={tr("Which")} className={`${narrowInputClass} min-w-48 flex-1`} value={adding.target} onChange={(e) => setAdding({ ...adding, target: e.target.value })}>
+            <option value="">{tr("Select…")}</option>
             {list.map((x) => (
               <option key={x.id} value={x.id}>
                 {x.name}

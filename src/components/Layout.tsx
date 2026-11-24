@@ -18,6 +18,7 @@ import NotificationPrompt from './alerts/NotificationPrompt'
 import UrgentBanner from './notices/UrgentBanner'
 import ClosureBanner from './notices/ClosureBanner'
 import NewOrderBanner from './NewOrderBanner'
+import { tr } from '../i18n'
 
 /**
  * Jumps to a setting found with the settings search: ?find=<id> scrolls to the
@@ -80,20 +81,20 @@ export default function Layout() {
         className={`app-sidebar keep-dark fixed inset-y-0 left-0 z-30 flex flex-col bg-slate-900 text-slate-100 transition-[width,transform] md:static md:translate-x-0 ${
           collapsed ? 'w-14 translate-x-0' : `w-60 ${menuOpen ? 'translate-x-0' : '-translate-x-full'}`
         }`}
-        aria-label="Main menu"
+        aria-label={tr("Main menu")}
       >
         <div className={`flex items-center gap-2 py-4 ${collapsed ? 'justify-center px-2' : 'px-5'}`}>
           {!collapsed && (
             <div className="min-w-0 flex-1">
               <div className="truncate text-lg font-semibold">Belfast Mini Mills</div>
-              <div className="text-sm text-slate-400">Order Tracker</div>
+              <div className="text-sm text-slate-400">{tr("Order Tracker")}</div>
             </div>
           )}
           <button
             type="button"
             onClick={toggle}
             className="rounded-md p-2 text-slate-300 hover:bg-slate-800 hover:text-white"
-            aria-label={collapsed ? 'Expand Menu' : 'Collapse Menu'}
+            aria-label={collapsed ? tr("Expand Menu") : tr("Collapse Menu")}
             aria-expanded={!collapsed}
             {...tipProps('Expand Menu')}
           >
@@ -109,7 +110,7 @@ export default function Layout() {
                 to={item.to}
                 end={'end' in item ? item.end : undefined}
                 onClick={() => setMenuOpen(false)}
-                aria-label={collapsed ? `${item.label}${count ? ` (${count} new)` : ''}` : undefined}
+                aria-label={collapsed ? `${item.label}${count ? ` (${tr('{{count}} new', { count })})` : ''}` : undefined}
                 {...tipProps(item.label)}
                 className={({ isActive }) =>
                   `relative flex items-center rounded-md py-2 text-sm font-medium ${collapsed ? 'justify-center px-2' : 'gap-3 px-3'} ${
@@ -123,11 +124,11 @@ export default function Layout() {
                   (collapsed ? (
                     <span className={`absolute right-1 top-1 h-2.5 w-2.5 rounded-full ${item.badge === 'chat' ? 'bg-blue-500' : 'bg-red-500'}`} aria-hidden="true" />
                   ) : item.badge === 'chat' ? (
-                    <span className="ml-auto rounded-full bg-blue-600 px-1.5 text-[0.6875rem] font-semibold text-white" aria-label={`${count} unread`}>
+                    <span className="ml-auto rounded-full bg-blue-600 px-1.5 text-[0.6875rem] font-semibold text-white" aria-label={tr("{{number}} unread", { number: count })}>
                       {count}
                     </span>
                   ) : (
-                    <span className="ml-auto h-2.5 w-2.5 rounded-full bg-red-500" aria-label={`${count} new ${count === 1 ? 'notice' : 'notices'}`} title={`${count} new`} />
+                    <span className="ml-auto h-2.5 w-2.5 rounded-full bg-red-500" aria-label={tr("{{number}} new {{value}}", { number: count, value: count === 1 ? tr("notice") : tr("notices") })} title={tr("{{number}} new", { number: count })} />
                   ))}
               </NavLink>
             )
@@ -144,7 +145,7 @@ export default function Layout() {
                 <div className="truncate text-slate-400" title={session.user.email}>
                   {session.user.email}
                 </div>
-                {role && <div className="text-xs text-slate-500">{role === 'admin' ? 'Admin (full access)' : 'User'}</div>}
+                {role && <div className="text-xs text-slate-500">{role === 'admin' ? tr("Admin (full access)") : tr("User")}</div>}
                 <button type="button" onClick={signOut} className="mt-2 text-slate-300 underline hover:text-white">
                   {ACTION.signOut}
                 </button>
@@ -166,7 +167,7 @@ export default function Layout() {
           {!collapsed && (
             <button type="button" onClick={() => setMenuOpen(true)} className="rounded-md border border-slate-300 px-3 py-1 text-sm md:hidden">
               <span className="flex items-center gap-1.5">
-                <Icon name="menu" /> Menu
+                <Icon name="menu" /> {tr("Menu")}
               </span>
             </button>
           )}
@@ -183,8 +184,7 @@ export default function Layout() {
 
         {!isSupabaseConfigured && (
           <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-900">
-            The app is not connected to the database. Copy <code>.env.example</code> to <code>.env.local</code> and enter your Supabase details (see the
-            README).
+            {tr("The app is not connected to the database. Copy")} <code>.env.example</code> {tr("to")} <code>.env.local</code> {tr("and enter your Supabase details (see the README).")}
           </div>
         )}
 

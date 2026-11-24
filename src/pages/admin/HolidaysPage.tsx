@@ -8,6 +8,7 @@ import { friendlyError } from '../../lib/format'
 import { HOLIDAY_KIND, holidayApiUrl, rangeText, showDateTime, type Holiday } from '../../lib/notices'
 import { supabase } from '../../lib/supabase'
 import { ACTION } from '../../lib/wording'
+import { tr } from '../../i18n'
 
 type Settings = { province?: string; last_import_at?: string; last_import_count?: number; last_error?: string | null }
 type Status = { scheduled: boolean; pg_cron: boolean; pg_net: boolean }
@@ -61,22 +62,22 @@ export default function HolidaysPage() {
     try {
       for (const y of [year, year + 1]) {
         const res = await fetch(holidayApiUrl(province, y))
-        if (!res.ok) throw new Error(`canada-holidays.ca answered with code ${res.status}`)
+        if (!res.ok) throw new Error(tr("canada-holidays.ca answered with code {{status}}", { status: res.status }))
         const { data, error } = await supabase.rpc('apply_statutory_holidays', { p_year: y, p_payload: await res.json() })
         if (error) throw error
         saved += Number(data ?? 0)
       }
-      toast.success(`${saved} statutory holidays checked for ${year} and ${year + 1}.`)
+      toast.success(tr("{{saved}} statutory holidays checked for {{year}} and {{value}}.", { saved: saved, year: year, value: year + 1 }))
     } catch (e) {
       // The browser could not reach the site: ask the database to fetch it instead.
       const { error } = await supabase.rpc('request_statutory_holidays')
       if (error) {
-        toast.error(`The holidays could not be imported. ${friendlyError(e as { message?: string })}`)
+        toast.error(tr("The holidays could not be imported. {{friendlyError}}", { friendlyError: friendlyError(e as { message?: string }) }))
       } else {
         await new Promise((r) => window.setTimeout(r, 4000))
         const { data } = await supabase.rpc('collect_statutory_holidays')
-        if (Number(data ?? 0) > 0) toast.success('Statutory holidays imported.')
-        else toast.message('The import has been requested. Reload this page in a minute to see the holidays.')
+        if (Number(data ?? 0) > 0) toast.success(tr("Statutory holidays imported."))
+        else toast.message(tr("The import has been requested. Reload this page in a minute to see the holidays."))
       }
     }
     setBusy(false)
@@ -94,9 +95,9 @@ export default function HolidaysPage() {
 
   async function save() {
     if (!form || !supabase) return
-    if (!form.name.trim()) return toast.error('Enter the name.')
+    if (!form.name.trim()) return toast.error(tr("Enter the name."))
     const end = form.end_date || form.start_date
-    if (end < form.start_date) return toast.error('The end date must be on or after the start date.')
+    if (end < form.start_date) return toast.error(tr("The end date must be on or after the start date."))
     const row = { name: form.name.trim(), start_date: form.start_date, end_date: end, kind: form.kind, day_off: form.day_off, notes: form.notes.trim() || null }
     await run(
       () => (form.id ? supabase!.from('company_holidays').update(row).eq('id', form.id) : supabase!.from('company_holidays').insert(row)),
@@ -112,22 +113,21 @@ export default function HolidaysPage() {
   return (
     <div className="space-y-6">
       <AdminPageHeader
-        title="Company Holidays"
+        title={tr("Company Holidays")}
         aside={
           <button type="button" className={buttonClass} onClick={() => setForm(blank())}>
-            Add Holiday or Closure
+            {tr("Add Holiday or Closure")}
           </button>
         }
       >
-        Statutory holidays, company holidays and office closures. Days marked as a day off are skipped when ship dates are worked out, and the next
-        ones are shown on the Notice Board.
+        {tr("Statutory holidays, company holidays and office closures. Days marked as a day off are skipped when ship dates are worked out, and the next ones are shown on the Notice Board.")}
       </AdminPageHeader>
 
       <div className={cardGridClass}>
       <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-5">
-        <h2 className="font-semibold">Statutory Holidays</h2>
+        <h2 className="font-semibold">{tr("Statutory Holidays")}</h2>
         <div className="flex flex-wrap items-end gap-3">
-          <Field label="Province" htmlFor="hol-prov">
+          <Field label={tr("Province")} htmlFor="hol-prov">
             <select
               id="hol-prov"
               className={`${narrowInputClass} w-64`}
@@ -142,30 +142,30 @@ export default function HolidaysPage() {
             </select>
           </Field>
           <button type="button" className={secondaryButtonClass} disabled={busy} onClick={importNow}>
-            {busy ? 'Importing…' : 'Import Now'}
+            {busy ? tr("Importing…") : tr("Import Now")}
           </button>
         </div>
         <p className="text-sm text-slate-600">
-          Imports this year and next year from canada-holidays.ca. Entries you have changed by hand are never overwritten.
-          {settings.last_import_at && ` Last import: ${showDateTime(settings.last_import_at)}.`}
+          {tr("Imports this year and next year from canada-holidays.ca. Entries you have changed by hand are never overwritten.")}
+          {settings.last_import_at && tr(" Last import: {{showDateTime}}.", { showDateTime: showDateTime(settings.last_import_at) })}
         </p>
-        {settings.last_error && <p className="text-sm text-red-700">The last automatic import did not work: {settings.last_error}</p>}
+        {settings.last_error && <p className="text-sm text-red-700">{tr("The last automatic import did not work:")} {settings.last_error}</p>}
         {status && (
           <p className="text-sm">
             {status.scheduled ? (
-              <span className="text-green-800">Yearly refresh is on: every December 31 the next two years are imported.</span>
+              <span className="text-green-800">{tr("Yearly refresh is on: every December 31 the next two years are imported.")}</span>
             ) : (
               <span className="flex flex-wrap items-center gap-2 text-amber-800">
-                The yearly refresh (every December 31) is not on.
+                {tr("The yearly refresh (every December 31) is not on.")}
                 <button
                   type="button"
                   className={secondaryButtonClass}
                   disabled={busy}
                   onClick={() => run(() => supabase!.rpc('start_holiday_schedule'), 'Yearly refresh turned on.')}
                 >
-                  Turn On Yearly Refresh
+                  {tr("Turn On Yearly Refresh")}
                 </button>
-                {(!status.pg_cron || !status.pg_net) && <span className="text-xs">It needs the pg_cron and pg_net extensions (Supabase → Database → Extensions).</span>}
+                {(!status.pg_cron || !status.pg_net) && <span className="text-xs">{tr("It needs the pg_cron and pg_net extensions (Supabase → Database → Extensions).")}</span>}
               </span>
             )}
           </p>
@@ -174,20 +174,20 @@ export default function HolidaysPage() {
 
       <section className="[grid-column:1/-1] rounded-lg border border-slate-200 bg-white p-5">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold">All Holidays and Closures</h2>
+          <h2 className="font-semibold">{tr("All Holidays and Closures")}</h2>
           <div className="flex gap-4 text-sm">
             <label className="flex items-center gap-1.5">
               <input type="checkbox" className="h-4 w-4" checked={showPast} onChange={(e) => setShowPast(e.target.checked)} />
-              Show past
+              {tr("Show past")}
             </label>
             <label className="flex items-center gap-1.5">
               <input type="checkbox" className="h-4 w-4" checked={showHidden} onChange={(e) => setShowHidden(e.target.checked)} />
-              Show hidden
+              {tr("Show hidden")}
             </label>
           </div>
         </div>
         {shown.length === 0 ? (
-          <p className="text-sm text-slate-500">No holidays have been added. Select Import Now to load the statutory holidays.</p>
+          <p className="text-sm text-slate-500">{tr("No holidays have been added. Select Import Now to load the statutory holidays.")}</p>
         ) : (
           years.map((y) => (
             <div key={y} className="mb-4">
@@ -201,9 +201,9 @@ export default function HolidaysPage() {
                       <span className="min-w-0 flex-1">
                         {h.name}
                         <span className="block text-xs text-slate-500">
-                          {HOLIDAY_KIND[h.kind]} · {h.day_off ? 'Day off' : 'Open as usual'}
-                          {h.source !== 'manual' && (h.edited ? ' · imported, changed by hand' : ' · imported')}
-                          {h.hidden && ' · hidden'}
+                          {HOLIDAY_KIND[h.kind]} · {h.day_off ? tr("Day off") : tr("Open as usual")}
+                          {h.source !== 'manual' && (h.edited ? tr(" · imported, changed by hand") : tr(" · imported"))}
+                          {h.hidden && tr(" · hidden")}
                           {h.notes && ` · ${h.notes}`}
                         </span>
                       </span>
@@ -221,7 +221,7 @@ export default function HolidaysPage() {
                           disabled={busy}
                           onClick={() => run(() => supabase!.from('company_holidays').update({ hidden: !h.hidden }).eq('id', h.id), h.hidden ? 'Shown again.' : 'Hidden. It no longer counts as a day off.')}
                         >
-                          {h.hidden ? 'Show' : 'Hide'}
+                          {h.hidden ? tr("Show") : tr("Hide")}
                         </button>
                       </span>
                     </li>
@@ -234,7 +234,7 @@ export default function HolidaysPage() {
 
       {form && (
         <Modal
-          title={form.id ? 'Edit Holiday' : 'Add Holiday or Closure'}
+          title={form.id ? tr("Edit Holiday") : tr("Add Holiday or Closure")}
           onClose={() => setForm(null)}
           busy={busy}
           footer={
@@ -249,18 +249,18 @@ export default function HolidaysPage() {
           }
         >
           <div className="space-y-4">
-            <Field label="Name" htmlFor="hol-name">
-              <input id="hol-name" className={inputClass} maxLength={120} placeholder="for example Christmas break" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Field label={tr("Name")} htmlFor="hol-name">
+              <input id="hol-name" className={inputClass} maxLength={120} placeholder={tr("for example Christmas break")} value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Start date" htmlFor="hol-start">
+              <Field label={tr("Start date")} htmlFor="hol-start">
                 <input id="hol-start" type="date" className={inputClass} value={form.start_date} onChange={(e) => setForm({ ...form, start_date: e.target.value })} />
               </Field>
-              <Field label="End date" htmlFor="hol-end" hint="Leave empty for one day.">
+              <Field label={tr("End date")} htmlFor="hol-end" hint={tr("Leave empty for one day.")}>
                 <input id="hol-end" type="date" className={inputClass} min={form.start_date} value={form.end_date} onChange={(e) => setForm({ ...form, end_date: e.target.value })} />
               </Field>
             </div>
-            <Field label="Type" htmlFor="hol-kind">
+            <Field label={tr("Type")} htmlFor="hol-kind">
               <select id="hol-kind" className={inputClass} value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value as Holiday['kind'] })}>
                 {(Object.keys(HOLIDAY_KIND) as Holiday['kind'][]).map((k) => (
                   <option key={k} value={k}>
@@ -272,11 +272,11 @@ export default function HolidaysPage() {
             <label className="flex items-start gap-2 text-sm">
               <input type="checkbox" className="mt-0.5 h-4 w-4" checked={form.day_off} onChange={(e) => setForm({ ...form, day_off: e.target.checked })} />
               <span>
-                Day off: the shop is closed
-                <span className="block text-xs text-slate-500">Ship dates and deadlines skip these days.</span>
+                {tr("Day off: the shop is closed")}
+                <span className="block text-xs text-slate-500">{tr("Ship dates and deadlines skip these days.")}</span>
               </span>
             </label>
-            <Field label="Notes (optional)" htmlFor="hol-notes">
+            <Field label={tr("Notes (optional)")} htmlFor="hol-notes">
               <input id="hol-notes" className={inputClass} maxLength={500} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
             </Field>
           </div>

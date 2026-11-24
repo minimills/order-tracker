@@ -4,6 +4,7 @@ import Can from '../Can'
 import { Field, inputClass } from '../form'
 import MachineTypeSearch from './MachineTypeSearch'
 import { MAX_QUANTITY, newMachineRow, parseQuantity, type MachineRow } from './machines'
+import { tr } from '../../i18n'
 
 type Props = {
   rows: MachineRow[]
@@ -59,12 +60,12 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
       {crating && rows.length > 1 && (
         <Can permission="order.machines.crate_flag" level="edit">
           <div className="flex flex-wrap items-center gap-3 text-sm">
-            <span className="text-slate-600">Crate:</span>
+            <span className="text-slate-600">{tr("Crate:")}</span>
             <button type="button" className="underline disabled:text-slate-400 disabled:no-underline" disabled={allCrated} onClick={() => onChange(rows.map((r) => ({ ...r, needsCrate: true })))}>
-              Select All
+              {tr("Select All")}
             </button>
             <button type="button" className="underline disabled:text-slate-400 disabled:no-underline" disabled={noneCrated} onClick={() => onChange(rows.map((r) => ({ ...r, needsCrate: false })))}>
-              Deselect All
+              {tr("Deselect All")}
             </button>
           </div>
         </Can>
@@ -74,13 +75,13 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
         return (
           <div key={row.key} className="rounded-md border border-slate-200 p-3">
             <div className="grid grid-cols-[1fr_5.5rem] gap-3 md:grid-cols-[1fr_7rem_auto]">
-              <Field label="Machine type" error={errors[`row-${i}-type`]}>
+              <Field label={tr("Machine type")} error={errors[`row-${i}-type`]}>
                 <p className="py-2 text-sm font-medium">
                   {type?.name ?? '—'}
-                  <span className="ml-2 font-mono text-xs font-normal text-slate-500">{type?.code ?? 'no code yet'}</span>
+                  <span className="ml-2 font-mono text-xs font-normal text-slate-500">{type?.code ?? tr("no code yet")}</span>
                 </p>
               </Field>
-              <Field label="Quantity" htmlFor={`${row.key}-qty`} error={errors[`row-${i}-qty`]}>
+              <Field label={tr("Quantity")} htmlFor={`${row.key}-qty`} error={errors[`row-${i}-qty`]}>
                 <input
                   id={`${row.key}-qty`}
                   type="number"
@@ -95,14 +96,14 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
               <div className="col-span-2 flex items-end gap-4 md:col-span-1">
                 {crating && (
                 <Can permission="order.machines.crate_flag" level="edit">
-                  <label className="flex items-center gap-2 pb-2 text-sm" title="Only crated machines get a crating deadline">
+                  <label className="flex items-center gap-2 pb-2 text-sm" title={tr("Only crated machines get a crating deadline")}>
                     <input
                       type="checkbox"
                       className="h-4 w-4"
                       checked={row.needsCrate}
                       onChange={(e) => updateRow(i, { needsCrate: e.target.checked })}
                     />
-                    Crate
+                    {tr("Crate")}
                   </label>
                 </Can>
                 )}
@@ -111,7 +112,7 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                   className="text-sm text-red-700 underline disabled:text-slate-400 disabled:no-underline"
                   onClick={() => onChange(rows.filter((_, j) => j !== i))}
                 >
-                  Remove
+                  {tr("Remove")}
                 </button>
               </div>
             </div>
@@ -123,16 +124,16 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                   const serial = preview[i]?.[j]
                   return (
                     <li key={j} className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                      <span className="w-20 shrink-0 text-slate-500">Machine {j + 1}</span>
+                      <span className="w-20 shrink-0 text-slate-500">{tr("Machine")} {j + 1}</span>
                       {manual === null ? (
                         <>
                           <span className="font-mono">
                             {serial ??
                               (!type.code
-                                ? 'No serial number (this machine type has no code yet)'
+                                ? tr("No serial number (this machine type has no code yet)")
                                 : getsSerials
                                   ? '—'
-                                  : 'Serial number assigned when confirmed')}
+                                  : tr("Serial number assigned when confirmed"))}
                           </span>
                           <Can permission="orders.new.serial_by_hand" level="edit">
                             <button
@@ -140,17 +141,17 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                               className="text-xs text-slate-600 underline"
                               onClick={() => setManual(i, j, '')}
                             >
-                              Enter Serial Manually
+                              {tr("Enter Serial Manually")}
                             </button>
                           </Can>
                         </>
                       ) : (
                         <>
                           <input
-                            aria-label={`Serial for machine ${j + 1}`}
+                            aria-label={tr("Serial for machine {{value}}", { value: j + 1 })}
                             className={`${inputClass} max-w-48 font-mono uppercase`}
                             value={manual}
-                            placeholder={type.code ? `${type.code}-0000` : 'Serial'}
+                            placeholder={type.code ? `${type.code}-0000` : tr("Serial")}
                             onChange={(e) => setManual(i, j, e.target.value)}
                           />
                           <button
@@ -158,7 +159,7 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
                             className="text-xs text-slate-600 underline"
                             onClick={() => setManual(i, j, null)}
                           >
-                            Use Automatic Serial
+                            {tr("Use Automatic Serial")}
                           </button>
                           {unitError && <span className="w-full text-xs font-medium text-red-600">{unitError}</span>}
                         </>
@@ -179,8 +180,8 @@ export default function MachinesSection({ rows, onChange, machineTypes, preview,
       <div>
         <p className="text-xs text-slate-500">
           {getsSerials
-            ? 'Serial numbers shown are a preview. The final numbers are assigned when you save, so no two machines can receive the same number.'
-            : 'Quotes do not receive serial numbers. They are assigned when the order is confirmed.'}
+            ? tr("Serial numbers shown are a preview. The final numbers are assigned when you save, so no two machines can receive the same number.")
+            : tr("Quotes do not receive serial numbers. They are assigned when the order is confirmed.")}
         </p>
       </div>
     </div>

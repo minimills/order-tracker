@@ -1,3 +1,4 @@
+import { currentLang, tr } from '../i18n'
 import { addMonths, format, parseISO, startOfMonth } from 'date-fns'
 import { todayISO } from './dates'
 import { fetchAll } from './fetchAll'
@@ -8,28 +9,64 @@ import { supabase } from './supabase'
 // gives a list of points (label + value) and one headline number for the gauges.
 
 export const CHART_TYPES = [
-  { key: 'column', label: 'Column' },
-  { key: 'bar', label: 'Bar' },
-  { key: 'line', label: 'Line' },
-  { key: 'pie', label: 'Pie' },
-  { key: 'gauge', label: 'Gauge' },
-  { key: 'gauge_targets', label: 'Gauge With Targets' },
-  { key: 'number', label: 'Number' },
-  { key: 'table', label: 'Table' },
+  { key: 'column', get label() {
+    return tr("Column")
+  } },
+  { key: 'bar', get label() {
+    return tr("Bar")
+  } },
+  { key: 'line', get label() {
+    return tr("Line")
+  } },
+  { key: 'pie', get label() {
+    return tr("Pie")
+  } },
+  { key: 'gauge', get label() {
+    return tr("Gauge")
+  } },
+  { key: 'gauge_targets', get label() {
+    return tr("Gauge With Targets")
+  } },
+  { key: 'number', get label() {
+    return tr("Number")
+  } },
+  { key: 'table', get label() {
+    return tr("Table")
+  } },
 ] as const
 export type ChartType = (typeof CHART_TYPES)[number]['key']
 
 export const RANGES = [
-  { key: 'today', label: 'Today' },
-  { key: 'week', label: 'This week' },
-  { key: 'month', label: 'This month' },
-  { key: 'quarter', label: 'This quarter' },
-  { key: 'ytd', label: 'This year' },
-  { key: '12m', label: 'Last 12 months' },
-  { key: 'last_year', label: 'Last year' },
-  { key: '3y', label: 'Last 3 years' },
-  { key: 'all', label: 'All time' },
-  { key: 'custom', label: 'Custom dates' },
+  { key: 'today', get label() {
+    return tr("Today")
+  } },
+  { key: 'week', get label() {
+    return tr("This week")
+  } },
+  { key: 'month', get label() {
+    return tr("This month")
+  } },
+  { key: 'quarter', get label() {
+    return tr("This quarter")
+  } },
+  { key: 'ytd', get label() {
+    return tr("This year")
+  } },
+  { key: '12m', get label() {
+    return tr("Last 12 months")
+  } },
+  { key: 'last_year', get label() {
+    return tr("Last year")
+  } },
+  { key: '3y', get label() {
+    return tr("Last 3 years")
+  } },
+  { key: 'all', get label() {
+    return tr("All time")
+  } },
+  { key: 'custom', get label() {
+    return tr("Custom dates")
+  } },
 ] as const
 export type RangeKey = (typeof RANGES)[number]['key']
 
@@ -205,7 +242,9 @@ function countBy<T>(rows: T[], key: (r: T) => string, top = 10): ChartPoint[] {
   const sorted = [...m].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
   const head = sorted.slice(0, top).map(([label, value]) => ({ label, value }))
   const rest = sorted.slice(top).reduce((s, [, v]) => s + v, 0)
-  return rest ? [...head, { label: 'Other', value: rest }] : head
+  return rest ? [...head, { get label() {
+    return tr("Other")
+  }, value: rest }] : head
 }
 
 const share = (part: number, whole: number) => (whole ? round1((part / whole) * 100) : 0)
@@ -244,7 +283,9 @@ const NO_GAUGE: ChartType[] = ['column', 'bar', 'line', 'pie', 'number', 'table'
 
 export const CHARTS: ChartDef[] = [
   {
-    key: 'delay_by_month', title: 'Average Delay by Month', group: 'Shipping', permission: 'dashboard.chart.delay_by_month', types: NO_PIE, defaultType: 'column', filters: ['country', 'machineType'],
+    key: 'delay_by_month', get title() {
+    return tr("Average Delay by Month")
+  }, group: 'Shipping', permission: 'dashboard.chart.delay_by_month', types: NO_PIE, defaultType: 'column', filters: ['country', 'machineType'],
     load: async (d, { from, to }, c) => {
       const rows = await filteredOrders(d, c, (o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
       const ms = months(from, to, rows.map((o) => o.actual_ship_date!))
@@ -253,11 +294,15 @@ export const CHARTS: ChartDef[] = [
         return { label: m.label, long: m.long, value: list.length ? round1(list.reduce((s, o) => s + Number(o.delay_days), 0) / list.length) : 0 }
       })
       const avg = rows.length ? round1(rows.reduce((s, o) => s + Number(o.delay_days), 0) / rows.length) : 0
-      return { points, unit: 'days', headline: { value: avg, label: 'days late on average (below zero = early)' } }
+      return { points, unit: 'days', headline: { value: avg, get label() {
+    return tr("days late on average (below zero = early)")
+  } } }
     },
   },
   {
-    key: 'delay_by_year', title: 'Average Delay by Year', group: 'Shipping', permission: 'dashboard.chart.delay_by_year', types: NO_PIE, defaultType: 'column', filters: ['country', 'machineType'],
+    key: 'delay_by_year', get title() {
+    return tr("Average Delay by Year")
+  }, group: 'Shipping', permission: 'dashboard.chart.delay_by_year', types: NO_PIE, defaultType: 'column', filters: ['country', 'machineType'],
     load: async (d, { from, to }, c) => {
       const rows = await filteredOrders(d, c, (o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
       const years = [...new Set(rows.map((o) => o.actual_ship_date!.slice(0, 4)))].sort()
@@ -266,64 +311,96 @@ export const CHARTS: ChartDef[] = [
         return { label: y, value: round1(list.reduce((s, o) => s + Number(o.delay_days), 0) / list.length) }
       })
       const avg = rows.length ? round1(rows.reduce((s, o) => s + Number(o.delay_days), 0) / rows.length) : 0
-      return { points, unit: 'days', headline: { value: avg, label: 'days late on average (below zero = early)' } }
+      return { points, unit: 'days', headline: { value: avg, get label() {
+    return tr("days late on average (below zero = early)")
+  } } }
     },
   },
   {
-    key: 'on_time', title: 'On-time and Late Shipments', group: 'Shipping', permission: 'dashboard.chart.on_time', types: ALL, defaultType: 'pie', filters: ['country', 'machineType'],
+    key: 'on_time', get title() {
+    return tr("On-time and Late Shipments")
+  }, group: 'Shipping', permission: 'dashboard.chart.on_time', types: ALL, defaultType: 'pie', filters: ['country', 'machineType'],
     load: async (d, { from, to }, c) => {
       const rows = await filteredOrders(d, c, (o) => o.delay_days !== null && inRange(o.actual_ship_date, from, to))
       const ok = rows.filter((o) => Number(o.delay_days) <= 0).length
-      return { points: [{ label: 'On time or early', value: ok }, { label: 'Late', value: rows.length - ok }], unit: 'shipments', headline: { value: share(ok, rows.length), label: '% shipped on time' } }
+      return { points: [{ get label() {
+    return tr("On time or early")
+  }, value: ok }, { get label() {
+    return tr("Late")
+  }, value: rows.length - ok }], unit: 'shipments', headline: { value: share(ok, rows.length), get label() {
+    return tr("% shipped on time")
+  } } }
     },
   },
   {
-    key: 'top_machines', title: 'Most Ordered Machines', group: 'Orders', permission: 'dashboard.chart.top_machines', types: NO_GAUGE, defaultType: 'bar', filters: ['country', 'machineType'],
+    key: 'top_machines', get title() {
+    return tr("Most Ordered Machines")
+  }, group: 'Orders', permission: 'dashboard.chart.top_machines', types: NO_GAUGE, defaultType: 'bar', filters: ['country', 'machineType'],
     load: async (d, { from, to }, c) => {
       const orders = new Map((await filteredOrders(d, c, (o) => REAL_ORDER(o) && inRange(o.order_date, from, to))).map((o) => [o.id, o]))
       const rows = (await d.machines()).filter((m) => orders.has(m.order_id) && typeOk(m, c))
-      return { points: countBy(rows, (m) => m.machine_type), unit: 'machines', headline: { value: rows.length, label: 'machines ordered' } }
+      return { points: countBy(rows, (m) => m.machine_type), unit: 'machines', headline: { value: rows.length, get label() {
+    return tr("machines ordered")
+  } } }
     },
   },
   {
-    key: 'by_country', title: 'Orders by Country', group: 'Orders', permission: 'dashboard.chart.by_country', types: NO_GAUGE, defaultType: 'bar', filters: ['machineType'],
+    key: 'by_country', get title() {
+    return tr("Orders by Country")
+  }, group: 'Orders', permission: 'dashboard.chart.by_country', types: NO_GAUGE, defaultType: 'bar', filters: ['machineType'],
     load: async (d, { from, to }, c) => {
       const rows = await filteredOrders(d, c, (o) => REAL_ORDER(o) && inRange(o.order_date, from, to))
-      return { points: countBy(rows, (o) => o.customer_country || 'Not set'), unit: 'orders', headline: { value: rows.length, label: 'orders' } }
+      return { points: countBy(rows, (o) => o.customer_country || 'Not set'), unit: 'orders', headline: { value: rows.length, get label() {
+    return tr("orders")
+  } } }
     },
   },
   {
-    key: 'voltage', title: '120V and 240V Machines Built', group: 'Orders', permission: 'dashboard.chart.voltage', types: NO_GAUGE, defaultType: 'pie', filters: ['country', 'machineType'],
+    key: 'voltage', get title() {
+    return tr("120V and 240V Machines Built")
+  }, group: 'Orders', permission: 'dashboard.chart.voltage', types: NO_GAUGE, defaultType: 'pie', filters: ['country', 'machineType'],
     load: async (d, { from, to }, c) => {
       const orders = new Map((await filteredOrders(d, c, (o) => REAL_ORDER(o) && inRange(o.order_date, from, to))).map((o) => [o.id, o]))
       const rows = (await d.machines()).filter((m) => m.ready && orders.has(m.order_id) && typeOk(m, c))
-      return { points: countBy(rows, (m) => orders.get(m.order_id)!.voltage || 'Unknown'), unit: 'machines', headline: { value: rows.length, label: 'machines built' }, note: 'Built machines on orders placed in these dates.' }
+      return { points: countBy(rows, (m) => orders.get(m.order_id)!.voltage || 'Unknown'), unit: 'machines', headline: { value: rows.length, get label() {
+    return tr("machines built")
+  } }, note: 'Built machines on orders placed in these dates.' }
     },
   },
   {
-    key: 'speed_employee', title: 'Build Speed by Employee', group: 'Production', permission: 'dashboard.chart.speed_employee', types: NO_PIE, defaultType: 'bar',
+    key: 'speed_employee', get title() {
+    return tr("Build Speed by Employee")
+  }, group: 'Production', permission: 'dashboard.chart.speed_employee', types: NO_PIE, defaultType: 'bar',
     load: async (d, { from, to }) => {
       const rows = await d.taskTimes(from, to)
       const by = new Map<string, number[]>()
       for (const t of rows) by.set(t.person, [...(by.get(t.person) ?? []), t.seconds])
       const points = [...by].map(([label, v]) => ({ label, value: round1(v.reduce((a, b) => a + b, 0) / v.length / 3600), long: `${label} (${v.length} finished)` })).sort((a, b) => a.value - b.value).slice(0, 15)
       const avg = rows.length ? round1(rows.reduce((s, t) => s + t.seconds, 0) / rows.length / 3600) : 0
-      return { points, unit: 'hours per task', headline: { value: avg, label: 'hours per finished task on average' }, note: 'From the Start and Finish timers on the boards; pauses are left out.' }
+      return { points, unit: 'hours per task', headline: { value: avg, get label() {
+    return tr("hours per finished task on average")
+  } }, note: 'From the Start and Finish timers on the boards; pauses are left out.' }
     },
   },
   {
-    key: 'speed_task', title: 'Build Speed by Task', group: 'Production', permission: 'dashboard.chart.speed_task', types: NO_PIE, defaultType: 'bar',
+    key: 'speed_task', get title() {
+    return tr("Build Speed by Task")
+  }, group: 'Production', permission: 'dashboard.chart.speed_task', types: NO_PIE, defaultType: 'bar',
     load: async (d, { from, to }) => {
       const rows = await d.taskTimes(from, to)
       const by = new Map<string, number[]>()
       for (const t of rows) by.set(t.task, [...(by.get(t.task) ?? []), t.seconds])
       const points = [...by].sort((a, b) => b[1].length - a[1].length).slice(0, 12).map(([label, v]) => ({ label, value: round1(v.reduce((a, b) => a + b, 0) / v.length / 3600), long: `${label} (${v.length} times)` }))
       const avg = rows.length ? round1(rows.reduce((s, t) => s + t.seconds, 0) / rows.length / 3600) : 0
-      return { points, unit: 'hours', headline: { value: avg, label: 'hours per finished task on average' }, note: 'The 12 tasks done most often; average time each takes.' }
+      return { points, unit: 'hours', headline: { value: avg, get label() {
+    return tr("hours per finished task on average")
+  } }, note: 'The 12 tasks done most often; average time each takes.' }
     },
   },
   {
-    key: 'department_delays', title: 'Department Delays', group: 'Production', permission: 'dashboard.chart.department_delays', types: NO_PIE, defaultType: 'column', filters: ['department'],
+    key: 'department_delays', get title() {
+    return tr("Department Delays")
+  }, group: 'Production', permission: 'dashboard.chart.department_delays', types: NO_PIE, defaultType: 'column', filters: ['department'],
     load: async (d, { from, to }, c) => {
       const dept = c.filters?.department
       const keep = dept ? new Set((await d.stageDepartments()).filter((s) => s.department_id === dept).map((s) => s.step)) : null
@@ -334,36 +411,64 @@ export const CHARTS: ChartDef[] = [
         return { label: STEP_LABEL[s] ?? s, value: round1(list.reduce((a, r) => a + Number(r.days_late), 0) / list.length) }
       })
       const avg = rows.length ? round1(rows.reduce((a, r) => a + Number(r.days_late), 0) / rows.length) : 0
-      return { points, unit: 'days', headline: { value: avg, label: 'days late on average, all departments' } }
+      return { points, unit: 'days', headline: { value: avg, get label() {
+    return tr("days late on average, all departments")
+  } } }
     },
   },
   {
-    key: 'service_days', title: 'Planned Service and Travel Days', group: 'Service / Training', permission: 'dashboard.chart.service_days', types: NO_GAUGE, defaultType: 'column',
+    key: 'service_days', get title() {
+    return tr("Planned Service and Travel Days")
+  }, group: 'Service / Training', permission: 'dashboard.chart.service_days', types: NO_GAUGE, defaultType: 'column',
     load: async (d, { from, to }) => {
       const calls = (await d.serviceCalls()).filter((c) => inRange(c.planned_start, from, to))
       const callDays = calls.reduce((s, c) => s + (Math.round((parseISO(c.planned_end ?? c.planned_start!).getTime() - parseISO(c.planned_start!).getTime()) / 86400000) + 1), 0)
       const travel = (await d.serviceOrders()).filter((o) => inRange(o.service_start, from, to)).reduce((s, o) => s + Number(o.travel_days ?? 0), 0)
-      return { points: [{ label: 'Planned service call days', value: callDays }, { label: 'Planned travel days', value: round1(travel) }], unit: 'days', headline: { value: round1(callDays + travel), label: 'planned days' } }
+      return { points: [{ get label() {
+    return tr("Planned service call days")
+  }, value: callDays }, { get label() {
+    return tr("Planned travel days")
+  }, value: round1(travel) }], unit: 'days', headline: { value: round1(callDays + travel), get label() {
+    return tr("planned days")
+  } } }
     },
   },
   {
-    key: 'service_hours', title: 'Travel and Service Hours', group: 'Service / Training', permission: 'dashboard.chart.service_hours', types: NO_GAUGE, defaultType: 'column',
+    key: 'service_hours', get title() {
+    return tr("Travel and Service Hours")
+  }, group: 'Service / Training', permission: 'dashboard.chart.service_hours', types: NO_GAUGE, defaultType: 'column',
     load: async (d, { from, to }) => {
       const rows = (await d.serviceEntries()).filter((e) => inRange(e.entry_date, from, to))
       const sum = (k: string) => round1(rows.filter((e) => e.kind === k).reduce((s, e) => s + Number(e.hours ?? 0), 0))
-      return { points: [{ label: 'Travel hours', value: sum('travel') }, { label: 'Service hours on site', value: sum('onsite') }], unit: 'hours', headline: { value: round1(sum('travel') + sum('onsite')), label: 'hours logged' } }
+      return { points: [{ get label() {
+    return tr("Travel hours")
+  }, value: sum('travel') }, { get label() {
+    return tr("Service hours on site")
+  }, value: sum('onsite') }], unit: 'hours', headline: { value: round1(sum('travel') + sum('onsite')), get label() {
+    return tr("hours logged")
+  } } }
     },
   },
   {
-    key: 'payments_on_time', title: 'On-time and Late Payments', group: 'Payments', permission: 'dashboard.chart.payments_on_time', types: ALL, defaultType: 'pie',
+    key: 'payments_on_time', get title() {
+    return tr("On-time and Late Payments")
+  }, group: 'Payments', permission: 'dashboard.chart.payments_on_time', types: ALL, defaultType: 'pie',
     load: async (d, { from, to }) => {
       const rows = (await d.payments()).filter((p) => Number(p.remaining) <= 0 && p.due_date && inRange(p.received_date, from, to))
       const ok = rows.filter((p) => p.received_date! <= p.due_date!).length
-      return { points: [{ label: 'Received on time', value: ok }, { label: 'Received late', value: rows.length - ok }], unit: 'payments', headline: { value: share(ok, rows.length), label: '% received on time' }, note: 'Fully received payments with a due date.' }
+      return { points: [{ get label() {
+    return tr("Received on time")
+  }, value: ok }, { get label() {
+    return tr("Received late")
+  }, value: rows.length - ok }], unit: 'payments', headline: { value: share(ok, rows.length), get label() {
+    return tr("% received on time")
+  } }, note: 'Fully received payments with a due date.' }
     },
   },
   {
-    key: 'outstanding', title: 'Money Outstanding by Currency', group: 'Payments', permission: 'dashboard.chart.outstanding', types: ['column', 'bar', 'pie', 'table'], defaultType: 'column', now: true,
+    key: 'outstanding', get title() {
+    return tr("Money Outstanding by Currency")
+  }, group: 'Payments', permission: 'dashboard.chart.outstanding', types: ['column', 'bar', 'pie', 'table'], defaultType: 'column', now: true,
     load: async (d) => {
       const rows = (await d.payments()).filter((p) => Number(p.remaining) > 0 && !p.order_archived && p.stage !== 'Quote' && p.stage !== 'Cancelled')
       const by = new Map<string, number>()
@@ -372,7 +477,9 @@ export const CHARTS: ChartDef[] = [
     },
   },
   {
-    key: 'board_cards', title: 'Open Cards by Stage', group: 'Boards', permission: 'dashboard.chart.board_cards', types: NO_GAUGE, defaultType: 'bar', now: true, boards: true, filters: ['board'],
+    key: 'board_cards', get title() {
+    return tr("Open Cards by Stage")
+  }, group: 'Boards', permission: 'dashboard.chart.board_cards', types: NO_GAUGE, defaultType: 'bar', now: true, boards: true, filters: ['board'],
     load: async (d, _r, c) => {
       const ids = c.boards?.length ? c.boards : c.filters?.board ? [c.filters.board] : []
       if (!ids.length) return { points: [], unit: 'cards', headline: null, note: 'Choose the boards to count.' }
@@ -382,12 +489,20 @@ export const CHARTS: ChartDef[] = [
         .filter((s) => ids.includes(s.board_id))
         .sort((a, b) => ids.indexOf(a.board_id) - ids.indexOf(b.board_id) || a.sort_order - b.sort_order)
         .map((s) => ({ label: ids.length > 1 ? `${boards.get(s.board_id) ?? ''}: ${s.name}` : s.name, value: cards.filter((x) => x.stage_id === s.id).length }))
-      return { points, unit: 'open cards', headline: { value: cards.length, label: 'open cards' }, note: `Now: ${ids.map((i) => boards.get(i) ?? 'a board you cannot open').join(', ')}.` }
+      return { points, unit: 'open cards', headline: { value: cards.length, get label() {
+    return tr("open cards")
+  } }, note: `Now: ${ids.map((i) => boards.get(i) ?? 'a board you cannot open').join(', ')}.` }
     },
   },
-  { key: 'crating_plywood', title: 'Plywood Sheets Used', group: 'Freight', permission: 'dashboard.chart.crating_plywood', types: NO_PIE, defaultType: 'column', load: (d, r) => cratingByMonth(d, r.from, r.to, (c) => Number(c.plywood_sheets ?? 0), 'sheets') },
-  { key: 'crating_crates', title: 'Crates Made', group: 'Freight', permission: 'dashboard.chart.crating_crates', types: NO_PIE, defaultType: 'column', load: (d, r) => cratingByMonth(d, r.from, r.to, () => 1, 'crates') },
-  { key: 'crating_hours', title: 'Crating Hours', group: 'Freight', permission: 'dashboard.chart.crating_hours', types: NO_PIE, defaultType: 'column', load: (d, r) => cratingByMonth(d, r.from, r.to, (c) => Number(c.build_hours ?? 0), 'hours') },
+  { key: 'crating_plywood', get title() {
+    return tr("Plywood Sheets Used")
+  }, group: 'Freight', permission: 'dashboard.chart.crating_plywood', types: NO_PIE, defaultType: 'column', load: (d, r) => cratingByMonth(d, r.from, r.to, (c) => Number(c.plywood_sheets ?? 0), 'sheets') },
+  { key: 'crating_crates', get title() {
+    return tr("Crates Made")
+  }, group: 'Freight', permission: 'dashboard.chart.crating_crates', types: NO_PIE, defaultType: 'column', load: (d, r) => cratingByMonth(d, r.from, r.to, () => 1, 'crates') },
+  { key: 'crating_hours', get title() {
+    return tr("Crating Hours")
+  }, group: 'Freight', permission: 'dashboard.chart.crating_hours', types: NO_PIE, defaultType: 'column', load: (d, r) => cratingByMonth(d, r.from, r.to, (c) => Number(c.build_hours ?? 0), 'hours') },
 ]
 
 export const chartDef = (key: string) => CHARTS.find((c) => c.key === key)
@@ -406,4 +521,4 @@ export function targetState(value: number, t: Target): 'good' | 'watch' | 'off' 
 }
 
 /** "1,234.5" */
-export const showNumber = (n: number) => (Math.round(n * 10) / 10).toLocaleString('en-CA')
+export const showNumber = (n: number) => (Math.round(n * 10) / 10).toLocaleString(currentLang())

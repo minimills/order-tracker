@@ -1,3 +1,4 @@
+import { dtf, tr } from '../i18n'
 import { addDays, addMonths, addWeeks, differenceInCalendarDays, endOfMonth, endOfWeek, format, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
@@ -42,7 +43,7 @@ type ImportStatus = { status: 'pending' | 'ok' | 'error'; last_error: string | n
 
 const snap = (m: number, step = 15) => Math.round(m / step) * step
 const clampMin = (m: number) => Math.max(0, Math.min(1440, m))
-const when = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Halifax', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
+const when = dtf({ timeZone: 'America/Halifax', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })
 
 /** Where an entry ends up after a drag (also used to draw it while dragging). */
 function moved(r: CalendarRow, d: Drag): Change {
@@ -160,7 +161,7 @@ export default function CalendarPage() {
     const r = await callFunction<{ message?: string }>('calendar-import', { action: 'sync_mine' })
     setRefreshing(false)
     if (!r.ok) toast.error(r.message)
-    else toast.success(r.message || 'Phone calendar read.')
+    else toast.success(r.message || tr("Phone calendar read."))
     setImportVersion((n) => n + 1)
     loadImport()
     load()
@@ -183,7 +184,7 @@ export default function CalendarPage() {
     if (r.source === 'phone') return setPhoneEntry(r)
     if (r.source === 'manual') {
       const { data, error } = await supabase.rpc('calendar_entry_details', { p_entry: r.source_id })
-      if (error || !data) return toast.error(error ? friendlyError(error) : 'That entry could not be found.')
+      if (error || !data) return toast.error(error ? friendlyError(error) : tr("That entry could not be found."))
       return setEditing({ entry: data as ManualEntry, preset: null })
     }
     if (r.link) navigate(r.link)
@@ -203,7 +204,7 @@ export default function CalendarPage() {
       ;({ error } = await supabase.from('orders').update({ service_start: c.start_date, service_end: c.end_date }).eq('id', r.source_id))
     }
     if (error) toast.error(friendlyError(error))
-    else toast.success(r.source === 'training' ? 'Training dates changed.' : r.source === 'service_call' ? 'Service call dates changed.' : 'Calendar entry changed.')
+    else toast.success(r.source === 'training' ? tr("Training dates changed.") : r.source === 'service_call' ? tr("Service call dates changed.") : tr("Calendar entry changed."))
     load()
   }
 
@@ -372,7 +373,7 @@ export default function CalendarPage() {
 
   const legend = (
     <Can permission="service.calendar">
-    <ul className="space-y-1.5 text-xs" aria-label="Colours">
+    <ul className="space-y-1.5 text-xs" aria-label={tr("Colours")}>
       {(Object.keys(CALENDAR_KINDS) as CalendarKind[]).map((k) => (
         <li key={k} className="flex items-center gap-1.5">
           <span className={`h-3 w-3 rounded-full ${CALENDAR_KINDS[k].dot}`} aria-hidden="true" />
@@ -380,18 +381,18 @@ export default function CalendarPage() {
         </li>
       ))}
       <li className="flex items-center gap-1.5 text-slate-600">
-        <Icon name="phone" className="h-3.5 w-3.5" /> From a linked phone calendar
+        <Icon name="phone" className="h-3.5 w-3.5" /> {tr("From a linked phone calendar")}
       </li>
       <li className="flex items-center gap-1.5 text-slate-600">
-        <Icon name="lock" className="h-3.5 w-3.5" /> Private entry (only you see it)
+        <Icon name="lock" className="h-3.5 w-3.5" /> {tr("Private entry (only you see it)")}
       </li>
       <li className="flex items-center gap-1.5 text-slate-600">
-        <Icon name="users" className="h-3.5 w-3.5" /> Shared with you by someone else
+        <Icon name="users" className="h-3.5 w-3.5" /> {tr("Shared with you by someone else")}
       </li>
       <li className="text-slate-600">
-        <span className="line-through">Struck through</span> = done
+        <span className="line-through">{tr("Struck through")}</span> {tr("= done")}
       </li>
-      {!tech && <li className="text-slate-500">Initials = whose calendar</li>}
+      {!tech && <li className="text-slate-500">{tr("Initials = whose calendar")}</li>}
     </ul>
     </Can>
   )
@@ -402,26 +403,25 @@ export default function CalendarPage() {
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h1 className="text-2xl font-semibold">Calendar</h1>
+              <h1 className="text-2xl font-semibold">{tr("Calendar")}</h1>
               <Can permission="service.calendar.print">
-                <PrintButton title="Calendar" />
+                <PrintButton title={tr("Calendar")} />
               </Can>
             </div>
             <p className="text-sm text-slate-600">
-              Click an empty time or day to add an entry, click an entry to open it, drag it to move it or drag its edge to change its length. Private entries are seen by you
-              only; shared entries also show on the calendars of the people they are shared with.
+              {tr("Click an empty time or day to add an entry, click an entry to open it, drag it to move it or drag its edge to change its length. Private entries are seen by you only; shared entries also show on the calendars of the people they are shared with.")}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Can anyOf={['service.calendar.sync', 'service.calendar.import']} level="edit">
               <button type="button" className={secondaryButtonClass} aria-expanded={connection} onClick={() => setConnection(!connection)}>
                 <Icon name="phone" className="mr-1 inline h-4 w-4 align-[-0.1875em]" />
-                Calendar Connection
+                {tr("Calendar Connection")}
               </button>
             </Can>
             <Can permission="service.calendar">
               <button type="button" className={buttonClass} onClick={() => setEditing({ entry: null, preset: { start_date: anchorISO, end_date: anchorISO, all_day: true } })}>
-                Add Entry
+                {tr("Add Entry")}
               </button>
             </Can>
           </div>
@@ -436,11 +436,11 @@ export default function CalendarPage() {
               <Icon name="phone" className="h-4 w-4" />
               <span className="min-w-0">
                 {importStatus.status === 'error'
-                  ? `Your phone calendar is not being read: ${importStatus.last_error ?? 'the link stopped working.'}`
-                  : `Phone calendar last synced ${importStatus.last_synced_at ? when.format(new Date(importStatus.last_synced_at)) : 'not yet'} · checked every 5 minutes`}
+                  ? tr("Your phone calendar is not being read: {{value}}", { value: importStatus.last_error ?? tr("the link stopped working.") })
+                  : tr("Phone calendar last synced {{value}} · checked every 5 minutes", { value: importStatus.last_synced_at ? when.format(new Date(importStatus.last_synced_at)) : tr("not yet") })}
               </span>
               <button type="button" className="font-medium underline" disabled={refreshing} onClick={refreshPhone}>
-                {refreshing ? 'Reading…' : 'Refresh Now'}
+                {refreshing ? tr("Reading…") : tr("Refresh Now")}
               </button>
               {importStatus.status === 'error' && (
                 <button
@@ -451,7 +451,7 @@ export default function CalendarPage() {
                     setOpenPart('import')
                   }}
                 >
-                  Open Calendar Connection
+                  {tr("Open Calendar Connection")}
                 </button>
               )}
             </div>
@@ -460,13 +460,13 @@ export default function CalendarPage() {
 
         {connection && (
           <Can anyOf={['service.calendar.sync', 'service.calendar.import']} level="edit">
-            <section className="space-y-2 rounded-lg border border-slate-200 bg-white p-4" aria-label="Calendar connection">
+            <section className="space-y-2 rounded-lg border border-slate-200 bg-white p-4" aria-label={tr("Calendar connection")}>
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
-                  <h2 className="text-base font-semibold">Calendar Connection</h2>
-                  <p className="text-sm text-slate-600">Connect this calendar with the calendar app on your phone or computer. Open a part to see its link and steps.</p>
+                  <h2 className="text-base font-semibold">{tr("Calendar Connection")}</h2>
+                  <p className="text-sm text-slate-600">{tr("Connect this calendar with the calendar app on your phone or computer. Open a part to see its link and steps.")}</p>
                 </div>
-                <button type="button" className="text-lg leading-none text-slate-500" aria-label="Close" onClick={() => setConnection(false)}>
+                <button type="button" className="text-lg leading-none text-slate-500" aria-label={tr("Close")} onClick={() => setConnection(false)}>
                   ✕
                 </button>
               </div>
@@ -479,13 +479,13 @@ export default function CalendarPage() {
                     onClick={() => setOpenPart(openPart === 'import' ? null : 'import')}
                   >
                     <span className="min-w-0">
-                      <span className="font-semibold">{openPart === 'import' ? '▾' : '▸'} From your phone to the app</span>
+                      <span className="font-semibold">{openPart === 'import' ? '▾' : '▸'} {tr("From your phone to the app")}</span>
                       <span className="block text-xs text-slate-600">
                         {!importStatus
-                          ? 'Not linked yet.'
+                          ? tr("Not linked yet.")
                           : importStatus.status === 'error'
-                            ? 'The link is not working.'
-                            : `Linked · last synced ${importStatus.last_synced_at ? when.format(new Date(importStatus.last_synced_at)) : 'not yet'}`}
+                            ? tr("The link is not working.")
+                            : tr("Linked · last synced {{value}}", { value: importStatus.last_synced_at ? when.format(new Date(importStatus.last_synced_at)) : tr("not yet") })}
                       </span>
                     </span>
                   </button>
@@ -511,8 +511,8 @@ export default function CalendarPage() {
                     onClick={() => setOpenPart(openPart === 'feed' ? null : 'feed')}
                   >
                     <span className="min-w-0">
-                      <span className="font-semibold">{openPart === 'feed' ? '▾' : '▸'} From the app to your phone</span>
-                      <span className="block text-xs text-slate-600">Your private link that shows these entries in Apple Calendar, Google Calendar or Outlook.</span>
+                      <span className="font-semibold">{openPart === 'feed' ? '▾' : '▸'} {tr("From the app to your phone")}</span>
+                      <span className="block text-xs text-slate-600">{tr("Your private link that shows these entries in Apple Calendar, Google Calendar or Outlook.")}</span>
                     </span>
                   </button>
                   {openPart === 'feed' && (
@@ -529,23 +529,23 @@ export default function CalendarPage() {
         <div className="flex flex-wrap items-center gap-2">
           <Can permission="service.calendar.navigate">
             <button type="button" className={secondaryButtonClass} onClick={() => set({ date: '' })}>
-              Today
+              {tr("Today")}
             </button>
-            <button type="button" className={secondaryButtonClass} onClick={() => step(-1)} aria-label="Previous">
+            <button type="button" className={secondaryButtonClass} onClick={() => step(-1)} aria-label={tr("Previous")}>
               ←
             </button>
-            <button type="button" className={secondaryButtonClass} onClick={() => step(1)} aria-label="Next">
+            <button type="button" className={secondaryButtonClass} onClick={() => step(1)} aria-label={tr("Next")}>
               →
             </button>
           </Can>
           <h2 className="ml-1 min-w-0 text-lg font-semibold">{title}</h2>
-          {loading && <span className="text-xs text-slate-500">Loading…</span>}
+          {loading && <span className="text-xs text-slate-500">{tr("Loading…")}</span>}
           <span className="flex-1" />
           <Can permission="service.calendar.navigate">
             <button type="button" className={`${secondaryButtonClass} lg:hidden`} aria-expanded={pickerOpen} onClick={() => setPickerOpen(!pickerOpen)}>
-              Choose a Date
+              {tr("Choose a Date")}
             </button>
-            <div className="flex rounded-md border border-slate-300 bg-white p-0.5" role="tablist" aria-label="View">
+            <div className="flex rounded-md border border-slate-300 bg-white p-0.5" role="tablist" aria-label={tr("View")}>
               {(['day', 'week', 'month'] as const).map((k) => (
                 <button
                   key={k}
@@ -555,14 +555,14 @@ export default function CalendarPage() {
                   className={`rounded px-3 py-1 text-sm ${view === k ? 'bg-slate-900 text-white' : ''}`}
                   onClick={() => set({ view: k })}
                 >
-                  {k === 'day' ? 'Day' : k === 'week' ? 'Week' : 'Month'}
+                  {k === 'day' ? tr("Day") : k === 'week' ? tr("Week") : tr("Month")}
                 </button>
               ))}
             </div>
           </Can>
-          <Can permission="service.calendar.all" fallback={<span className="text-sm text-slate-600">Your calendar</span>}>
-            <select aria-label="Whose calendar" className={`${narrowInputClass} w-full sm:w-56`} value={tech} onChange={(e) => set({ tech: e.target.value })}>
-              <option value="">Everyone</option>
+          <Can permission="service.calendar.all" fallback={<span className="text-sm text-slate-600">{tr("Your calendar")}</span>}>
+            <select aria-label={tr("Whose calendar")} className={`${narrowInputClass} w-full sm:w-56`} value={tech} onChange={(e) => set({ tech: e.target.value })}>
+              <option value="">{tr("Everyone")}</option>
               {people.map((pp) => (
                 <option key={pp.email} value={pp.email}>
                   {pp.name}

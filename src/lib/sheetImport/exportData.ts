@@ -3,6 +3,7 @@ import { supabase } from '../supabase'
 import { COLUMN_WIDTHS, HEADER_EXTRAS, HEADERS } from './layout'
 import type { OutCell, OutSheet } from './xlsx'
 import { richTextToPlain } from '../richText'
+import { tr } from '../../i18n'
 
 const d = (iso: string | null | undefined): OutCell => (iso ? { date: iso } : null)
 
@@ -73,7 +74,7 @@ type PaymentRow = { order_id: string; order_code: string; payment_type: string; 
 
 /** Everything in the app, in the same layout (plus Customers and Payments sheets for reference). */
 export async function backupSheets(): Promise<OutSheet[]> {
-  if (!supabase) throw new Error('Not connected to the database.')
+  if (!supabase) throw new Error(tr("Not connected to the database."))
   const [o, m, p, c] = await Promise.all([
     fetchAll<OrderRow>(() => supabase!.from('order_summary').select('*').eq('archived', false).order('order_number').order('split_number', { nullsFirst: true })),
     fetchAll<MachineRow>(() =>

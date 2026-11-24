@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { loadBoardChoices, type BoardChoice } from '../../lib/boards'
 import { narrowInputClass } from '../form'
+import { tr } from '../../i18n'
 
 const small = 'rounded-md border border-slate-300 bg-white px-2.5 py-1 text-sm hover:bg-slate-50 disabled:opacity-40'
 
@@ -28,26 +29,26 @@ export default function BoardNavigator({ boardId, production }: { boardId: strin
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm text-slate-600" data-print="hide">
-      <button type="button" className={small} disabled={!prev} title={prev?.name} onClick={() => prev && navigate(`/boards/${prev.id}`)} aria-label={`Previous ${what}`}>
-        ← Previous
+      <button type="button" className={small} disabled={!prev} title={prev?.name} onClick={() => prev && navigate(`/boards/${prev.id}`)} aria-label={tr("Previous {{what}}", { what: what })}>
+        {tr("← Previous")}
       </button>
       {pos >= 0 && (
         <span className="tabular-nums">
-          {pos + 1} of {group.length} {production ? 'orders' : 'boards'}
+          {pos + 1} {tr("of")} {group.length} {production ? tr("orders") : tr("boards")}
         </span>
       )}
-      <button type="button" className={small} disabled={!next} title={next?.name} onClick={() => next && navigate(`/boards/${next.id}`)} aria-label={`Next ${what}`}>
-        Next →
+      <button type="button" className={small} disabled={!next} title={next?.name} onClick={() => next && navigate(`/boards/${next.id}`)} aria-label={tr("Next {{what}}", { what: what })}>
+        {tr("Next →")}
       </button>
       <select
-        aria-label="Go to an order or board"
+        aria-label={tr("Go to an order or board")}
         className={`${narrowInputClass} w-64 max-w-full py-1`}
         value=""
         onChange={(e) => e.target.value && navigate(`/boards/${e.target.value}`)}
       >
-        <option value="">{boards === null ? 'Loading…' : 'Go to an order or board…'}</option>
+        <option value="">{boards === null ? tr("Loading…") : tr("Go to an order or board…")}</option>
         {orders.length > 0 && (
-          <optgroup label="Orders (production boards)">
+          <optgroup label={tr("Orders (production boards)")}>
             {orders.map((b) => (
               <option key={b.id} value={b.id} disabled={b.id === boardId}>
                 {b.name}
@@ -56,7 +57,7 @@ export default function BoardNavigator({ boardId, production }: { boardId: strin
           </optgroup>
         )}
         {others.length > 0 && (
-          <optgroup label="Boards">
+          <optgroup label={tr("Boards")}>
             {others.map((b) => (
               <option key={b.id} value={b.id} disabled={b.id === boardId}>
                 {b.name}

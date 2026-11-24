@@ -12,6 +12,7 @@ import { WidgetLibraryDialog, WidgetSettingsDialog } from './DashboardDialogs'
 import WidgetBody from './WidgetBody'
 import { HealthColour } from '../../lib/healthColour'
 import { updatedText } from '../../lib/dashboardData'
+import { tr } from '../../i18n'
 
 type Drag = { id: string; mode: 'move' | 'resize'; startX: number; startY: number; orig: Item; base: Item[] }
 
@@ -130,21 +131,21 @@ export default function DashboardCanvas({
       {editing && (
         <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border border-dashed border-blue-300 bg-blue-50 p-2 text-sm text-blue-900">
           <button type="button" className={secondaryButtonClass} onClick={() => setLibrary(true)}>
-            + Add Widget
+            {tr("+ Add Widget")}
           </button>
           <span>
-            Drag a widget by its top bar to move it, or by the corner to resize it. This layout is saved for {bp === 'lg' ? 'computers' : bp === 'md' ? 'tablets' : 'phones'}.
+            {tr("Drag a widget by its top bar to move it, or by the corner to resize it. This layout is saved for")} {bp === 'lg' ? tr("computers") : bp === 'md' ? tr("tablets") : tr("phones")}.
           </span>
         </div>
       )}
       {shown.length === 0 && (
         <p className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-          {widgets.length > 0 ? 'The widgets on this dashboard are not shown because you are not allowed to see them.' : `This dashboard has no widgets${editing ? '. Select Add Widget to start.' : ' yet.'}`}
+          {widgets.length > 0 ? tr("The widgets on this dashboard are not shown because you are not allowed to see them.") : tr("This dashboard has no widgets{{value}}", { value: editing ? tr(". Select Add Widget to start.") : ' yet.' })}
         </p>
       )}
       {shown.length > 0 && shown.length < widgets.length && (
         <p className="mb-2 text-xs text-slate-500">
-          {widgets.length - shown.length} widget{widgets.length - shown.length === 1 ? ' is' : 's are'} not shown because you are not allowed to see {widgets.length - shown.length === 1 ? 'it' : 'them'}.
+          {widgets.length - shown.length} {tr("widget")}{widgets.length - shown.length === 1 ? tr(" is") : tr("s are")} {tr("not shown because you are not allowed to see")} {widgets.length - shown.length === 1 ? tr("it") : tr("them")}.
         </p>
       )}
       <div
@@ -179,15 +180,15 @@ export default function DashboardCanvas({
                   <h2 className="min-w-[6rem] flex-1 truncate text-sm font-semibold">{widgetTitle(w)}</h2>
                   {state !== 'neutral' && (
                     <span className={`shrink-0 rounded-full px-2 text-[0.6875rem] font-semibold text-white ${state === 'bad' ? 'bg-red-700' : 'bg-green-700'}`}>
-                      {state === 'bad' ? 'Needs attention' : 'Good'}
+                      {state === 'bad' ? tr("Needs attention") : tr("Good")}
                     </span>
                   )}
                   {editing && (
                     <span className="flex shrink-0 items-center gap-1">
-                      <button type="button" className={btn} aria-label={`Settings of ${widgetTitle(w)}`} onClick={() => setSettingsFor(w)}>
-                        Settings
+                      <button type="button" className={btn} aria-label={tr("Settings of {{widgetTitle}}", { widgetTitle: widgetTitle(w) })} onClick={() => setSettingsFor(w)}>
+                        {tr("Settings")}
                       </button>
-                      <button type="button" className={btn} aria-label={`Remove ${widgetTitle(w)}`} onClick={() => remove(w.id)}>
+                      <button type="button" className={btn} aria-label={tr("Remove {{widgetTitle}}", { widgetTitle: widgetTitle(w) })} onClick={() => remove(w.id)}>
                         ✕
                       </button>
                     </span>
@@ -200,36 +201,36 @@ export default function DashboardCanvas({
                 </div>
                 {editing ? (
                   <footer className="flex flex-wrap items-center gap-1 border-t border-slate-100 bg-slate-50 px-2 py-1">
-                    <button type="button" className={btn} aria-label="Move left" onClick={() => nudge(it.i, (x) => ({ x: x.x - 1 }))}>
+                    <button type="button" className={btn} aria-label={tr("Move left")} onClick={() => nudge(it.i, (x) => ({ x: x.x - 1 }))}>
                       ←
                     </button>
-                    <button type="button" className={btn} aria-label="Move up" onClick={() => nudge(it.i, (x) => ({ y: Math.max(0, x.y - 1) }))}>
+                    <button type="button" className={btn} aria-label={tr("Move up")} onClick={() => nudge(it.i, (x) => ({ y: Math.max(0, x.y - 1) }))}>
                       ↑
                     </button>
-                    <button type="button" className={btn} aria-label="Move down" onClick={() => nudge(it.i, (x) => ({ y: x.y + x.h }))}>
+                    <button type="button" className={btn} aria-label={tr("Move down")} onClick={() => nudge(it.i, (x) => ({ y: x.y + x.h }))}>
                       ↓
                     </button>
-                    <button type="button" className={btn} aria-label="Move right" onClick={() => nudge(it.i, (x) => ({ x: x.x + 1 }))}>
+                    <button type="button" className={btn} aria-label={tr("Move right")} onClick={() => nudge(it.i, (x) => ({ x: x.x + 1 }))}>
                       →
                     </button>
                     <span className="ml-1 text-[0.6875rem] text-slate-500">
                       {it.w}×{it.h}
                     </span>
-                    <button type="button" className={btn} aria-label="Narrower" onClick={() => nudge(it.i, (x) => ({ w: x.w - 1 }))}>
+                    <button type="button" className={btn} aria-label={tr("Narrower")} onClick={() => nudge(it.i, (x) => ({ w: x.w - 1 }))}>
                       −W
                     </button>
-                    <button type="button" className={btn} aria-label="Wider" onClick={() => nudge(it.i, (x) => ({ w: x.w + 1 }))}>
+                    <button type="button" className={btn} aria-label={tr("Wider")} onClick={() => nudge(it.i, (x) => ({ w: x.w + 1 }))}>
                       +W
                     </button>
-                    <button type="button" className={btn} aria-label="Shorter" onClick={() => nudge(it.i, (x) => ({ h: x.h - 1 }))}>
+                    <button type="button" className={btn} aria-label={tr("Shorter")} onClick={() => nudge(it.i, (x) => ({ h: x.h - 1 }))}>
                       −H
                     </button>
-                    <button type="button" className={btn} aria-label="Taller" onClick={() => nudge(it.i, (x) => ({ h: x.h + 1 }))}>
+                    <button type="button" className={btn} aria-label={tr("Taller")} onClick={() => nudge(it.i, (x) => ({ h: x.h + 1 }))}>
                       +H
                     </button>
                     <span
                       role="presentation"
-                      title="Drag to resize"
+                      title={tr("Drag to resize")}
                       className="ml-auto h-5 w-5 shrink-0 cursor-se-resize touch-none rounded-sm [background:linear-gradient(135deg,transparent_50%,rgb(100_116_139)_50%,rgb(100_116_139)_60%,transparent_60%,transparent_70%,rgb(100_116_139)_70%,rgb(100_116_139)_80%,transparent_80%)]"
                       onPointerDown={(e) => start(e, it.i, 'resize')}
                     />

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { friendlyError } from '../../lib/format'
 import { activityTime, activityWho, describeActivity, type ActivityEntry } from '../../lib/activity'
 import { supabase } from '../../lib/supabase'
+import { tr } from '../../i18n'
 
 /** Everything that happened to one order, newest first. */
 export default function ActivityList({ orderId, reloadKey }: { orderId: string; reloadKey: number }) {
@@ -35,9 +36,9 @@ export default function ActivityList({ orderId, reloadKey }: { orderId: string; 
     }
   }, [orderId, reloadKey])
 
-  if (loading) return <p className="text-sm text-slate-500">Loading…</p>
+  if (loading) return <p className="text-sm text-slate-500">{tr("Loading…")}</p>
   if (error) return <p className="text-sm text-red-700">{error}</p>
-  if (entries.length === 0) return <p className="text-sm text-slate-500">No changes have been recorded for this order yet.</p>
+  if (entries.length === 0) return <p className="text-sm text-slate-500">{tr("No changes have been recorded for this order yet.")}</p>
 
   return (
     <ol className="space-y-3">

@@ -1,3 +1,4 @@
+import { formatCurrency } from '../i18n'
 import { MESSAGE } from './wording'
 /** Same format as the database: code + "-" + at least 4 digits, for example LCR-0073. */
 export function formatSerial(code: string, n: number) {
@@ -6,7 +7,7 @@ export function formatSerial(code: string, n: number) {
 
 export function formatMoney(amount: number | null | undefined, currency: string) {
   if (amount == null || Number.isNaN(amount)) return '—'
-  return new Intl.NumberFormat('en-CA', { style: 'currency', currency, currencyDisplay: 'code' }).format(amount)
+  return formatCurrency(amount, currency)
 }
 
 /** Turns a database error into a sentence a person can act on. */

@@ -10,6 +10,7 @@ import { refreshChatUnread, usePresence, type ConversationRow } from '../lib/cha
 import { friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
 import { supabase } from '../lib/supabase'
+import { tr } from '../i18n'
 
 /**
  * Chat: conversation list and the open conversation side by side; on a phone
@@ -62,7 +63,9 @@ export default function ChatPage() {
 
   const presence = usePresence(can('chat'), me, hidden)
   const current = rows.find((r) => r.id === conversationId) ?? null
-  useBreadcrumbs(current && [{ label: 'Chat', to: '/chat' }, { label: current.name ?? 'Conversation' }])
+  useBreadcrumbs(current && [{ get label() {
+    return tr("Chat")
+  }, to: '/chat' }, { label: current.name ?? 'Conversation' }])
 
   // Swipe right from the left edge on a phone = back to the list.
   const touch = useRef<{ x: number; y: number } | null>(null)
@@ -93,11 +96,11 @@ export default function ChatPage() {
               <Conversation key={conversationId} id={conversationId} row={current} me={me} presence={presence} onChanged={load} />
             ) : (
               <div className="m-auto max-w-sm p-6 text-center text-sm text-slate-500">
-                This conversation could not be found. You may have left it, or it was archived.
+                {tr("This conversation could not be found. You may have left it, or it was archived.")}
               </div>
             )
           ) : (
-            <div className="m-auto p-6 text-center text-sm text-slate-500">Choose a conversation, or start a new one.</div>
+            <div className="m-auto p-6 text-center text-sm text-slate-500">{tr("Choose a conversation, or start a new one.")}</div>
           )}
         </section>
       </div>

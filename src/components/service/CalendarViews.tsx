@@ -8,6 +8,7 @@ import { endOf, HOUR_PX, iso, isTimed, PX_PER_MIN, rowKey, WEEKDAYS } from '../.
 import { todayISO } from '../../lib/dates'
 import { CALENDAR_KINDS, type CalendarKind, type CalendarRow } from '../../lib/service'
 import Icon from '../Icon'
+import { tr } from '../../i18n'
 
 const initials = (name: string | null) =>
   (name ?? '?')
@@ -86,9 +87,9 @@ function Chip({
       }}
     >
       <span className={`block truncate ${r.done ? 'line-through opacity-70' : ''}`}>
-        {r.from_phone && <Icon name="phone" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label="From phone" />}
-        {r.source === 'manual' && r.visibility === 'private' && <Icon name="lock" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label="Private" />}
-        {r.source === 'manual' && r.tech_email !== p.me && <Icon name="users" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label={`Shared by ${r.tech_name ?? 'someone else'}`} />}
+        {r.from_phone && <Icon name="phone" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label={tr("From phone")} />}
+        {r.source === 'manual' && r.visibility === 'private' && <Icon name="lock" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label={tr("Private")} />}
+        {r.source === 'manual' && r.tech_email !== p.me && <Icon name="users" className="mr-0.5 inline h-3 w-3 align-[-0.125em]" label={tr("Shared by {{value}}", { value: r.tech_name ?? tr("someone else") })} />}
         {p.showTech && r.tech_name ? `${initials(r.tech_name)} · ` : ''}
         {timeText && <span className="font-medium">{timeText} </span>}
         {r.title}
@@ -168,7 +169,7 @@ export function MonthView({ anchor, p, onMore }: { anchor: Date; p: ViewProps; o
                       onMore(day)
                     }}
                   >
-                    +{list.length - 3} more
+                    +{list.length - 3} {tr("more")}
                   </button>
                 )}
               </div>
@@ -267,7 +268,7 @@ export function TimeGridView({
         </div>
         {/* All-day entries */}
         <div className="grid border-b border-slate-300" style={{ gridTemplateColumns: cols }}>
-          <div className="px-1 py-1 text-right text-[0.625rem] text-slate-500">All day</div>
+          <div className="px-1 py-1 text-right text-[0.625rem] text-slate-500">{tr("All day")}</div>
           {days.map((day) => (
             <div
               key={day}
@@ -363,13 +364,13 @@ export function MiniMonth({ selected, onPick, marked }: { selected: string; onPi
   const days: Date[] = []
   for (let d = startOfWeek(month, { weekStartsOn: 1 }); d <= endOfWeek(endOfMonth(month), { weekStartsOn: 1 }); d = addDays(d, 1)) days.push(d)
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-2 text-xs" aria-label="Choose a date">
+    <div className="rounded-lg border border-slate-200 bg-white p-2 text-xs" aria-label={tr("Choose a date")}>
       <div className="mb-1 flex items-center justify-between">
-        <button type="button" className="rounded px-2 py-1 hover:bg-slate-100" aria-label="Previous month" onClick={() => setMonth(addMonths(month, -1))}>
+        <button type="button" className="rounded px-2 py-1 hover:bg-slate-100" aria-label={tr("Previous month")} onClick={() => setMonth(addMonths(month, -1))}>
           ←
         </button>
         <span className="font-semibold">{format(month, 'MMMM yyyy')}</span>
-        <button type="button" className="rounded px-2 py-1 hover:bg-slate-100" aria-label="Next month" onClick={() => setMonth(addMonths(month, 1))}>
+        <button type="button" className="rounded px-2 py-1 hover:bg-slate-100" aria-label={tr("Next month")} onClick={() => setMonth(addMonths(month, 1))}>
           →
         </button>
       </div>

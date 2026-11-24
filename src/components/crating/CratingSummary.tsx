@@ -6,6 +6,7 @@ import { showDims, showNumber, showWeight, weightFromKg, weightUnit } from '../.
 import { secondaryButtonClass, Section } from '../form'
 import Can from '../Can'
 import UnitsSwitch from './UnitsSwitch'
+import { tr } from '../../i18n'
 
 type Props = {
   order: { order_code: string; customer_name: string; customer_country: string | null }
@@ -24,20 +25,20 @@ export default function CratingSummary({ order, crates, notCrated }: Props) {
     const text = freightSummary(order, crates, units, notCrated)
     try {
       await navigator.clipboard.writeText(text)
-      toast.success('Crating summary copied. Paste it into your freight quote email.')
+      toast.success(tr("Crating summary copied. Paste it into your freight quote email."))
     } catch {
-      toast.error('The summary could not be copied. Select the text and copy it manually.')
+      toast.error(tr("The summary could not be copied. Select the text and copy it manually."))
     }
   }
 
   return (
     <Section
-      title="Crating Summary"
+      title={tr("Crating Summary")}
       aside={
         crates.length > 0 && (
           <Can permission="crating.summary.copy">
             <button type="button" className={secondaryButtonClass} onClick={copy}>
-              Copy
+              {tr("Copy")}
             </button>
           </Can>
         )
@@ -50,22 +51,22 @@ export default function CratingSummary({ order, crates, notCrated }: Props) {
       </Can>
       {crates.length === 0 ? (
         <p className="text-sm text-slate-500">
-          No crates have been entered yet. Mark a machine above as crated to enter its crate.
+          {tr("No crates have been entered yet. Mark a machine above as crated to enter its crate.")}
         </p>
       ) : (
         <div className="space-y-3 text-sm">
           <p>
             <strong>
-              {crates.length} crate{crates.length === 1 ? '' : 's'}
+              {tr("{{count}} crate", { count: crates.length })}
             </strong>
-            , total weight{' '}
+            {tr(", total weight")}{' '}
             <strong>
               {showNumber(weightFromKg(totalKg, units), units === 'imperial' ? 0 : 1)} {weightUnit(units)}
             </strong>
             {missingWeight > 0 && (
               <span className="text-amber-700">
                 {' '}
-                ({missingWeight} crate{missingWeight === 1 ? ' has' : 's have'} no weight yet)
+                ({missingWeight} {tr("crate")}{missingWeight === 1 ? tr(" has") : tr("s have")} {tr("no weight yet)")}
               </span>
             )}
           </p>
@@ -73,20 +74,20 @@ export default function CratingSummary({ order, crates, notCrated }: Props) {
             {crates.map((c) => (
               <li key={c.id} className="py-1.5">
                 <div>
-                  <span className="font-medium">Crate {c.number}:</span>{' '}
-                  {showDims(c, units) ?? <span className="text-amber-700">size not entered</span>}
+                  <span className="font-medium">{tr("Crate")} {c.number}:</span>{' '}
+                  {showDims(c, units) ?? <span className="text-amber-700">{tr("size not entered")}</span>}
                   {' · '}
-                  {c.weight_kg == null ? <span className="text-amber-700">weight not entered</span> : showWeight(c.weight_kg, units)}
+                  {c.weight_kg == null ? <span className="text-amber-700">{tr("weight not entered")}</span> : showWeight(c.weight_kg, units)}
                 </div>
                 <div className="text-xs text-slate-500">{contentsLabel(c.machine_types)}</div>
               </li>
             ))}
           </ul>
-          <p className="text-xs text-slate-500">Sizes are length × width × height.</p>
+          <p className="text-xs text-slate-500">{tr("Sizes are length × width × height.")}</p>
         </div>
       )}
       {notCrated.length > 0 && crates.length > 0 && (
-        <p className="mt-3 text-sm text-amber-700">Not crated yet: {notCrated.join(', ')}</p>
+        <p className="mt-3 text-sm text-amber-700">{tr("Not crated yet:")} {notCrated.join(', ')}</p>
       )}
     </Section>
   )

@@ -7,6 +7,7 @@ import { showDate, todayISO } from '../lib/dates'
 import { formatMoney } from '../lib/format'
 import { handlingText, type Breakdown } from '../lib/freight'
 import { supabase } from '../lib/supabase'
+import { tr } from '../i18n'
 
 /** A saved shipment cost breakdown on one page with the letterhead, for printing or "Save as PDF". Nothing is stored. */
 export default function FreightBreakdownPrintPage() {
@@ -24,7 +25,7 @@ export default function FreightBreakdownPrintPage() {
       .eq('id', id)
       .maybeSingle()
       .then(async ({ data }) => {
-        if (!data) return setError('That cost breakdown could not be found.')
+        if (!data) return setError(tr("That cost breakdown could not be found."))
         setB(data as Breakdown)
         if (data.order_id) {
           const { data: o } = await supabase!.from('order_summary').select('order_code').eq('id', data.order_id).maybeSingle()
@@ -65,14 +66,14 @@ export default function FreightBreakdownPrintPage() {
       <div className="keep-light mx-auto min-h-full max-w-3xl bg-white p-4 text-slate-900 sm:p-6 print:max-w-none print:p-0">
         <div className="mb-4 flex justify-end gap-2 print:hidden">
           <Link to={`/freight/breakdowns/${id}`} className="rounded-md border border-slate-300 px-4 py-2 text-sm hover:bg-slate-50">
-            ← Back to the Cost Breakdown
+            {tr("← Back to the Cost Breakdown")}
           </Link>
           <button type="button" onClick={() => window.print()} disabled={!b} className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700 disabled:opacity-50">
-            Print or Save as PDF
+            {tr("Print or Save as PDF")}
           </button>
         </div>
         {error && <p className="text-red-700">{error}</p>}
-        {!error && !b && <p className="text-slate-500">Loading…</p>}
+        {!error && !b && <p className="text-slate-500">{tr("Loading…")}</p>}
         {b && (
           <article className="text-sm">
             <header className="flex items-start justify-between gap-6 border-b-2 border-slate-900 pb-3">
@@ -84,7 +85,7 @@ export default function FreightBreakdownPrintPage() {
               {company.logo && <img src={company.logo} alt="" className="max-h-16" />}
             </header>
 
-            <h1 className="mt-4 text-2xl font-bold">Shipment Cost Breakdown – {b.freight_type}</h1>
+            <h1 className="mt-4 text-2xl font-bold">{tr("Shipment Cost Breakdown –")} {b.freight_type}</h1>
             <dl className="mt-3 grid grid-cols-2 gap-x-6 gap-y-1.5 sm:grid-cols-3 print:grid-cols-3">
               {details
                 .filter(([, v]) => v)
@@ -113,13 +114,13 @@ export default function FreightBreakdownPrintPage() {
             </table>
 
             <div className="mt-4 flex items-center justify-between gap-4 border-2 border-slate-900 px-3 py-2 text-base font-bold">
-              <span>Price difference (invoice − breakdown cost): {Number(b.price_difference) >= 0 ? 'profit' : 'loss'}</span>
+              <span>{tr("Price difference (invoice − breakdown cost):")} {Number(b.price_difference) >= 0 ? tr("profit") : tr("loss")}</span>
               <span className="tabular-nums">{money(b.price_difference)}</span>
             </div>
-            {b.notes && <p className="mt-4 whitespace-pre-line">Notes: {b.notes}</p>}
+            {b.notes && <p className="mt-4 whitespace-pre-line">{tr("Notes:")} {b.notes}</p>}
             <p className="mt-6 text-xs text-slate-500">
-              Printed {showDate(todayISO())}
-              {b.updated_by_name ? ` · last saved by ${b.updated_by_name}` : ''}
+              {tr("Printed")} {showDate(todayISO())}
+              {b.updated_by_name ? tr(" · last saved by {{updated_by_name}}", { updated_by_name: b.updated_by_name }) : ''}
             </p>
           </article>
         )}

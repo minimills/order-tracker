@@ -1,3 +1,4 @@
+import { currentLang, tr } from '../../i18n'
 // @permission-scope freight.dashboard
 import { addMonths, endOfMonth, format, parseISO, startOfMonth, startOfWeek } from 'date-fns'
 import { useEffect, useMemo, useState } from 'react'
@@ -20,7 +21,7 @@ const sum = (list: Crate[]): Totals => ({
   crates: list.length,
   hours: list.reduce((s, c) => s + Number(c.build_hours ?? 0), 0),
 })
-const show = (n: number) => (Math.round(n * 10) / 10).toLocaleString('en-CA')
+const show = (n: number) => (Math.round(n * 10) / 10).toLocaleString(currentLang())
 const iso = (d: Date) => format(d, 'yyyy-MM-dd')
 
 /** Freight dashboard: plywood, crates and crating hours now, and by month against the year before. */
@@ -62,10 +63,18 @@ export default function FreightDashboard() {
     const yearStart = today.slice(0, 5) + '01-01'
     const since = (d: string) => sum(crates.filter((c) => c.crated_on >= d && c.crated_on <= today))
     return [
-      { label: 'Today', sub: showDate(today), t: since(today) },
-      { label: 'This Week', sub: `since ${showDate(week, 'MMM d')}`, t: since(week) },
-      { label: 'This Month', sub: format(parseISO(today), 'MMMM yyyy'), t: since(month) },
-      { label: 'This Year', sub: String(thisYear), t: since(yearStart) },
+      { get label() {
+    return tr("Today")
+  }, sub: showDate(today), t: since(today) },
+      { get label() {
+    return tr("This Week")
+  }, sub: `since ${showDate(week, 'MMM d')}`, t: since(week) },
+      { get label() {
+    return tr("This Month")
+  }, sub: format(parseISO(today), 'MMMM yyyy'), t: since(month) },
+      { get label() {
+    return tr("This Year")
+  }, sub: String(thisYear), t: since(yearStart) },
     ]
   }, [crates, today, thisYear])
 
@@ -103,7 +112,7 @@ export default function FreightDashboard() {
   const nameA = mode === 'year' ? String(year) : 'Chosen dates'
   const nameB = mode === 'year' ? String(year - 1) : 'One year earlier'
 
-  if (loading) return <p className="py-8 text-center text-slate-500">Loading…</p>
+  if (loading) return <p className="py-8 text-center text-slate-500">{tr("Loading…")}</p>
 
   return (
     <div className="space-y-4">
@@ -115,15 +124,15 @@ export default function FreightDashboard() {
             <dl className="mt-2 grid grid-cols-3 gap-2 text-center">
               <div>
                 <dd className="text-xl font-semibold tabular-nums">{show(b.t.sheets)}</dd>
-                <dt className="text-[0.6875rem] text-slate-600">Plywood sheets</dt>
+                <dt className="text-[0.6875rem] text-slate-600">{tr("Plywood sheets")}</dt>
               </div>
               <div>
                 <dd className="text-xl font-semibold tabular-nums">{show(b.t.crates)}</dd>
-                <dt className="text-[0.6875rem] text-slate-600">Crates made</dt>
+                <dt className="text-[0.6875rem] text-slate-600">{tr("Crates made")}</dt>
               </div>
               <div>
                 <dd className="text-xl font-semibold tabular-nums">{show(b.t.hours)}</dd>
-                <dt className="text-[0.6875rem] text-slate-600">Crating hours</dt>
+                <dt className="text-[0.6875rem] text-slate-600">{tr("Crating hours")}</dt>
               </div>
             </dl>
           </section>
@@ -133,15 +142,15 @@ export default function FreightDashboard() {
       <Can permission="freight.dashboard.filters">
         <div className="flex flex-wrap items-end gap-2">
           <label className="text-sm">
-            <span className="mb-1 block text-slate-600">Period</span>
+            <span className="mb-1 block text-slate-600">{tr("Period")}</span>
             <select className={`${narrowInputClass} w-44`} value={mode} onChange={(e) => set({ period: e.target.value === 'range' ? 'range' : '' })}>
-              <option value="year">A whole year</option>
-              <option value="range">Custom dates</option>
+              <option value="year">{tr("A whole year")}</option>
+              <option value="range">{tr("Custom dates")}</option>
             </select>
           </label>
           {mode === 'year' ? (
             <label className="text-sm">
-              <span className="mb-1 block text-slate-600">Year</span>
+              <span className="mb-1 block text-slate-600">{tr("Year")}</span>
               <select className={`${narrowInputClass} w-28`} value={year} onChange={(e) => set({ year: Number(e.target.value) === thisYear ? '' : e.target.value })}>
                 {years.map((y) => (
                   <option key={y} value={y}>
@@ -153,11 +162,11 @@ export default function FreightDashboard() {
           ) : (
             <>
               <label className="text-sm">
-                <span className="mb-1 block text-slate-600">From</span>
+                <span className="mb-1 block text-slate-600">{tr("From")}</span>
                 <input type="date" className={inputClass} value={from} max={to} onChange={(e) => set({ dfrom: e.target.value })} />
               </label>
               <label className="text-sm">
-                <span className="mb-1 block text-slate-600">to</span>
+                <span className="mb-1 block text-slate-600">{tr("to")}</span>
                 <input type="date" className={inputClass} value={to} min={from} max={addDaysISO(from, 730)} onChange={(e) => set({ dto: e.target.value })} />
               </label>
             </>
@@ -167,19 +176,19 @@ export default function FreightDashboard() {
 
       {period && (
         <p className="text-sm text-slate-700">
-          {mode === 'year' ? `In ${year}` : `${showDate(start)} to ${showDate(end)}`}: <strong>{show(period.sheets)}</strong> plywood sheets,{' '}
-          <strong>{show(period.crates)}</strong> {period.crates === 1 ? 'crate' : 'crates'} made, <strong>{show(period.hours)}</strong> crating hours.
+          {mode === 'year' ? tr("In {{year}}", { year: year }) : tr("{{showDate}} to {{showDate2}}", { showDate: showDate(start), showDate2: showDate(end) })}: <strong>{show(period.sheets)}</strong> {tr("plywood sheets,")}{' '}
+          <strong>{show(period.crates)}</strong> {period.crates === 1 ? tr("crate") : tr("crates")} {tr("made,")} <strong>{show(period.hours)}</strong> {tr("crating hours.")}
         </p>
       )}
 
       {charts && (
         <div className="grid gap-3 [grid-template-columns:repeat(auto-fit,minmax(min(100%,22rem),1fr))]">
-          <CompareChart title="Plywood Sheets Used" points={charts.sheets} nameA={nameA} nameB={nameB} unit="sheets" />
-          <CompareChart title="Crates Made" points={charts.crates} nameA={nameA} nameB={nameB} unit="crates" />
-          <CompareChart title="Crating Hours" points={charts.hours} nameA={nameA} nameB={nameB} unit="hours" />
+          <CompareChart title={tr("Plywood Sheets Used")} points={charts.sheets} nameA={nameA} nameB={nameB} unit="sheets" />
+          <CompareChart title={tr("Crates Made")} points={charts.crates} nameA={nameA} nameB={nameB} unit="crates" />
+          <CompareChart title={tr("Crating Hours")} points={charts.hours} nameA={nameA} nameB={nameB} unit="hours" />
         </div>
       )}
-      {crates.length === 0 && <p className="text-sm text-slate-500">No crates have been entered yet. Mark a machine as crated on an order that is ready to ship.</p>}
+      {crates.length === 0 && <p className="text-sm text-slate-500">{tr("No crates have been entered yet. Mark a machine as crated on an order that is ready to ship.")}</p>}
     </div>
   )
 }

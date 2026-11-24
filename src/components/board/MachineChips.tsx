@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import Can from '../Can'
 import SerialNumber from '../SerialNumber'
 import Icon from '../Icon'
+import { tr } from '../../i18n'
 
 /** One machine, as the chips need it (a row of the order_machine_status view). */
 export type ChipMachine = {
@@ -181,12 +182,12 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                   const st = STATUS_STYLE[code]
                   return (
                     <li key={m.id} className="flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 py-0.5">
-                      {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span>No serial yet</span>}
+                      {m.serial_number ? <SerialNumber serial={m.serial_number} /> : <span>{tr("No serial yet")}</span>}
                       <Can permission="orders.board.card.chip_status">
                         <span className="text-slate-500">
                           {st.icon} {statusWord(m, code)}
                           {m.checklist_status === 'in_progress' && (
-                            <> · final check {m.checklist_completed ?? 0}/{m.checklist_total ?? 0}</>
+                            <> {tr("· final check")} {m.checklist_completed ?? 0}/{m.checklist_total ?? 0}</>
                           )}
                         </span>
                       </Can>
@@ -199,10 +200,10 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                             className="w-full rounded border border-slate-300 px-1.5 py-0.5 text-center text-[0.6875rem] font-medium hover:bg-slate-50"
                           >
                             {m.checklist_status === 'signed'
-                              ? 'View Final Check'
+                              ? tr("View Final Check")
                               : m.checklist_status === 'in_progress'
-                                ? 'Continue Final Check'
-                                : 'Final Check'}
+                                ? tr("Continue Final Check")
+                                : tr("Final Check")}
                           </Link>
                         )}
                       </Can>
@@ -222,7 +223,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
           }}
           className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-slate-600 ring-1 ring-slate-300 hover:bg-slate-50"
         >
-          +{hidden} more
+          +{hidden} {tr("more")}
         </button>
       )}
       {expanded && groups.length > max && (
@@ -235,7 +236,7 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
           }}
           className="rounded-full px-2 py-0.5 text-xs text-slate-500 underline"
         >
-          Show less
+          {tr("Show less")}
         </button>
       )}
     </div>
@@ -258,14 +259,14 @@ export function ChipLegend({ showCrated }: { showCrated: boolean }) {
   const list: Status[] = showCrated ? [0, 1, 2, 3] : [0, 1, 2]
   return (
     <div className="flex flex-wrap items-center gap-1.5 text-xs text-slate-600">
-      <span>Key:</span>
+      <span>{tr("Key:")}</span>
       {list.map((s) => (
         <span key={s} className={`rounded-full px-2 py-0.5 ring-1 ${STATUS_STYLE[s].chip}`}>
           {STATUS_STYLE[s].icon} {STATUS_STYLE[s].word}
         </span>
       ))}
       <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 ring-1 ring-slate-300">
-        <MixedDot /> Mixed (tap for each serial)
+        <MixedDot /> {tr("Mixed (tap for each serial)")}
       </span>
     </div>
   )

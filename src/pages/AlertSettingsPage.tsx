@@ -7,6 +7,7 @@ import { DEFAULT_THRESHOLDS, useAlerts, type AlertThresholds } from '../lib/aler
 import { usePermissions } from '../lib/permissions'
 import { friendlyError } from '../lib/format'
 import { supabase } from '../lib/supabase'
+import { tr } from '../i18n'
 
 type Draft = Record<keyof AlertThresholds, string>
 
@@ -65,7 +66,7 @@ export default function AlertSettingsPage() {
     const { error } = await supabase.from('app_settings').upsert({ key: 'alerts', value })
     setSaving(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Alert settings saved.')
+    toast.success(tr("Alert settings saved."))
     refresh()
   }
 
@@ -80,7 +81,7 @@ export default function AlertSettingsPage() {
         onChange={set(key)}
         disabled={!isAdmin || loading}
       />
-      <span className="text-sm text-slate-600">days</span>
+      <span className="text-sm text-slate-600">{tr("days")}</span>
     </div>
   )
 
@@ -88,53 +89,51 @@ export default function AlertSettingsPage() {
     <div className="space-y-6">
       <div>
         <Link to="/admin" className="text-sm text-slate-600 underline">
-          ← Admin
+          {tr("← Admin")}
         </Link>
-        <h1 className="mt-2 text-2xl font-semibold">Alerts</h1>
+        <h1 className="mt-2 text-2xl font-semibold">{tr("Alerts")}</h1>
         <p className="mt-1 text-sm text-slate-600">
-          How far ahead the bell warns you. Overdue payments, payments due today, passed ship dates and unknown voltage
-          on confirmed orders are always shown.
-          {!isAdmin && ' Only admins can change these.'}
+          {tr("How far ahead the bell warns you. Overdue payments, payments due today, passed ship dates and unknown voltage on confirmed orders are always shown.")}
+          {!isAdmin && tr(" Only admins can change these.")}
         </p>
       </div>
 
       <form onSubmit={save} className="max-w-3xl space-y-5 rounded-lg border border-slate-200 bg-white p-5" noValidate>
         <Field
-          label="Warn about a payment when it is due within"
+          label={tr("Warn about a payment when it is due within")}
           htmlFor="payment_warn_days"
           error={errors.payment_warn_days}
-          hint="First warning (yellow). Default 7."
+          hint={tr("First warning (yellow). Default 7.")}
         >
           {days('payment_warn_days')}
         </Field>
         <Field
-          label="Warn again when it is due within"
+          label={tr("Warn again when it is due within")}
           htmlFor="payment_urgent_days"
           error={errors.payment_urgent_days}
-          hint="Second warning (yellow). Default 3. A payment due today or overdue is red."
+          hint={tr("Second warning (yellow). Default 3. A payment due today or overdue is red.")}
         >
           {days('payment_urgent_days')}
         </Field>
         <Field
-          label="Warn about an expected ship date within"
+          label={tr("Warn about an expected ship date within")}
           htmlFor="ship_warn_days"
           error={errors.ship_warn_days}
-          hint="Default 14. A ship date that has passed without being marked shipped is red."
+          hint={tr("Default 14. A ship date that has passed without being marked shipped is red.")}
         >
           {days('ship_warn_days')}
         </Field>
         {isAdmin && (
           <div className="flex justify-end">
             <button type="submit" className={buttonClass} disabled={saving || loading}>
-              {saving ? 'Saving…' : 'Save Changes'}
+              {saving ? tr("Saving…") : tr("Save Changes")}
             </button>
           </div>
         )}
       </form>
 
       <p className="text-sm text-slate-600">
-        Snoozing or dismissing an alert only affects you; other people still see it. The app checks for new alerts every
-        10 minutes while it is open.
+        {tr("Snoozing or dismissing an alert only affects you; other people still see it. The app checks for new alerts every 10 minutes while it is open.")}
       </p>
     </div>
   )
