@@ -1,5 +1,6 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { supabase } from './supabase'
+import { tk, tr } from '../i18n'
 import { STAGES, type Stage } from './types'
 
 /**
@@ -62,7 +63,20 @@ export async function saveStageLabels(next: Partial<StageLabels>) {
 /** The name shown for a stage ("Ready / testing"). Works outside React too. */
 export function stageLabel(stage: string | null | undefined) {
   if (!stage) return ''
-  return labels[stage as Stage] ?? stage
+  const label = labels[stage as Stage] ?? stage
+  // A name an admin typed (Admin → Stage names) is shown as typed; the built-in names are translated.
+  return label === stage ? tr(STAGE_NAMES[stage as Stage] ?? stage) : label
+}
+
+/** The built-in stage names, as translation keys. */
+const STAGE_NAMES: Record<Stage, string> = {
+  Quote: tk('Quote'),
+  Confirmed: tk('Confirmed'),
+  'In production': tk('In production'),
+  Ready: tk('Ready'),
+  'Ready to ship': tk('Ready to ship'),
+  Shipped: tk('Shipped'),
+  Cancelled: tk('Cancelled'),
 }
 
 /** Re-renders when the names change. Returns stageLabel. */
