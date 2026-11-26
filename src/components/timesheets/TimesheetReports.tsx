@@ -10,9 +10,11 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import { loadBalances, loadWeekRows, showHours, useEmployees, type Balances, type WeekRow } from '../../lib/timesheets'
 import { useDepartments } from '../../lib/useDepartments'
+import WeeklyPayroll from './WeeklyPayroll'
 
 const VIEWS = [
-  { key: 'hours', label: 'Hours' },
+  { key: 'week', label: 'Weekly Payroll' },
+  { key: 'hours', label: 'Hours by Period' },
   { key: 'overtime', label: 'Overtime' },
   { key: 'banked', label: 'Banked Hours' },
   { key: 'leave', label: 'Leave Taken' },
@@ -36,15 +38,21 @@ const HOUR_COLS = [
   ['unpaid', 'Unpaid'],
 ] as const
 
-/** Timesheet reports: hours per employee per week / month / year, overtime, banked hours and leave taken; CSV for payroll. */
+/**
+ * Timesheet reports. The default is the weekly payroll report (last week, one
+ * row per employee, totals to copy into the payroll app); the other reports
+ * (hours by period, overtime, banked hours, leave taken) and the filters sit
+ * in the collapsed "More Options" panel.
+ */
 export default function TimesheetReports() {
   const [params, setParams] = useSearchParams()
   const year = todayISO().slice(0, 4)
   const from = params.get('from') || `${year}-01-01`
   const to = params.get('to') || todayISO()
-  const view = (VIEWS.find((v) => v.key === params.get('view'))?.key ?? 'hours') as (typeof VIEWS)[number]['key']
+  const view = (VIEWS.find((v) => v.key === params.get('view'))?.key ?? 'week') as (typeof VIEWS)[number]['key']
   const by = (params.get('by') as 'week' | 'month' | 'year' | null) ?? 'month'
   const empFilter = params.get('employee') ?? ''
+  const moreOpen = params.get('more') === '1' || (params.has('view') && params.get('view') !== 'week')
   const deptFilter = params.get('dept') ?? ''
   const { employees } = useEmployees(true)
   const { departments } = useDepartments()
@@ -163,240 +171,268 @@ export default function TimesheetReports() {
 
   return (
     <div className="space-y-3">
-      <div className="flex flex-wrap gap-1 border-b border-slate-200" role="tablist" aria-label="Report">
-        {VIEWS.map((v) => (
-          <button key={v.key} type="button" role="tab" aria-selected={view === v.key} onClick={() => set('view', v.key === 'hours' ? '' : v.key)} className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${view === v.key ? 'border-slate-900 font-semibold' : 'border-transparent text-slate-600'}`}>
-            {v.label}
-          </button>
-        ))}
-      </div>
-      <div className="flex flex-wrap items-end gap-2 text-sm">
-        <label className="flex flex-col">
-          <span className="text-xs text-slate-600">From</span>
-          <input type="date" className={narrowInputClass} value={from} onChange={(e) => set('from', e.target.value)} />
-        </label>
-        <label className="flex flex-col">
-          <span className="text-xs text-slate-600">To</span>
-          <input type="date" className={narrowInputClass} value={to} onChange={(e) => set('to', e.target.value)} />
-        </label>
-        {[Number(year) - 1, Number(year)].map((y) => (
-          <button key={y} type="button" className={secondaryButtonClass} onClick={() => setParams({ ...Object.fromEntries(params), from: `${y}-01-01`, to: `${y}-12-31` }, { replace: true })}>
-            {y}
-          </button>
-        ))}
-        <button type="button" className={secondaryButtonClass} onClick={() => setParams({ ...Object.fromEntries(params), from: `${Number(year) - 1}-01-01`, to: todayISO(), by: 'year' }, { replace: true })}>
-          Compare Years
+      <div className="rounded-lg border border-slate-200 bg-white" data-print="hide">
+        <button
+          type="button"
+          className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm font-medium"
+          aria-expanded={moreOpen}
+          onClick={() => set('more', moreOpen ? '' : '1')}
+        >
+          <span className="text-xs text-slate-500" aria-hidden="true">
+            {moreOpen ? '▾' : '▸'}
+          </span>
+          More Options
+          {!moreOpen && (deptFilter || empFilter) && <span className="rounded bg-blue-50 px-1.5 text-xs font-normal text-blue-800">Filters in use</span>}
         </button>
-        {view === 'hours' && (
-          <label className="flex flex-col">
-            <span className="text-xs text-slate-600">Group by</span>
-            <select className={narrowInputClass} value={by} onChange={(e) => set('by', e.target.value === 'month' ? '' : e.target.value)}>
-              <option value="week">Week</option>
-              <option value="month">Month</option>
-              <option value="year">Year</option>
-            </select>
-          </label>
+        {moreOpen && (
+          <div className="space-y-3 border-t border-slate-200 p-3">
+            <div className="flex flex-wrap gap-1 border-b border-slate-200" role="tablist" aria-label="Report">
+              {VIEWS.map((v) => (
+                <button key={v.key} type="button" role="tab" aria-selected={view === v.key} onClick={() => set('view', v.key === 'week' ? '' : v.key)} className={`-mb-px border-b-2 px-3 py-1.5 text-sm ${view === v.key ? 'border-slate-900 font-semibold' : 'border-transparent text-slate-600'}`}>
+                  {v.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex flex-wrap items-end gap-2 text-sm">
+              <label className="flex flex-col">
+                <span className="text-xs text-slate-600">Department</span>
+                <select className={narrowInputClass} value={deptFilter} onChange={(e) => set('dept', e.target.value)}>
+                  <option value="">All</option>
+                  {departments.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="flex flex-col">
+                <span className="text-xs text-slate-600">Employee</span>
+                <select className={narrowInputClass} value={empFilter} onChange={(e) => set('employee', e.target.value)}>
+                  <option value="">All</option>
+                  {employees.map((e) => (
+                    <option key={e.id} value={e.id}>
+                      {e.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              {view !== 'week' && (
+                <>
+                  <label className="flex flex-col">
+                    <span className="text-xs text-slate-600">From</span>
+                    <input type="date" className={narrowInputClass} value={from} onChange={(e) => set('from', e.target.value)} />
+                  </label>
+                  <label className="flex flex-col">
+                    <span className="text-xs text-slate-600">To</span>
+                    <input type="date" className={narrowInputClass} value={to} onChange={(e) => set('to', e.target.value)} />
+                  </label>
+                  {[Number(year) - 1, Number(year)].map((y) => (
+                    <button key={y} type="button" className={secondaryButtonClass} onClick={() => setParams({ ...Object.fromEntries(params), from: `${y}-01-01`, to: `${y}-12-31` }, { replace: true })}>
+                      {y}
+                    </button>
+                  ))}
+                  <button type="button" className={secondaryButtonClass} onClick={() => setParams({ ...Object.fromEntries(params), from: `${Number(year) - 1}-01-01`, to: todayISO(), by: 'year' }, { replace: true })}>
+                    Compare Years
+                  </button>
+                  {view === 'hours' && (
+                    <label className="flex flex-col">
+                      <span className="text-xs text-slate-600">Group by</span>
+                      <select className={narrowInputClass} value={by} onChange={(e) => set('by', e.target.value === 'month' ? '' : e.target.value)}>
+                        <option value="week">Week</option>
+                        <option value="month">Month</option>
+                        <option value="year">Year</option>
+                      </select>
+                    </label>
+                  )}
+                  <Can permission="timesheets.reports.export">
+                    <button type="button" className={`${secondaryButtonClass} ml-auto`} onClick={exportCsv}>
+                      Export CSV
+                    </button>
+                  </Can>
+                </>
+              )}
+            </div>
+          </div>
         )}
-        <label className="flex flex-col">
-          <span className="text-xs text-slate-600">Department</span>
-          <select className={narrowInputClass} value={deptFilter} onChange={(e) => set('dept', e.target.value)}>
-            <option value="">All</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="flex flex-col">
-          <span className="text-xs text-slate-600">Employee</span>
-          <select className={narrowInputClass} value={empFilter} onChange={(e) => set('employee', e.target.value)}>
-            <option value="">All</option>
-            {employees.map((e) => (
-              <option key={e.id} value={e.id}>
-                {e.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <Can permission="timesheets.reports.export">
-          <button type="button" className={`${secondaryButtonClass} ml-auto`} onClick={exportCsv}>
-            Export CSV
-          </button>
-        </Can>
       </div>
 
-      <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
-        {view === 'hours' && (
-          <table className="w-full min-w-[60rem] text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-600">
-              <tr>
-                <th className={th}>Employee</th>
-                <th className={th}>{by === 'week' ? 'Week' : by === 'month' ? 'Month' : 'Year'}</th>
-                {HOUR_COLS.map(([k, l]) => (
-                  <th key={k} className={`${th} text-right`}>
-                    {l}
-                  </th>
-                ))}
-                <th className={th}>Notes</th>
-              </tr>
-            </thead>
-            <tbody>
-              {grouped.length === 0 && (
-                <tr>
-                  <td className={`${td} text-slate-500`} colSpan={HOUR_COLS.length + 3}>
-                    No hours in these dates.
-                  </td>
-                </tr>
-              )}
-              {grouped.map((g) => (
-                <tr key={`${g.employee_id}|${g.period}`} className="border-t border-slate-100">
-                  <td className={td}>{empName.get(g.employee_id)}</td>
-                  <td className={`${td} whitespace-nowrap`}>{periodLabel(g.period)}</td>
-                  {HOUR_COLS.map(([k]) => (
-                    <td key={k} className={`${td} text-right tabular-nums`}>
-                      {showHours(g[k])}
-                    </td>
+      {view === 'week' && <WeeklyPayroll employees={employees} dept={deptFilter} employee={empFilter} />}
+
+      {view !== 'week' && (
+        <>
+          <div className="overflow-x-auto rounded-lg border border-slate-200 bg-white">
+            {view === 'hours' && (
+              <table className="w-full min-w-[60rem] text-sm">
+                <thead className="bg-slate-50 text-xs text-slate-600">
+                  <tr>
+                    <th className={th}>Employee</th>
+                    <th className={th}>{by === 'week' ? 'Week' : by === 'month' ? 'Month' : 'Year'}</th>
+                    {HOUR_COLS.map(([k, l]) => (
+                      <th key={k} className={`${th} text-right`}>
+                        {l}
+                      </th>
+                    ))}
+                    <th className={th}>Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {grouped.length === 0 && (
+                    <tr>
+                      <td className={`${td} text-slate-500`} colSpan={HOUR_COLS.length + 3}>
+                        No hours in these dates.
+                      </td>
+                    </tr>
+                  )}
+                  {grouped.map((g) => (
+                    <tr key={`${g.employee_id}|${g.period}`} className="border-t border-slate-100">
+                      <td className={td}>{empName.get(g.employee_id)}</td>
+                      <td className={`${td} whitespace-nowrap`}>{periodLabel(g.period)}</td>
+                      {HOUR_COLS.map(([k]) => (
+                        <td key={k} className={`${td} text-right tabular-nums`}>
+                          {showHours(g[k])}
+                        </td>
+                      ))}
+                      <td className={`${td} text-xs text-slate-600`}>
+                        {g.imported > 0 && <span className="mr-1 rounded bg-slate-100 px-1">Imported</span>}
+                        {g.review > 0 && <span className="mr-1 rounded bg-amber-100 px-1 text-amber-900">Needs review</span>}
+                        {g.choices.length > 0 && <span>Banked time over the threshold: {g.choices.join('; ')}</span>}
+                      </td>
+                    </tr>
                   ))}
-                  <td className={`${td} text-xs text-slate-600`}>
-                    {g.imported > 0 && <span className="mr-1 rounded bg-slate-100 px-1">Imported</span>}
-                    {g.review > 0 && <span className="mr-1 rounded bg-amber-100 px-1 text-amber-900">Needs review</span>}
-                    {g.choices.length > 0 && <span>Banked time over the threshold: {g.choices.join('; ')}</span>}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {view === 'overtime' && (
-          <table className="w-full min-w-[54rem] text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-600">
-              <tr>
-                <th className={th}>Employee</th>
-                <th className={th}>Week of</th>
-                <th className={`${th} text-right`}>Worked</th>
-                <th className={`${th} text-right`}>Banked used</th>
-                <th className={`${th} text-right`}>Overtime</th>
-                <th className={`${th} text-right`}>Banked from overtime</th>
-                <th className={`${th} text-right`}>Paid overtime</th>
-                <th className={th}>Hours over the threshold from banked time</th>
-              </tr>
-            </thead>
-            <tbody>
-              {overtimeRows.length === 0 && (
-                <tr>
-                  <td className={`${td} text-slate-500`} colSpan={8}>
-                    No overtime in these dates.
-                  </td>
-                </tr>
-              )}
-              {overtimeRows.map((r) => (
-                <tr key={`${r.employee_id}|${r.week_start}`} className="border-t border-slate-100">
-                  <td className={td}>{r.employee_name}</td>
-                  <td className={td}>{showDate(r.week_start)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(r.worked)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(r.banked_used)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(r.overtime)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(r.earned_overtime)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(r.paid_overtime)}</td>
-                  <td className={`${td} text-xs`}>
-                    {r.over_by_banked > 0
-                      ? `${showHours(r.over_by_banked)} hours paid as ${r.ot_choice === 'regular' ? 'regular pay' : 'overtime'}${r.ot_choice_by_name ? ` (chosen by ${r.ot_choice_by_name}${r.ot_choice_at ? `, ${showDate(r.ot_choice_at.slice(0, 10))}` : ''})` : ''}`
-                      : ''}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {view === 'banked' && (
-          <table className="w-full min-w-[48rem] text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-600">
-              <tr>
-                <th className={th}>Employee</th>
-                <th className={th}>Date</th>
-                <th className={th}>What</th>
-                <th className={`${th} text-right`}>Hours</th>
-                <th className={`${th} text-right`}>Bank change</th>
-                <th className={`${th} text-right`}>Balance</th>
-                <th className={th}>Note</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ledgerRows.length === 0 && (
-                <tr>
-                  <td className={`${td} text-slate-500`} colSpan={7}>
-                    No banked hours in these dates.
-                  </td>
-                </tr>
-              )}
-              {ledgerRows.map((l) => (
-                <tr key={`${l.kind}${l.id}`} className="border-t border-slate-100">
-                  <td className={td}>{empName.get(l.employee_id)}</td>
-                  <td className={td}>{showDate(l.work_date)}</td>
-                  <td className={td}>
-                    {LEDGER_WORDS[l.kind] ?? l.kind}
-                    {l.source ? ` (${l.source})` : ''}
-                  </td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(l.hours)}</td>
-                  <td className={`${td} text-right tabular-nums ${l.change < 0 ? 'text-red-700' : 'text-green-800'}`}>
-                    {l.change > 0 ? '+' : ''}
-                    {showHours(l.change)}
-                  </td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(l.balance)}</td>
-                  <td className={`${td} text-xs`}>
-                    {l.note}
-                    {l.by_name ? ` · ${l.by_name}` : ''}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {view === 'leave' && (
-          <table className="w-full min-w-[50rem] text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-600">
-              <tr>
-                <th className={th}>Employee</th>
-                <th className={th}>Year</th>
-                <th className={`${th} text-right`}>Vacation days</th>
-                <th className={`${th} text-right`}>Vacation left</th>
-                <th className={`${th} text-right`}>Sick days</th>
-                <th className={`${th} text-right`}>Sick days left</th>
-                <th className={`${th} text-right`}>Banked used (h)</th>
-                <th className={`${th} text-right`}>Unpaid (h)</th>
-                <th className={`${th} text-right`}>Stat holiday (h)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {leaveRows.length === 0 && (
-                <tr>
-                  <td className={`${td} text-slate-500`} colSpan={9}>
-                    No leave in these dates.
-                  </td>
-                </tr>
-              )}
-              {leaveRows.map((l) => (
-                <tr key={`${l.name}|${l.year}`} className="border-t border-slate-100">
-                  <td className={td}>{l.name}</td>
-                  <td className={td}>{l.year}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(l.vacation / l.hpd)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{l.b ? `${showHours(l.b.vacation.left)} of ${showHours(l.b.vacation.entitlement)}` : '—'}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(l.sick / l.hpd)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{l.b ? `${showHours(l.b.sick.left)} of ${showHours(l.b.sick.entitlement)}` : '—'}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(l.banked)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(l.unpaid)}</td>
-                  <td className={`${td} text-right tabular-nums`}>{showHours(l.stat)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
-      <p className="text-xs text-slate-500">
-        Weeks count in the month and year they start in. Imported years are included, so years can be compared. Days = hours ÷ the employee’s hours per day. “Left” counts the whole year, including approved
-        time off still to come.
-      </p>
+                </tbody>
+              </table>
+            )}
+            {view === 'overtime' && (
+              <table className="w-full min-w-[54rem] text-sm">
+                <thead className="bg-slate-50 text-xs text-slate-600">
+                  <tr>
+                    <th className={th}>Employee</th>
+                    <th className={th}>Week of</th>
+                    <th className={`${th} text-right`}>Worked</th>
+                    <th className={`${th} text-right`}>Banked used</th>
+                    <th className={`${th} text-right`}>Overtime</th>
+                    <th className={`${th} text-right`}>Banked from overtime</th>
+                    <th className={`${th} text-right`}>Paid overtime</th>
+                    <th className={th}>Hours over the threshold from banked time</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {overtimeRows.length === 0 && (
+                    <tr>
+                      <td className={`${td} text-slate-500`} colSpan={8}>
+                        No overtime in these dates.
+                      </td>
+                    </tr>
+                  )}
+                  {overtimeRows.map((r) => (
+                    <tr key={`${r.employee_id}|${r.week_start}`} className="border-t border-slate-100">
+                      <td className={td}>{r.employee_name}</td>
+                      <td className={td}>{showDate(r.week_start)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(r.worked)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(r.banked_used)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(r.overtime)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(r.earned_overtime)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(r.paid_overtime)}</td>
+                      <td className={`${td} text-xs`}>
+                        {r.over_by_banked > 0
+                          ? `${showHours(r.over_by_banked)} hours paid as ${r.ot_choice === 'regular' ? 'regular pay' : 'overtime'}${r.ot_choice_by_name ? ` (chosen by ${r.ot_choice_by_name}${r.ot_choice_at ? `, ${showDate(r.ot_choice_at.slice(0, 10))}` : ''})` : ''}`
+                          : ''}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {view === 'banked' && (
+              <table className="w-full min-w-[48rem] text-sm">
+                <thead className="bg-slate-50 text-xs text-slate-600">
+                  <tr>
+                    <th className={th}>Employee</th>
+                    <th className={th}>Date</th>
+                    <th className={th}>What</th>
+                    <th className={`${th} text-right`}>Hours</th>
+                    <th className={`${th} text-right`}>Bank change</th>
+                    <th className={`${th} text-right`}>Balance</th>
+                    <th className={th}>Note</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ledgerRows.length === 0 && (
+                    <tr>
+                      <td className={`${td} text-slate-500`} colSpan={7}>
+                        No banked hours in these dates.
+                      </td>
+                    </tr>
+                  )}
+                  {ledgerRows.map((l) => (
+                    <tr key={`${l.kind}${l.id}`} className="border-t border-slate-100">
+                      <td className={td}>{empName.get(l.employee_id)}</td>
+                      <td className={td}>{showDate(l.work_date)}</td>
+                      <td className={td}>
+                        {LEDGER_WORDS[l.kind] ?? l.kind}
+                        {l.source ? ` (${l.source})` : ''}
+                      </td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(l.hours)}</td>
+                      <td className={`${td} text-right tabular-nums ${l.change < 0 ? 'text-red-700' : 'text-green-800'}`}>
+                        {l.change > 0 ? '+' : ''}
+                        {showHours(l.change)}
+                      </td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(l.balance)}</td>
+                      <td className={`${td} text-xs`}>
+                        {l.note}
+                        {l.by_name ? ` · ${l.by_name}` : ''}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+            {view === 'leave' && (
+              <table className="w-full min-w-[50rem] text-sm">
+                <thead className="bg-slate-50 text-xs text-slate-600">
+                  <tr>
+                    <th className={th}>Employee</th>
+                    <th className={th}>Year</th>
+                    <th className={`${th} text-right`}>Vacation days</th>
+                    <th className={`${th} text-right`}>Vacation left</th>
+                    <th className={`${th} text-right`}>Sick days</th>
+                    <th className={`${th} text-right`}>Sick days left</th>
+                    <th className={`${th} text-right`}>Banked used (h)</th>
+                    <th className={`${th} text-right`}>Unpaid (h)</th>
+                    <th className={`${th} text-right`}>Stat holiday (h)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {leaveRows.length === 0 && (
+                    <tr>
+                      <td className={`${td} text-slate-500`} colSpan={9}>
+                        No leave in these dates.
+                      </td>
+                    </tr>
+                  )}
+                  {leaveRows.map((l) => (
+                    <tr key={`${l.name}|${l.year}`} className="border-t border-slate-100">
+                      <td className={td}>{l.name}</td>
+                      <td className={td}>{l.year}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(l.vacation / l.hpd)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{l.b ? `${showHours(l.b.vacation.left)} of ${showHours(l.b.vacation.entitlement)}` : '—'}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(l.sick / l.hpd)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{l.b ? `${showHours(l.b.sick.left)} of ${showHours(l.b.sick.entitlement)}` : '—'}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(l.banked)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(l.unpaid)}</td>
+                      <td className={`${td} text-right tabular-nums`}>{showHours(l.stat)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <p className="text-xs text-slate-500">
+            Weeks count in the month and year they start in. Imported years are included, so years can be compared. Days = hours ÷ the employee’s hours per day. “Left” counts the whole year, including approved
+            time off still to come.
+          </p>
+        </>
+      )}
     </div>
   )
 }
