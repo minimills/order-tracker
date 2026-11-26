@@ -1,9 +1,11 @@
 import { addDaysISO, showDate, todayISO } from './dates'
+import { isHex } from './colour'
 import { showTime } from './service'
 import { supabase } from './supabase'
 
 export type Rsvp = 'going' | 'not_going' | 'maybe'
-export type EventColour = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'teal' | 'slate'
+/** A named event colour, or a colour code chosen with the full colour picker. */
+export type EventColour = 'blue' | 'green' | 'amber' | 'red' | 'purple' | 'teal' | 'slate' | `#${string}`
 /** One event as my_company_events() returns it. */
 export type CompanyEvent = {
   id: string
@@ -43,7 +45,7 @@ export const EVENT_COLOURS: { value: EventColour; label: string; stripe: string 
   { value: 'teal', label: 'Teal', stripe: '#1f9aa3' },
   { value: 'slate', label: 'Grey', stripe: '#64748b' },
 ]
-export const stripeOf = (c: EventColour | null) => EVENT_COLOURS.find((x) => x.value === c)?.stripe ?? '#cbd5e1'
+export const stripeOf = (c: EventColour | null) => (c && isHex(c) ? c : (EVENT_COLOURS.find((x) => x.value === c)?.stripe ?? '#cbd5e1'))
 
 export const RSVP_LABEL: Record<Rsvp, string> = { going: 'Going', maybe: 'Maybe', not_going: 'Not going' }
 

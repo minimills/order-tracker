@@ -130,5 +130,8 @@ export type Department = {
   default_permissions: Record<string, unknown>
   archived: boolean
   /** Approves timesheets and time off of the department (0044). */
+  /** The first manager (kept for older screens); use `managers`. */
   manager_email?: string | null
+  /** Every manager of the department (0056), in the order they were added. */
+  managers?: string[]
 }

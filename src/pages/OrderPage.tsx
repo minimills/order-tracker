@@ -40,6 +40,7 @@ import OrderServiceSection from '../components/service/OrderServiceSection'
 import CeIssueDialog from '../components/ce/CeIssueDialog'
 import CeRegister from '../components/ce/CeRegister'
 import PrintButton from '../components/print/PrintButton'
+import OrderNavigator from '../components/order/OrderNavigator'
 
 type Machine = {
   id: string
@@ -91,7 +92,17 @@ function Placeholder({ title, text }: { title: string; text: string }) {
   )
 }
 
+/** Keyed by the order, so moving to the previous / next order starts every section afresh. */
 export default function OrderPage() {
+  const { id } = useParams()
+  return (
+    <Can permission="order.page">
+      <OrderPageBody key={id} />
+    </Can>
+  )
+}
+
+function OrderPageBody() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { refresh: refreshAlerts } = useAlerts()
@@ -286,11 +297,16 @@ export default function OrderPage() {
       <div className="mx-auto max-w-6xl space-y-5">
         {/* ---------- Header ---------- */}
         <div className="space-y-3">
-          <Can permission="orders.list">
-            <Link to="/orders" className="text-sm text-slate-600 underline">
-              ← Orders List
-            </Link>
-          </Can>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <Can permission="orders.list">
+              <Link to="/orders" className="text-sm text-slate-600 underline">
+                ← Orders List
+              </Link>
+            </Can>
+            <Can permission="order.navigate">
+              <OrderNavigator orderId={order.id} />
+            </Can>
+          </div>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">

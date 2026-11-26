@@ -11,10 +11,16 @@ export function useDepartments() {
     if (!supabase) return
     const { data } = await supabase
       .from('departments')
-      .select('id, name, sort_order, default_permissions, archived, manager_email')
+      .select('id, name, sort_order, default_permissions, archived, manager_email, department_managers(user_email, added_at)')
       .order('sort_order')
       .order('name')
-    setDepartments((data as Department[]) ?? [])
+    type Row = Department & { department_managers?: { user_email: string; added_at: string }[] }
+    setDepartments(
+      ((data as Row[]) ?? []).map(({ department_managers, ...d }) => ({
+        ...d,
+        managers: [...(department_managers ?? [])].sort((a, b) => a.added_at.localeCompare(b.added_at)).map((m) => m.user_email),
+      })),
+    )
     setLoading(false)
   }, [])
 

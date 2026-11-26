@@ -1,6 +1,8 @@
 // @permission-scope automations
 import { useMemo, useState, type ReactNode } from 'react'
 import { inputClass, narrowInputClass } from '../form'
+import ColourPicker from '../boards/ColourPicker'
+import { LABEL_COLOURS } from '../../lib/boards'
 import {
   BOARD_KINDS,
   CHANNELS,
@@ -503,7 +505,7 @@ export function ActionRow({
             'label',
           )}
           {action.type === 'add_label' &&
-            field('Colour (if the label is new)', <input id={`${id}-colour`} type="color" className="h-10 w-16 rounded border border-slate-300" value={action.colour ?? '#16a34a'} onChange={(e) => set({ colour: e.target.value })} disabled={disabled} />, 'colour')}
+            field('Colour (if the label is new)', <div id={`${id}-colour`}>{disabled ? <span className="inline-block h-7 w-7 rounded-full" style={{ backgroundColor: action.colour ?? '#16a34a' }} /> : <ColourPicker colours={LABEL_COLOURS} value={action.colour ?? '#16a34a'} onChange={(colour) => set({ colour })} label="Label colour" />}</div>, 'colour')}
         </>
       )
       break

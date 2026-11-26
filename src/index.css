@@ -406,3 +406,69 @@ html.print-preview #root {
   min-height: 0 !important;
   margin: 0 !important;
 }
+
+/* ---------------------------------------------------------------------------
+   Scrollbars: thin, quiet and matching the theme (light, dark, glass) on
+   computers; phones and tablets (no fine pointer) keep the system scrollbar.
+   The thumb is drawn inside a wider transparent border, so it looks thin but
+   is easy to grab, and grows a little under the pointer.
+   ------------------------------------------------------------------------- */
+@media (hover: hover) and (pointer: fine) {
+  :root {
+    --sb-thumb: rgb(100 116 139 / 0.4);
+    --sb-thumb-hover: rgb(71 85 105 / 0.75);
+  }
+  html.dark {
+    --sb-thumb: rgb(148 163 184 / 0.35);
+    --sb-thumb-hover: rgb(203 213 225 / 0.6);
+  }
+  html.glass {
+    --sb-thumb: rgb(30 41 59 / 0.3);
+    --sb-thumb-hover: rgb(30 41 59 / 0.6);
+  }
+  html.glass.dark {
+    --sb-thumb: rgb(226 232 240 / 0.3);
+    --sb-thumb-hover: rgb(241 245 249 / 0.6);
+  }
+  /* The menu is always dark. */
+  .keep-dark,
+  html.glass .app-sidebar {
+    --sb-thumb: rgb(203 213 225 / 0.3);
+    --sb-thumb-hover: rgb(226 232 240 / 0.6);
+  }
+  .keep-light {
+    --sb-thumb: rgb(100 116 139 / 0.4);
+    --sb-thumb-hover: rgb(71 85 105 / 0.75);
+  }
+
+  /* Chrome, Edge, Safari */
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    min-height: 40px;
+    min-width: 40px;
+    border: 3px solid transparent;
+    border-radius: 9999px;
+    background-clip: padding-box;
+    background-color: var(--sb-thumb);
+  }
+  ::-webkit-scrollbar-thumb:hover,
+  ::-webkit-scrollbar-thumb:active {
+    border-width: 2px;
+    background-color: var(--sb-thumb-hover);
+  }
+
+  /* Firefox (no ::-webkit-scrollbar): the standard properties. */
+  @supports not selector(::-webkit-scrollbar) {
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: var(--sb-thumb) transparent;
+    }
+  }
+}

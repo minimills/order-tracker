@@ -1,5 +1,6 @@
 // @permission-scope dashboard.charts.customize, dashboard.share, dashboard.charts.print
 import { useEffect, useState } from 'react'
+import { CustomColourButton } from '../colour/CustomColour'
 import { toast } from 'sonner'
 import Can from '../Can'
 import { buttonClass, Field, inputClass, Modal, narrowInputClass, secondaryButtonClass } from '../form'
@@ -236,6 +237,7 @@ export function WidgetSettingsDialog({
                   {c.label}
                 </button>
               ))}
+              <CustomColourButton value={w.colour} presets={WIDGET_COLOURS.map((c) => c.hex)} onChange={(hex) => setW({ ...w, colour: hex })} label="Widget colour" />
             </div>
           </fieldset>
         </Can>

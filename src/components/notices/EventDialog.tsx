@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { todayISO } from '../../lib/dates'
+import { CustomColourButton } from '../colour/CustomColour'
 import { EVENT_COLOURS, REMINDER_CHOICES, type CompanyEvent, type EventColour } from '../../lib/events'
 import { friendlyError } from '../../lib/format'
 import { useAudienceChoices, type Audience } from '../../lib/notices'
@@ -172,6 +173,7 @@ export default function EventDialog({ event, audience, onClose, onSaved }: { eve
                 className={`h-8 w-8 rounded ${colour === c.value ? 'ring-2 ring-slate-900 ring-offset-1' : ''}`}
               />
             ))}
+            <CustomColourButton value={colour} presets={EVENT_COLOURS.map((c) => c.stripe)} onChange={(hex) => setColour(hex as EventColour)} label="Event colour" round={false} />
           </div>
         </fieldset>
 

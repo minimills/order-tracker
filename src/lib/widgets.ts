@@ -1,4 +1,5 @@
 import { CHARTS, type ChartType, type FilterKey, type RangeKey, type WidgetFilters } from './dashboardCharts'
+import { isHex } from './colour'
 import type { Layouts } from './gridLayout'
 
 /**
@@ -118,7 +119,8 @@ export const WIDGET_COLOURS = [
   { key: 'purple', label: 'Purple', hex: '#6250d6' },
   { key: 'slate', label: 'Grey', hex: '#64748b' },
 ] as const
-export const colourHex = (key?: string) => WIDGET_COLOURS.find((c) => c.key === key)?.hex ?? WIDGET_COLOURS[0].hex
+/** A widget colour: a preset key, or a colour code chosen with the full colour picker. */
+export const colourHex = (key?: string) => (key && isHex(key) ? key : (WIDGET_COLOURS.find((c) => c.key === key)?.hex ?? WIDGET_COLOURS[0].hex))
 
 const kpi = (k: { metric: string; title: string; permission: string; description: string; needs?: string[] }): WidgetDef => ({
   key: `kpi:${k.metric}`, kind: 'kpi', title: k.title, group: 'Numbers', description: k.description, permission: k.permission, needs: k.needs, w: 3, h: 2,

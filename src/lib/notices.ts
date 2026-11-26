@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { isHex, shade } from './colour'
 import { showDate, todayISO } from './dates'
 import { supabase } from './supabase'
 import { useDepartments } from './useDepartments'
@@ -7,7 +8,8 @@ import { useDepartments } from './useDepartments'
 // Types
 // ---------------------------------------------------------------------------
 export type Priority = 'normal' | 'important' | 'urgent'
-export type NoteColour = 'yellow' | 'blue' | 'green' | 'pink' | 'orange' | 'purple' | 'white'
+/** A named note colour, or a colour code chosen with the full colour picker. */
+export type NoteColour = 'yellow' | 'blue' | 'green' | 'pink' | 'orange' | 'purple' | 'white' | `#${string}`
 export type Notice = {
   id: string
   title: string
@@ -77,7 +79,8 @@ export const NOTE_COLOURS: { value: NoteColour; label: string; paper: string; ed
   { value: 'purple', label: 'Purple', paper: '#ebe4fb', edge: '#d3c6f3' },
   { value: 'white', label: 'White card', paper: '#ffffff', edge: '#e2e8f0' },
 ]
-export const colourOf = (c: string) => NOTE_COLOURS.find((x) => x.value === c) ?? NOTE_COLOURS[0]
+export const colourOf = (c: string) =>
+  isHex(c) ? { value: c as NoteColour, label: 'Custom', paper: c, edge: shade(c, 0.15) } : (NOTE_COLOURS.find((x) => x.value === c) ?? NOTE_COLOURS[0])
 
 export const PRIORITY: Record<Priority, { label: string; hint: string; badge: string }> = {
   normal: { label: 'Normal', hint: 'Shows on the board.', badge: 'bg-slate-100 text-slate-700' },

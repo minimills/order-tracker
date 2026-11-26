@@ -130,7 +130,7 @@ export default function TimeOffPage() {
               <PrintButton title="Time Off" />
             </Can>
           </div>
-          <p className="text-sm text-slate-600">Requests go to the department manager, who approves or declines them. Approved days are added to the timesheet.</p>
+          <p className="text-sm text-slate-600">Requests go to every manager of your departments; the first to approve or decline settles the request. Approved days are added to the timesheet.</p>
         </div>
         <Can permission="timesheets.time_off.request" level="edit">
           <button type="button" className={buttonClass} onClick={() => setAsking(true)}>
@@ -268,7 +268,7 @@ function RequestDialog({ onClose, onDone }: { onClose: () => void; onDone: () =>
     })
     setBusy(false)
     if (error) return toast.error(friendlyError(error))
-    toast.success('Request sent to your manager.')
+    toast.success('Request sent to your managers.')
     onDone()
   }
 
@@ -340,7 +340,12 @@ function DecideDialog({ r, who, decision, onClose, onDone }: { r: Request; who: 
     setBusy(true)
     const { data, error } = await supabase.rpc('decide_time_off', { p_request: r.id, p_decision: decision, p_comment: comment })
     setBusy(false)
-    if (error) return toast.error(friendlyError(error), { duration: 10000 })
+    if (error) {
+      toast.error(friendlyError(error), { duration: 10000 })
+      // Another manager decided first: close and show who did.
+      if (error.code === '55000') onDone(false)
+      return
+    }
     const res = data as { days_written: number; skipped_days: string[] } | null
     toast.success(
       decision === 'approved'

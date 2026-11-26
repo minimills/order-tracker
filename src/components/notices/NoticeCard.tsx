@@ -22,6 +22,7 @@ import {
 import { supabase } from '../../lib/supabase'
 import { ACTION, confirmText } from '../../lib/wording'
 import Can from '../Can'
+import ReactionChip from './ReactionChip'
 import Icon from '../Icon'
 import RichText from '../RichText'
 import { narrowInputClass } from '../form'
@@ -207,27 +208,10 @@ export default function NoticeCard(props: Props) {
 
       {/* Reactions, comments and actions */}
       <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        <Can
-          permission="notices.react"
-          level="edit"
-          fallback={counts.map((r) => (
-            <span key={r.emoji} className="rounded-full bg-white/70 px-2 py-0.5 text-xs">
-              {r.emoji} {r.n}
-            </span>
-          ))}
-        >
-          {counts.map((r) => (
-            <button
-              key={r.emoji}
-              type="button"
-              disabled={busy || n.archived}
-              onClick={() => react(r.emoji)}
-              aria-pressed={r.mine}
-              className={`rounded-full border px-2 py-0.5 text-xs ${r.mine ? 'border-blue-400 bg-blue-50' : 'border-transparent bg-white/70 hover:border-slate-300'}`}
-            >
-              {r.emoji} {r.n}
-            </button>
-          ))}
+        {counts.map((r) => (
+          <ReactionChip key={r.emoji} noticeId={n.id} emoji={r.emoji} count={r.n} mine={r.mine} me={me} disabled={busy || n.archived} onToggle={react} />
+        ))}
+        <Can permission="notices.react" level="edit">
           {!n.archived && (
             <span className="relative">
               <button
