@@ -605,7 +605,8 @@ export const CATALOG: PermissionItem[] = [
     ],
     Reports: [
       { key: 'timesheets.reports', label: 'Timesheet reports: hours per employee per week or month, overtime, banked hours, leave taken (all years, imported ones too)', levels: V, db: true },
-      { key: 'timesheets.reports.export', label: 'Export reports as CSV for payroll', levels: V, requires: 'timesheets.reports' },
+      { key: 'timesheets.reports.export', label: 'Export reports as CSV or Excel for payroll', levels: V, requires: 'timesheets.reports' },
+      { key: 'timesheets.reports.copy', label: 'Copy buttons on the weekly payroll report (each total, and “Copy All Totals” for the payroll app)', levels: V, requires: 'timesheets.reports' },
     ],
     'Pay and labour cost': [
       { key: 'payroll.pay', label: 'View pay rates and labour cost (edit: change pay rates). Owners and payroll only.', levels: VE, db: true, hint: 'Pay rates and costs are never shown without this, even to people who enter hours.' },

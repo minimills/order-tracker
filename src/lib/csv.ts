@@ -20,3 +20,13 @@ export function downloadCsv(filename: string, header: string[], rows: Cell[][]) 
   a.remove()
   URL.revokeObjectURL(url)
 }
+
+/** Downloads rows as an Excel workbook (.xlsx, one sheet). SheetJS is loaded only when needed. */
+export async function downloadXlsx(filename: string, sheetName: string, header: string[], rows: Cell[][]) {
+  const XLSX = await import('xlsx')
+  const ws = XLSX.utils.aoa_to_sheet([header, ...rows.map((r) => r.map((c) => (c === undefined ? null : c)))])
+  ws['!cols'] = header.map((h, i) => ({ wch: Math.max(h.length, ...rows.map((r) => String(r[i] ?? '').length)) + 2 }))
+  const wb = XLSX.utils.book_new()
+  XLSX.utils.book_append_sheet(wb, ws, sheetName.slice(0, 31))
+  XLSX.writeFile(wb, filename)
+}

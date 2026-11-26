@@ -34,6 +34,7 @@ const PATHS = {
   hash: 'M5 9h14M5 15h14M10 3 8 21M16 3l-2 18',
   bell: 'M6 16V11a6 6 0 0 1 12 0v5l2 2H4zM10 21h4',
   building: 'M4 21V3h11v18M15 9h5v12M8 7h3M8 11h3M8 15h3M2 21h20',
+  copy: 'M9 9h11v11H9zM5 15H4V4h11v1',
   download: 'M12 3v12M7 10l5 5 5-5M4 21h16',
   archive: 'M3 4h18v4H3zM5 8v12h14V8M10 12h4',
   history: 'M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5M12 7v5l3 2',

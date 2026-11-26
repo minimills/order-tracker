@@ -87,7 +87,7 @@
   html.dark :is(.text-red-800, .text-red-900):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(88.5% 0.062 18.334); }
   html.dark :is(.text-rose-900):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(89.2% 0.058 10.001); }
   html.dark :is(.text-violet-900):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(89.4% 0.057 293.283); }
-  html.dark :is(.text-purple-800):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(90.2% 0.063 306.703); }
+  html.dark :is(.text-purple-800, .text-purple-900):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(90.2% 0.063 306.703); }
   html.dark :is(.text-emerald-900):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(90.5% 0.093 164.15); }
   html.dark :is(.text-cyan-800):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(91.7% 0.08 205.041); }
   html.dark :is(.text-teal-800, .text-teal-900):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { color: oklch(91% 0.096 180.426); }
