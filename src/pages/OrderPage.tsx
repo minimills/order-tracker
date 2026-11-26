@@ -23,6 +23,7 @@ import { countryFlag } from '../lib/country'
 import { checklistStatusText, type ChecklistStatusRow } from '../lib/checklists'
 import { CRATING_STAGES, loadCrates, loadOrderCrating, type CrateMachine, type NumberedCrate } from '../lib/crates'
 import OrderCrating from '../components/order/OrderCrating'
+import OrderExtraMachines from '../components/order/OrderExtraMachines'
 import { showDate } from '../lib/dates'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
@@ -604,6 +605,12 @@ function OrderPageBody() {
                     </p>
                   </Can>
                 </Section>
+                <OrderExtraMachines
+                  orderId={order.id}
+                  customerId={order.customer_id ?? null}
+                  open={order.stage !== 'Shipped' && order.stage !== 'Cancelled' && can('order.machines.from_stock', 'edit')}
+                  onChanged={load}
+                />
               </Can>
 
               <Can permission="schedule">

@@ -76,6 +76,9 @@ import OrdersListPage from './pages/OrdersListPage'
 import PaymentsPage from './pages/PaymentsPage'
 import SettingsPage from './pages/SettingsPage'
 import MachinePage from './pages/MachinePage'
+import RefurbPage from './pages/RefurbPage'
+import MachineReportsPage from './pages/MachineReportsPage'
+import MachineLifecyclePage from './pages/admin/MachineLifecyclePage'
 import NotificationSettingsPage from './pages/NotificationSettingsPage'
 import StatusPage from './pages/admin/StatusPage'
 import ShopBoardPage from './pages/ShopBoardPage'
@@ -173,6 +176,7 @@ export default function App() {
         <Route path="orders/new" element={<Page permission="orders.new" level="edit"><NewOrderPage /></Page>} />
         <Route path="orders/:id" element={<Page permission="order.page"><OrderPage /></Page>} />
         <Route path="machines" element={<Page permission="machines"><MachinePage /></Page>} />
+        <Route path="machines/refurb/:id" element={<Page permission="refurb"><RefurbPage /></Page>} />
         <Route path="machines/:id" element={<Page permission="machines"><MachinePage /></Page>} />
         <Route path="payments" element={<Page permission="payments.page"><PaymentsPage /></Page>} />
         <Route path="checklists/:machineId" element={<Page permission="checklist"><ChecklistPage /></Page>} />
@@ -202,6 +206,7 @@ export default function App() {
         <Route path="automations/:id" element={<Page permission="automations"><AutomationEditorPage /></Page>} />
         <Route path="reports/department-delays" element={<Page permission="reports.department_delays"><DepartmentDelaysPage /></Page>} />
         <Route path="reports/build-times" element={<Page permission="reports.build_times"><BuildTimesPage /></Page>} />
+        <Route path="reports/machines" element={<Page permission="reports.machines"><MachineReportsPage /></Page>} />
         <Route path="agent" element={<Page permission="agent"><AgentPage /></Page>} />
         <Route path="settings" element={<Page permission="settings"><SettingsPage /></Page>} />
         <Route path="settings/notifications" element={<Page permission="settings.notification_channels"><NotificationSettingsPage /></Page>} />
@@ -214,6 +219,7 @@ export default function App() {
           <Route path="users" element={<Page permission="admin.users" level="edit"><UsersPage /></Page>} />
           <Route path="departments" element={<Page permission="admin.departments" level="edit"><DepartmentsPage /></Page>} />
           <Route path="machine-types" element={<Page permission="admin.machine_types" level="edit"><MachineTypesPage /></Page>} />
+          <Route path="machine-lifecycle" element={<Page permission="admin.machine_lifecycle" level="edit"><MachineLifecyclePage /></Page>} />
           <Route path="dropdowns" element={<Page permission="admin.dropdowns" level="edit"><OptionListsPage /></Page>} />
           <Route path="stages" element={<Page permission="admin.stages" level="edit"><StagesPage /></Page>} />
           <Route path="order-defaults" element={<Page permission="admin.order_defaults" level="edit"><OrderDefaultsPage /></Page>} />

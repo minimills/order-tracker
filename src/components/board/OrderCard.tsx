@@ -8,6 +8,7 @@ import type { OrderSummaryRow } from '../../lib/types'
 import Can from '../Can'
 import { badgeClass, orderBadges, type Badge } from './badges'
 import MachineChips, { type ChipMachine } from './MachineChips'
+import { kindBadge } from '../../lib/machines'
 import { DEADLINE_TONE, STEP_LABEL, type PromisedItem } from '../../lib/schedule'
 import { serviceDates, type ServiceInfo } from '../../lib/service'
 
@@ -98,6 +99,11 @@ export default function OrderCard(props: Props) {
             Order {o.order_code}
           </Link>
         </Can>
+        {props.machines.some((m) => kindBadge(m.item_kind)) && (
+          <span className="shrink-0 rounded bg-violet-600 px-1.5 py-0.5 text-[0.6875rem] font-bold text-white" title="This order has used or refurbished machines">
+            {props.machines.some((m) => m.item_kind === 'refurbished') ? 'R' : 'Used'}
+          </span>
+        )}
         <Can permission="orders.board.card.built">
           <span className={`shrink-0 text-xs ${allReady ? 'font-medium text-green-700' : 'text-slate-500'}`}>
             {o.machines_ready_count}/{o.machines_count} ready

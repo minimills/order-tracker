@@ -239,6 +239,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'orders.new.split', label: 'Split shipment (76-1, 76-2), also the button on the order page', levels: E, requires: 'orders.new' },
       { key: 'orders.new.serial_by_hand', label: 'Type a serial number by hand', levels: E, requires: 'orders.new' },
       { key: 'orders.new.schedule', label: 'Schedule preview: expected ship date worked out, deadlines timeline', levels: V, requires: 'orders.new' },
+      { key: 'orders.new.from_stock', label: '“From Stock” and “Customer-owned” machines on a new order (reserves a used or refurbished machine, no new serial)', levels: E, requires: 'orders.new', db: true },
       { key: 'orders.new.crating', label: '“Will this order be crated?” (No = no Crating stage and no crating boxes for the order)', levels: E, requires: 'orders.new' },
     ],
   }),
@@ -304,13 +305,26 @@ export const CATALOG: PermissionItem[] = [
       { key: 'order.machines.checklist', label: 'Final check status per machine (and the “Final check” button with “Final check: see”)', levels: V, requires: 'order.section.machines', needs: ['checklist'] },
       { key: 'order.machines.add', label: '“Add Machines” button', levels: E, requires: 'order.section.machines', db: true },
       { key: 'order.machines.crate_flag', label: '“Crate” setting per machine (only crated machines get a crating deadline)', levels: VE, requires: 'order.section.machines', db: true },
+      { key: 'order.machines.from_stock', label: '“From Stock” / “Customer-owned” machines on an existing order (add, take off)', levels: E, requires: 'order.section.machines', db: true },
       { key: 'order.machines.remove', label: '“Remove” a machine', levels: E, requires: 'order.section.machines', db: true },
     ],
     'Machine page': [
       { key: 'machines', label: 'Machine page: search by serial number, owners and the whole history (built, owners, service, training, final check, crating, shipping)', levels: V, page: true, db: true },
       { key: 'machines.search', label: 'Search box on the Machines page: narrows the list of every machine as you type (serial, model, customer, country, order #)', levels: V, requires: 'machines' },
       { key: 'machines.print', label: 'Print button on the machine pages (search results, details and history)', levels: V, requires: 'machines' },
-      { key: 'machines.transfer', label: '“Transfer / Resold”: give a machine a new owner (date, notes, optional order)', levels: E, requires: 'machines', db: true },
+      { key: 'machines.transfer', label: '“Change Owner”: private sale, sold through us, gift, inheritance or company change (new owner, date, how we found out, notes)', levels: E, requires: 'machines', db: true },
+      { key: 'machines.add_existing', label: '“Add Existing Machine” (built before the app) and editing a machine’s details: year built, voltage, location, condition, warranty', levels: E, requires: 'machines', db: true },
+      { key: 'machines.import', label: '“Import Machines”: older machines from Excel / CSV with a matching screen and preview', levels: E, requires: 'machines', db: true },
+      { key: 'machines.buyback', label: '“Buy Back”: the company buys a machine back (price, condition, reason, freight in); see buy-backs on the machine page', levels: VE, requires: 'machines', db: true },
+      { key: 'machines.stock', label: 'Stock tab: machines the company owns (view); change stock status, location, condition and the asking price (edit)', levels: VE, requires: 'machines', db: true },
+      { key: 'machines.warranty', label: 'Warranty on the machine page (new / refurbished / used, end date)', levels: V, requires: 'machines' },
+      { key: 'machines.documents', label: 'Photos and documents of a machine (available in a future update)', levels: VE, requires: 'machines' },
+    ],
+    'Refurbishment': [
+      { key: 'refurb', label: 'Refurbishment jobs: see them (view); start one, record work, parts and conditions (edit)', levels: VE, requires: 'machines', db: true },
+      { key: 'refurb.complete', label: 'Complete or cancel a refurbishment (the machine gets its new -R serial)', levels: E, requires: 'refurb', db: true },
+      { key: 'refurb.costs', label: 'See refurbishment costs, buy-back prices, asking prices, profit and margin (labour cost also needs pay rates)', levels: V, requires: 'refurb', db: true },
+      { key: 'refurb.photos', label: 'Photos per refurbishment stage (available in a future update)', levels: VE, requires: 'refurb' },
     ],
     'Shipping section': [
       { key: 'order.section.shipping', label: 'Shipping section', levels: V, requires: 'order.page' },
@@ -635,6 +649,8 @@ export const CATALOG: PermissionItem[] = [
 
   ...group('Reports', {
     'Department delays': [
+      { key: 'reports.machines', label: 'Machine reports: buy-backs, refurbishments in progress, refurbishment time and cost per machine type, profit per refurbished machine, machines by owner and country', levels: V, page: true, db: true },
+      { key: 'reports.machines.print', label: 'Print the machine reports', levels: V, requires: 'reports.machines' },
       { key: 'reports.department_delays', label: 'Department delays report (on-time %, days late per department)', levels: V, page: true, db: true },
       { key: 'reports.department_delays.print', label: 'Print the department delays report', levels: V, requires: 'reports.department_delays' },
       { key: 'reports.department_delays.summary', label: 'Summary boxes: on time %, average days early, average days late, worst department this month', levels: V, requires: 'reports.department_delays' },
@@ -711,6 +727,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'admin.payroll', label: 'Payroll settings: overtime threshold, banked overtime, vacation and sick day rules, PEI minimums', levels: E, db: true },
       { key: 'admin.timesheets', label: 'Timesheets: employees without a login, import of old timesheet sheets, import layouts', levels: E, db: true },
       { key: 'admin.machine_types', label: 'Machine types', levels: E, db: true },
+      { key: 'admin.machine_lifecycle', label: 'Machine lifecycle: warranty lengths, refurbishment stages and checklists, “Refurbished from” on documents', levels: E, db: true },
       { key: 'admin.dropdowns', label: 'Dropdown lists', levels: E, db: true },
       { key: 'admin.checklists', label: 'Checklist templates (edit checklist templates)', levels: E, db: true },
       { key: 'admin.chat', label: 'Chat channels (department, group and other channels; never private chats)', levels: E, db: true },

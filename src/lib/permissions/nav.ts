@@ -33,6 +33,7 @@ export const NAV_ITEMS: NavItem[] = [
   { to: '/freight', label: 'Freight', icon: 'truck', anyOf: FREIGHT_KEYS },
   { to: '/reports/department-delays', label: 'Department Delays', icon: 'clock', permission: 'reports.department_delays' },
   { to: '/reports/build-times', label: 'Build Times', icon: 'clock', permission: 'reports.build_times' },
+  { to: '/reports/machines', label: 'Machine Reports', icon: 'hash', permission: 'reports.machines' },
   { to: '/agent', label: 'Agent', icon: 'chat', permission: 'agent' },
   { to: '/settings', label: 'Settings', icon: 'settings', permission: 'settings' },
   { to: '/admin', label: 'Admin', icon: 'wrench', anyOf: ADMIN_KEYS },

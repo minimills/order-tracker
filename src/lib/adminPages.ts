@@ -12,6 +12,7 @@ export const ADMIN_PAGES: AdminPage[] = [
   { to: '/admin/timesheets', permission: 'admin.timesheets', icon: 'timer' as const, title: 'Timesheets', text: 'Employees, people without a login, and import of the old timesheet sheets (Excel or CSV).' },
   { to: '/admin/payroll', permission: 'admin.payroll', icon: 'money' as const, title: 'Payroll Settings', text: 'Overtime threshold, banked overtime, vacation and sick day rules, statutory holiday pay, PEI minimums.' },
   { to: '/admin/machine-types', permission: 'admin.machine_types', icon: 'cog' as const, title: 'Machine Types', text: 'Names, codes and next serial numbers.' },
+  { to: '/admin/machine-lifecycle', permission: 'admin.machine_lifecycle', icon: 'wrench' as const, title: 'Machine Lifecycle', text: 'Warranty lengths, refurbishment stages and checklists, “Refurbished from” on documents.' },
   { to: '/admin/dropdowns', permission: 'admin.dropdowns', icon: 'dropdown' as const, title: 'Dropdown Lists', text: 'Voltage, delivery equipment, freight and payment types, notice categories.' },
   { to: '/admin/stages', permission: 'admin.stages', icon: 'tag' as const, title: 'Stage Names', text: 'Rename what people see for each stage, for example “Ready / testing”.' },
   { to: '/admin/checklists', permission: 'admin.checklists', icon: 'checklist' as const, title: 'Checklists', text: 'Final check templates: general items for every machine, plus extras per machine type.' },
