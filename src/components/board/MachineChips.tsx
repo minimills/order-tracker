@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom'
 import Can from '../Can'
 import SerialNumber from '../SerialNumber'
 import Icon from '../Icon'
+import { kindBadge } from '../../lib/machines'
 
 /** One machine, as the chips need it (a row of the order_machine_status view). */
 export type ChipMachine = {
@@ -25,6 +26,8 @@ export type ChipMachine = {
   /** Production stage and %, "Assembly – 60%" (0038; empty without permission). */
   progress?: string | null
   progressPercent?: number | null
+  /** new / used / refurbished (0059): used and refurbished machines get a badge. */
+  item_kind?: 'new' | 'used' | 'refurbished' | null
 }
 
 /** 0 not built · 1 built · 2 final checklist done · 3 crated */
@@ -44,20 +47,25 @@ function statusOf(m: ChipMachine, countCrates: boolean): Status {
   return 0
 }
 
-type Group = { typeId: string; name: string; fullName: string; machines: ChipMachine[]; status: Status; mixed: boolean; percent: number | null }
+type Group = { typeId: string; badge: string | null; name: string; fullName: string; machines: ChipMachine[]; status: Status; mixed: boolean; percent: number | null }
 
 /** The word for a machine's status: unbuilt machines show their production stage and % when known. */
 const statusWord = (m: ChipMachine, st: Status) => (st === 0 && m.progress ? m.progress : STATUS_STYLE[st].word)
 
 function groupMachines(machines: ChipMachine[], countCrates: boolean): Group[] {
   const map = new Map<string, ChipMachine[]>()
-  for (const m of machines) map.set(m.machine_type_id, [...(map.get(m.machine_type_id) ?? []), m])
+  // New, used and refurbished machines of one type get separate chips.
+  for (const m of machines) {
+    const k = `${m.machine_type_id}|${kindBadge(m.item_kind) ?? ''}`
+    map.set(k, [...(map.get(k) ?? []), m])
+  }
   return [...map.entries()]
     .map(([typeId, list]) => {
       const statuses = list.map((m) => statusOf(m, countCrates))
       const sorted = [...list].sort((a, b) => (a.serial_number ?? '').localeCompare(b.serial_number ?? ''))
       return {
         typeId,
+        badge: kindBadge(list[0].item_kind),
         name: list[0].code || list[0].short_name,
         fullName: list[0].machine_type,
         machines: sorted,
@@ -153,6 +161,11 @@ export default function MachineChips({ machines, showStatus, showCrated, showSer
                 </span>
               )}
               <span className="truncate">{g.name}</span>
+              {g.badge && (
+                <span className="shrink-0 rounded bg-violet-600 px-1 text-[0.625rem] font-bold text-white" title={g.badge === 'R' ? 'Refurbished' : 'Used'}>
+                  {g.badge}
+                </span>
+              )}
               {showStatus && g.status === 0 && g.percent !== null && <span className="shrink-0 text-[0.6875rem] font-normal tabular-nums opacity-80">{g.percent}%</span>}
               {g.machines.length > 1 && (
                 <span className="shrink-0 rounded-full bg-white/80 px-1.5 text-[0.6875rem] font-semibold tabular-nums ring-1 ring-current/20">

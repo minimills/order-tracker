@@ -20,6 +20,7 @@ const LISTS: { name: OptionListName; title: string }[] = [
   { name: 'notice_category', title: 'Notice categories' },
   { name: 'ce_directive', title: 'CE directives (for declarations of conformity)' },
   { name: 'incoming_delivery_type', title: 'Incoming freight: type of delivery' },
+  { name: 'machine_condition', title: 'Machine condition (older, used and refurbished machines)' },
 ]
 
 const small = 'rounded border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40'

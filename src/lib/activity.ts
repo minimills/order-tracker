@@ -86,6 +86,11 @@ const THING: Record<string, string> = {
   crates: 'crate',
   permission_templates: 'permission template',
   machine_checklists: 'final check',
+  machine_checklists_all: 'final check',
+  machine_buybacks: 'buy-back',
+  refurb_jobs: 'refurbishment',
+  refurb_parts: 'refurbishment part',
+  refurb_costs: 'refurbishment cost',
   checklist_template_items: 'checklist template item',
   build_checklist_items: 'build checklist item',
   production_stage_template: 'production stage',
@@ -231,7 +236,7 @@ export function describeActivity(e: ActivityEntry, typeNames: Map<string, string
           c.crated_by ? `Crated by ${c.crated_by}` : '',
         ].filter(Boolean),
       }
-    if (e.table_name === 'machine_checklists')
+    if (e.table_name === 'machine_checklists' || e.table_name === 'machine_checklists_all')
       return { title: e.action === 'insert' ? `Final check started by ${c.started_by_name ?? 'someone'}` : 'Final check deleted', lines: [] }
     if (e.table_name === 'build_checklist_items')
       return { title: `${verb} build checklist item`, lines: [`${c.section}: ${c.item_text}`] }

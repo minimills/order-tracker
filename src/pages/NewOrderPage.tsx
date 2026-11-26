@@ -7,6 +7,7 @@ import { buttonClass, Field, inputClass, Section } from '../components/form'
 import CustomerPicker from '../components/order/CustomerPicker'
 import { emailPattern, parseEmails, type CustomerChoice } from '../components/order/customer'
 import MachinesSection from '../components/order/MachinesSection'
+import StockMachinesPicker, { type ExtraMachine } from '../components/order/StockMachinesPicker'
 import { cleanSerial, parseQuantity, previewSerials, type MachineRow } from '../components/order/machines'
 import { formatMoney, friendlyError } from '../lib/format'
 import { usePermissions } from '../lib/permissions'
@@ -68,6 +69,7 @@ export default function NewOrderPage() {
 
   // --- Form state ---------------------------------------------------------
   const [customer, setCustomer] = useState<CustomerChoice>({ mode: 'existing', customer: null })
+  const [extras, setExtras] = useState<ExtraMachine[]>([])
   const [orderNumber, setOrderNumber] = useState('')
   const [nextNumber, setNextNumber] = useState<number | null>(null)
   const [isSplit, setIsSplit] = useState(Boolean(splitParam) && may.split)
@@ -307,7 +309,7 @@ export default function NewOrderPage() {
         seen.set(s, key)
       })
     })
-    if (rows.length === 0) e.machines = 'Add at least one machine.'
+    if (rows.length === 0 && !extras.some((x) => x.kind === 'stock')) e.machines = 'Add at least one machine.'
 
     if (!may.total) {
       // no order total for this person
@@ -376,7 +378,9 @@ export default function NewOrderPage() {
     }
 
     setSaving(true)
-    const { data, error } = await supabase.rpc('create_order', { p_order: payload })
+    const { data, error } = extras.length
+      ? await supabase.rpc('create_order_with_stock', { p_order: payload, p_extra: extras.map((x) => ({ machine_id: x.machine_id, kind: x.kind })) })
+      : await supabase.rpc('create_order', { p_order: payload })
     setSaving(false)
     if (error) {
       toast.error(friendlyError(error))
@@ -579,6 +583,18 @@ export default function NewOrderPage() {
             errors={errors}
             crateDefault={defaults.crate}
           />
+          <Can permission="orders.new.from_stock" level="edit">
+            <div className="mt-4 border-t border-slate-100 pt-3" data-setting="new-order-from-stock">
+              <h3 className="mb-1 text-sm font-medium text-slate-700">Used and Refurbished Machines</h3>
+              <p className="mb-2 text-xs text-slate-500">A machine from stock is reserved on this order and keeps its serial number; a customer-owned machine is only listed for the record.</p>
+              <StockMachinesPicker
+                customerId={customer.mode === 'existing' ? (customer.customer?.id ?? null) : null}
+                value={extras}
+                onAdd={(m) => setExtras((xs) => [...xs, m])}
+                onRemove={(m) => setExtras((xs) => xs.filter((x) => x.machine_id !== m.machine_id))}
+              />
+            </div>
+          </Can>
         </Section>
 
         <Can

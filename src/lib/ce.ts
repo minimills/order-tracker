@@ -47,7 +47,7 @@ export type CeData = {
   closing_html: string
   manufacturer: { name: string; address: string | null; phone: string | null; contact_person: string; email: string | null; website: string | null }
   authorised_person: string
-  machine: { product: string; brand: string; model: string | null; serial_number: string | null; serial: string; voltage: string | null; year: number; type_name: string }
+  machine: { product: string; brand: string; model: string | null; serial_number: string | null; serial: string; voltage: string | null; year: number; type_name: string; refurbished_from?: string | null }
   directives: string[]
   standards: string[]
   notified_body: string | null

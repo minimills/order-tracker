@@ -214,7 +214,9 @@ export function useOutbox(onSaved?: () => void) {
 // ---------------------------------------------------------------------------
 // Commissioning certificates
 // ---------------------------------------------------------------------------
-export type CertMachine = { key: string; machine_id: string | null; machine: string; serial: string | null; removed: boolean }
+export type CertMachine = { key: string; machine_id: string | null; machine: string; serial: string | null; removed: boolean   /** "Refurbished from LCR-2073" when the machine was refurbished (0059). */
+  note?: string | null
+}
 export type CompanyInfo = { name?: string; address?: string; phone?: string; email?: string; website?: string; logo?: string | null; office_email?: string }
 export type Certificate = {
   id: string

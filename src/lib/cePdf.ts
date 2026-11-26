@@ -181,6 +181,7 @@ async function drawDeclaration(pdf: PDFDocument, f: Fonts, it: CeRenderItem, log
     ['Brand name', d.machine.brand],
     ['Model', d.machine.model ?? ''],
     ['Serial number', d.machine.serial],
+    ...(d.machine.refurbished_from ? ([['Refurbished from', d.machine.refurbished_from.replace(/^Refurbished from /, '')]] as [string, string][]) : []),
     ['Voltage', d.machine.voltage ?? ''],
     ['Year of manufacture', String(d.machine.year)],
   ]

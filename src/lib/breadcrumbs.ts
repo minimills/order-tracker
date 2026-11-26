@@ -47,6 +47,7 @@ export function crumbsForPath(path: string): Crumb[] {
     '/settings/notifications': [{ label: 'Settings', to: '/settings' }, { label: 'Notifications' }],
     '/reports/department-delays': [{ label: 'Reports' }, { label: 'Department Delays' }],
     '/reports/build-times': [{ label: 'Reports' }, { label: 'Build Times' }],
+    '/reports/machines': [{ label: 'Reports' }, { label: 'Machine Reports' }],
   }
   if (exact[p]) return exact[p]
   if (NAV_LABEL.has(p)) return [{ label: NAV_LABEL.get(p)! }]

@@ -184,7 +184,7 @@ export async function buildCertificatePdf(c: Certificate, company: CompanyInfo, 
     y -= rowH
   }
   drawRow('Machine', 'Serial number', true)
-  for (const m of rows) drawRow(m.machine, m.serial ?? '', false)
+  for (const m of rows) drawRow(m.machine, `${m.serial ?? ''}${m.note ? ` (${m.note.charAt(0).toLowerCase()}${m.note.slice(1)})` : ''}`, false)
   if (rows.length === 0) drawRow('No machines listed', '', false)
   y -= 18
 
