@@ -278,6 +278,7 @@ export const CATALOG: PermissionItem[] = [
     Page: [
       { key: 'order.page', label: 'Open an order (order page; also makes orders clickable elsewhere)', levels: V, page: true },
       { key: 'order.print', label: 'Print button on the order page (print preview with the letterhead; choose the sections to include)', levels: V, requires: 'order.page' },
+      { key: 'order.navigate', label: '← Previous / Next → order and “Go to an order” at the top of the order page', levels: V, requires: 'order.page' },
     ],
     Header: [
       { key: 'order.header.customer', label: 'Customer name, company and country', levels: V, requires: 'order.page' },
@@ -517,6 +518,7 @@ export const CATALOG: PermissionItem[] = [
       { key: 'notices.acknowledge', label: 'Acknowledge Important and Urgent notices', levels: E, requires: 'notices', db: true },
       { key: 'notices.acks', label: 'See who has and hasn’t acknowledged their own notices (edit: Remind the Rest)', levels: VE, requires: 'notices', db: true },
       { key: 'notices.react', label: 'Add reactions', levels: E, requires: 'notices', db: true },
+      { key: 'notices.reactions.who', label: 'See who reacted (select a reaction to list the names)', levels: V, requires: 'notices', db: true },
       { key: 'notices.comments', label: 'Comments under notices (edit: write comments)', levels: VE, requires: 'notices', db: true },
       { key: 'notices.print', label: 'Print a notice on one page with the company letterhead', levels: V, requires: 'notices' },
     ],

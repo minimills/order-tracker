@@ -1,9 +1,10 @@
 // @permission-scope notices.post.everyone, notices.post.department, notices.manage
 import { useState } from 'react'
+import { CustomColourButton } from '../colour/CustomColour'
 import { toast } from 'sonner'
 import { todayISO } from '../../lib/dates'
 import { friendlyError } from '../../lib/format'
-import { NOTE_COLOURS, PRIORITY, refreshNoticeUnread, refreshUrgentNotices, useAudienceChoices, type Audience, type Notice, type Priority } from '../../lib/notices'
+import { NOTE_COLOURS, PRIORITY, refreshNoticeUnread, refreshUrgentNotices, useAudienceChoices, type Audience, type Notice, type NoteColour, type Priority } from '../../lib/notices'
 import { usePermissions } from '../../lib/permissions'
 import { isEmptyRichText } from '../../lib/richText'
 import { supabase } from '../../lib/supabase'
@@ -135,6 +136,7 @@ export default function NoticeDialog({ notice, audience, onClose, onSaved }: { n
                   className={`h-8 w-8 rounded border-2 ${colour === c.value ? 'ring-2 ring-slate-900 ring-offset-1' : ''}`}
                 />
               ))}
+              <CustomColourButton value={colour} presets={NOTE_COLOURS.map((c) => c.paper)} onChange={(hex) => setColour(hex as NoteColour)} label="Note colour" round={false} />
             </div>
           </fieldset>
         </div>

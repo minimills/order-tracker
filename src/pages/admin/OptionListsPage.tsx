@@ -7,6 +7,10 @@ import { friendlyError } from '../../lib/format'
 import { supabase } from '../../lib/supabase'
 import type { OptionItem, OptionListName } from '../../lib/types'
 import Icon from '../../components/Icon'
+import ColourPicker from '../../components/boards/ColourPicker'
+
+/** Preset chip colours for voltages (any other colour with the "+" button). */
+const VOLTAGE_COLOURS = ['#2563eb', '#16a34a', '#d97706', '#dc2626', '#7c3aed', '#64748b']
 
 const LISTS: { name: OptionListName; title: string }[] = [
   { name: 'voltage', title: 'Voltage' },
@@ -102,16 +106,16 @@ function OptionList({ list, items, reload }: { list: (typeof LISTS)[number]; ite
                 onKeyDown={(e) => e.key === 'Enter' && rename(item)}
               />
               {list.name === 'voltage' && !item.archived && (
-                <input
-                  type="color"
-                  aria-label={`Colour for ${item.value}`}
-                  title="Chip colour on the Orders board"
-                  className="h-9 w-11 cursor-pointer rounded border border-slate-300 bg-white p-0.5"
-                  value={item.colour ?? '#64748b'}
-                  onChange={(e) =>
-                    supabase && run(supabase.from('option_lists').update({ colour: e.target.value }).eq('id', item.id), `Colour for "${item.value}" saved.`)
-                  }
-                />
+                <span className="flex items-center gap-1.5" title="Chip colour on the Orders board">
+                  <ColourPicker
+                    colours={VOLTAGE_COLOURS}
+                    value={item.colour ?? '#64748b'}
+                    label={`Colour for ${item.value}`}
+                    onChange={(colour) =>
+                      supabase && run(supabase.from('option_lists').update({ colour }).eq('id', item.id), `Colour for "${item.value}" saved.`)
+                    }
+                  />
+                </span>
               )}
               {draft.trim() !== item.value && (
                 <button type="button" className={buttonClass} onClick={() => rename(item)}>

@@ -40,7 +40,7 @@ export default function WeeksOverview() {
   }, [ws, version])
 
   const byEmp = new Map(rows.map((r) => [r.employee_id, r]))
-  const managed = new Set(departments.filter((d) => d.manager_email && d.manager_email === me).map((d) => d.id))
+  const managed = new Set(departments.filter((d) => !d.archived && !!me && (d.managers ?? []).includes(me)).map((d) => d.id))
   const shown = employees.filter((e) => (!dept || e.department_id === dept) && (!q || e.name.toLowerCase().includes(q.toLowerCase())))
   const go = (d: string) => setParams({ ...Object.fromEntries(params), week: d }, { replace: true })
   const canApprove = (deptId: string | null) => can('timesheets.approve', 'edit') || (deptId != null && managed.has(deptId))

@@ -54,7 +54,7 @@
   html.dark :is(.bg-amber-200):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 32%, #131c2e); }
   html.dark :is(.hover\:bg-amber-300:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { background-color: color-mix(in srgb, oklch(76.9% 0.188 70.08) 42%, #131c2e); }
   html.dark :is(.border-slate-100, .divide-slate-100 > :not(:last-child)):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #1a2436; }
-  html.dark :is(.border-slate-200, .divide-slate-200 > :not(:last-child)):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #263247; }
+  html.dark :is(.border-slate-200, .border-white, .divide-slate-200 > :not(:last-child)):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #263247; }
   html.dark :is(.border-slate-300, .divide-slate-300 > :not(:last-child), .hover\:border-slate-300:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #334155; }
   html.dark :is(.border-slate-400, .hover\:border-slate-400:hover):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #475569; }
   html.dark :is(.border-slate-500, .focus\:border-slate-500:focus):not(:is(.keep-light, .keep-light *, .keep-dark, .keep-dark *)) { border-color: #64748b; }

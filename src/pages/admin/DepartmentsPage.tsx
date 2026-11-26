@@ -8,6 +8,7 @@ import { supabase } from '../../lib/supabase'
 import type { Department } from '../../lib/types'
 import { useDepartments } from '../../lib/useDepartments'
 import { useTsPeople } from '../../lib/timesheets'
+import { confirmAction } from '../../lib/confirm'
 
 const small = 'rounded border border-slate-300 bg-white px-2 py-1 text-xs hover:bg-slate-50 disabled:opacity-40'
 
@@ -61,10 +62,17 @@ export default function DepartmentsPage() {
     }
   }
 
-  async function setManager(d: Department, email: string) {
+  const nameOf = (email: string) => people.find((p) => p.email === email)?.name ?? email
+
+  async function addManager(d: Department, email: string) {
+    if (!supabase || !email) return
+    await save(supabase.from('department_managers').insert({ department_id: d.id, user_email: email }), `${nameOf(email)} is now a manager of ${d.name}.`)
+  }
+
+  async function removeManager(d: Department, email: string) {
     if (!supabase) return
-    const who = people.find((p) => p.email === email)?.name
-    await save(supabase.from('departments').update({ manager_email: email || null }).eq('id', d.id), email ? `${who} manages ${d.name}.` : `${d.name} has no manager now.`)
+    if (!(await confirmAction(`Remove ${nameOf(email)} as a manager of ${d.name}? They will no longer approve its timesheets or time off requests.`, { confirmLabel: 'Remove Manager' }))) return
+    await save(supabase.from('department_managers').delete().eq('department_id', d.id).eq('user_email', email), `${nameOf(email)} is no longer a manager of ${d.name}.`)
   }
 
   async function move(d: Department, dir: -1 | 1) {
@@ -94,7 +102,7 @@ export default function DepartmentsPage() {
     <div className="space-y-6">
       <AdminPageHeader title="Departments">
         The departments people belong to. A person can be in more than one (set that in Users). Archiving hides a
-        department from lists but keeps it on past activity. The manager approves the department’s timesheets and time off requests.
+        department from lists but keeps it on past activity. The manager approves the department’s timesheets and time off requests. A department can have several managers: each is told about time off requests, and the first to approve or decline settles the request (the others see who did).
       </AdminPageHeader>
 
       <section className="rounded-lg border border-slate-200 bg-white p-4">
@@ -123,22 +131,6 @@ export default function DepartmentsPage() {
                   <button type="button" className={buttonClass} onClick={() => rename(d)}>
                     Save Changes
                   </button>
-                )}
-                {!d.archived && (
-                  <select
-                    aria-label={`Manager of ${d.name}`}
-                    data-setting={idx === 0 ? 'dept-managers' : undefined}
-                    className="rounded border border-slate-300 bg-white px-2 py-1 text-xs"
-                    value={d.manager_email ?? ''}
-                    onChange={(e) => setManager(d, e.target.value)}
-                  >
-                    <option value="">No manager</option>
-                    {people.map((p) => (
-                      <option key={p.email} value={p.email}>
-                        Manager: {p.name}
-                      </option>
-                    ))}
-                  </select>
                 )}
                 <span className="w-20 text-xs text-slate-500">
                   {counts[d.id] ?? 0} {counts[d.id] === 1 ? 'person' : 'people'}
@@ -172,6 +164,35 @@ export default function DepartmentsPage() {
                 >
                   {d.archived ? 'Restore' : 'Archive'}
                 </button>
+                {!d.archived && (
+                  <div className="flex w-full flex-wrap items-center gap-1.5 pl-1 text-xs" data-setting={idx === 0 ? 'dept-managers' : undefined}>
+                    <span className="text-slate-600">Managers:</span>
+                    {(d.managers ?? []).length === 0 && <span className="text-slate-500">None yet.</span>}
+                    {(d.managers ?? []).map((m) => (
+                      <span key={m} className="flex items-center gap-1 rounded-full bg-slate-100 py-0.5 pl-2 pr-1 text-slate-800">
+                        {nameOf(m)}
+                        <button type="button" className="rounded-full px-1 text-slate-500 hover:bg-slate-200 hover:text-slate-900" aria-label={`Remove ${nameOf(m)} as a manager of ${d.name}`} onClick={() => removeManager(d, m)}>
+                          ×
+                        </button>
+                      </span>
+                    ))}
+                    <select
+                      aria-label={`Add a manager to ${d.name}`}
+                      className="rounded border border-slate-300 bg-white px-2 py-1 text-xs"
+                      value=""
+                      onChange={(e) => addManager(d, e.target.value)}
+                    >
+                      <option value="">Add Manager…</option>
+                      {people
+                        .filter((p) => !(d.managers ?? []).includes(p.email))
+                        .map((p) => (
+                          <option key={p.email} value={p.email}>
+                            {p.name}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                )}
                 <p className="w-full pl-1 text-xs text-slate-500">
                   Default permissions:{' '}
                   {Object.keys(d.default_permissions ?? {}).length ? 'set' : 'none yet (set up in a later step)'}

@@ -16,7 +16,7 @@
 \pset tuples_only on
 set session_replication_role = replica;
 insert into allowed_users (email, name, role) values ('owner@test.ca','Owner Admin','admin'), ('mgr@test.ca','Mary Manager','staff'), ('tom@test.ca','Tom Test','staff'), ('sam@test.ca','Sam Other','staff');
-update departments set manager_email='mgr@test.ca' where name='Assembly Shop';
+insert into department_managers (department_id, user_email) select id, 'mgr@test.ca' from departments where name='Assembly Shop';
 insert into user_departments (user_email, department_id) select 'tom@test.ca', id from departments where name='Assembly Shop';
 insert into user_permissions (user_email, perms) values ('mgr@test.ca','{"timesheets":"view","timesheets.absences":"view","dashboard.whos_off":"view","boards":"edit","boards.card.edit":"edit","boards.card.due":"edit","boards.card.assignees":"edit"}'), ('tom@test.ca','{"timesheets.mine":"view","timesheets.time_off.request":"edit","dashboard.whos_off":"view"}');
 -- a holiday on Wed Nov 11 2026 (Remembrance Day)

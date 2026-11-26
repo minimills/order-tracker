@@ -1,9 +1,10 @@
 // @permission-scope notices.my_notes
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from 'react'
+import { CustomColourButton } from '../colour/CustomColour'
 import { toast } from 'sonner'
 import { confirmAction } from '../../lib/confirm'
 import { friendlyError } from '../../lib/format'
-import { colourOf, NOTE_COLOURS, showDateTime, tiltOf, toLocalInput, type ChecklistItem, type PersonalNote } from '../../lib/notices'
+import { colourOf, NOTE_COLOURS, showDateTime, tiltOf, toLocalInput, type ChecklistItem, type NoteColour, type PersonalNote } from '../../lib/notices'
 import { supabase } from '../../lib/supabase'
 import { ACTION, confirmText } from '../../lib/wording'
 import Can from '../Can'
@@ -397,6 +398,7 @@ function NoteDialog({
                 className={`h-8 w-8 rounded border-2 ${colour === c.value ? 'ring-2 ring-slate-900 ring-offset-1' : ''}`}
               />
             ))}
+            <CustomColourButton value={colour} presets={NOTE_COLOURS.map((c) => c.paper)} onChange={(hex) => setColour(hex as NoteColour)} label="Note colour" round={false} />
           </div>
         </fieldset>
         <fieldset>
